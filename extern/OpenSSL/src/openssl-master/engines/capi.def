@@ -1,0 +1,9 @@
+;
+; Definition file for the DLL version of the engines\capi-3 library from OpenSSL
+;
+
+LIBRARY         engines\capi-3
+
+EXPORTS
+    bind_engine
+    v_check

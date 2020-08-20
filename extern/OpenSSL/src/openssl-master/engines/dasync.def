@@ -1,0 +1,9 @@
+;
+; Definition file for the DLL version of the engines\dasync-3 library from OpenSSL
+;
+
+LIBRARY         engines\dasync-3
+
+EXPORTS
+    bind_engine
+    v_check

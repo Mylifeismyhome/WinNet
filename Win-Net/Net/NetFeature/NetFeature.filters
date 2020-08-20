@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{424493c8-ef79-4cf6-b34f-45d005fdb9fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Cryption">
+      <UniqueIdentifier>{4bd8ed5b-a277-4908-92a4-bb35916d71cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{88156f93-1490-4385-bca0-c7aaef7a51a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\manager">
+      <UniqueIdentifier>{62ff05af-1707-40ae-8bca-5f0318abac4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\web">
+      <UniqueIdentifier>{275512df-07ee-45b9-b721-b2065640c7e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JSON11">
+      <UniqueIdentifier>{622f5a62-7edb-437f-b4d4-17e37d5a220f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compression">
+      <UniqueIdentifier>{106d3cfb-fe7b-44f1-9fc8-912e6578916f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compression\ZLib">
+      <UniqueIdentifier>{3f5600af-2914-435f-9be3-c2d66f0ae194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Coding">
+      <UniqueIdentifier>{49d4e4d9-744d-4eb0-afc7-bc3c8c1ccfe6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Coding\md5">
+      <UniqueIdentifier>{8d9dabea-6347-4e72-834f-7f56e869a779}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\assets\assets.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="..\Net\Net.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Cryption\RSA.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Cryption\AES.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Package.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Cryption\XOR.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\NativePackages.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\manager\filemanager.h">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\manager\dirmanager.h">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\manager\logmanager.h">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\web\http.h">
+      <Filter>Assets\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\timer.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\assets\benchmark.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\NetCodes.hpp">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\extern\Json11\json11.hpp">
+      <Filter>JSON11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Compression\Compression.h">
+      <Filter>Compression</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\BASE64.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\Hex.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\MD5.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\SHA1.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\md5\md5_loc.h">
+      <Filter>Coding\md5</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Coding\md5\md5.h">
+      <Filter>Coding\md5</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\assets\assets.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="..\Cryption\RSA.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Cryption\AES.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Cryption\XOR.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\manager\filemanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\manager\dirmanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\manager\logmanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\web\http.cpp">
+      <Filter>Assets\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\timer.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\assets\benchmark.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\Json11\json11.cpp">
+      <Filter>JSON11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Package.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\gzread.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\gzwrite.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\inffast.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\inflate.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\inftrees.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\trees.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\zutil.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\adler32.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\compress.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\crc32.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\deflate.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\ZLib\gzlib.c">
+      <Filter>Compression\ZLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Compression\Compression.cpp">
+      <Filter>Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Coding\Hex.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Coding\MD5.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Coding\SHA1.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Coding\BASE64.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Coding\md5\md5.cpp">
+      <Filter>Coding\md5</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
