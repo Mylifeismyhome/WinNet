@@ -842,7 +842,7 @@ bool Server::Close()
 	}
 
 	SetRunning(false);
-	
+
 	if (GetListenSocket())
 		closesocket(GetListenSocket());
 
@@ -866,28 +866,31 @@ void Server::Terminate()
 
 short Server::Handshake(NET_PEER peer)
 {
-	if(!peer)
+	if (!peer)
 		return WebServerHandshake::HandshakeRet_t::peer_not_valid;
-	
+
 	/* SSL */
 	if (peer.ssl)
 	{
 		// check socket still open
 		if (recv(peer.pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSAETIMEDOUT)
+			switch (WSAGetLastError())
 			{
+			case WSAETIMEDOUT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
+
+			default:
+				break;
 			}
 		}
 
@@ -895,51 +898,48 @@ short Server::Handshake(NET_PEER peer)
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer.ssl, data_size);
-			if (err == SSL_ERROR_ZERO_RETURN)
+			switch (err)
 			{
+			case SSL_ERROR_ZERO_RETURN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
-			{
+
+			case SSL_ERROR_WANT_CONNECT:
+			case SSL_ERROR_WANT_ACCEPT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (err == SSL_ERROR_WANT_X509_LOOKUP)
-			{
+
+			case SSL_ERROR_WANT_X509_LOOKUP:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (err == SSL_ERROR_SYSCALL)
-			{
+
+			case SSL_ERROR_SYSCALL:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (err == SSL_ERROR_SSL)
-			{
+
+			case SSL_ERROR_SSL:
 				/* Some servers did not close the connection properly */
 				peer.network.reset();
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
 
-			if (err == SSL_ERROR_WANT_READ)
-			{
+			case SSL_ERROR_WANT_READ:
 				peer.network.reset();
 				return WebServerHandshake::HandshakeRet_t::would_block;
-			}
 
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
-			ErasePeer(peer);
-			return WebServerHandshake::HandshakeRet_t::error;
+			default:
+				peer.network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+			}
 		}
 		ERR_clear_error();
 		peer.network.getDataReceive()[data_size] = '\0';
@@ -966,121 +966,108 @@ short Server::Handshake(NET_PEER peer)
 		const auto data_size = recv(peer.pSocket, reinterpret_cast<char*>(peer.network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
-			{
+
+			case WSAEWOULDBLOCK:
 				peer.network.reset();
 				return WebServerHandshake::HandshakeRet_t::would_block;
-			}
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
-			}
 
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
-			ErasePeer(peer);
-			return WebServerHandshake::HandshakeRet_t::error;
+			default:
+				peer.network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+			}
 		}
 		if (data_size == 0)
 		{
@@ -1305,7 +1292,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 {
 	if (!peer)
 		return;
-	
+
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
@@ -1403,54 +1390,46 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 				if (res <= 0)
 				{
 					const auto err = SSL_get_error(peer.ssl, res);
-					if (err == SSL_ERROR_ZERO_RETURN)
+					switch (err)
 					{
+					case SSL_ERROR_ZERO_RETURN:
 						buf.free();
 						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
-					{
+
+					case SSL_ERROR_WANT_CONNECT:
+					case SSL_ERROR_WANT_ACCEPT:
 						buf.free();
 						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (err == SSL_ERROR_WANT_X509_LOOKUP)
-					{
+
+					case SSL_ERROR_WANT_X509_LOOKUP:
 						buf.free();
 						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (err == SSL_ERROR_SYSCALL)
-					{
+
+					case SSL_ERROR_SYSCALL:
 						buf.free();
 						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (err == SSL_ERROR_SSL)
-					{
-						/* Some servers did not close the connection properly */
+
+					case SSL_ERROR_SSL:
 						buf.free();
-						//LOG_PEER(CSTRING("[HTTPS] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called"));
-						//return 0;
 						return;
 
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called"), GetServerName(), peer.getIPAddr());
+					case SSL_ERROR_WANT_WRITE:
+						continue;
+
+					default:
+						buf.free();
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
 					}
-
-					if (err == SSL_ERROR_WANT_WRITE)
-						continue;
-
-					buf.free();
-					LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.getIPAddr());
-					ErasePeer(peer);
-					return;
 				}
 				ERR_clear_error();
 			} while (res <= 0);
@@ -1463,139 +1442,125 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 				const auto res = send(peer.pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
 				if (res == SOCKET_ERROR)
 				{
-					if (WSAGetLastError() == WSANOTINITIALISED)
+					switch (WSAGetLastError())
 					{
+					case WSANOTINITIALISED:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAENETDOWN)
-					{
+
+					case WSAENETDOWN:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEACCES)
-					{
+
+					case WSAEACCES:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEINTR)
-					{
+
+					case WSAEINTR:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEINPROGRESS)
-					{
+
+					case WSAEINPROGRESS:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEFAULT)
-					{
+
+					case WSAEFAULT:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAENETRESET)
-					{
+
+					case WSAENETRESET:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAENOBUFS)
-					{
+
+					case WSAENOBUFS:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAENOTCONN)
-					{
+
+					case WSAENOTCONN:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAENOTSOCK)
-					{
+
+					case WSAENOTSOCK:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEOPNOTSUPP)
-					{
+
+					case WSAEOPNOTSUPP:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAESHUTDOWN)
-					{
+
+					case WSAESHUTDOWN:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEWOULDBLOCK)
+
+					case WSAEWOULDBLOCK:
 						continue;
-					if (WSAGetLastError() == WSAEMSGSIZE)
-					{
+
+					case WSAEMSGSIZE:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEHOSTUNREACH)
-					{
+
+					case WSAEHOSTUNREACH:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAEINVAL)
-					{
+
+					case WSAEINVAL:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAECONNABORTED)
-					{
+
+					case WSAECONNABORTED:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAECONNRESET)
-					{
+
+					case WSAECONNRESET:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
-					if (WSAGetLastError() == WSAETIMEDOUT)
-					{
+
+					case WSAETIMEDOUT:
 						buf.free();
 						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer.getIPAddr());
 						ErasePeer(peer);
 						return;
-					}
 
-					buf.free();
-					LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.getIPAddr());
-					ErasePeer(peer);
-					return;
+					default:
+						buf.free();
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.getIPAddr());
+						ErasePeer(peer);
+						return;
+					}
 				}
 
 				sendSize -= res;
@@ -1610,7 +1575,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 {
 	auto peer = InsertPeer(client_addr, socket);
-	
+
 	/* Handshake */
 	if (!GetWithoutHandshake())
 	{
@@ -1618,7 +1583,7 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 		{
 			peer.setAsync(true);
 			const auto res = Handshake(peer);
-			if(res == WebServerHandshake::peer_not_valid)
+			if (res == WebServerHandshake::peer_not_valid)
 			{
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), GetServerName(), peer.getIPAddr());
 
@@ -1627,7 +1592,7 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 				ErasePeer(peer);
 				return;
 			}
-			if(res == WebServerHandshake::would_block)
+			if (res == WebServerHandshake::would_block)
 			{
 				peer.setAsync(false);
 				continue;
@@ -1644,7 +1609,7 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 			if (res == WebServerHandshake::error)
 			{
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), GetServerName(), peer.getIPAddr());
-				
+
 				peer.setAsync(false);
 				ErasePeer(peer);
 				return;
@@ -1705,101 +1670,87 @@ void Server::DoReceive(NET_PEER peer)
 		// check socket still open
 		if (recv(peer.pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
-			{
-			}
-			else
-			{
+
+			case WSAEWOULDBLOCK:
+				break;
+
+			default:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
@@ -1810,50 +1761,48 @@ void Server::DoReceive(NET_PEER peer)
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer.ssl, data_size);
-			if (err == SSL_ERROR_ZERO_RETURN)
+			switch (err)
 			{
+			case SSL_ERROR_ZERO_RETURN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
-			{
+
+			case SSL_ERROR_WANT_CONNECT:
+			case SSL_ERROR_WANT_ACCEPT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (err == SSL_ERROR_WANT_X509_LOOKUP)
-			{
+
+			case SSL_ERROR_WANT_X509_LOOKUP:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (err == SSL_ERROR_SYSCALL)
-			{
+
+			case SSL_ERROR_SYSCALL:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (err == SSL_ERROR_SSL)
-			{
+
+			case SSL_ERROR_SSL:
 				/* Some servers did not close the connection properly */
 				peer.network.reset();
 				return;
-			}
-			if (err == SSL_ERROR_WANT_READ)
-			{
+
+			case SSL_ERROR_WANT_READ:
 				peer.network.reset();
 				return;
-			}
 
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
-			ErasePeer(peer);
-			return;
+			default:
+				peer.network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
+				ErasePeer(peer);
+				return;
+			}
 		}
 		ERR_clear_error();
 		peer.network.getDataReceive()[data_size] = '\0';
@@ -1880,132 +1829,114 @@ void Server::DoReceive(NET_PEER peer)
 		const auto data_size = recv(peer.pSocket, reinterpret_cast<char*>(peer.network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
-			{
+
+			case WSAEWOULDBLOCK:
 				peer.network.reset();
 				return;
-			}
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				peer.network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer.getIPAddr());
 				ErasePeer(peer);
 				return;
-			}
 
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
-			ErasePeer(peer);
-			return;
+			default:
+				peer.network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.getIPAddr());
+				ErasePeer(peer);
+				return;
+			}
 		}
 		if (data_size == 0)
 		{
 			peer.network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer.getIPAddr());
 			ErasePeer(peer);
-			return;
-		}
-		if (data_size < 0)
-		{
-			peer.network.reset();
 			return;
 		}
 		peer.network.getDataReceive()[data_size] = '\0';
@@ -2035,7 +1966,7 @@ void Server::DecodeFrame(NET_PEER peer)
 {
 	if (!peer)
 		return;
-	
+
 	// 6 bytes have to be set (2 bytes to read the mask and 4 bytes represent the mask key)
 	if (peer.network.getDataSize() < 6)
 	{
