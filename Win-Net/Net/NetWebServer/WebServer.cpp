@@ -569,7 +569,6 @@ void Server::NET_IPEER::clear()
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
 	client_addr = sockaddr_in();
-	lastaction = 0.0f;
 	estabilished = false;
 	isAsync = false;
 	handshake = false;
@@ -1659,10 +1658,6 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 void Server::DoReceive(NET_PEER peer)
 {
 	if (!peer)
-		return;
-
-	// SPAMMPROTECTION
-	if (peer.lastaction > CURRENTCLOCKTIME)
 		return;
 
 	if (peer.ssl)

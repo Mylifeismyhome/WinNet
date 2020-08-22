@@ -560,7 +560,6 @@ void Server::NET_IPEER::clear()
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
 	client_addr = sockaddr_in();
-	lastaction = 0.0f;
 	estabilished = false;
 	isAsync = false;
 	NetVersionMatched = false;
