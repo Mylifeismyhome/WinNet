@@ -226,7 +226,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	ChangeMode(GetBlockingMode());
 
 
-	if(GetCryptPackage())
+	if (GetCryptPackage())
 	{
 		/* create RSA Key Pair */
 		network.createNewRSAKeys(GetRSAKeySize());
@@ -437,7 +437,7 @@ void Client::Network::createNewRSAKeys(const size_t keySize)
 	RSAPrivateKey = rsa.CreatePrivateKey(keySize, 3);
 	RSAHandshake = false;
 }
-    
+
 void Client::Network::deleteRSAKeys()
 {
 	RSAPublicKey.free();
@@ -480,126 +480,112 @@ void Client::SingleSend(const char* data, size_t size)
 {
 	if (!GetSocket())
 		return;
-	
+
 	do
 	{
 		const auto res = send(GetSocket(), data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				LOG_PEER(CSTRING("The network subsystem has failed"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEACCES)
-			{
+
+			case WSAEACCES:
 				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOBUFS)
-			{
+
+			case WSAENOBUFS:
 				LOG_PEER(CSTRING("No buffer space is available"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				LOG_PEER(CSTRING("The socket is not connected"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				LOG_PEER(CSTRING("The descriptor is not a socket"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
+
+			case WSAEWOULDBLOCK:
 				continue;
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEHOSTUNREACH)
-			{
+
+			case WSAEHOSTUNREACH:
 				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
-			}
 
-			LOG_PEER(CSTRING("Something bad happen... on Send"));
-			Disconnect();
-			return;
+			default:
+				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				Disconnect();
+				return;
+			}
 		}
 		if (res < 0)
 			break;
@@ -615,145 +601,131 @@ void Client::SingleSend(BYTE*& data, size_t size)
 		FREE(data);
 		return;
 	}
-	
+
 	do
 	{
 		const auto res = send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				FREE(data);
 				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				FREE(data);
 				LOG_PEER(CSTRING("The network subsystem has failed"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEACCES)
-			{
+
+			case WSAEACCES:
 				FREE(data);
 				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				FREE(data);
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				FREE(data);
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				FREE(data);
 				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				FREE(data);
 				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOBUFS)
-			{
+
+			case WSAENOBUFS:
 				FREE(data);
 				LOG_PEER(CSTRING("No buffer space is available"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				FREE(data);
 				LOG_PEER(CSTRING("The socket is not connected"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				FREE(data);
 				LOG_PEER(CSTRING("The descriptor is not a socket"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				FREE(data);
 				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				FREE(data);
 				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
+
+			case WSAEWOULDBLOCK:
 				continue;
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				FREE(data);
 				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEHOSTUNREACH)
-			{
+
+			case WSAEHOSTUNREACH:
 				FREE(data);
 				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				FREE(data);
 				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				FREE(data);
 				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				FREE(data);
 				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				FREE(data);
 				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
-			}
 
-			FREE(data);
-			LOG_PEER(CSTRING("Something bad happen... on Send"));
-			Disconnect();
-			return;
+			default:
+				FREE(data);
+				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				Disconnect();
+				return;
+			}
 		}
 		if (res < 0)
 			break;
@@ -771,145 +743,131 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size)
 		data.free();
 		return;
 	}
-	
+
 	do
 	{
 		const auto res = send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (WSAGetLastError())
 			{
+			case WSANOTINITIALISED:
 				data.free();
 				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
+
+			case WSAENETDOWN:
 				data.free();
 				LOG_PEER(CSTRING("The network subsystem has failed"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEACCES)
-			{
+
+			case WSAEACCES:
 				data.free();
 				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
+
+			case WSAEINTR:
 				data.free();
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
+
+			case WSAEINPROGRESS:
 				data.free();
 				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
+
+			case WSAEFAULT:
 				data.free();
 				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
+
+			case WSAENETRESET:
 				data.free();
 				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOBUFS)
-			{
+
+			case WSAENOBUFS:
 				data.free();
 				LOG_PEER(CSTRING("No buffer space is available"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
+
+			case WSAENOTCONN:
 				data.free();
 				LOG_PEER(CSTRING("The socket is not connected"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
+
+			case WSAENOTSOCK:
 				data.free();
 				LOG_PEER(CSTRING("The descriptor is not a socket"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
+
+			case WSAEOPNOTSUPP:
 				data.free();
 				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
+
+			case WSAESHUTDOWN:
 				data.free();
 				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
+
+			case WSAEWOULDBLOCK:
 				continue;
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
+
+			case WSAEMSGSIZE:
 				data.free();
 				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEHOSTUNREACH)
-			{
+
+			case WSAEHOSTUNREACH:
 				data.free();
 				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
+
+			case WSAEINVAL:
 				data.free();
 				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
+
+			case WSAECONNABORTED:
 				data.free();
 				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
+
+			case WSAECONNRESET:
 				data.free();
 				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
+
+			case WSAETIMEDOUT:
 				data.free();
 				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
-			}
 
-			data.free();
-			LOG_PEER(CSTRING("Something bad happen... on Send"));
-			Disconnect();
-			return;
+			default:
+				data.free();
+				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				Disconnect();
+				return;
+			}
 		}
 		if (res < 0)
 			break;
@@ -1216,7 +1174,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, sizeof(NET_PACKAGE_BRACKET_OPEN) - 1);
 		SingleSend(dataSizeStr.data(), dataSizeStr.length());
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1);
-	
+
 		if (GetCompressPackage())
 			SingleSend(dataBuffer, dataBufferSize);
 		else
@@ -1252,133 +1210,115 @@ void Client::DoReceive()
 	const auto data_size = recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
-		if (WSAGetLastError() == WSANOTINITIALISED)
+		switch (WSAGetLastError())
 		{
+		case WSANOTINITIALISED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAENETDOWN)
-		{
+
+		case WSAENETDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The network subsystem has failed"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEFAULT)
-		{
+
+		case WSAEFAULT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAENOTCONN)
-		{
+
+		case WSAENOTCONN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket is not connected"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEINTR)
-		{
+
+		case WSAEINTR:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The (blocking) call was canceled through WSACancelBlockingCall()"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEINPROGRESS)
-		{
+
+		case WSAEINPROGRESS:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAENETRESET)
-		{
+
+		case WSAENETRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAENOTSOCK)
-		{
+
+		case WSAENOTSOCK:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The descriptor is not a socket"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEOPNOTSUPP)
-		{
+
+		case WSAEOPNOTSUPP:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAESHUTDOWN)
-		{
+
+		case WSAESHUTDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEWOULDBLOCK)
-		{
+
+		case WSAEWOULDBLOCK:
 			ProcessPackages();
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			return;
-		}
-		if (WSAGetLastError() == WSAEMSGSIZE)
-		{
+
+		case WSAEMSGSIZE:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The message was too large to fit into the specified buffer and was truncated"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAEINVAL)
-		{
+
+		case WSAEINVAL:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 			Disconnect();
 			return;
-		}
-		if (WSAGetLastError() == WSAECONNABORTED)
-		{
+
+		case WSAECONNABORTED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 			Timeout();
 			return;
-		}
-		if (WSAGetLastError() == WSAETIMEDOUT)
-		{
+
+		case WSAETIMEDOUT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The connection has been dropped because of a network failure or because the peer system failed to respond"));
 			Timeout();
 			return;
-		}
-		if (WSAGetLastError() == WSAECONNRESET)
-		{
+
+		case WSAECONNRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 			Timeout();
 			return;
-		}
 
-		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-		LOG_PEER(CSTRING("Something bad happen..."));
-		Disconnect();
-		return;
+		default:
+			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("Something bad happen..."));
+			Disconnect();
+			return;
+		}
 	}
 	if (data_size == 0)
 	{
 		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 		LOG_PEER(CSTRING("Connection has been gracefully closed"));
 		Disconnect();
-		return;
-	}
-	if (data_size < 0)
-	{
-		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 		return;
 	}
 
@@ -1393,10 +1333,10 @@ void Client::DoReceive()
 	{
 		if (network.data_full_size > 0)
 		{
-			if(network.data_size + data_size > network.data_full_size)
+			if (network.data_size + data_size > network.data_full_size)
 			{
 				network.data_full_size += data_size;
-				
+
 				/* store incomming */
 				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
 				memcpy(newBuffer, network.data.get(), network.data_size);
@@ -1482,7 +1422,7 @@ void Client::GetPackageDataSize()
 						break;
 					}
 				}
-				
+
 				if (!endPos)
 					return;
 
@@ -1912,7 +1852,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 
 					if (GetCompressPackage())
 						DecompressData(entry.reference(), entry.size());
-				
+
 					rawData.emplace_back(entry);
 					key.free();
 
@@ -1953,7 +1893,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 				offset += packageSize;
 
 				if (GetCompressPackage())
-					DecompressData(data.reference().get(), packageSize);	
+					DecompressData(data.reference().get(), packageSize);
 			}
 
 			// we have reached the end of reading
@@ -1995,7 +1935,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 
 	Package Content;
 	Content.DoNotDestruct();
-	
+
 	if (!pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
