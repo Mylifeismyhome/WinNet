@@ -133,7 +133,6 @@ explicit operator bool() const
 NET_UID UniqueID;
 SOCKET pSocket;
 struct sockaddr_in client_addr;
-float lastaction;
 
 bool estabilished;
 
@@ -153,7 +152,6 @@ NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
 client_addr = sockaddr_in();
-lastaction = 0.0f;
 estabilished = false;
 isAsync = false;
 NetVersionMatched = false;

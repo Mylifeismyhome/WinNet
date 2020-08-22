@@ -138,7 +138,6 @@ NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
 client_addr = sockaddr_in();
-lastaction = 0.0f;
 estabilished = false;
 isAsync = false;
 ssl = nullptr;
