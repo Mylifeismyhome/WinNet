@@ -1852,10 +1852,6 @@ void Server::DoReceive(NET_PEER peer)
 	if (!peer || !peer.pSocket)
 		return;
 
-	// SPAMMPROTECTION
-	if (peer.lastaction > CURRENTCLOCKTIME)
-		return;
-
 	const auto data_size = recv(peer.pSocket, reinterpret_cast<char*>(peer.network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
