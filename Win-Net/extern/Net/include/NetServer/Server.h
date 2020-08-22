@@ -283,8 +283,6 @@ void GetPackageDataSize(NET_PEER) const;
 void ProcessPackages(NET_PEER);
 void ExecutePackage(NET_PEER, size_t, size_t);
 
-bool Handshake(SOCKET) const;
-
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 
 /* Native Packages */

@@ -1,2 +1,3 @@
 C:\Personal\Win-Net\Net\NetFeature\bin\x64\NetFeature.vcxprojAssemblyReference.cache
 D:\Projects\Personal\Win-Net\Net\NetFeature\bin\x64\NetFeature.vcxprojAssemblyReference.cache
+D:\Projects\WinNet\Win-Net\Net\NetFeature\bin\x64\NetFeature.vcxprojAssemblyReference.cache
