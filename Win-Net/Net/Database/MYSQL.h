@@ -159,13 +159,14 @@ NET_CLASS_DESTRUCTUR(MYSQL);
 
 bool connect();
 bool disconnect();
+bool reconnect();
 
 void SetLastError(const char*);
 char* GetLastError() const;
 
-MYSQL_RESULT query(char*);
-MYSQL_RESULT query(MYSQL_QUERY);
-MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY);
+MYSQL_RESULT query(char*, bool = false);
+MYSQL_RESULT query(MYSQL_QUERY, bool = false);
+MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY, bool = false);
 NET_CLASS_END;
 
 static char* SQLString(sql::SQLString string, ...)

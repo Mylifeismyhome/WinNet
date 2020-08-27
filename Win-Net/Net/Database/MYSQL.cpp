@@ -176,18 +176,6 @@ bool MYSQL::setup()
 
 bool MYSQL::connect()
 {
-	if (!msqldriver)
-	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on connect, mysql driver instance does not exists"));
-		return false;
-	}
-
-	if (msqlcon)
-	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on connect, mysql connection instance exists"));
-		return false;
-	}
-
 	try
 	{
 		char constr[128];
@@ -207,24 +195,6 @@ bool MYSQL::connect()
 
 bool MYSQL::disconnect()
 {
-	if (!msqldriver)
-	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on disconnect, mysql driver instance does not exists"));
-		return false;
-	}
-
-	if (!msqlcon)
-	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on disconnect, mysql connection instance does not exists"));
-		return false;
-	}
-
-	if (!msqlcon->isValid())
-	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on disconnect, mysql connection is not valid"));
-		return false;
-	}
-
 	try
 	{
 		msqlcon->close();
@@ -245,6 +215,16 @@ bool MYSQL::disconnect()
 	return false;
 }
 
+bool MYSQL::reconnect()
+{
+	disconnect();
+	const auto res = connect();
+	if (!res)
+		LOG_ERROR(CSTRING("[MYSQL] - Failure on re-estabilishing connection"));
+
+	return res;
+}
+
 void MYSQL::SetLastError(const char* in)
 {
 	FREE(lastError);
@@ -260,22 +240,40 @@ char* MYSQL::GetLastError() const
 	return lastError;
 }
 
-MYSQL_RESULT MYSQL::query(char* query)
+MYSQL_RESULT MYSQL::query(char* query, bool retry)
 {
 	if (!msqldriver)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon->isValid())
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
 	}
@@ -295,6 +293,12 @@ MYSQL_RESULT MYSQL::query(char* query)
 	}
 	catch (sql::SQLException& e)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		SetLastError(e.what());
 
 		if(memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
@@ -304,22 +308,40 @@ MYSQL_RESULT MYSQL::query(char* query)
 	return {};
 }
 
-MYSQL_RESULT MYSQL::query(MYSQL_QUERY query)
+MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 {
 	if (!msqldriver)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon->isValid())
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
 	}
@@ -339,6 +361,12 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query)
 	}
 	catch (sql::SQLException& e)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->query(query, true);
+		}
+
 		SetLastError(e.what());
 	
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
@@ -348,22 +376,40 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query)
 	return {};
 }
 
-MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query)
+MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
 {
 	if (!msqldriver)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->multiQuery(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->multiQuery(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
 
 	if (!msqlcon->isValid())
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->multiQuery(query, true);
+		}
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
 	}
@@ -388,6 +434,12 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query)
 	}
 	catch (sql::SQLException& e)
 	{
+		if (!retry)
+		{
+			if (reconnect())
+				return this->multiQuery(query, true);
+		}
+
 		SetLastError(e.what());
 		
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)

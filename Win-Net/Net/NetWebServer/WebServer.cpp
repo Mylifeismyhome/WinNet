@@ -501,6 +501,9 @@ void Server::IncreasePeersCounter()
 void Server::DecreasePeersCounter()
 {
 	--_CounterPeersTable;
+
+	if (_CounterPeersTable == INVALID_SIZE)
+		_CounterPeersTable = NULL;
 }
 
 Server::NET_IPEER Server::InsertPeer(const sockaddr_in client_addr, const SOCKET socket)
