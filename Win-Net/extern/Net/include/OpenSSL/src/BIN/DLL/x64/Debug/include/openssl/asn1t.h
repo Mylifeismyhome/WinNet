@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -880,7 +880,7 @@ DECLARE_ASN1_ITEM(LONG)
 DECLARE_ASN1_ITEM(ZLONG)
 # endif
 
-DEFINE_STACK_OF(ASN1_VALUE)
+DEFINE_OR_DECLARE_STACK_OF(ASN1_VALUE)
 
 /* Functions used internally by the ASN1 code */
 

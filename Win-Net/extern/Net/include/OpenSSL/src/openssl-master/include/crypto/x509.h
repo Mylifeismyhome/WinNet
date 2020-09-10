@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -8,6 +8,8 @@
  */
 
 #include "internal/refcount.h"
+#include <openssl/asn1.h>
+#include <openssl/x509.h>
 
 /* Internal X509 structures and functions: not for application use */
 
@@ -112,6 +114,9 @@ struct X509_crl_st {
     const X509_CRL_METHOD *meth;
     void *meth_data;
     CRYPTO_RWLOCK *lock;
+
+    OPENSSL_CTX *libctx;
+    const char *propq;
 };
 
 struct x509_revoked_st {
@@ -189,6 +194,9 @@ struct x509_st {
 
     /* Set on live certificates for authentication purposes */
     ASN1_OCTET_STRING *distinguishing_id;
+
+    OPENSSL_CTX *libctx;
+    const char *propq;
 } /* X509 */ ;
 
 /*
@@ -227,8 +235,11 @@ struct x509_store_ctx_st {      /* X509_STORE_CTX */
     int (*cert_crl) (X509_STORE_CTX *ctx, X509_CRL *crl, X509 *x);
     /* Check policy status of the chain */
     int (*check_policy) (X509_STORE_CTX *ctx);
-    STACK_OF(X509) *(*lookup_certs) (X509_STORE_CTX *ctx, X509_NAME *nm);
-    STACK_OF(X509_CRL) *(*lookup_crls) (X509_STORE_CTX *ctx, X509_NAME *nm);
+    STACK_OF(X509) *(*lookup_certs) (X509_STORE_CTX *ctx,
+                                     const X509_NAME *nm);
+    /* cannot constify 'ctx' param due to lookup_certs_sk() in x509_vfy.c */
+    STACK_OF(X509_CRL) *(*lookup_crls) (const X509_STORE_CTX *ctx,
+                                        const X509_NAME *nm);
     int (*cleanup) (X509_STORE_CTX *ctx);
     /* The following is built up */
     /* if 0, rebuild chain */
@@ -259,6 +270,9 @@ struct x509_store_ctx_st {      /* X509_STORE_CTX */
     SSL_DANE *dane;
     /* signed via bare TA public key, rather than CA certificate */
     int bare_ta_signed;
+
+    OPENSSL_CTX *libctx;
+    char *propq;
 };
 
 /* PKCS#8 private key info structure */
@@ -289,5 +303,15 @@ struct x509_object_st {
 int a2i_ipadd(unsigned char *ipout, const char *ipasc);
 int x509_set1_time(ASN1_TIME **ptm, const ASN1_TIME *tm);
 int x509_print_ex_brief(BIO *bio, X509 *cert, unsigned long neg_cflags);
-
+int x509v3_cache_extensions(X509 *x);
+int x509_set0_libctx(X509 *x, OPENSSL_CTX *libctx, const char *propq);
+int x509_crl_set0_libctx(X509_CRL *x, OPENSSL_CTX *libctx, const char *propq);
 void x509_init_sig_info(X509 *x);
+int asn1_item_digest_with_libctx(const ASN1_ITEM *it, const EVP_MD *type,
+                                 void *data, unsigned char *md,
+                                 unsigned int *len, OPENSSL_CTX *libctx,
+                                 const char *propq);
+int X509_add_cert_new(STACK_OF(X509) **sk, X509 *cert, int flags);
+
+int X509_PUBKEY_get0_libctx(OPENSSL_CTX **plibctx, const char **ppropq,
+                            const X509_PUBKEY *key);

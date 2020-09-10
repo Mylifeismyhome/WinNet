@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -61,6 +61,7 @@ extern "C" {
 # ifndef OPENSSL_NO_SCTP
 #  define BIO_TYPE_DGRAM_SCTP    (24|BIO_TYPE_SOURCE_SINK|BIO_TYPE_DESCRIPTOR)
 # endif
+# define BIO_TYPE_CORE_TO_PROV   (25|BIO_TYPE_FILTER)
 
 #define BIO_TYPE_START           128
 
@@ -286,7 +287,7 @@ int BIO_method_type(const BIO *b);
 typedef int BIO_info_cb(BIO *, int, int);
 typedef BIO_info_cb bio_info_cb;  /* backward compatibility */
 
-DEFINE_STACK_OF(BIO)
+DEFINE_OR_DECLARE_STACK_OF(BIO)
 
 /* Prefix and suffix callback in ASN1 BIO */
 typedef int asn1_ps_func (BIO *b, unsigned char **pbuf, int *plen,
@@ -566,7 +567,7 @@ int BIO_ctrl_reset_read_request(BIO *b);
 #define BIO_get_ex_new_index(l, p, newf, dupf, freef) \
     CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_BIO, l, p, newf, dupf, freef)
 int BIO_set_ex_data(BIO *bio, int idx, void *data);
-void *BIO_get_ex_data(BIO *bio, int idx);
+void *BIO_get_ex_data(const BIO *bio, int idx);
 uint64_t BIO_number_read(BIO *bio);
 uint64_t BIO_number_written(BIO *bio);
 
@@ -663,8 +664,8 @@ int BIO_sock_should_retry(int i);
 int BIO_sock_non_fatal_error(int error);
 int BIO_socket_wait(int fd, int for_read, time_t max_time);
 # endif
-int BIO_wait(BIO *bio, time_t max_time, unsigned int milliseconds);
-int BIO_connect_retry(BIO *bio, int timeout);
+int BIO_wait(BIO *bio, time_t max_time, unsigned int nap_milliseconds);
+int BIO_do_connect_retry(BIO *bio, int timeout, int nap_milliseconds);
 
 int BIO_fd_should_retry(int i);
 int BIO_fd_non_fatal_error(int error);

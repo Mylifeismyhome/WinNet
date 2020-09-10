@@ -1,5 +1,5 @@
 /*-
- * Copyright 2007-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -43,7 +43,8 @@ typedef struct ossl_crmf_encryptedvalue_st OSSL_CRMF_ENCRYPTEDVALUE;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_ENCRYPTEDVALUE)
 typedef struct ossl_crmf_msg_st OSSL_CRMF_MSG;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_MSG)
-DEFINE_STACK_OF(OSSL_CRMF_MSG)
+DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_MSG)
+DEFINE_OR_DECLARE_STACK_OF(OSSL_CRMF_MSG)
 typedef struct ossl_crmf_attributetypeandvalue_st OSSL_CRMF_ATTRIBUTETYPEANDVALUE;
 typedef struct ossl_crmf_pbmparameter_st OSSL_CRMF_PBMPARAMETER;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_PBMPARAMETER)
@@ -51,7 +52,8 @@ typedef struct ossl_crmf_poposigningkey_st OSSL_CRMF_POPOSIGNINGKEY;
 typedef struct ossl_crmf_certrequest_st OSSL_CRMF_CERTREQUEST;
 typedef struct ossl_crmf_certid_st OSSL_CRMF_CERTID;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_CERTID)
-DEFINE_STACK_OF(OSSL_CRMF_CERTID)
+DECLARE_ASN1_DUP_FUNCTION(OSSL_CRMF_CERTID)
+DEFINE_OR_DECLARE_STACK_OF(OSSL_CRMF_CERTID)
 
 typedef struct ossl_crmf_pkipublicationinfo_st OSSL_CRMF_PKIPUBLICATIONINFO;
 DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_PKIPUBLICATIONINFO)
@@ -65,9 +67,11 @@ DECLARE_ASN1_FUNCTIONS(OSSL_CRMF_MSGS)
 typedef struct ossl_crmf_optionalvalidity_st OSSL_CRMF_OPTIONALVALIDITY;
 
 /* crmf_pbm.c */
-OSSL_CRMF_PBMPARAMETER *OSSL_CRMF_pbmp_new(size_t slen, int owfnid,
-                                           int itercnt, int macnid);
-int OSSL_CRMF_pbm_new(const OSSL_CRMF_PBMPARAMETER *pbmp,
+OSSL_CRMF_PBMPARAMETER *OSSL_CRMF_pbmp_new(OPENSSL_CTX *libctx, size_t slen,
+                                           int owfnid, size_t itercnt,
+                                           int macnid);
+int OSSL_CRMF_pbm_new(OPENSSL_CTX *libctx, const char *propq,
+                      const OSSL_CRMF_PBMPARAMETER *pbmp,
                       const unsigned char *msg, size_t msglen,
                       const unsigned char *sec, size_t seclen,
                       unsigned char **mac, size_t *maclen);
@@ -104,7 +108,8 @@ int OSSL_CRMF_MSG_set1_regInfo_utf8Pairs(OSSL_CRMF_MSG *msg,
 int OSSL_CRMF_MSG_set1_regInfo_certReq(OSSL_CRMF_MSG *msg,
                                        const OSSL_CRMF_CERTREQUEST *cr);
 
-int OSSL_CRMF_MSG_set_validity(OSSL_CRMF_MSG *crm, time_t from, time_t to);
+int OSSL_CRMF_MSG_set0_validity(OSSL_CRMF_MSG *crm,
+                                ASN1_TIME *notBefore, ASN1_TIME *notAfter);
 int OSSL_CRMF_MSG_set_certReqId(OSSL_CRMF_MSG *crm, int rid);
 int OSSL_CRMF_MSG_get_certReqId(const OSSL_CRMF_MSG *crm);
 int OSSL_CRMF_MSG_set0_extensions(OSSL_CRMF_MSG *crm, X509_EXTENSIONS *exts);
@@ -115,16 +120,19 @@ int OSSL_CRMF_MSG_push0_extension(OSSL_CRMF_MSG *crm, X509_EXTENSION *ext);
 #  define OSSL_CRMF_POPO_SIGNATURE  1
 #  define OSSL_CRMF_POPO_KEYENC     2
 #  define OSSL_CRMF_POPO_KEYAGREE   3
-int OSSL_CRMF_MSG_create_popo(OSSL_CRMF_MSG *crm, EVP_PKEY *pkey,
-                              int dgst, int ppmtd);
+int OSSL_CRMF_MSG_create_popo(int meth, OSSL_CRMF_MSG *crm,
+                              EVP_PKEY *pkey, const EVP_MD *digest,
+                              OPENSSL_CTX *libctx, const char *propq);
 int OSSL_CRMF_MSGS_verify_popo(const OSSL_CRMF_MSGS *reqs,
-                               int rid, int acceptRAVerified);
+                               int rid, int acceptRAVerified,
+                               OPENSSL_CTX *libctx, const char *propq);
 OSSL_CRMF_CERTTEMPLATE *OSSL_CRMF_MSG_get0_tmpl(const OSSL_CRMF_MSG *crm);
 ASN1_INTEGER
 *OSSL_CRMF_CERTTEMPLATE_get0_serialNumber(const OSSL_CRMF_CERTTEMPLATE *tmpl);
-X509_NAME
+const X509_NAME
 *OSSL_CRMF_CERTTEMPLATE_get0_issuer(const OSSL_CRMF_CERTTEMPLATE *tmpl);
-X509_NAME *OSSL_CRMF_CERTID_get0_issuer(const OSSL_CRMF_CERTID *cid);
+const X509_NAME
+*OSSL_CRMF_CERTID_get0_issuer(const OSSL_CRMF_CERTID *cid);
 ASN1_INTEGER *OSSL_CRMF_CERTID_get0_serialNumber(const OSSL_CRMF_CERTID *cid);
 int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
                                 EVP_PKEY *pubkey,
@@ -133,6 +141,7 @@ int OSSL_CRMF_CERTTEMPLATE_fill(OSSL_CRMF_CERTTEMPLATE *tmpl,
                                 const ASN1_INTEGER *serial);
 X509
 *OSSL_CRMF_ENCRYPTEDVALUE_get1_encCert(const OSSL_CRMF_ENCRYPTEDVALUE *ecert,
+                                       OPENSSL_CTX *libctx, const char *propq,
                                        EVP_PKEY *pkey);
 
 #  ifdef __cplusplus

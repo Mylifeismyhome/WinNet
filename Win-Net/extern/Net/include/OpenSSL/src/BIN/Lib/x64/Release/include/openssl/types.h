@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -60,7 +60,9 @@ typedef int ASN1_BOOLEAN;
 typedef int ASN1_NULL;
 # endif
 
+typedef struct asn1_type_st ASN1_TYPE;
 typedef struct asn1_object_st ASN1_OBJECT;
+typedef struct asn1_string_table_st ASN1_STRING_TABLE;
 
 typedef struct ASN1_ITEM_st ASN1_ITEM;
 typedef struct asn1_pctx_st ASN1_PCTX;
@@ -111,6 +113,9 @@ typedef struct evp_keymgmt_st EVP_KEYMGMT;
 
 typedef struct evp_kdf_st EVP_KDF;
 typedef struct evp_kdf_ctx_st EVP_KDF_CTX;
+
+typedef struct evp_rand_st EVP_RAND;
+typedef struct evp_rand_ctx_st EVP_RAND_CTX;
 
 typedef struct evp_keyexch_st EVP_KEYEXCH;
 
@@ -203,11 +208,14 @@ typedef struct ossl_dispatch_st OSSL_DISPATCH;
 typedef struct ossl_item_st OSSL_ITEM;
 typedef struct ossl_algorithm_st OSSL_ALGORITHM;
 typedef struct ossl_param_st OSSL_PARAM;
+typedef struct ossl_param_bld_st OSSL_PARAM_BLD;
 
 typedef int pem_password_cb (char *buf, int size, int rwflag, void *userdata);
 
-typedef struct ossl_serializer_st OSSL_SERIALIZER;
-typedef struct ossl_serializer_ctx_st OSSL_SERIALIZER_CTX;
+typedef struct ossl_encoder_st OSSL_ENCODER;
+typedef struct ossl_encoder_ctx_st OSSL_ENCODER_CTX;
+typedef struct ossl_decoder_st OSSL_DECODER;
+typedef struct ossl_decoder_ctx_st OSSL_DECODER_CTX;
 
 typedef struct ossl_self_test_st OSSL_SELF_TEST;
 

@@ -44,9 +44,6 @@
     <ClCompile Include="cryptlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="darn.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="des.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -191,9 +188,6 @@
     <ClCompile Include="strciphr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="trdlocal.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aes.h">
@@ -236,9 +230,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cryptlib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="darn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="des.h">
@@ -394,9 +385,6 @@
     <ClInclude Include="trap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="trdlocal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="words.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -405,10 +393,5 @@
     <ResourceCompile Include="cryptopp.rc">
       <Filter>Source Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="x64dll.asm">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
   </ItemGroup>
 </Project>

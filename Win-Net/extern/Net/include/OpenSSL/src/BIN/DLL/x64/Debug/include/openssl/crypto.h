@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -169,7 +169,8 @@ struct crypto_ex_data_st {
     OPENSSL_CTX *ctx;
     STACK_OF(void) *sk;
 };
-DEFINE_STACK_OF(void)
+
+DEFINE_OR_DECLARE_STACK_OF(void)
 
 /*
  * Per class, we have a STACK of function pointers.
@@ -192,14 +193,15 @@ DEFINE_STACK_OF(void)
 # define CRYPTO_EX_INDEX_RAND_DRBG       15
 # define CRYPTO_EX_INDEX_DRBG            CRYPTO_EX_INDEX_RAND_DRBG
 # define CRYPTO_EX_INDEX_OPENSSL_CTX     16
-# define CRYPTO_EX_INDEX__COUNT          17
+# define CRYPTO_EX_INDEX_EVP_PKEY        17
+# define CRYPTO_EX_INDEX__COUNT          18
 
 typedef void CRYPTO_EX_new (void *parent, void *ptr, CRYPTO_EX_DATA *ad,
                            int idx, long argl, void *argp);
 typedef void CRYPTO_EX_free (void *parent, void *ptr, CRYPTO_EX_DATA *ad,
                              int idx, long argl, void *argp);
 typedef int CRYPTO_EX_dup (CRYPTO_EX_DATA *to, const CRYPTO_EX_DATA *from,
-                           void *from_d, int idx, long argl, void *argp);
+                           void **from_d, int idx, long argl, void *argp);
 __owur int CRYPTO_get_ex_new_index(int class_index, long argl, void *argp,
                                    CRYPTO_EX_new *new_func,
                                    CRYPTO_EX_dup *dup_func,
@@ -375,9 +377,6 @@ ossl_noreturn void OPENSSL_die(const char *assertion, const char *file, int line
 
 int OPENSSL_isservice(void);
 
-int FIPS_mode(void);
-int FIPS_mode_set(int r);
-
 void OPENSSL_init(void);
 # ifdef OPENSSL_SYS_UNIX
 void OPENSSL_fork_prepare(void);
@@ -434,7 +433,6 @@ int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len);
     (OPENSSL_INIT_ENGINE_RDRAND | OPENSSL_INIT_ENGINE_DYNAMIC \
     | OPENSSL_INIT_ENGINE_CRYPTODEV | OPENSSL_INIT_ENGINE_CAPI | \
     OPENSSL_INIT_ENGINE_PADLOCK)
-
 
 /* Library initialisation functions */
 void OPENSSL_cleanup(void);
@@ -493,7 +491,9 @@ CRYPTO_THREAD_ID CRYPTO_THREAD_get_current_id(void);
 int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b);
 
 OPENSSL_CTX *OPENSSL_CTX_new(void);
+int OPENSSL_CTX_load_config(OPENSSL_CTX *ctx, const char *config_file);
 void OPENSSL_CTX_free(OPENSSL_CTX *);
+OPENSSL_CTX *OPENSSL_CTX_set0_default(OPENSSL_CTX *libctx);
 
 # ifdef  __cplusplus
 }
