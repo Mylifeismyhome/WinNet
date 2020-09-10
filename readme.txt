@@ -12,9 +12,8 @@ How To Compile Dependencies:
     requires Perl
     requires nmake and nasm path variable
 
-    1. Start x64 or x86 vc development cmd
-    2. run vcvarsall.bat with parameter x86 or x64
-    3. run batch files
+    change vs paths in each batch if required
+    and run batch files
 
   MYSQL:
     download mysql c++ connector dependencies and place all files in:
