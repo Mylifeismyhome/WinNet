@@ -88,8 +88,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -227,3 +225,21 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/rsa.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\rsa\rsa_local.h
+crypto\rsa\rsa_pmeth.c(151): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\rsa\rsa_pmeth.c(167): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(172): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\rsa\rsa_pmeth.c(190): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(210): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(235): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(240): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(259): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\rsa\rsa_pmeth.c(260): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\rsa\rsa_pmeth.c(272): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(288): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(313): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(315): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(321): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(340): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(347): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(350): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\rsa\rsa_pmeth.c(570): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data

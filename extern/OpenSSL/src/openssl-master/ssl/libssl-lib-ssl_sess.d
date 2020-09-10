@@ -129,8 +129,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -268,3 +266,9 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/bio.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/ktls.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\ssl\statem/statem_local.h
+ssl\ssl_sess.c(448): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\ssl_sess.c(454): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\ssl_sess.c(457): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\ssl_sess.c(589): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\ssl_sess.c(617): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\ssl_sess.c(711): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'

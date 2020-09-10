@@ -102,6 +102,7 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/conferr.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/x509v3err.h
+apps\lib\opt.c(940): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
 Note: including file: C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\windows.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\winapifamily.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\winpackagefamily.h
@@ -119,8 +120,6 @@ Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.190
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\kernelspecs.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\basetsd.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
-Note: including file:     c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:     c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:     c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:     c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -212,3 +211,4 @@ Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\mcx.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\imm.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\ime_cmodes.h
+apps\lib\opt.c(974): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

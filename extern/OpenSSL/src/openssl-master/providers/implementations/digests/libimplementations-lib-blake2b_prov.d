@@ -47,3 +47,4 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\digests\blake2_impl.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/endian.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/blake2.h
+providers\implementations\digests\blake2b_prov.c(307): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data

@@ -1,5 +1,5 @@
-start BuildWin32d.bat
-start BuildWin64d.bat
-start BuildWin32.bat
-start BuildWin64.bat
+start BUILDX86d.bat
+start BUILDX64d.bat
+start BUILDX86.bat
+start BUILDX64.bat
 exit

@@ -65,3 +65,9 @@ Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041
 Note: including file: C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\ctype.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wctype.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/nelem.h
+test\testutil\format_output.c(115): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+test\testutil\format_output.c(208): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+test\testutil\format_output.c(309): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+test\testutil\format_output.c(313): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+test\testutil\format_output.c(317): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+test\testutil\format_output.c(504): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data

@@ -45,3 +45,7 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/siphash.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\siphash\siphash_local.h
+crypto\siphash\siphash.c(103): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\siphash\siphash.c(108): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\siphash\siphash.c(120): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\siphash\siphash.c(164): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data

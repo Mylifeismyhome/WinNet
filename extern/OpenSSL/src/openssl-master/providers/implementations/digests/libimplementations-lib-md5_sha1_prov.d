@@ -74,3 +74,4 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/digestcommon.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_dispatch.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/implementations.h
+providers\implementations\digests\md5_sha1_prov.c(47): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

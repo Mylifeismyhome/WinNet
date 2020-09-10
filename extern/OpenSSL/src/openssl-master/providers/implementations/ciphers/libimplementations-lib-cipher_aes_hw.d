@@ -102,8 +102,6 @@ Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -198,4 +196,12 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/aes_platform.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/providercommonerr.h
+providers\implementations\ciphers\cipher_aes_hw.c(47): warning C4267: 'function': conversion from 'size_t' to 'const int', possible loss of data
+providers\implementations\ciphers\cipher_aes_hw.c(54): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\ciphers\cipher_aes_hw.c(61): warning C4267: 'function': conversion from 'size_t' to 'const int', possible loss of data
+providers\implementations\ciphers\cipher_aes_hw.c(92): warning C4267: 'function': conversion from 'size_t' to 'const int', possible loss of data
+providers\implementations\ciphers\cipher_aes_hw.c(99): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\ciphers\cipher_aes_hw.c(106): warning C4267: 'function': conversion from 'size_t' to 'const int', possible loss of data
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes_hw_aesni.inc
+d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes_hw_aesni.inc(32): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes_hw_aesni.inc(37): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

@@ -69,8 +69,6 @@ Note: including file:            C:\Program Files (x86)\Microsoft Visual Studio 
 Note: including file:         C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -183,3 +181,8 @@ Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\sys/stat.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\sys/types.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+d:\projects\winnet\extern\openssl\src\openssl-master\crypto\LPdir_win.c(108): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+d:\projects\winnet\extern\openssl\src\openssl-master\crypto\LPdir_win.c(114): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+d:\projects\winnet\extern\openssl\src\openssl-master\crypto\LPdir_win.c(124): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+d:\projects\winnet\extern\openssl\src\openssl-master\crypto\LPdir_win.c(134): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+d:\projects\winnet\extern\openssl\src\openssl-master\crypto\LPdir_win.c(189): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

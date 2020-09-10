@@ -70,8 +70,6 @@ Note: including file:             C:\Program Files (x86)\Microsoft Visual Studio
 Note: including file:          C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -264,3 +262,9 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_names.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\ssl\record\record_local.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/cryptlib.h
+ssl\record\ssl3_record.c(140): warning C4267: '+=': conversion from 'size_t' to 'uint32_t', possible loss of data
+ssl\record\ssl3_record.c(147): warning C4267: '+=': conversion from 'size_t' to 'uint32_t', possible loss of data
+ssl\record\ssl3_record.c(629): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\record\ssl3_record.c(1518): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\record\ssl3_record.c(1530): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\record\ssl3_record.c(1638): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

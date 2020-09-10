@@ -87,8 +87,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -219,3 +217,4 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/x509.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/encoder.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/encodererr.h
+crypto\x509\x_pubkey.c(317): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data

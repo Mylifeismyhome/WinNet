@@ -69,3 +69,5 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inclu
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/modes.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/siv.h
+crypto\modes\siv128.c(294): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\modes\siv128.c(330): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data

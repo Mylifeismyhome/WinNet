@@ -50,3 +50,4 @@ Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/bnerr.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/thread_once.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+crypto\params.c(684): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

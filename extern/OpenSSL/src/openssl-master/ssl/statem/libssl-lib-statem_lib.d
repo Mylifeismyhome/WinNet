@@ -70,8 +70,6 @@ Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -261,3 +259,11 @@ Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\ssl\s
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/cryptlib.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/evp.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/trace.h
+ssl\statem\statem_lib.c(184): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(187): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(193): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(195): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(496): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+ssl\statem\statem_lib.c(1162): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(1181): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+ssl\statem\statem_lib.c(1184): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'

@@ -70,8 +70,6 @@ Note: including file:             C:\Program Files (x86)\Microsoft Visual Studio
 Note: including file:          C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -268,3 +266,9 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/obj_mac.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_names.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/trace.h
+ssl\t1_enc.c(404): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_enc.c(537): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_enc.c(593): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_enc.c(603): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_enc.c(678): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_enc.c(708): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

@@ -63,3 +63,5 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ec.h
+crypto\ec\ecp_oct.c(340): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ecp_oct.c(351): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

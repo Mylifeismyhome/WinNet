@@ -70,3 +70,18 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\asn1\asn1_local.h
+crypto\asn1\tasn_dec.c(298): warning C4244: '=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(347): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(379): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(414): warning C4244: 'function': conversion from '__int64' to 'int', possible loss of data
+crypto\asn1\tasn_dec.c(484): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(590): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(604): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(725): warning C4244: '=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(727): warning C4244: '=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(749): warning C4267: '=': conversion from 'size_t' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(962): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(1035): warning C4244: '-=': conversion from '__int64' to 'long', possible loss of data
+crypto\asn1\tasn_dec.c(1049): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\asn1\tasn_dec.c(1108): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
+crypto\asn1\tasn_dec.c(1146): warning C4244: '=': conversion from '__int64' to 'long', possible loss of data

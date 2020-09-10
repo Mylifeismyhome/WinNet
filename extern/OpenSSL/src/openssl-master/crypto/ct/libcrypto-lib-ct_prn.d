@@ -94,3 +94,7 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/conferr.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/x509v3err.h
+crypto\ct\ct_prn.c(87): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ct\ct_prn.c(99): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ct\ct_prn.c(108): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ct\ct_prn.c(113): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

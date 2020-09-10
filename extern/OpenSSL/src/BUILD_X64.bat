@@ -1,4 +1,7 @@
 @echo off
+call "D:\Programme\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
+
 cd openssl-master
 
 nmake clean

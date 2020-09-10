@@ -105,8 +105,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -206,3 +204,5 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\provi
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/der.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/packet.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+providers\implementations\signature\dsa.c(226): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\signature\dsa.c(243): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

@@ -53,3 +53,5 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/buffererr.h
 Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\sys/types.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+crypto\asn1_dsa.c(46): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\asn1_dsa.c(52): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data

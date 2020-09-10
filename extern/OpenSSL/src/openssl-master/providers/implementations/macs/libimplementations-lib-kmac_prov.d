@@ -112,3 +112,7 @@ Note: including file:       D:\Projects\WinNet\extern\OpenSSL\src\openssl-master
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/pemerr.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/uierr.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/engineerr.h
+providers\implementations\macs\kmac_prov.c(296): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\macs\kmac_prov.c(363): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\macs\kmac_prov.c(374): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\macs\kmac_prov.c(488): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data

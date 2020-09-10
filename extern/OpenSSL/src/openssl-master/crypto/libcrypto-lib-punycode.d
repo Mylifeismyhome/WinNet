@@ -26,3 +26,7 @@ Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\
 Note: including file:  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdint.h
 Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/punycode.h
+crypto\punycode.c(149): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\punycode.c(178): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\punycode.c(181): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\punycode.c(194): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data

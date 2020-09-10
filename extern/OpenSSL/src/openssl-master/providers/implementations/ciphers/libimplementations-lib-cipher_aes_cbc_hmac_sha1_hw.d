@@ -100,8 +100,6 @@ Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -197,3 +195,25 @@ Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\i
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/aes_platform.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/aes.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/sha.h
+Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
+Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/rand.h
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/randerr.h
+Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/evp.h
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
+Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/constant_time.h
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(53): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(55): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(89): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(90): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(407): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(408): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(429): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(475): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(487): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(491): warning C4267: '=': conversion from 'size_t' to 'unsigned char', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(492): warning C4267: '=': conversion from 'size_t' to 'unsigned char', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(510): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+providers\implementations\ciphers\cipher_aes_cbc_hmac_sha1_hw.c(736): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data

@@ -101,8 +101,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -237,3 +235,6 @@ Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\i
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/uierr.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/engineerr.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\kdfs\pbkdf2.h
+providers\implementations\kdfs\pbkdf2.c(155): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\kdfs\pbkdf2.c(303): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\kdfs\pbkdf2.c(304): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

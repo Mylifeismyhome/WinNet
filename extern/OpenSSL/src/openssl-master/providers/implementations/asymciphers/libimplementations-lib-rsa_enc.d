@@ -130,3 +130,11 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inclu
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/providercommonerr.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/provider_ctx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/implementations.h
+providers\implementations\asymciphers\rsa_enc.c(143): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(145): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(157): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(207): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(226): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(227): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(229): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\asymciphers\rsa_enc.c(246): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

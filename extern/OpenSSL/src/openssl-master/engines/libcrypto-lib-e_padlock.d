@@ -109,3 +109,5 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inclu
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/modes.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
+engines\e_padlock.c(353): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+engines\e_padlock.c(421): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

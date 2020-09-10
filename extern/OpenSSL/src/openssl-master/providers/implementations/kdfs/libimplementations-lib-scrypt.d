@@ -79,3 +79,6 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\provi
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/provider_ctx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/providercommonerr.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/implementations.h
+providers\implementations\kdfs\scrypt.c(451): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\kdfs\scrypt.c(458): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\kdfs\scrypt.c(459): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

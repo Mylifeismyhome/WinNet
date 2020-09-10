@@ -71,8 +71,6 @@ Note: including file:            C:\Program Files (x86)\Microsoft Visual Studio 
 Note: including file:         C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -214,3 +212,4 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/sizes.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/param_build_set.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/param_build.h
+providers\implementations\keymgmt\dsa_kmgmt.c(528): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

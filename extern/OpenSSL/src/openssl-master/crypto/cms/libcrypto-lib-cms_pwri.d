@@ -85,8 +85,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -228,3 +226,12 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inclu
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\cms\cms_local.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/asn1.h
+crypto\cms\cms_pwri.c(205): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(212): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(214): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(219): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(270): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(273): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(274): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(352): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\cms\cms_pwri.c(373): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data

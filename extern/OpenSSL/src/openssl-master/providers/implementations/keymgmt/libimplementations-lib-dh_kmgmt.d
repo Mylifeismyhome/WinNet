@@ -85,3 +85,7 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/nelem.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/param_build_set.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/param_build.h
+providers\implementations\keymgmt\dh_kmgmt.c(597): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\keymgmt\dh_kmgmt.c(641): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\keymgmt\dh_kmgmt.c(644): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\keymgmt\dh_kmgmt.c(645): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

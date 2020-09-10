@@ -123,8 +123,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -215,3 +213,5 @@ Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.1904
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\imm.h
 Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\ime_cmodes.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/passphrase.h
+crypto\passphrase.c(150): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\passphrase.c(165): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

@@ -98,8 +98,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -193,3 +191,9 @@ Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\provi
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_dispatch.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/self_test.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\fips\self_test_data.inc
+providers\fips\self_test_kats.c(75): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\fips\self_test_kats.c(77): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\fips\self_test_kats.c(81): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\fips\self_test_kats.c(105): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\fips\self_test_kats.c(118): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\fips\self_test_kats.c(156): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

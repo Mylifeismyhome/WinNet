@@ -115,3 +115,4 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\provi
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/provider_ctx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\common\include\prov/provider_util.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/provider.h
+providers\implementations\macs\hmac_prov.c(274): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

@@ -77,3 +77,12 @@ Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.1904
 Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime_string.h
 Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
+crypto\sm2\sm2_crypt.c(107): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(109): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(111): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(203): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(204): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(249): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(308): warning C4267: 'function': conversion from 'size_t' to 'long', possible loss of data
+crypto\sm2\sm2_crypt.c(363): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\sm2\sm2_crypt.c(364): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

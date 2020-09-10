@@ -132,8 +132,6 @@ Note: including file:             C:\Program Files (x86)\Microsoft Visual Studio
 Note: including file:          C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -271,3 +269,12 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/tsan_assist.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/bio.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/ktls.h
+ssl\t1_lib.c(1264): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_lib.c(1299): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
+ssl\t1_lib.c(1325): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_lib.c(1696): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_lib.c(1941): warning C4244: '-=': conversion from '__int64' to 'int', possible loss of data
+ssl\t1_lib.c(2653): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+ssl\t1_lib.c(3217): warning C4244: 'function': conversion from '__int64' to 'int', possible loss of data
+ssl\t1_lib.c(3244): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+ssl\t1_lib.c(3440): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

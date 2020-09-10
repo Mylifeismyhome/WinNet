@@ -119,3 +119,4 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/tsan_assist.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/nelem.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+providers\implementations\rands\drbg_hash.c(464): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data

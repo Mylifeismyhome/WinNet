@@ -89,8 +89,6 @@ Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -222,3 +220,4 @@ Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/x509v3err.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/cmperr.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/http.h
+crypto\cmp\cmp_util.c(59): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data

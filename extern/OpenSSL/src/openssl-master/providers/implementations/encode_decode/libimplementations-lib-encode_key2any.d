@@ -127,8 +127,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
@@ -230,3 +228,6 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/packet.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
 Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\encode_decode\endecoder_local.h
+providers\implementations\encode_decode\encode_key2any.c(97): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\encode_decode\encode_key2any.c(585): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+providers\implementations\encode_decode\encode_key2any.c(600): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data

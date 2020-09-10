@@ -111,3 +111,4 @@ Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypt
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/obj_mac.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ec.h
+crypto\ec\ec_kmeth.c(177): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data

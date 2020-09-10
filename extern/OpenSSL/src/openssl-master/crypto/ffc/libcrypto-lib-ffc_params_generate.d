@@ -80,3 +80,12 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/param_build.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/sizes.h
+crypto\ffc\ffc_params_generate.c(528): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(632): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(648): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(651): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(669): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(861): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(907): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(908): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\ffc\ffc_params_generate.c(918): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
