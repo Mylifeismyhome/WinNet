@@ -345,7 +345,7 @@ MigrationBackup/
 *.lib
 *.tlog
 
-!extern/MYSQL/
+!extern/MYSQL/*
 
 !.gitignore
 
