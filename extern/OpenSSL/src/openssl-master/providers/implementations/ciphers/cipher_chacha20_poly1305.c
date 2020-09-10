@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -27,16 +27,16 @@
                                 | EVP_CIPH_CUSTOM_IV                           \
                                 | EVP_CIPH_CUSTOM_IV_LENGTH)
 
-static OSSL_OP_cipher_newctx_fn chacha20_poly1305_newctx;
-static OSSL_OP_cipher_freectx_fn chacha20_poly1305_freectx;
-static OSSL_OP_cipher_encrypt_init_fn chacha20_poly1305_einit;
-static OSSL_OP_cipher_decrypt_init_fn chacha20_poly1305_dinit;
-static OSSL_OP_cipher_get_params_fn chacha20_poly1305_get_params;
-static OSSL_OP_cipher_get_ctx_params_fn chacha20_poly1305_get_ctx_params;
-static OSSL_OP_cipher_set_ctx_params_fn chacha20_poly1305_set_ctx_params;
-static OSSL_OP_cipher_cipher_fn chacha20_poly1305_cipher;
-static OSSL_OP_cipher_final_fn chacha20_poly1305_final;
-static OSSL_OP_cipher_gettable_ctx_params_fn chacha20_poly1305_gettable_ctx_params;
+static OSSL_FUNC_cipher_newctx_fn chacha20_poly1305_newctx;
+static OSSL_FUNC_cipher_freectx_fn chacha20_poly1305_freectx;
+static OSSL_FUNC_cipher_encrypt_init_fn chacha20_poly1305_einit;
+static OSSL_FUNC_cipher_decrypt_init_fn chacha20_poly1305_dinit;
+static OSSL_FUNC_cipher_get_params_fn chacha20_poly1305_get_params;
+static OSSL_FUNC_cipher_get_ctx_params_fn chacha20_poly1305_get_ctx_params;
+static OSSL_FUNC_cipher_set_ctx_params_fn chacha20_poly1305_set_ctx_params;
+static OSSL_FUNC_cipher_cipher_fn chacha20_poly1305_cipher;
+static OSSL_FUNC_cipher_final_fn chacha20_poly1305_final;
+static OSSL_FUNC_cipher_gettable_ctx_params_fn chacha20_poly1305_gettable_ctx_params;
 #define chacha20_poly1305_settable_ctx_params cipher_aead_settable_ctx_params
 #define chacha20_poly1305_gettable_params cipher_generic_gettable_params
 #define chacha20_poly1305_update chacha20_poly1305_cipher
@@ -65,8 +65,10 @@ static void chacha20_poly1305_freectx(void *vctx)
 {
     PROV_CHACHA20_POLY1305_CTX *ctx = (PROV_CHACHA20_POLY1305_CTX *)vctx;
 
-    if (ctx != NULL)
+    if (ctx != NULL) {
+        cipher_generic_reset_ctx((PROV_CIPHER_CTX *)vctx);
         OPENSSL_clear_free(ctx, sizeof(*ctx));
+    }
 }
 
 static int chacha20_poly1305_get_params(OSSL_PARAM params[])
@@ -133,7 +135,8 @@ static const OSSL_PARAM chacha20_poly1305_known_gettable_ctx_params[] = {
     OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_AEAD_TLS1_AAD_PAD, NULL),
     OSSL_PARAM_END
 };
-static const OSSL_PARAM *chacha20_poly1305_gettable_ctx_params(void)
+static const OSSL_PARAM *chacha20_poly1305_gettable_ctx_params
+    (ossl_unused void *provctx)
 {
     return chacha20_poly1305_known_gettable_ctx_params;
 }
@@ -275,7 +278,6 @@ static int chacha20_poly1305_cipher(void *vctx, unsigned char *out,
     if (!hw->aead_cipher(ctx, out, outl, in, inl))
         return 0;
 
-    *outl = inl;
     return 1;
 }
 

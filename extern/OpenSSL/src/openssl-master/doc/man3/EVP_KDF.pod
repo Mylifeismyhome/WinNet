@@ -48,7 +48,7 @@ EVP_KDF_gettable_params - EVP KDF routines
 
 =head1 DESCRIPTION
 
-The EVP KDF routines are a high level interface to Key Derivation Function
+The EVP KDF routines are a high-level interface to Key Derivation Function
 algorithms and should be used instead of algorithm-specific functions.
 
 After creating a B<EVP_KDF_CTX> for the required algorithm using
@@ -67,6 +67,9 @@ B<EVP_KDF_CTX> is a context type that holds the algorithm inputs.
 EVP_KDF_fetch() fetches an implementation of a KDF I<algorithm>, given
 a library context I<libctx> and a set of I<properties>.
 See L<provider(7)/Fetching algorithms> for further information.
+
+See L<OSSL_PROVIDER-default(7)/Key Derivation Function (KDF)> for the lists of
+algorithms supported by the default provider.
 
 The returned value must eventually be freed with
 L<EVP_KDF_free(3)>.
@@ -248,14 +251,7 @@ supported by the KDF algorithm.
 
 =head1 SEE ALSO
 
-L<EVP_KDF-SCRYPT(7)>
-L<EVP_KDF-TLS1_PRF(7)>
-L<EVP_KDF-PBKDF2(7)>
-L<EVP_KDF-HKDF(7)>
-L<EVP_KDF-SS(7)>
-L<EVP_KDF-SSHKDF(7)>
-L<EVP_KDF-X963(7)>
-L<EVP_KDF-X942(7)>
+L<OSSL_PROVIDER-default(7)/Key Derivation Function (KDF)>
 
 =head1 HISTORY
 
@@ -263,7 +259,7 @@ This functionality was added to OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

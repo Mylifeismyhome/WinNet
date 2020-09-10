@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -684,7 +684,8 @@ static int always_retry_puts(BIO *bio, const char *str)
     return -1;
 }
 
-int create_ssl_ctx_pair(const SSL_METHOD *sm, const SSL_METHOD *cm,
+int create_ssl_ctx_pair(OPENSSL_CTX *libctx, const SSL_METHOD *sm,
+const SSL_METHOD *cm,
                         int min_proto_version, int max_proto_version,
                         SSL_CTX **sctx, SSL_CTX **cctx, char *certfile,
                         char *privkeyfile)
@@ -694,13 +695,13 @@ int create_ssl_ctx_pair(const SSL_METHOD *sm, const SSL_METHOD *cm,
 
     if (*sctx != NULL)
         serverctx = *sctx;
-    else if (!TEST_ptr(serverctx = SSL_CTX_new(sm)))
+    else if (!TEST_ptr(serverctx = SSL_CTX_new_with_libctx(libctx, NULL, sm)))
         goto err;
 
     if (cctx != NULL) {
         if (*cctx != NULL)
             clientctx = *cctx;
-        else if (!TEST_ptr(clientctx = SSL_CTX_new(cm)))
+        else if (!TEST_ptr(clientctx = SSL_CTX_new_with_libctx(libctx, NULL, cm)))
             goto err;
     }
 
@@ -740,8 +741,10 @@ int create_ssl_ctx_pair(const SSL_METHOD *sm, const SSL_METHOD *cm,
     return 1;
 
  err:
-    SSL_CTX_free(serverctx);
-    SSL_CTX_free(clientctx);
+    if (*sctx == NULL)
+        SSL_CTX_free(serverctx);
+    if (cctx != NULL && *cctx == NULL)
+        SSL_CTX_free(clientctx);
     return 0;
 }
 
@@ -915,11 +918,14 @@ int create_ssl_objects(SSL_CTX *serverctx, SSL_CTX *clientctx, SSL **sssl,
 }
 
 /*
- * Create an SSL connection, but does not ready any post-handshake
+ * Create an SSL connection, but does not read any post-handshake
  * NewSessionTicket messages.
  * If |read| is set and we're using DTLS then we will attempt to SSL_read on
  * the connection once we've completed one half of it, to ensure any retransmits
  * get triggered.
+ * We stop the connection attempt (and return a failure value) if either peer
+ * has SSL_get_error() return the value in the |want| parameter. The connection
+ * attempt could be restarted by a subsequent call to this function.
  */
 int create_bare_ssl_connection(SSL *serverssl, SSL *clientssl, int want,
                                int read)
@@ -938,6 +944,8 @@ int create_bare_ssl_connection(SSL *serverssl, SSL *clientssl, int want,
 
         if (!clienterr && retc <= 0 && err != SSL_ERROR_WANT_READ) {
             TEST_info("SSL_connect() failed %d, %d", retc, err);
+            if (want != SSL_ERROR_SSL)
+                TEST_openssl_errors();
             clienterr = 1;
         }
         if (want != SSL_ERROR_NONE && err == want)
@@ -954,6 +962,8 @@ int create_bare_ssl_connection(SSL *serverssl, SSL *clientssl, int want,
                 && err != SSL_ERROR_WANT_READ
                 && err != SSL_ERROR_WANT_X509_LOOKUP) {
             TEST_info("SSL_accept() failed %d, %d", rets, err);
+            if (want != SSL_ERROR_SSL)
+                TEST_openssl_errors();
             servererr = 1;
         }
         if (want != SSL_ERROR_NONE && err == want)

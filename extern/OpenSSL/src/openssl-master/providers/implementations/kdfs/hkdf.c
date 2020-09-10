@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -31,14 +31,14 @@
 
 #define HKDF_MAXBUF 1024
 
-static OSSL_OP_kdf_newctx_fn kdf_hkdf_new;
-static OSSL_OP_kdf_freectx_fn kdf_hkdf_free;
-static OSSL_OP_kdf_reset_fn kdf_hkdf_reset;
-static OSSL_OP_kdf_derive_fn kdf_hkdf_derive;
-static OSSL_OP_kdf_settable_ctx_params_fn kdf_hkdf_settable_ctx_params;
-static OSSL_OP_kdf_set_ctx_params_fn kdf_hkdf_set_ctx_params;
-static OSSL_OP_kdf_gettable_ctx_params_fn kdf_hkdf_gettable_ctx_params;
-static OSSL_OP_kdf_get_ctx_params_fn kdf_hkdf_get_ctx_params;
+static OSSL_FUNC_kdf_newctx_fn kdf_hkdf_new;
+static OSSL_FUNC_kdf_freectx_fn kdf_hkdf_free;
+static OSSL_FUNC_kdf_reset_fn kdf_hkdf_reset;
+static OSSL_FUNC_kdf_derive_fn kdf_hkdf_derive;
+static OSSL_FUNC_kdf_settable_ctx_params_fn kdf_hkdf_settable_ctx_params;
+static OSSL_FUNC_kdf_set_ctx_params_fn kdf_hkdf_set_ctx_params;
+static OSSL_FUNC_kdf_gettable_ctx_params_fn kdf_hkdf_gettable_ctx_params;
+static OSSL_FUNC_kdf_get_ctx_params_fn kdf_hkdf_get_ctx_params;
 
 static int HKDF(const EVP_MD *evp_md,
                 const unsigned char *salt, size_t salt_len,
@@ -90,12 +90,14 @@ static void kdf_hkdf_free(void *vctx)
 static void kdf_hkdf_reset(void *vctx)
 {
     KDF_HKDF *ctx = (KDF_HKDF *)vctx;
+    void *provctx = ctx->provctx;
 
     ossl_prov_digest_reset(&ctx->digest);
     OPENSSL_free(ctx->salt);
     OPENSSL_clear_free(ctx->key, ctx->key_len);
     OPENSSL_cleanse(ctx->info, ctx->info_len);
     memset(ctx, 0, sizeof(*ctx));
+    ctx->provctx = provctx;
 }
 
 static size_t kdf_hkdf_size(KDF_HKDF *ctx)
@@ -223,7 +225,7 @@ static int kdf_hkdf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     return 1;
 }
 
-static const OSSL_PARAM *kdf_hkdf_settable_ctx_params(void)
+static const OSSL_PARAM *kdf_hkdf_settable_ctx_params(ossl_unused void *provctx)
 {
     static const OSSL_PARAM known_settable_ctx_params[] = {
         OSSL_PARAM_utf8_string(OSSL_KDF_PARAM_MODE, NULL, 0),
@@ -248,7 +250,7 @@ static int kdf_hkdf_get_ctx_params(void *vctx, OSSL_PARAM params[])
     return -2;
 }
 
-static const OSSL_PARAM *kdf_hkdf_gettable_ctx_params(void)
+static const OSSL_PARAM *kdf_hkdf_gettable_ctx_params(ossl_unused void *provctx)
 {
     static const OSSL_PARAM known_gettable_ctx_params[] = {
         OSSL_PARAM_size_t(OSSL_KDF_PARAM_SIZE, NULL),

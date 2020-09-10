@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -200,7 +200,7 @@ static const struct {
     }
 };
 
-# ifndef FIPS_MODE
+# ifndef FIPS_MODULE
 /* the x9.62 prime curves (minus the nist prime curves) */
 static const struct {
     EC_CURVE_DATA h;
@@ -379,7 +379,7 @@ static const struct {
         0x43, 0x21, 0x46, 0x52, 0x65, 0x51
     }
 };
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 static const struct {
     EC_CURVE_DATA h;
@@ -419,7 +419,7 @@ static const struct {
     }
 };
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 /* the secg prime curves (minus the nist and x9.62 prime curves) */
 static const struct {
     EC_CURVE_DATA h;
@@ -841,13 +841,13 @@ static const struct {
         0x5C, 0x5C, 0x2A, 0x3D
     }
 };
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 #ifndef OPENSSL_NO_EC2M
 
 /* characteristic two curves */
 
-# ifndef FIPS_MODE
+# ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[20 + 15 * 6];
@@ -975,7 +975,7 @@ static const struct {
         0x33, 0x04, 0x9B, 0xA9, 0x8F
     }
 };
-# endif /* FIPS_MODE */
+# endif /* FIPS_MODULE */
 
 static const struct {
     EC_CURVE_DATA h;
@@ -1007,7 +1007,7 @@ static const struct {
     }
 };
 
-# ifndef FIPS_MODE
+# ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[0 + 21 * 6];
@@ -1036,7 +1036,7 @@ static const struct {
         0xAA, 0xB6, 0x89, 0xC2, 0x9C, 0xA7, 0x10, 0x27, 0x9B
     }
 };
-# endif /* FIPS_MODE */
+# endif /* FIPS_MODULE */
 
 static const struct {
     EC_CURVE_DATA h;
@@ -1067,7 +1067,7 @@ static const struct {
     }
 };
 
-# ifndef FIPS_MODE
+# ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[20 + 25 * 6];
@@ -1143,7 +1143,7 @@ static const struct {
         0xD5
     }
 };
-# endif /* FIPS_MODE */
+# endif /* FIPS_MODULE */
 
 static const struct {
     EC_CURVE_DATA h;
@@ -1219,7 +1219,7 @@ static const struct {
     }
 };
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[0 + 30 * 6];
@@ -1255,7 +1255,7 @@ static const struct {
         0x1D, 0xA8, 0x00, 0xE4, 0x78, 0xA5
     }
 };
-# endif /* FIPS_MODE */
+# endif /* FIPS_MODULE */
 
 static const struct {
     EC_CURVE_DATA h;
@@ -1539,7 +1539,7 @@ static const struct {
     }
 };
 
-# ifndef FIPS_MODE
+# ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[20 + 21 * 6];
@@ -2224,7 +2224,7 @@ static const struct {
         0xED, 0xF9, 0x7C, 0x44, 0xDB, 0x9F, 0x24, 0x20, 0xBA, 0xFC, 0xA7, 0x5E
     }
 };
-# endif /* FIPS_MODE */
+# endif /* FIPS_MODULE */
 #endif /* OPENSSL_NO_EC2M */
 
 /*
@@ -2235,7 +2235,7 @@ static const struct {
  * generation mechanism is different from those defined in ANSI X9.62.
  */
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[0 + 20 * 6];
@@ -2775,9 +2775,9 @@ static const struct {
         0x9C, 0xA9, 0x00, 0x69
     }
 };
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
-#if !defined(OPENSSL_NO_SM2) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_SM2) && !defined(FIPS_MODULE)
 static const struct {
     EC_CURVE_DATA h;
     unsigned char data[0 + 32 * 6];
@@ -2824,7 +2824,7 @@ typedef struct _ec_list_element_st {
     const char *comment;
 } ec_list_element;
 
-#ifdef FIPS_MODE
+#ifdef FIPS_MODULE
 static const ec_list_element curve_list[] = {
     /* prime field curves */
     /* secg curves */
@@ -3113,33 +3113,74 @@ static const ec_list_element curve_list[] = {
      "SM2 curve over a 256 bit prime field"},
 # endif
 };
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 #define curve_list_length OSSL_NELEM(curve_list)
 
+static const ec_list_element *ec_curve_nid2curve(int nid)
+{
+    size_t i;
+
+    if (nid <= 0)
+        return NULL;
+
+    for (i = 0; i < curve_list_length; i++) {
+        if (curve_list[i].nid == nid)
+            return &curve_list[i];
+    }
+    return NULL;
+}
+
+static const ec_list_element *ec_curve_name2curve(const char *name)
+{
+    size_t i;
+
+    for (i = 0; i < curve_list_length; i++) {
+        if (strcasecmp(curve_list[i].name, name) == 0)
+            return &curve_list[i];
+    }
+    return NULL;
+}
+
 const char *ec_curve_nid2name(int nid)
 {
-    int i;
+    /*
+     * TODO(3.0) Figure out if we should try to find the nid with
+     * EC_curve_nid2nist() first, i.e. make it a priority to return
+     * NIST names if there is one for the NID.  This is related to
+     * the TODO comment in ec_curve_name2nid().
+     */
+    const ec_list_element *curve = ec_curve_nid2curve(nid);
 
-    for (i = 0; i < (int)curve_list_length; i++) {
-        if (curve_list[i].nid == nid)
-            return curve_list[i].name;
-    }
+    if (curve != NULL)
+        return curve->name;
     return NULL;
 }
 
 int ec_curve_name2nid(const char *name)
 {
-    int i;
+    const ec_list_element *curve = NULL;
+    int nid;
 
-    for (i = 0; i < (int)curve_list_length; i++) {
-        if (strcasecmp(curve_list[i].name, name) == 0)
-            return curve_list[i].nid;
-    }
+    if ((nid = EC_curve_nist2nid(name)) != NID_undef)
+        return nid;
+
+#ifndef FIPS_MODULE
+    /*
+     * TODO(3.0) Figure out if we can use other names than the NIST names
+     * ("B-163", "K-163" & "P-192") in the FIPS module, or if other names
+     * are allowed as well as long as they lead to the same curve data.
+     * If only the NIST names are allowed in the FIPS module, we should
+     * move '#endif' to just before 'return NID_undef'.
+     */
+#endif
+    if ((curve = ec_curve_name2curve(name)) != NULL)
+        return curve->nid;
     return NID_undef;
 }
 
 static EC_GROUP *ec_group_new_from_data(OPENSSL_CTX *libctx,
+                                        const char *propq,
                                         const ec_list_element curve)
 {
     EC_GROUP *group = NULL;
@@ -3155,8 +3196,8 @@ static EC_GROUP *ec_group_new_from_data(OPENSSL_CTX *libctx,
 
     /* If no curve data curve method must handle everything */
     if (curve.data == NULL)
-        return EC_GROUP_new_ex(libctx,
-                               curve.meth != NULL ? curve.meth() : NULL);
+        return ec_group_new_with_libctx(libctx, propq,
+                                        curve.meth != NULL ? curve.meth() : NULL);
 
     if ((ctx = BN_CTX_new_ex(libctx)) == NULL) {
         ECerr(EC_F_EC_GROUP_NEW_FROM_DATA, ERR_R_MALLOC_FAILURE);
@@ -3178,7 +3219,7 @@ static EC_GROUP *ec_group_new_from_data(OPENSSL_CTX *libctx,
 
     if (curve.meth != 0) {
         meth = curve.meth();
-        if (((group = EC_GROUP_new_ex(libctx, meth)) == NULL) ||
+        if (((group = ec_group_new_with_libctx(libctx, propq, meth)) == NULL) ||
             (!(group->meth->group_set_curve(group, p, a, b, ctx)))) {
             ECerr(EC_F_EC_GROUP_NEW_FROM_DATA, ERR_R_EC_LIB);
             goto err;
@@ -3248,41 +3289,25 @@ static EC_GROUP *ec_group_new_from_data(OPENSSL_CTX *libctx,
     return group;
 }
 
-EC_GROUP *EC_GROUP_new_by_curve_name_ex(OPENSSL_CTX *libctx, int nid)
+EC_GROUP *EC_GROUP_new_by_curve_name_with_libctx(OPENSSL_CTX *libctx,
+                                                 const char *propq, int nid)
 {
-    size_t i;
     EC_GROUP *ret = NULL;
+    const ec_list_element *curve;
 
-    if (nid <= 0)
-        return NULL;
-
-#ifdef FIPS_MODE
-    /*
-     * Only use approved NIST curves in FIPS.
-     * NOTE: "B-163", "K-163" & "P-192" can only be used for legacy use
-     * (i.e- ECDSA signature verification).
-     */
-    if (EC_curve_nid2nist(nid) == NULL)
-        return NULL;
-#endif /* FIPS_MODE */
-    for (i = 0; i < curve_list_length; i++)
-        if (curve_list[i].nid == nid) {
-            ret = ec_group_new_from_data(libctx, curve_list[i]);
-            break;
-        }
-
-    if (ret == NULL) {
-        ECerr(EC_F_EC_GROUP_NEW_BY_CURVE_NAME_EX, EC_R_UNKNOWN_GROUP);
+    if ((curve = ec_curve_nid2curve(nid)) == NULL
+        || (ret = ec_group_new_from_data(libctx, propq, *curve)) == NULL) {
+        ECerr(0, EC_R_UNKNOWN_GROUP);
         return NULL;
     }
 
     return ret;
 }
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 EC_GROUP *EC_GROUP_new_by_curve_name(int nid)
 {
-    return EC_GROUP_new_by_curve_name_ex(NULL, nid);
+    return EC_GROUP_new_by_curve_name_with_libctx(NULL, NULL, nid);
 }
 #endif
 
@@ -3365,17 +3390,13 @@ int ec_curve_nid_from_params(const EC_GROUP *group, BN_CTX *ctx)
     unsigned char *param_bytes = NULL;
     const EC_CURVE_DATA *data;
     const EC_POINT *generator = NULL;
-    const EC_METHOD *meth;
     const BIGNUM *cofactor = NULL;
     /* An array of BIGNUMs for (p, a, b, x, y, order) */
     BIGNUM *bn[NUM_BN_FIELDS] = {NULL, NULL, NULL, NULL, NULL, NULL};
 
-    meth = EC_GROUP_method_of(group);
-    if (meth == NULL)
-        return -1;
     /* Use the optional named curve nid as a search field */
     nid = EC_GROUP_get_curve_name(group);
-    field_type = EC_METHOD_get_field_type(meth);
+    field_type = EC_GROUP_get_field_type(group);
     seed_len = EC_GROUP_get_seed_len(group);
     seed = EC_GROUP_get0_seed(group);
     cofactor = EC_GROUP_get0_cofactor(group);

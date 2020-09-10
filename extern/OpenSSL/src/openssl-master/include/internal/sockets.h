@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -154,9 +154,9 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 
 /* also in apps/include/apps.h */
 # if defined(OPENSSL_SYS_WIN32) || defined(OPENSSL_SYS_WINCE)
-#  define openssl_fdset(a,b) FD_SET((unsigned int)a, b)
+#  define openssl_fdset(a, b) FD_SET((unsigned int)(a), b)
 # else
-#  define openssl_fdset(a,b) FD_SET(a, b)
+#  define openssl_fdset(a, b) FD_SET(a, b)
 # endif
 
 #endif

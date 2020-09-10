@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -22,6 +22,8 @@
 #include "crypto/x509.h"
 #include "x509_local.h"
 
+DEFINE_STACK_OF(X509_OBJECT)
+
 struct lookup_dir_hashes_st {
     unsigned long hash;
     int suffix;
@@ -40,23 +42,32 @@ typedef struct lookup_dir_st {
 } BY_DIR;
 
 static int dir_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp, long argl,
-                    char **ret);
+                    char **retp);
+
 static int new_dir(X509_LOOKUP *lu);
 static void free_dir(X509_LOOKUP *lu);
 static int add_cert_dir(BY_DIR *ctx, const char *dir, int type);
 static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
-                               X509_NAME *name, X509_OBJECT *ret);
+                               const X509_NAME *name, X509_OBJECT *ret);
+static int get_cert_by_subject_with_libctx(X509_LOOKUP *xl,
+                                           X509_LOOKUP_TYPE type,
+                                           const X509_NAME *name,
+                                           X509_OBJECT *ret,
+                                           OPENSSL_CTX *libctx,
+                                           const char *propq);
 static X509_LOOKUP_METHOD x509_dir_lookup = {
     "Load certs from files in a directory",
-    new_dir,                    /* new_item */
-    free_dir,                   /* free */
-    NULL,                       /* init */
-    NULL,                       /* shutdown */
-    dir_ctrl,                   /* ctrl */
-    get_cert_by_subject,        /* get_by_subject */
-    NULL,                       /* get_by_issuer_serial */
-    NULL,                       /* get_by_fingerprint */
-    NULL,                       /* get_by_alias */
+    new_dir,                         /* new_item */
+    free_dir,                        /* free */
+    NULL,                            /* init */
+    NULL,                            /* shutdown */
+    dir_ctrl,                        /* ctrl */
+    get_cert_by_subject,             /* get_by_subject */
+    NULL,                            /* get_by_issuer_serial */
+    NULL,                            /* get_by_fingerprint */
+    NULL,                            /* get_by_alias */
+    get_cert_by_subject_with_libctx, /* get_by_subject_with_libctx */
+    NULL,                            /* ctrl_with_libctx */
 };
 
 X509_LOOKUP_METHOD *X509_LOOKUP_hash_dir(void)
@@ -208,8 +219,12 @@ static int add_cert_dir(BY_DIR *ctx, const char *dir, int type)
     return 1;
 }
 
-static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
-                               X509_NAME *name, X509_OBJECT *ret)
+static int get_cert_by_subject_with_libctx(X509_LOOKUP *xl,
+                                           X509_LOOKUP_TYPE type,
+                                           const X509_NAME *name,
+                                           X509_OBJECT *ret,
+                                           OPENSSL_CTX *libctx,
+                                           const char *propq)
 {
     BY_DIR *ctx;
     union {
@@ -228,20 +243,20 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
 
     stmp.type = type;
     if (type == X509_LU_X509) {
-        data.st_x509.cert_info.subject = name;
+        data.st_x509.cert_info.subject = (X509_NAME *)name; /* won't modify it */
         stmp.data.x509 = &data.st_x509;
         postfix = "";
     } else if (type == X509_LU_CRL) {
-        data.crl.crl.issuer = name;
+        data.crl.crl.issuer = (X509_NAME *)name; /* won't modify it */
         stmp.data.crl = &data.crl;
         postfix = "r";
     } else {
-        X509err(X509_F_GET_CERT_BY_SUBJECT, X509_R_WRONG_LOOKUP_TYPE);
+        X509err(0, X509_R_WRONG_LOOKUP_TYPE);
         goto finish;
     }
 
     if ((b = BUF_MEM_new()) == NULL) {
-        X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_BUF_LIB);
+        X509err(0, ERR_R_BUF_LIB);
         goto finish;
     }
 
@@ -256,7 +271,7 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
         ent = sk_BY_DIR_ENTRY_value(ctx->dirs, i);
         j = strlen(ent->dir) + 1 + 8 + 6 + 1 + 1;
         if (!BUF_MEM_grow(b, j)) {
-            X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+            X509err(0, ERR_R_MALLOC_FAILURE);
             goto finish;
         }
         if (type == X509_LU_CRL && ent->hashes) {
@@ -314,7 +329,8 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
 #endif
             /* found one. */
             if (type == X509_LU_X509) {
-                if ((X509_load_cert_file(xl, b->data, ent->dir_type)) == 0)
+                if ((X509_load_cert_file_with_libctx(xl, b->data, ent->dir_type,
+                                                     libctx, propq)) == 0)
                     break;
             } else if (type == X509_LU_CRL) {
                 if ((X509_load_crl_file(xl, b->data, ent->dir_type)) == 0)
@@ -349,7 +365,7 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
                 hent = OPENSSL_malloc(sizeof(*hent));
                 if (hent == NULL) {
                     CRYPTO_THREAD_unlock(ctx->lock);
-                    X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+                    X509err(0, ERR_R_MALLOC_FAILURE);
                     ok = 0;
                     goto finish;
                 }
@@ -358,7 +374,7 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
                 if (!sk_BY_DIR_HASH_push(ent->hashes, hent)) {
                     CRYPTO_THREAD_unlock(ctx->lock);
                     OPENSSL_free(hent);
-                    X509err(X509_F_GET_CERT_BY_SUBJECT, ERR_R_MALLOC_FAILURE);
+                    X509err(0, ERR_R_MALLOC_FAILURE);
                     ok = 0;
                     goto finish;
                 }
@@ -387,4 +403,10 @@ static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
  finish:
     BUF_MEM_free(b);
     return ok;
+}
+
+static int get_cert_by_subject(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
+                               const X509_NAME *name, X509_OBJECT *ret)
+{
+    return get_cert_by_subject_with_libctx(xl, type, name, ret, NULL, NULL);
 }

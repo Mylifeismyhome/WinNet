@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -65,7 +65,7 @@ int EC_KEY_set_method(EC_KEY *key, const EC_KEY_METHOD *meth)
     if (finish != NULL)
         finish(key);
 
-#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
     ENGINE_finish(key->engine);
     key->engine = NULL;
 #endif
@@ -76,7 +76,8 @@ int EC_KEY_set_method(EC_KEY *key, const EC_KEY_METHOD *meth)
     return 1;
 }
 
-EC_KEY *ec_key_new_method_int(OPENSSL_CTX *libctx, ENGINE *engine)
+EC_KEY *ec_key_new_method_int(OPENSSL_CTX *libctx, const char *propq,
+                              ENGINE *engine)
 {
     EC_KEY *ret = OPENSSL_zalloc(sizeof(*ret));
 
@@ -86,17 +87,23 @@ EC_KEY *ec_key_new_method_int(OPENSSL_CTX *libctx, ENGINE *engine)
     }
 
     ret->libctx = libctx;
+    if (propq != NULL) {
+        ret->propq = OPENSSL_strdup(propq);
+        if (ret->propq == NULL) {
+            ECerr(EC_F_EC_KEY_NEW_METHOD_INT, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+    }
 
     ret->references = 1;
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
         ECerr(EC_F_EC_KEY_NEW_METHOD_INT, ERR_R_MALLOC_FAILURE);
-        OPENSSL_free(ret);
-        return NULL;
+        goto err;
     }
 
     ret->meth = EC_KEY_get_default_method();
-#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
     if (engine != NULL) {
         if (!ENGINE_init(engine)) {
             ECerr(EC_F_EC_KEY_NEW_METHOD_INT, ERR_R_ENGINE_LIB);
@@ -118,7 +125,7 @@ EC_KEY *ec_key_new_method_int(OPENSSL_CTX *libctx, ENGINE *engine)
     ret->conv_form = POINT_CONVERSION_UNCOMPRESSED;
 
 /* No ex_data inside the FIPS provider */
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_EC_KEY, ret, &ret->ex_data)) {
         goto err;
     }
@@ -135,10 +142,10 @@ EC_KEY *ec_key_new_method_int(OPENSSL_CTX *libctx, ENGINE *engine)
     return NULL;
 }
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 EC_KEY *EC_KEY_new_method(ENGINE *engine)
 {
-    return ec_key_new_method_int(NULL, engine);
+    return ec_key_new_method_int(NULL, NULL, engine);
 }
 #endif
 

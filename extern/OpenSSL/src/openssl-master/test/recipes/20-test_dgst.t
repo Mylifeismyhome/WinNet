@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2017 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2017-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -24,8 +24,8 @@ sub tsignverify {
     my $privkey = shift;
     my $pubkey = shift;
 
-    my $data_to_sign = srctop_file('test', 'README');
-    my $other_data = srctop_file('test', 'README.external');
+    my $data_to_sign = srctop_file('test', 'data.txt');
+    my $other_data = srctop_file('test', 'data2.txt');
 
     my $sigfile = basename($privkey, '.pem') . '.sig';
     plan tests => 4;

@@ -15,7 +15,7 @@
 
 #include <string.h> /* memcpy */
 #include <openssl/crypto.h>
-#include <openssl/core_numbers.h>
+#include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
 #include <openssl/dsa.h>
 #include <openssl/params.h>
@@ -23,32 +23,34 @@
 #include <openssl/err.h>
 #include "internal/nelem.h"
 #include "internal/sizes.h"
+#include "internal/cryptlib.h"
 #include "prov/providercommonerr.h"
 #include "prov/implementations.h"
 #include "prov/provider_ctx.h"
 #include "crypto/ec.h"
+#include "prov/der_ec.h"
 
-static OSSL_OP_signature_newctx_fn ecdsa_newctx;
-static OSSL_OP_signature_sign_init_fn ecdsa_signature_init;
-static OSSL_OP_signature_verify_init_fn ecdsa_signature_init;
-static OSSL_OP_signature_sign_fn ecdsa_sign;
-static OSSL_OP_signature_verify_fn ecdsa_verify;
-static OSSL_OP_signature_digest_sign_init_fn ecdsa_digest_signverify_init;
-static OSSL_OP_signature_digest_sign_update_fn ecdsa_digest_signverify_update;
-static OSSL_OP_signature_digest_sign_final_fn ecdsa_digest_sign_final;
-static OSSL_OP_signature_digest_verify_init_fn ecdsa_digest_signverify_init;
-static OSSL_OP_signature_digest_verify_update_fn ecdsa_digest_signverify_update;
-static OSSL_OP_signature_digest_verify_final_fn ecdsa_digest_verify_final;
-static OSSL_OP_signature_freectx_fn ecdsa_freectx;
-static OSSL_OP_signature_dupctx_fn ecdsa_dupctx;
-static OSSL_OP_signature_get_ctx_params_fn ecdsa_get_ctx_params;
-static OSSL_OP_signature_gettable_ctx_params_fn ecdsa_gettable_ctx_params;
-static OSSL_OP_signature_set_ctx_params_fn ecdsa_set_ctx_params;
-static OSSL_OP_signature_settable_ctx_params_fn ecdsa_settable_ctx_params;
-static OSSL_OP_signature_get_ctx_md_params_fn ecdsa_get_ctx_md_params;
-static OSSL_OP_signature_gettable_ctx_md_params_fn ecdsa_gettable_ctx_md_params;
-static OSSL_OP_signature_set_ctx_md_params_fn ecdsa_set_ctx_md_params;
-static OSSL_OP_signature_settable_ctx_md_params_fn ecdsa_settable_ctx_md_params;
+static OSSL_FUNC_signature_newctx_fn ecdsa_newctx;
+static OSSL_FUNC_signature_sign_init_fn ecdsa_signature_init;
+static OSSL_FUNC_signature_verify_init_fn ecdsa_signature_init;
+static OSSL_FUNC_signature_sign_fn ecdsa_sign;
+static OSSL_FUNC_signature_verify_fn ecdsa_verify;
+static OSSL_FUNC_signature_digest_sign_init_fn ecdsa_digest_signverify_init;
+static OSSL_FUNC_signature_digest_sign_update_fn ecdsa_digest_signverify_update;
+static OSSL_FUNC_signature_digest_sign_final_fn ecdsa_digest_sign_final;
+static OSSL_FUNC_signature_digest_verify_init_fn ecdsa_digest_signverify_init;
+static OSSL_FUNC_signature_digest_verify_update_fn ecdsa_digest_signverify_update;
+static OSSL_FUNC_signature_digest_verify_final_fn ecdsa_digest_verify_final;
+static OSSL_FUNC_signature_freectx_fn ecdsa_freectx;
+static OSSL_FUNC_signature_dupctx_fn ecdsa_dupctx;
+static OSSL_FUNC_signature_get_ctx_params_fn ecdsa_get_ctx_params;
+static OSSL_FUNC_signature_gettable_ctx_params_fn ecdsa_gettable_ctx_params;
+static OSSL_FUNC_signature_set_ctx_params_fn ecdsa_set_ctx_params;
+static OSSL_FUNC_signature_settable_ctx_params_fn ecdsa_settable_ctx_params;
+static OSSL_FUNC_signature_get_ctx_md_params_fn ecdsa_get_ctx_md_params;
+static OSSL_FUNC_signature_gettable_ctx_md_params_fn ecdsa_gettable_ctx_md_params;
+static OSSL_FUNC_signature_set_ctx_md_params_fn ecdsa_set_ctx_md_params;
+static OSSL_FUNC_signature_settable_ctx_md_params_fn ecdsa_settable_ctx_md_params;
 
 /*
  * What's passed as an actual key is defined by the KEYMGMT interface.
@@ -58,24 +60,18 @@ static OSSL_OP_signature_settable_ctx_md_params_fn ecdsa_settable_ctx_md_params;
 
 typedef struct {
     OPENSSL_CTX *libctx;
+    char *propq;
     EC_KEY *ec;
     char mdname[OSSL_MAX_NAME_SIZE];
 
     /* The Algorithm Identifier of the combined signature algorithm */
-    unsigned char aid[OSSL_MAX_ALGORITHM_ID_SIZE];
+    unsigned char aid_buf[OSSL_MAX_ALGORITHM_ID_SIZE];
+    unsigned char *aid;
     size_t  aid_len;
     size_t mdsize;
 
     EVP_MD *md;
     EVP_MD_CTX *mdctx;
-    /*
-     * This indicates that KAT (CAVS) test is running. Externally an app will
-     * override the random callback such that the generated private key and k
-     * are known.
-     * Normal operation will loop to choose a new k if the signature is not
-     * valid - but for this mode of operation it forces a failure instead.
-     */
-    unsigned int kattest;
     /*
      * Internally used to cache the results of calling the EC group
      * sign_setup() methods which are then passed to the sign operation.
@@ -85,9 +81,19 @@ typedef struct {
      */
     BIGNUM *kinv;
     BIGNUM *r;
+#if defined(FIPS_MODULE) && !defined(OPENSSL_NO_ACVP_TESTS)
+    /*
+     * This indicates that KAT (CAVS) test is running. Externally an app will
+     * override the random callback such that the generated private key and k
+     * are known.
+     * Normal operation will loop to choose a new k if the signature is not
+     * valid - but for this mode of operation it forces a failure instead.
+     */
+    unsigned int kattest;
+#endif
 } PROV_ECDSA_CTX;
 
-static void *ecdsa_newctx(void *provctx)
+static void *ecdsa_newctx(void *provctx, const char *propq)
 {
     PROV_ECDSA_CTX *ctx = OPENSSL_zalloc(sizeof(PROV_ECDSA_CTX));
 
@@ -95,6 +101,11 @@ static void *ecdsa_newctx(void *provctx)
         return NULL;
 
     ctx->libctx = PROV_LIBRARY_CONTEXT_OF(provctx);
+    if (propq != NULL && (ctx->propq = OPENSSL_strdup(propq)) == NULL) {
+        OPENSSL_free(ctx);
+        ctx = NULL;
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+    }
     return ctx;
 }
 
@@ -122,8 +133,10 @@ static int ecdsa_sign(void *vctx, unsigned char *sig, size_t *siglen,
         return 1;
     }
 
+#if defined(FIPS_MODULE) && !defined(OPENSSL_NO_ACVP_TESTS)
     if (ctx->kattest && !ECDSA_sign_setup(ctx->ec, NULL, &ctx->kinv, &ctx->r))
         return 0;
+#endif
 
     if (sigsize < (size_t)ecsize)
         return 0;
@@ -192,30 +205,29 @@ static int get_md_nid(const EVP_MD *md)
 
 static void free_md(PROV_ECDSA_CTX *ctx)
 {
+    OPENSSL_free(ctx->propq);
     EVP_MD_CTX_free(ctx->mdctx);
     EVP_MD_free(ctx->md);
+    ctx->propq = NULL;
     ctx->mdctx = NULL;
     ctx->md = NULL;
     ctx->mdsize = 0;
 }
 
 static int ecdsa_digest_signverify_init(void *vctx, const char *mdname,
-                                        const char *props, void *ec)
+                                        void *ec)
 {
     PROV_ECDSA_CTX *ctx = (PROV_ECDSA_CTX *)vctx;
-    size_t algorithmidentifier_len = 0;
-    const unsigned char *algorithmidentifier;
+    int md_nid = NID_undef;
+    WPACKET pkt;
 
     free_md(ctx);
 
     if (!ecdsa_signature_init(vctx, ec))
         return 0;
 
-    ctx->md = EVP_MD_fetch(ctx->libctx, mdname, props);
-    algorithmidentifier =
-        ecdsa_algorithmidentifier_encoding(get_md_nid(ctx->md),
-                                           &algorithmidentifier_len);
-    if (algorithmidentifier == NULL)
+    ctx->md = EVP_MD_fetch(ctx->libctx, mdname, ctx->propq);
+    if ((md_nid = get_md_nid(ctx->md)) == NID_undef)
         goto error;
 
     ctx->mdsize = EVP_MD_size(ctx->md);
@@ -223,8 +235,21 @@ static int ecdsa_digest_signverify_init(void *vctx, const char *mdname,
     if (ctx->mdctx == NULL)
         goto error;
 
-    memcpy(ctx->aid, algorithmidentifier, algorithmidentifier_len);
-    ctx->aid_len = algorithmidentifier_len;
+    /*
+     * TODO(3.0) Should we care about DER writing errors?
+     * All it really means is that for some reason, there's no
+     * AlgorithmIdentifier to be had, but the operation itself is
+     * still valid, just as long as it's not used to construct
+     * anything that needs an AlgorithmIdentifier.
+     */
+    ctx->aid_len = 0;
+    if (WPACKET_init_der(&pkt, ctx->aid_buf, sizeof(ctx->aid_buf))
+        && DER_w_algorithmIdentifier_ECDSA_with_MD(&pkt, -1, ctx->ec, md_nid)
+        && WPACKET_finish(&pkt)) {
+        WPACKET_get_total_written(&pkt, &ctx->aid_len);
+        ctx->aid = WPACKET_get_curr(&pkt);
+    }
+    WPACKET_cleanup(&pkt);
 
     if (!EVP_DigestInit_ex(ctx->mdctx, ctx->md, NULL))
         goto error;
@@ -374,7 +399,7 @@ static const OSSL_PARAM known_gettable_ctx_params[] = {
     OSSL_PARAM_END
 };
 
-static const OSSL_PARAM *ecdsa_gettable_ctx_params(void)
+static const OSSL_PARAM *ecdsa_gettable_ctx_params(ossl_unused void *provctx)
 {
     return known_gettable_ctx_params;
 }
@@ -395,10 +420,11 @@ static int ecdsa_set_ctx_params(void *vctx, const OSSL_PARAM params[])
          */
         return 1;
     }
-
+#if defined(FIPS_MODULE) && !defined(OPENSSL_NO_ACVP_TESTS)
     p = OSSL_PARAM_locate_const(params, OSSL_SIGNATURE_PARAM_KAT);
     if (p != NULL && !OSSL_PARAM_get_uint(p, &ctx->kattest))
         return 0;
+#endif
 
     p = OSSL_PARAM_locate_const(params, OSSL_SIGNATURE_PARAM_DIGEST_SIZE);
     if (p != NULL && !OSSL_PARAM_get_size_t(p, &ctx->mdsize))
@@ -425,7 +451,7 @@ static const OSSL_PARAM known_settable_ctx_params[] = {
     OSSL_PARAM_END
 };
 
-static const OSSL_PARAM *ecdsa_settable_ctx_params(void)
+static const OSSL_PARAM *ecdsa_settable_ctx_params(ossl_unused void *provctx)
 {
     /*
      * TODO(3.0): Should this function return a different set of settable ctx

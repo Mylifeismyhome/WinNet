@@ -2,10 +2,6 @@
 
 =head1 NAME
 
-EVP_PKEY_CTX_get_params,
-EVP_PKEY_CTX_gettable_params,
-EVP_PKEY_CTX_set_params,
-EVP_PKEY_CTX_settable_params,
 EVP_PKEY_CTX_ctrl,
 EVP_PKEY_CTX_ctrl_str,
 EVP_PKEY_CTX_ctrl_uint64,
@@ -13,6 +9,8 @@ EVP_PKEY_CTX_md,
 EVP_PKEY_CTX_set_signature_md,
 EVP_PKEY_CTX_get_signature_md,
 EVP_PKEY_CTX_set_mac_key,
+EVP_PKEY_CTX_set_group_name,
+EVP_PKEY_CTX_get_group_name,
 EVP_PKEY_CTX_set_rsa_padding,
 EVP_PKEY_CTX_get_rsa_padding,
 EVP_PKEY_CTX_set_rsa_pss_saltlen,
@@ -33,10 +31,16 @@ EVP_PKEY_CTX_get0_rsa_oaep_label,
 EVP_PKEY_CTX_set_dsa_paramgen_bits,
 EVP_PKEY_CTX_set_dsa_paramgen_q_bits,
 EVP_PKEY_CTX_set_dsa_paramgen_md,
+EVP_PKEY_CTX_set_dsa_paramgen_md_props,
+EVP_PKEY_CTX_set_dsa_paramgen_gindex,
+EVP_PKEY_CTX_set_dsa_paramgen_type,
+EVP_PKEY_CTX_set_dsa_paramgen_seed,
 EVP_PKEY_CTX_set_dh_paramgen_prime_len,
 EVP_PKEY_CTX_set_dh_paramgen_subprime_len,
 EVP_PKEY_CTX_set_dh_paramgen_generator,
 EVP_PKEY_CTX_set_dh_paramgen_type,
+EVP_PKEY_CTX_set_dh_paramgen_gindex,
+EVP_PKEY_CTX_set_dh_paramgen_seed,
 EVP_PKEY_CTX_set_dh_rfc5114,
 EVP_PKEY_CTX_set_dhx_rfc5114,
 EVP_PKEY_CTX_set_dh_pad,
@@ -70,11 +74,6 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
 
  #include <openssl/evp.h>
 
- int EVP_PKEY_CTX_get_params(EVP_PKEY_CTX *ctx, OSSL_PARAM *params);
- const OSSL_PARAM *EVP_PKEY_CTX_gettable_params(EVP_PKEY_CTX *ctx);
- int EVP_PKEY_CTX_set_params(EVP_PKEY_CTX *ctx, OSSL_PARAM *params);
- const OSSL_PARAM *EVP_PKEY_CTX_settable_params(EVP_PKEY_CTX *ctx);
-
  int EVP_PKEY_CTX_ctrl(EVP_PKEY_CTX *ctx, int keytype, int optype,
                        int cmd, int p1, void *p2);
  int EVP_PKEY_CTX_ctrl_uint64(EVP_PKEY_CTX *ctx, int keytype, int optype,
@@ -89,6 +88,8 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
 
  int EVP_PKEY_CTX_set_mac_key(EVP_PKEY_CTX *ctx, const unsigned char *key,
                               int len);
+ int EVP_PKEY_CTX_set_group_name(EVP_PKEY_CTX *ctx, const char *name);
+ int EVP_PKEY_CTX_get_group_name(EVP_PKEY_CTX *ctx, char *name, size_t namelen);
 
  #include <openssl/rsa.h>
 
@@ -110,8 +111,9 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
  int EVP_PKEY_CTX_set_rsa_oaep_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);
  int EVP_PKEY_CTX_get_rsa_oaep_md(EVP_PKEY_CTX *ctx, const EVP_MD **md);
  int EVP_PKEY_CTX_get_rsa_oaep_md_name(EVP_PKEY_CTX *ctx, char *name,
-                                       size_t namelen)
- int EVP_PKEY_CTX_set0_rsa_oaep_label(EVP_PKEY_CTX *ctx, unsigned char *label, int len);
+                                       size_t namelen);
+ int EVP_PKEY_CTX_set0_rsa_oaep_label(EVP_PKEY_CTX *ctx, unsigned char *label,
+                                      int len);
  int EVP_PKEY_CTX_get0_rsa_oaep_label(EVP_PKEY_CTX *ctx, unsigned char **label);
 
  #include <openssl/dsa.h>
@@ -119,6 +121,14 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
  int EVP_PKEY_CTX_set_dsa_paramgen_bits(EVP_PKEY_CTX *ctx, int nbits);
  int EVP_PKEY_CTX_set_dsa_paramgen_q_bits(EVP_PKEY_CTX *ctx, int qbits);
  int EVP_PKEY_CTX_set_dsa_paramgen_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);
+ int EVP_PKEY_CTX_set_dsa_paramgen_md_props(EVP_PKEY_CTX *ctx,
+                                            const char *md_name,
+                                            const char *md_properties);
+ int EVP_PKEY_CTX_set_dsa_paramgen_type(EVP_PKEY_CTX *ctx, const char *name);
+ int EVP_PKEY_CTX_set_dsa_paramgen_gindex(EVP_PKEY_CTX *ctx, int gindex);
+ int EVP_PKEY_CTX_set_dsa_paramgen_seed(EVP_PKEY_CTX *ctx,
+                                        const unsigned char *seed,
+                                        size_t seedlen);
 
  #include <openssl/dh.h>
 
@@ -130,6 +140,10 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
  int EVP_PKEY_CTX_set_dh_nid(EVP_PKEY_CTX *ctx, int nid);
  int EVP_PKEY_CTX_set_dh_rfc5114(EVP_PKEY_CTX *ctx, int rfc5114);
  int EVP_PKEY_CTX_set_dhx_rfc5114(EVP_PKEY_CTX *ctx, int rfc5114);
+ int EVP_PKEY_CTX_set_dh_paramgen_gindex(EVP_PKEY_CTX *ctx, int gindex);
+ int EVP_PKEY_CTX_set_dh_paramgen_seed(EVP_PKEY_CTX *ctx,
+                                        const unsigned char *seed,
+                                        size_t seedlen);
  int EVP_PKEY_CTX_set_dh_kdf_type(EVP_PKEY_CTX *ctx, int kdf);
  int EVP_PKEY_CTX_get_dh_kdf_type(EVP_PKEY_CTX *ctx);
  int EVP_PKEY_CTX_set0_dh_kdf_oid(EVP_PKEY_CTX *ctx, ASN1_OBJECT *oid);
@@ -161,49 +175,6 @@ EVP_PKEY_CTX_set1_id, EVP_PKEY_CTX_get1_id, EVP_PKEY_CTX_get1_id_len
  int EVP_PKEY_CTX_get1_id_len(EVP_PKEY_CTX *ctx, size_t *id_len);
 
 =head1 DESCRIPTION
-
-The EVP_PKEY_CTX_get_params() and EVP_PKEY_CTX_set_params() functions get and
-send arbitrary parameters from and to the algorithm implementation respectively.
-Not all parameters may be supported by all providers.
-See L<OSSL_PROVIDER(3)> for more information on providers.
-See L<OSSL_PARAM(3)> for more information on parameters.
-These functions must only be called after the EVP_PKEY_CTX has been initialised
-for use in an operation.
-
-The parameters currently supported by the default provider are:
-
-=over 4
-
-=item "pad" (B<OSSL_EXCHANGE_PARAM_PAD>) <unsigned integer>
-
-Sets the DH padding mode.
-If B<OSSL_EXCHANGE_PARAM_PAD> is 1 then the  shared secret is padded with zeros
-up to the size of the DH prime I<p>.
-If B<OSSL_EXCHANGE_PARAM_PAD> is zero (the default) then no padding is
-performed.
-
-=item "digest" (B<OSSL_SIGNATURE_PARAM_DIGEST>) <UTF8 string>
-
-Gets and sets the name of the digest algorithm used for the input to the
-signature functions.
-
-=item "digest-size" (B<OSSL_SIGNATURE_PARAM_DIGEST_SIZE>) <unsigned integer>
-
-Gets and sets the output size of the digest algorithm used for the input to the
-signature functions.
-The length of the "digest-size" parameter should not exceed that of a B<size_t>.
-The internal algorithm that supports this parameter is DSA.
-
-=back
-
-EVP_PKEY_CTX_gettable_params() and EVP_PKEY_CTX_settable_params() gets a
-constant B<OSSL_PARAM> array that describes the  gettable and
-settable parameters for the current algorithm implementation, i.e. parameters
-that can be used with EVP_PKEY_CTX_get_params() and EVP_PKEY_CTX_set_params()
-respectively.
-See L<OSSL_PARAM(3)> for the use of B<OSSL_PARAM> as parameter descriptor.
-These functions must only be called after the EVP_PKEY_CTX has been initialised
-for use in an operation.
 
 The function EVP_PKEY_CTX_ctrl() sends a control operation to the context
 I<ctx>. The key type used must match I<keytype> if it is not -1. The parameter
@@ -248,6 +219,15 @@ L<EVP_PKEY_new_raw_private_key(3)> or similar functions instead of this macro.
 
 The EVP_PKEY_CTX_set_mac_key() macro can be used with any of the algorithms
 supported by the L<EVP_PKEY_new_raw_private_key(3)> function.
+
+EVP_PKEY_CTX_set_group_name() sets the group name to I<name> for parameter and
+key generation. For example for EC keys this will set the curve name and for
+DH keys it will set the name of the finite field group.
+
+EVP_PKEY_CTX_get_group_name() finds the group name that's currently
+set with I<ctx>, and writes it to the location that I<name> points at, as long
+as its size I<namelen> is large enough to store that name, including a
+terminating NUL byte.
 
 =head2 RSA parameters
 
@@ -389,18 +369,39 @@ negotiated protocol version. Otherwise it should be left unset.
 
 =head2 DSA parameters
 
-The EVP_PKEY_CTX_set_dsa_paramgen_bits() macro sets the number of bits used
-for DSA parameter generation to I<nbits>. If not specified, 2048 is used.
+EVP_PKEY_CTX_set_dsa_paramgen_bits() sets the number of bits used for DSA
+parameter generation to B<nbits>. If not specified, 2048 is used.
 
-The EVP_PKEY_CTX_set_dsa_paramgen_q_bits() macro sets the number of bits in the
-subprime parameter I<q> for DSA parameter generation to I<qbits>. If not
-specified, 224 is used. If a digest function is specified below, this parameter
-is ignored and instead, the number of bits in I<q> matches the size of the
-digest.
+EVP_PKEY_CTX_set_dsa_paramgen_q_bits() sets the number of bits in the subprime
+parameter I<q> for DSA parameter generation to I<qbits>. If not specified, 224
+is used. If a digest function is specified below, this parameter is ignored and
+instead, the number of bits in I<q> matches the size of the digest.
 
-The EVP_PKEY_CTX_set_dsa_paramgen_md() macro sets the digest function used for
-DSA parameter generation to I<md>. If not specified, one of SHA-1, SHA-224, or
+EVP_PKEY_CTX_set_dsa_paramgen_md() sets the digest function used for DSA
+parameter generation to I<md>. If not specified, one of SHA-1, SHA-224, or
 SHA-256 is selected to match the bit length of I<q> above.
+
+EVP_PKEY_CTX_set_dsa_paramgen_md_props() sets the digest function used for DSA
+parameter generation using I<md_name> and I<md_properties> to retrieve the
+digest from a provider.
+If not specified, I<md_name> will be set to one of SHA-1, SHA-224, or
+SHA-256 depending on the bit length of I<q> above. I<md_properties> is a
+property query string that has a default value of '' if not specified.
+
+EVP_PKEY_CTX_set_dsa_paramgen_gindex() sets the I<gindex> used by the generator
+G. The default value is -1 which uses unverifiable g, otherwise a positive value
+uses verifiable g. This value must be saved if key validation of g is required,
+since it is not part of a persisted key.
+
+EVP_PKEY_CTX_set_dsa_paramgen_seed() sets the I<seed> to use for generation
+rather than using a randomly generated value for the seed. This is useful for
+testing purposes only and can fail if the seed does not produce primes for both
+p & q on its first iteration. This value must be saved if key validation of
+p, q, and verifiable g are required, since it is not part of a persisted key.
+
+EVP_PKEY_CTX_set_dsa_paramgen_type() sets the generation type to use FIPS186-4
+generation if I<name> is "fips186_4", or FIPS186-2 generation if I<name> is
+"fips186_2". The default value is "fips186_4".
 
 =head2 DH parameters
 
@@ -411,8 +412,7 @@ then 2048 is used. Only accepts lengths greater than or equal to 256.
 The EVP_PKEY_CTX_set_dh_paramgen_subprime_len() macro sets the length of the DH
 optional subprime parameter I<q> for DH parameter generation. The default is
 256 if the prime is at least 2048 bits long or 160 otherwise. The DH
-paramgen type must have been set to B<DH_PARAMGEN_TYPE_FIPS_186_2> or
-B<DH_PARAMGEN_TYPE_FIPS_186_4>.
+paramgen type must have been set to "fips186_4".
 
 The EVP_PKEY_CTX_set_dh_paramgen_generator() macro sets DH generator to I<gen>
 for DH parameter generation. If not specified 2 is used.
@@ -422,21 +422,37 @@ parameter generation. The supported parameters are:
 
 =over 4
 
-=item B<DH_PARAMGEN_TYPE_GENERATOR>
+=item B<DH_PARAMGEN_TYPE_GROUP>
 
-Uses a generator g (PKCS#3 format).
-
-=item B<DH_PARAMGEN_TYPE_FIPS_186_2>
-
-FIPS186-2 FFC parameter generator (X9.42 DH).
+Use a named group. If only the safe prime parameter I<p> is set this can be
+used to select a ffdhe safe prime group of the correct size.
 
 =item B<DH_PARAMGEN_TYPE_FIPS_186_4>
 
 FIPS186-4 FFC parameter generator.
 
+=item B<DH_PARAMGEN_TYPE_FIPS_186_2>
+
+FIPS186-2 FFC parameter generator (X9.42 DH).
+
+=item B<DH_PARAMGEN_TYPE_GENERATOR>
+
+Uses a safe prime generator g (PKCS#3 format).
+
 =back
 
 The default is B<DH_PARAMGEN_TYPE_GENERATOR>.
+
+EVP_PKEY_CTX_set_dh_paramgen_gindex() sets the I<gindex> used by the generator G.
+The default value is -1 which uses unverifiable g, otherwise a positive value
+uses verifiable g. This value must be saved if key validation of g is required,
+since it is not part of a persisted key.
+
+EVP_PKEY_CTX_set_dh_paramgen_seed() sets the I<seed> to use for generation
+rather than using a randomly generated value for the seed. This is useful for
+testing purposes only and can fail if the seed does not produce primes for both
+p & q on its first iteration. This value must be saved if key validation of p, q,
+and verifiable g are required, since it is not part of a persisted key.
 
 The EVP_PKEY_CTX_set_dh_pad() function sets the DH padding mode.
 If I<pad> is 1 the shared secret is padded with zeros up to the size of the DH
@@ -467,57 +483,67 @@ EVP_PKEY_derive() is the output of the KDF instead of the DH shared secret.
 The KDF output is typically used as a Key Encryption Key (KEK) that in turn
 encrypts a Content Encryption Key (CEK).
 
-The EVP_PKEY_CTX_set_dh_kdf_type() macro sets the key derivation function type
-to I<kdf> for DH key derivation. Possible values are B<EVP_PKEY_DH_KDF_NONE>
-and B<EVP_PKEY_DH_KDF_X9_42> which uses the key derivation specified in RFC2631
+EVP_PKEY_CTX_set_dh_kdf_type() sets the key derivation function type to I<kdf>
+for DH key derivation. Possible values are B<EVP_PKEY_DH_KDF_NONE> and
+B<EVP_PKEY_DH_KDF_X9_42> which uses the key derivation specified in RFC2631
 (based on the keying algorithm described in X9.42). When using key derivation,
 the I<kdf_oid>, I<kdf_md> and I<kdf_outlen> parameters must also be specified.
 
-The EVP_PKEY_CTX_get_dh_kdf_type() macro gets the key derivation function type
-for I<ctx> used for DH key derivation. Possible values are B<EVP_PKEY_DH_KDF_NONE>
-and B<EVP_PKEY_DH_KDF_X9_42>.
+EVP_PKEY_CTX_get_dh_kdf_type() gets the key derivation function type for I<ctx>
+used for DH key derivation. Possible values are B<EVP_PKEY_DH_KDF_NONE> and
+B<EVP_PKEY_DH_KDF_X9_42>.
 
-The EVP_PKEY_CTX_set0_dh_kdf_oid() macro sets the key derivation function
-object identifier to I<oid> for DH key derivation. This OID should identify
-the algorithm to be used with the Content Encryption Key.
+EVP_PKEY_CTX_set0_dh_kdf_oid() sets the key derivation function object
+identifier to I<oid> for DH key derivation. This OID should identify the
+algorithm to be used with the Content Encryption Key.
 The library takes ownership of the object identifier so the caller should not
 free the original memory pointed to by I<oid>.
 
-The EVP_PKEY_CTX_get0_dh_kdf_oid() macro gets the key derivation function oid
-for I<ctx> used for DH key derivation. The resulting pointer is owned by the
-library and should not be freed by the caller.
+EVP_PKEY_CTX_get0_dh_kdf_oid() gets the key derivation function oid for I<ctx>
+used for DH key derivation. The resulting pointer is owned by the library and
+should not be freed by the caller.
 
-The EVP_PKEY_CTX_set_dh_kdf_md() macro sets the key derivation function
-message digest to I<md> for DH key derivation. Note that RFC2631 specifies
-that this digest should be SHA1 but OpenSSL tolerates other digests.
+EVP_PKEY_CTX_set_dh_kdf_md() sets the key derivation function message digest to
+I<md> for DH key derivation. Note that RFC2631 specifies that this digest should
+be SHA1 but OpenSSL tolerates other digests.
 
-The EVP_PKEY_CTX_get_dh_kdf_md() macro gets the key derivation function
-message digest for I<ctx> used for DH key derivation.
+EVP_PKEY_CTX_get_dh_kdf_md() gets the key derivation function message digest for
+I<ctx> used for DH key derivation.
 
-The EVP_PKEY_CTX_set_dh_kdf_outlen() macro sets the key derivation function
-output length to I<len> for DH key derivation.
+EVP_PKEY_CTX_set_dh_kdf_outlen() sets the key derivation function output length
+to I<len> for DH key derivation.
 
-The EVP_PKEY_CTX_get_dh_kdf_outlen() macro gets the key derivation function
-output length for I<ctx> used for DH key derivation.
+EVP_PKEY_CTX_get_dh_kdf_outlen() gets the key derivation function output length
+for I<ctx> used for DH key derivation.
 
-The EVP_PKEY_CTX_set0_dh_kdf_ukm() macro sets the user key material to
-I<ukm> and its length to I<len> for DH key derivation. This parameter is optional
-and corresponds to the partyAInfo field in RFC2631 terms. The specification
+EVP_PKEY_CTX_set0_dh_kdf_ukm() sets the user key material to I<ukm> and its
+length to I<len> for DH key derivation. This parameter is optional and
+corresponds to the partyAInfo field in RFC2631 terms. The specification
 requires that it is 512 bits long but this is not enforced by OpenSSL.
 The library takes ownership of the user key material so the caller should not
 free the original memory pointed to by I<ukm>.
 
-The EVP_PKEY_CTX_get0_dh_kdf_ukm() macro gets the user key material for I<ctx>.
+EVP_PKEY_CTX_get0_dh_kdf_ukm() gets the user key material for I<ctx>.
 The return value is the user key material length. The resulting pointer is owned
 by the library and should not be freed by the caller.
 
 =head2 EC parameters
 
-The EVP_PKEY_CTX_set_ec_paramgen_curve_nid() sets the EC curve for EC parameter
-generation to I<nid>. For EC parameter generation this macro must be called
-or an error occurs because there is no default curve.
-This function can also be called to set the curve explicitly when
+Use EVP_PKEY_CTX_set_group_name() (described above) to set the curve name to
+I<name> for parameter and key generation.
+
+EVP_PKEY_CTX_set_ec_paramgen_curve_nid() does the same as
+EVP_PKEY_CTX_set_group_name(), but is specific to EC and uses a I<nid> rather
+than a name string.
+
+For EC parameter generation, one of EVP_PKEY_CTX_set_group_name()
+or EVP_PKEY_CTX_set_ec_paramgen_curve_nid() must be called or an error occurs
+because there is no default curve.
+These function can also be called to set the curve explicitly when
 generating an EC key.
+
+EVP_PKEY_CTX_get_group_name() (described above) can be used to obtain the curve
+name that's currently set with I<ctx>.
 
 The EVP_PKEY_CTX_set_ec_param_enc() macro sets the EC parameter encoding to
 I<param_enc> when generating EC parameters or an EC key. The encoding can be
@@ -587,17 +613,13 @@ allocate adequate memory space for the I<id> before calling EVP_PKEY_CTX_get1_id
 
 =head1 RETURN VALUES
 
-EVP_PKEY_CTX_set_params() returns 1 for success or 0 otherwise.
-EVP_PKEY_CTX_settable_params() returns an OSSL_PARAM array on success or NULL on
-error.
-It may also return NULL if there are no settable parameters available.
-
 All other functions and macros described on this page return a positive value
 for success and 0 or a negative value for failure. In particular a return value
 of -2 indicates the operation is not supported by the public key algorithm.
 
 =head1 SEE ALSO
 
+L<EVP_PKEY_CTX_set_params(3)>,
 L<EVP_PKEY_CTX_new(3)>,
 L<EVP_PKEY_encrypt(3)>,
 L<EVP_PKEY_decrypt(3)>,
@@ -615,12 +637,22 @@ EVP_PKEY_CTX_get_rsa_padding(), EVP_PKEY_CTX_get_rsa_mgf1_md(),
 EVP_PKEY_CTX_set_rsa_mgf1_md(), EVP_PKEY_CTX_set_rsa_oaep_md(),
 EVP_PKEY_CTX_get_rsa_oaep_md(), EVP_PKEY_CTX_set0_rsa_oaep_label(),
 EVP_PKEY_CTX_get0_rsa_oaep_label(), EVP_PKEY_CTX_set_rsa_pss_saltlen(),
-EVP_PKEY_CTX_get_rsa_pss_saltlen(), were macros in OpenSSL 1.1.1 and below.
+EVP_PKEY_CTX_get_rsa_pss_saltlen(), EVP_PKEY_CTX_set_dsa_paramgen_bits(),
+EVP_PKEY_CTX_set_dsa_paramgen_q_bits(), EVP_PKEY_CTX_set_dsa_paramgen_md().
+EVP_PKEY_CTX_set_dh_kdf_type(), EVP_PKEY_CTX_get_dh_kdf_type(),
+EVP_PKEY_CTX_set0_dh_kdf_oid(), EVP_PKEY_CTX_get0_dh_kdf_oid(),
+EVP_PKEY_CTX_set_dh_kdf_md(), EVP_PKEY_CTX_get_dh_kdf_md(),
+EVP_PKEY_CTX_set_dh_kdf_outlen(), EVP_PKEY_CTX_get_dh_kdf_outlen(),
+EVP_PKEY_CTX_set0_dh_kdf_ukm() and EVP_PKEY_CTX_get0_dh_kdf_ukm()
+were macros in OpenSSL 1.1.1 and below.
 From OpenSSL 3.0 they are functions.
 
 EVP_PKEY_CTX_get_rsa_oaep_md_name(), EVP_PKEY_CTX_get_rsa_mgf1_md_name(),
-EVP_PKEY_CTX_set_rsa_mgf1_md_name() and EVP_PKEY_CTX_set_rsa_oaep_md_name() were
-added in OpenSSL 3.0.
+EVP_PKEY_CTX_set_rsa_mgf1_md_name(), EVP_PKEY_CTX_set_rsa_oaep_md_name(),
+EVP_PKEY_CTX_set_dsa_paramgen_md_props(), EVP_PKEY_CTX_set_dsa_paramgen_gindex(),
+EVP_PKEY_CTX_set_dsa_paramgen_type(), EVP_PKEY_CTX_set_dsa_paramgen_seed(),
+EVP_PKEY_CTX_set_group_name() and EVP_PKEY_CTX_get_group_name()
+were added in OpenSSL 3.0.
 
 The EVP_PKEY_CTX_set1_id(), EVP_PKEY_CTX_get1_id() and
 EVP_PKEY_CTX_get1_id_len() macros were added in 1.1.1, other functions were
@@ -628,7 +660,7 @@ added in OpenSSL 1.0.0.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

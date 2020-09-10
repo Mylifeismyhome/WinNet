@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -19,8 +19,8 @@ int dsa_check_params(const DSA *dsa, int *ret)
      * (2b) FFC domain params conform to FIPS-186-4 explicit domain param
      * validity tests.
      */
-    return ffc_params_FIPS186_4_validate(&dsa->params, FFC_PARAM_TYPE_DSA, NULL,
-                                         FFC_PARAMS_VALIDATE_ALL, ret, NULL);
+    return ffc_params_FIPS186_4_validate(dsa->libctx, &dsa->params,
+                                         FFC_PARAM_TYPE_DSA, ret, NULL);
 }
 
 /*

@@ -1,8 +1,0 @@
-;
-; Definition file for the DLL version of the test\p_test-3 library from OpenSSL
-;
-
-LIBRARY         test\p_test-3
-
-EXPORTS
-    OSSL_provider_init

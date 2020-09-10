@@ -20,7 +20,7 @@ B<openssl> B<rsautl>
 [B<-rev>]
 [B<-out> I<file>]
 [B<-inkey> I<file>]
-[B<-keyform> B<DER>|B<PEM>|B<ENGINE>]
+[B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-pubin>]
 [B<-certin>]
 [B<-sign>]
@@ -41,7 +41,7 @@ B<openssl> B<rsautl>
 [B<-rand> I<files>]
 [B<-writerand> I<file>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 =for openssl ifdef engine
 
@@ -84,9 +84,10 @@ default.
 
 The input key file, by default it should be an RSA private key.
 
-=item B<-keyform> B<DER>|B<PEM>|B<ENGINE>
+=item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
 The key format; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
 See L<openssl(1)/Format Options> for details.
 
 =item B<-pubin>
@@ -134,6 +135,7 @@ B<-verify> option.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-rand> I<files>, B<-writerand> I<file>
 
@@ -141,7 +143,7 @@ See L<openssl(1)/Random State Options> for details.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -253,9 +255,14 @@ L<openssl-genrsa(1)>
 
 This command was deprecated in OpenSSL 3.0.
 
+All B<-keyform> values except B<ENGINE> have become obsolete in OpenSSL 3.0.0
+and have no effect.
+
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

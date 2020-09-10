@@ -75,6 +75,7 @@ d2i_IPAddressChoice,
 d2i_IPAddressFamily,
 d2i_IPAddressOrRange,
 d2i_IPAddressRange,
+d2i_ISSUER_SIGN_TOOL,
 d2i_ISSUING_DIST_POINT,
 d2i_NAMING_AUTHORITY,
 d2i_NETSCAPE_CERT_SEQUENCE,
@@ -267,6 +268,7 @@ i2d_IPAddressChoice,
 i2d_IPAddressFamily,
 i2d_IPAddressOrRange,
 i2d_IPAddressRange,
+i2d_ISSUER_SIGN_TOOL,
 i2d_ISSUING_DIST_POINT,
 i2d_NAMING_AUTHORITY,
 i2d_NETSCAPE_CERT_SEQUENCE,
@@ -451,7 +453,7 @@ the encoding of the structure I<a> to BIO I<bp> and it
 returns 1 for success and 0 for failure.
 
 B<i2d_I<TYPE>_fp>() is similar to B<i2d_I<TYPE>>() except it writes
-the encoding of the structure I<a> to BIO I<bp> and it
+the encoding of the structure I<a> to FILE pointer I<fp> and it
 returns 1 for success and 0 for failure.
 
 These routines do not encrypt private keys and therefore offer no
@@ -470,7 +472,7 @@ populated B<I<TYPE>> structure -- it B<cannot> simply be fed with an
 empty structure such as that returned by TYPE_new().
 
 The encoded data is in binary form and may contain embedded zeros.
-Therefore any FILE pointers or BIOs should be opened in binary mode.
+Therefore, any FILE pointers or BIOs should be opened in binary mode.
 Functions such as strlen() will B<not> return the correct length
 of the encoded structure.
 
@@ -643,7 +645,7 @@ efficiency reasons.
 
 =head1 COPYRIGHT
 
-Copyright 1998-2018 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 1998-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -303,8 +303,13 @@ int ssl3_read_n(SSL *s, size_t n, size_t max, int extend, int clearold,
             if (ret <= 0
                     && !BIO_should_retry(s->rbio)
                     && BIO_eof(s->rbio)) {
-                SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_SSL3_READ_N,
-                         SSL_R_UNEXPECTED_EOF_WHILE_READING);
+                if (s->options & SSL_OP_IGNORE_UNEXPECTED_EOF) {
+                    SSL_set_shutdown(s, SSL_RECEIVED_SHUTDOWN);
+                    s->s3.warn_alert = SSL_AD_CLOSE_NOTIFY;
+                } else {
+                    SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_SSL3_READ_N,
+                             SSL_R_UNEXPECTED_EOF_WHILE_READING);
+                }
             }
         } else {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL3_READ_N,
@@ -384,10 +389,12 @@ int ssl3_write_bytes(SSL *s, int type, const void *buf_, size_t len,
     s->rlayer.wnum = 0;
 
     /*
-     * If we are supposed to be sending a KeyUpdate then go into init unless we
-     * have writes pending - in which case we should finish doing that first.
+     * If we are supposed to be sending a KeyUpdate or NewSessionTicket then go
+     * into init unless we have writes pending - in which case we should finish
+     * doing that first.
      */
-    if (wb->left == 0 && s->key_update != SSL_KEY_UPDATE_NONE)
+    if (wb->left == 0 && (s->key_update != SSL_KEY_UPDATE_NONE
+                          || s->ext.extra_tickets_expected > 0))
         ossl_statem_set_in_init(s, 1);
 
     /*
@@ -771,6 +778,7 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
          */
         SSL3_BUFFER_set_buf(&s->rlayer.wbuf[0], (unsigned char *)buf);
         SSL3_BUFFER_set_offset(&s->rlayer.wbuf[0], 0);
+        SSL3_BUFFER_set_app_buffer(&s->rlayer.wbuf[0], 1);
         goto wpacket_init_complete;
     }
 
@@ -937,6 +945,7 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
         }
 
         if (SSL_TREAT_AS_TLS13(s)
+                && !BIO_get_ktls_send(s->wbio)
                 && s->enc_write_ctx != NULL
                 && (s->statem.enc_write_state != ENC_WRITE_STATE_WRITE_PLAIN_ALERTS
                     || type != SSL3_RT_ALERT)) {
@@ -1035,7 +1044,7 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
          * We haven't actually negotiated the version yet, but we're trying to
          * send early data - so we need to use the tls13enc function.
          */
-        if (tls13_enc(s, wr, numpipes, 1) < 1) {
+        if (tls13_enc(s, wr, numpipes, 1, NULL, mac_size) < 1) {
             if (!ossl_statem_in_error(s)) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_SSL3_WRITE,
                          ERR_R_INTERNAL_ERROR);
@@ -1044,7 +1053,8 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
         }
     } else {
         if (!BIO_get_ktls_send(s->wbio)) {
-            if (s->method->ssl3_enc->enc(s, wr, numpipes, 1) < 1) {
+            if (s->method->ssl3_enc->enc(s, wr, numpipes, 1, NULL,
+                                         mac_size) < 1) {
                 if (!ossl_statem_in_error(s)) {
                     SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_DO_SSL3_WRITE,
                             ERR_R_INTERNAL_ERROR);
@@ -1097,14 +1107,14 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
         if (s->msg_callback) {
             recordstart = WPACKET_get_curr(thispkt) - len
                           - SSL3_RT_HEADER_LENGTH;
-            s->msg_callback(1, 0, SSL3_RT_HEADER, recordstart,
+            s->msg_callback(1, thiswr->rec_version, SSL3_RT_HEADER, recordstart,
                             SSL3_RT_HEADER_LENGTH, s,
                             s->msg_callback_arg);
 
             if (SSL_TREAT_AS_TLS13(s) && s->enc_write_ctx != NULL) {
                 unsigned char ctype = type;
 
-                s->msg_callback(1, s->version, SSL3_RT_INNER_CONTENT_TYPE,
+                s->msg_callback(1, thiswr->rec_version, SSL3_RT_INNER_CONTENT_TYPE,
                                 &ctype, 1, s, s->msg_callback_arg);
             }
         }
@@ -1474,6 +1484,8 @@ int ssl3_read_bytes(SSL *s, int type, int *recvd_type, unsigned char *buf,
                 if (SSL3_RECORD_get_length(rr) == 0)
                     SSL3_RECORD_set_read(rr);
             } else {
+                if (s->options & SSL_OP_CLEANSE_PLAINTEXT)
+                    OPENSSL_cleanse(&(rr->data[rr->off]), n);
                 SSL3_RECORD_sub_length(rr, n);
                 SSL3_RECORD_add_off(rr, n);
                 if (SSL3_RECORD_get_length(rr) == 0) {

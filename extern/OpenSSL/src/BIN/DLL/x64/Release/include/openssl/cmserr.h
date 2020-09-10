@@ -12,11 +12,6 @@
 # define OPENSSL_CMSERR_H
 # pragma once
 
-# include <openssl/macros.h>
-# ifndef OPENSSL_NO_DEPRECATED_3_0
-#  define HEADER_CMSERR_H
-# endif
-
 # include <openssl/opensslconf.h>
 # include <openssl/symhacks.h>
 
@@ -87,6 +82,7 @@ int ERR_load_CMS_strings(void);
 #   define CMS_F_CMS_RECEIPT_VERIFY                         0
 #   define CMS_F_CMS_RECIPIENTINFO_DECRYPT                  0
 #   define CMS_F_CMS_RECIPIENTINFO_ENCRYPT                  0
+#   define CMS_F_CMS_RECIPIENTINFO_KARI_DECRYPT             0
 #   define CMS_F_CMS_RECIPIENTINFO_KARI_ENCRYPT             0
 #   define CMS_F_CMS_RECIPIENTINFO_KARI_GET0_ALG            0
 #   define CMS_F_CMS_RECIPIENTINFO_KARI_GET0_ORIG_ID        0
@@ -113,6 +109,7 @@ int ERR_load_CMS_strings(void);
 #   define CMS_F_CMS_SIGN                                   0
 #   define CMS_F_CMS_SIGNED_DATA_INIT                       0
 #   define CMS_F_CMS_SIGNERINFO_CONTENT_SIGN                0
+#   define CMS_F_CMS_SIGNERINFO_GET_CHAIN                   0
 #   define CMS_F_CMS_SIGNERINFO_SIGN                        0
 #   define CMS_F_CMS_SIGNERINFO_VERIFY                      0
 #   define CMS_F_CMS_SIGNERINFO_VERIFY_CERT                 0
@@ -122,6 +119,7 @@ int ERR_load_CMS_strings(void);
 #   define CMS_F_CMS_STREAM                                 0
 #   define CMS_F_CMS_UNCOMPRESS                             0
 #   define CMS_F_CMS_VERIFY                                 0
+#   define CMS_F_ESS_CHECK_SIGNING_CERTS                    0
 #   define CMS_F_KEK_UNWRAP_KEY                             0
 # endif
 
@@ -133,6 +131,8 @@ int ERR_load_CMS_strings(void);
 #  define CMS_R_CERTIFICATE_ALREADY_PRESENT                175
 #  define CMS_R_CERTIFICATE_HAS_NO_KEYID                   160
 #  define CMS_R_CERTIFICATE_VERIFY_ERROR                   100
+#  define CMS_R_CIPHER_AEAD_SET_TAG_ERROR                  184
+#  define CMS_R_CIPHER_GET_TAG                             185
 #  define CMS_R_CIPHER_INITIALISATION_ERROR                101
 #  define CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR      102
 #  define CMS_R_CMS_DATAFINAL_ERROR                        103
@@ -151,6 +151,8 @@ int ERR_load_CMS_strings(void);
 #  define CMS_R_ERROR_READING_MESSAGEDIGEST_ATTRIBUTE      114
 #  define CMS_R_ERROR_SETTING_KEY                          115
 #  define CMS_R_ERROR_SETTING_RECIPIENTINFO                116
+#  define CMS_R_ESS_NO_SIGNING_CERTID_ATTRIBUTE            182
+#  define CMS_R_ESS_SIGNING_CERTID_MISMATCH_ERROR          183
 #  define CMS_R_INVALID_ENCRYPTED_KEY_LENGTH               117
 #  define CMS_R_INVALID_KEY_ENCRYPTION_PARAMETER           176
 #  define CMS_R_INVALID_KEY_LENGTH                         118

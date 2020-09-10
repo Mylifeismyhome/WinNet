@@ -42,7 +42,7 @@ B<openssl> B<cms>
 [B<-inform> B<DER>|B<PEM>|B<SMIME>]
 [B<-outform> B<DER>|B<PEM>|B<SMIME>]
 [B<-rctform> B<DER>|B<PEM>|B<SMIME>]
-[B<-keyform> B<DER>|B<PEM>|B<ENGINE>]
+[B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-stream>]
 [B<-indef>]
 [B<-noindef>]
@@ -50,6 +50,7 @@ B<openssl> B<cms>
 [B<-text>]
 [B<-noout>]
 [B<-print>]
+[B<-nameopt> I<option>]
 [B<-md> I<digest>]
 [B<-I<cipher>>]
 [B<-wrap> I<cipher>]
@@ -124,8 +125,10 @@ B<openssl> B<cms>
 [B<-writerand> I<file>]
 [B<-engine> I<id>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
-[I<cert.pem> ...]
+[B<-provider-path> I<path>]
+[B<-config> I<configfile>]
+
+[I<recipient-cert> ...]
 
 =for openssl ifdef des-wrap engine
 
@@ -150,7 +153,7 @@ Print out a usage message.
 
 Encrypt mail for the given recipient certificates. Input file is the message
 to be encrypted. The output file is the encrypted mail in MIME format. The
-actual CMS type is <B>EnvelopedData<B>.
+actual CMS type is B<EnvelopedData>.
 
 Note that no revocation check is done for the recipient cert, so if that
 key has been compromised, others may be able to decrypt the text.
@@ -278,9 +281,10 @@ The output format of the CMS structure (if one is being written);
 the default is B<SMIME>.
 See L<openssl(1)/Format Options> for details.
 
-=item B<-keyform> B<DER>|B<PEM>|B<ENGINE>
+=item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
 The format of the private key file; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
 See L<openssl(1)/Format Options> for details.
 
 =item B<-rctform> B<DER>|B<PEM>|B<SMIME>
@@ -330,6 +334,12 @@ structure is being checked.
 For the B<-cmsout> operation print out all fields of the CMS structure. This
 is mainly useful for testing purposes.
 
+=item B<-nameopt> I<option>
+
+For the B<-cmsout> operation when B<-print> option is in use, specifies
+printing options for string fields. For most cases B<utf8> is reasonable value.
+See L<openssl(1)/Name Format Options> for details.
+
 =item B<-md> I<digest>
 
 Digest algorithm to use when signing or resigning. If not present then the
@@ -342,6 +352,9 @@ or 256 bit AES - B<-aes256>. Any standard algorithm name (as used by the
 EVP_get_cipherbyname() function) can also be used preceded by a dash, for
 example B<-aes-128-cbc>. See L<openssl-enc(1)> for a list of ciphers
 supported by your version of OpenSSL.
+
+Currently the AES variants with GCM mode are the only supported AEAD
+algorithms.
 
 If not specified triple DES is used. Only used with B<-encrypt> and
 B<-EncryptedData_create> commands.
@@ -413,7 +426,8 @@ the MIME type multipart/signed is used.
 
 Allows additional certificates to be specified. When signing these will
 be included with the message. When verifying these will be searched for
-the signers certificates. The certificates should be in PEM format.
+the signers certificates.
+The input can be in PEM, DER, or PKCS#12 format.
 
 =item B<-certsout> I<file>
 
@@ -550,14 +564,19 @@ See L<openssl(1)/Random State Options> for details.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
-=item I<cert.pem> ...
+=item B<-config> I<configfile>
+
+See L<openssl(1)/Configuration Option>.
+
+=item I<recipient-cert> ...
 
 One or more certificates of message recipients: used when encrypting
 a message.
@@ -632,7 +651,8 @@ Message-digest of the eContent OCTET STRING within encapContentInfo being signed
 
 =item *
 
-An ESS signing-certificate or ESS signing-certificate-v2 attribute, as defined in Enhanced Security Services (ESS), RFC 2634 and RFC 5035.
+An ESS signing-certificate or ESS signing-certificate-v2 attribute, as defined 
+in Enhanced Security Services (ESS), RFC 2634 and RFC 5035.
 An ESS signing-certificate attribute only allows for the use of SHA-1 as a digest algorithm.
 An ESS signing-certificate-v2 attribute allows for the use of any digest algorithm.
 
@@ -640,9 +660,10 @@ An ESS signing-certificate-v2 attribute allows for the use of any digest algorit
 
 The digital signature value computed on the user data and, when present, on the signed attributes.
 
-Note that currently the B<-cades> option applies only to the B<-sign> operation and is ignored during
-the B<-verify> operation, i.e. the signing certification is not checked during the verification process.
-This feature might be added in a future version.
+NOTE that the B<-cades> option applies to the B<-sign> or B<-verify> operations.
+With this option, the B<-verify> operation also checks that the signing-certificates
+attribute is present, and its value matches the verification trust chain built
+during the verification process.
 
 =back
 
@@ -830,9 +851,16 @@ was added in OpenSSL 1.0.2.
 
 The -no_alt_chains option was added in OpenSSL 1.0.2b.
 
+All B<-keyform> values except B<ENGINE> have become obsolete in OpenSSL 3.0.0
+and have no effect.
+
+The B<-nameopt> option was added in OpenSSL 3.0.0.
+
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 COPYRIGHT
 
-Copyright 2008-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2008-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

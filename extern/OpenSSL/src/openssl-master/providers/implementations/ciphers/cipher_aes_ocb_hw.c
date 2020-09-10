@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -18,6 +18,7 @@
 #define OCB_SET_KEY_FN(fn_set_enc_key, fn_set_dec_key,                         \
                        fn_block_enc, fn_block_dec,                             \
                        fn_stream_enc, fn_stream_dec)                           \
+CRYPTO_ocb128_cleanup(&ctx->ocb);                                              \
 fn_set_enc_key(key, keylen * 8, &ctx->ksenc.ks);                               \
 fn_set_dec_key(key, keylen * 8, &ctx->ksdec.ks);                               \
 if (!CRYPTO_ocb128_init(&ctx->ocb, &ctx->ksenc.ks, &ctx->ksdec.ks,             \

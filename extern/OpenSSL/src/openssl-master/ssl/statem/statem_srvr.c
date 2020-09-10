@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -25,6 +25,10 @@
 #include <openssl/trace.h>
 #include <openssl/core_names.h>
 #include <openssl/asn1t.h>
+
+DEFINE_STACK_OF(X509)
+DEFINE_STACK_OF(SSL_COMP)
+DEFINE_STACK_OF_CONST(SSL_CIPHER)
 
 #define TICKET_NONCE_SIZE       8
 
@@ -437,6 +441,10 @@ static WRITE_TRAN ossl_statem_server13_write_transition(SSL *s)
             st->hand_state = TLS_ST_SW_CERT_REQ;
             return WRITE_TRAN_CONTINUE;
         }
+        if (s->ext.extra_tickets_expected > 0) {
+            st->hand_state = TLS_ST_SW_SESSION_TICKET;
+            return WRITE_TRAN_CONTINUE;
+        }
         /* Try to read from the client instead */
         return WRITE_TRAN_FINISHED;
 
@@ -527,7 +535,9 @@ static WRITE_TRAN ossl_statem_server13_write_transition(SSL *s)
          * Following an initial handshake we send the number of tickets we have
          * been configured for.
          */
-        if (s->hit || s->num_tickets <= s->sent_tickets) {
+        if (!SSL_IS_FIRST_HANDSHAKE(s) && s->ext.extra_tickets_expected > 0) {
+            return WRITE_TRAN_CONTINUE;
+        } else if (s->hit || s->num_tickets <= s->sent_tickets) {
             /* We've written enough tickets out. */
             st->hand_state = TLS_ST_OK;
         }
@@ -723,7 +733,8 @@ WORK_STATE ossl_statem_server_pre_work(SSL *s, WORK_STATE wst)
         return WORK_FINISHED_CONTINUE;
 
     case TLS_ST_SW_SESSION_TICKET:
-        if (SSL_IS_TLS13(s) && s->sent_tickets == 0) {
+        if (SSL_IS_TLS13(s) && s->sent_tickets == 0
+                && s->ext.extra_tickets_expected == 0) {
             /*
              * Actually this is the end of the handshake, but we're going
              * straight into writing the session ticket out. So we finish off
@@ -732,7 +743,8 @@ WORK_STATE ossl_statem_server_pre_work(SSL *s, WORK_STATE wst)
              * Calls SSLfatal as required.
              */
             return tls_finish_handshake(s, wst, 0, 0);
-        } if (SSL_IS_DTLS(s)) {
+        }
+        if (SSL_IS_DTLS(s)) {
             /*
              * We're into the last flight. We don't retransmit the last flight
              * unless we need to, so we don't use the timer
@@ -1300,7 +1312,7 @@ int dtls_construct_hello_verify_request(SSL *s, WPACKET *pkt)
     if (s->ctx->app_gen_cookie_cb == NULL ||
         s->ctx->app_gen_cookie_cb(s, s->d1->cookie,
                                   &cookie_leni) == 0 ||
-        cookie_leni > 255) {
+        cookie_leni > DTLS1_COOKIE_LENGTH) {
         SSLfatal(s, SSL_AD_NO_ALERT, SSL_F_DTLS_CONSTRUCT_HELLO_VERIFY_REQUEST,
                  SSL_R_COOKIE_GEN_CALLBACK_FAILURE);
         return 0;
@@ -2795,7 +2807,10 @@ int tls_construct_server_key_exchange(SSL *s, WPACKET *pkt)
             goto err;
         }
 
-        if (EVP_DigestSignInit(md_ctx, &pctx, md, NULL, pkey) <= 0) {
+        if (EVP_DigestSignInit_with_libctx(md_ctx, &pctx,
+                                           md == NULL ? NULL : EVP_MD_name(md),
+                                           s->ctx->libctx, s->ctx->propq,
+                                           pkey) <= 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR,
                      SSL_F_TLS_CONSTRUCT_SERVER_KEY_EXCHANGE,
                      ERR_R_INTERNAL_ERROR);
@@ -3133,7 +3148,7 @@ static int tls_process_cke_dhe(SSL *s, PACKET *pkt)
     ckey = EVP_PKEY_new();
     if (ckey == NULL || EVP_PKEY_copy_parameters(ckey, skey) == 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_DHE,
-                 SSL_R_BN_LIB);
+                 SSL_R_COPY_PARAMETERS_FAILED);
         goto err;
     }
 
@@ -3202,9 +3217,10 @@ static int tls_process_cke_ecdhe(SSL *s, PACKET *pkt)
         ckey = EVP_PKEY_new();
         if (ckey == NULL || EVP_PKEY_copy_parameters(ckey, skey) <= 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_ECDHE,
-                     ERR_R_EVP_LIB);
+                     SSL_R_COPY_PARAMETERS_FAILED);
             goto err;
         }
+
         if (EVP_PKEY_set1_tls_encodedpoint(ckey, data, i) == 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_ECDHE,
                      ERR_R_EC_LIB);
@@ -3386,6 +3402,93 @@ static int tls_process_cke_gost(SSL *s, PACKET *pkt)
 #endif
 }
 
+static int tls_process_cke_gost18(SSL *s, PACKET *pkt)
+{
+#ifndef OPENSSL_NO_GOST
+    unsigned char rnd_dgst[32];
+    EVP_PKEY_CTX *pkey_ctx = NULL;
+    EVP_PKEY *pk = NULL;
+    unsigned char premaster_secret[32];
+    const unsigned char *start = NULL;
+    size_t outlen = 32, inlen = 0;
+    int ret = 0;
+    int cipher_nid = gost18_cke_cipher_nid(s);
+
+    if (cipher_nid == NID_undef) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (gost_ukm(s, rnd_dgst) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* Get our certificate private key */
+    pk = s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey != NULL ?
+         s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey :
+         s->cert->pkeys[SSL_PKEY_GOST12_256].privatekey;
+    if (pk == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 SSL_R_BAD_HANDSHAKE_STATE);
+        goto err;
+    }
+
+    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pk, s->ctx->propq);
+    if (pkey_ctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+    if (EVP_PKEY_decrypt_init(pkey_ctx) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* Reuse EVP_PKEY_CTRL_SET_IV, make choice in engine code depending on size */
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
+                          EVP_PKEY_CTRL_SET_IV, 32, rnd_dgst) < 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_DECRYPT,
+                          EVP_PKEY_CTRL_CIPHER, cipher_nid, NULL) < 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+    inlen = PACKET_remaining(pkt);
+    start = PACKET_data(pkt);
+
+    if (EVP_PKEY_decrypt(pkey_ctx, premaster_secret, &outlen, start, inlen) <= 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+                 SSL_R_DECRYPTION_FAILED);
+        goto err;
+    }
+    /* Generate master secret */
+    if (!ssl_generate_master_secret(s, premaster_secret,
+         sizeof(premaster_secret), 0)) {
+         /* SSLfatal() already called */
+         goto err;
+    }
+    ret = 1;
+
+ err:
+    EVP_PKEY_CTX_free(pkey_ctx);
+    return ret;
+#else
+    /* Should never happen */
+    SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_CKE_GOST18,
+             ERR_R_INTERNAL_ERROR);
+    return 0;
+#endif
+}
+
 MSG_PROCESS_RETURN tls_process_client_key_exchange(SSL *s, PACKET *pkt)
 {
     unsigned long alg_k;
@@ -3433,6 +3536,11 @@ MSG_PROCESS_RETURN tls_process_client_key_exchange(SSL *s, PACKET *pkt)
         }
     } else if (alg_k & SSL_kGOST) {
         if (!tls_process_cke_gost(s, pkt)) {
+            /* SSLfatal() already called */
+            goto err;
+        }
+    } else if (alg_k & SSL_kGOST18) {
+        if (!tls_process_cke_gost18(s, pkt)) {
             /* SSLfatal() already called */
             goto err;
         }
@@ -3569,12 +3677,18 @@ MSG_PROCESS_RETURN tls_process_client_certificate(SSL *s, PACKET *pkt)
         }
 
         certstart = certbytes;
-        x = d2i_X509(NULL, (const unsigned char **)&certbytes, l);
+        x = X509_new_with_libctx(s->ctx->libctx, s->ctx->propq);
         if (x == NULL) {
+            SSLfatal(s, SSL_AD_DECODE_ERROR,
+                     SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        if (d2i_X509(&x, (const unsigned char **)&certbytes, l) == NULL) {
             SSLfatal(s, SSL_AD_DECODE_ERROR,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE, ERR_R_ASN1_LIB);
             goto err;
         }
+
         if (certbytes != (certstart + l)) {
             SSLfatal(s, SSL_AD_DECODE_ERROR,
                      SSL_F_TLS_PROCESS_CLIENT_CERTIFICATE,
@@ -3906,7 +4020,14 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
         }
         iv_len = EVP_CIPHER_CTX_iv_length(ctx);
     } else {
-        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
+        EVP_CIPHER *cipher = EVP_CIPHER_fetch(s->ctx->libctx, "AES-256-CBC",
+                                              s->ctx->propq);
+
+        if (cipher == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_CONSTRUCT_STATELESS_TICKET,
+                     SSL_R_ALGORITHM_FETCH_FAILED);
+            goto err;
+        }
 
         iv_len = EVP_CIPHER_iv_length(cipher);
         if (RAND_bytes_ex(s->ctx->libctx, iv, iv_len) <= 0
@@ -3915,10 +4036,12 @@ static int construct_stateless_ticket(SSL *s, WPACKET *pkt, uint32_t age_add,
                 || !ssl_hmac_init(hctx, tctx->ext.secure->tick_hmac_key,
                                   sizeof(tctx->ext.secure->tick_hmac_key),
                                   "SHA256")) {
+            EVP_CIPHER_free(cipher);
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_CONSTRUCT_STATELESS_TICKET,
                      ERR_R_INTERNAL_ERROR);
             goto err;
         }
+        EVP_CIPHER_free(cipher);
         memcpy(key_name, tctx->ext.tick_key_name,
                sizeof(tctx->ext.tick_key_name));
     }
@@ -4115,10 +4238,13 @@ int tls_construct_new_session_ticket(SSL *s, WPACKET *pkt)
         /*
          * Increment both |sent_tickets| and |next_ticket_nonce|. |sent_tickets|
          * gets reset to 0 if we send more tickets following a post-handshake
-         * auth, but |next_ticket_nonce| does not.
+         * auth, but |next_ticket_nonce| does not.  If we're sending extra
+         * tickets, decrement the count of pending extra tickets.
          */
         s->sent_tickets++;
         s->next_ticket_nonce++;
+        if (s->ext.extra_tickets_expected > 0)
+            s->ext.extra_tickets_expected--;
         ssl_update_cache(s, SSL_SESS_CACHE_SERVER);
     }
 

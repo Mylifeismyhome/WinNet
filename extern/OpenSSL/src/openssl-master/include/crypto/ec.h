@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -14,6 +14,7 @@
 # include <openssl/opensslconf.h>
 
 # ifndef OPENSSL_NO_EC
+#  include <openssl/core.h>
 #  include <openssl/ec.h>
 
 /*-
@@ -46,15 +47,26 @@ __owur int ec_group_do_inverse_ord(const EC_GROUP *group, BIGNUM *res,
 int ecdh_KDF_X9_63(unsigned char *out, size_t outlen,
                    const unsigned char *Z, size_t Zlen,
                    const unsigned char *sinfo, size_t sinfolen,
-                   const EVP_MD *md);
+                   const EVP_MD *md, OPENSSL_CTX *libctx, const char *propq);
 
 int ec_generate_key(OPENSSL_CTX *libctx, EC_KEY *eckey, int pairwise_test);
 int ec_key_public_check(const EC_KEY *eckey, BN_CTX *ctx);
 int ec_key_private_check(const EC_KEY *eckey);
 int ec_key_pairwise_check(const EC_KEY *eckey, BN_CTX *ctx);
 OPENSSL_CTX *ec_key_get_libctx(const EC_KEY *eckey);
+const char *ec_key_get0_propq(const EC_KEY *eckey);
 const char *ec_curve_nid2name(int nid);
 int ec_curve_name2nid(const char *name);
-const unsigned char *ecdsa_algorithmidentifier_encoding(int md_nid, size_t *len);
+
+/* Backend support */
+int ec_group_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
+                    OSSL_PARAM params[], OPENSSL_CTX *libctx, const char *propq,
+                    BN_CTX *bnctx, unsigned char **genbuf);
+int ec_group_fromdata(EC_KEY *ec, const OSSL_PARAM params[]);
+int ec_key_fromdata(EC_KEY *ecx, const OSSL_PARAM params[], int include_private);
+int ec_key_otherparams_fromdata(EC_KEY *ec, const OSSL_PARAM params[]);
+int ec_set_ecdh_cofactor_mode(EC_KEY *ec, int mode);
+int ec_encoding_name2id(const char *name);
+
 # endif /* OPENSSL_NO_EC */
 #endif

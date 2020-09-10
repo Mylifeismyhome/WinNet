@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -47,14 +47,14 @@ int X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial)
     return 1;
 }
 
-int X509_set_issuer_name(X509 *x, X509_NAME *name)
+int X509_set_issuer_name(X509 *x, const X509_NAME *name)
 {
     if (x == NULL)
         return 0;
     return X509_NAME_set(&x->cert_info.issuer, name);
 }
 
-int X509_set_subject_name(X509 *x, X509_NAME *name)
+int X509_set_subject_name(X509 *x, const X509_NAME *name)
 {
     if (x == NULL)
         return 0;

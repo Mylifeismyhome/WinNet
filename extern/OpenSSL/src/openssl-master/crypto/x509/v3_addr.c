@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -22,8 +22,14 @@
 #include <openssl/x509v3.h>
 #include "crypto/x509.h"
 #include "ext_dat.h"
+#include "x509_local.h"
 
 #ifndef OPENSSL_NO_RFC3779
+
+DEFINE_STACK_OF(IPAddressOrRange)
+DEFINE_STACK_OF(IPAddressFamily)
+DEFINE_STACK_OF(CONF_VALUE)
+DEFINE_STACK_OF(X509)
 
 /*
  * OpenSSL ASN.1 template translation of RFC 3779 2.2.3.
@@ -139,6 +145,7 @@ static int i2r_address(BIO *out,
             return 0;
         BIO_printf(out, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
         break;
+        /* TODO possibly combine with ipaddr_to_asc() */
     case IANA_AFI_IPV6:
         if (!addr_expand(addr, bs, 16, fill))
             return 0;
@@ -919,7 +926,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
         } else {
             X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                       X509V3_R_EXTENSION_NAME_ERROR);
-            X509V3_conf_err(val);
+            ERR_add_error_data(1, val->name);
             goto err;
         }
 
@@ -943,7 +950,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
             t += strspn(t, " \t");
             if (*safi > 0xFF || *t++ != ':') {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS, X509V3_R_INVALID_SAFI);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             t += strspn(t, " \t");
@@ -964,7 +971,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
             if (!X509v3_addr_add_inherit(addr, afi, safi)) {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                           X509V3_R_INVALID_INHERITANCE);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             OPENSSL_free(s);
@@ -979,7 +986,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
 
         if (a2i_ipadd(min, s) != length) {
             X509V3err(X509V3_F_V2I_IPADDRBLOCKS, X509V3_R_INVALID_IPADDRESS);
-            X509V3_conf_err(val);
+            X509V3_conf_add_error_name_value(val);
             goto err;
         }
 
@@ -989,7 +996,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
             if (t == s + i2 || *t != '\0') {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                           X509V3_R_EXTENSION_VALUE_ERROR);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             if (!X509v3_addr_add_prefix(addr, afi, safi, min, prefixlen)) {
@@ -1003,19 +1010,19 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
             if (i1 == i2 || s[i2] != '\0') {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                           X509V3_R_EXTENSION_VALUE_ERROR);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             if (a2i_ipadd(max, s + i1) != length) {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                           X509V3_R_INVALID_IPADDRESS);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             if (memcmp(min, max, length_from_afi(afi)) > 0) {
                 X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                           X509V3_R_EXTENSION_VALUE_ERROR);
-                X509V3_conf_err(val);
+                X509V3_conf_add_error_name_value(val);
                 goto err;
             }
             if (!X509v3_addr_add_range(addr, afi, safi, min, max)) {
@@ -1032,7 +1039,7 @@ static void *v2i_IPAddrBlocks(const struct v3_ext_method *method,
         default:
             X509V3err(X509V3_F_V2I_IPADDRBLOCKS,
                       X509V3_R_EXTENSION_VALUE_ERROR);
-            X509V3_conf_err(val);
+            X509V3_conf_add_error_name_value(val);
             goto err;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -160,11 +160,25 @@ int ccm_get_ctx_params(void *vctx, OSSL_PARAM params[])
 
     p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IV);
     if (p != NULL) {
-        if (ccm_get_ivlen(ctx) != p->data_size) {
+        if (ccm_get_ivlen(ctx) > p->data_size) {
             ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IVLEN);
             return 0;
         }
-        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, p->data_size)) {
+        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, p->data_size)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->iv, p->data_size)) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
+            return 0;
+        }
+    }
+
+    p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IV_STATE);
+    if (p != NULL) {
+        if (ccm_get_ivlen(ctx) > p->data_size) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IVLEN);
+            return 0;
+        }
+        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, p->data_size)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->iv, p->data_size)) {
             ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
             return 0;
         }
@@ -307,7 +321,7 @@ static int ccm_tls_cipher(PROV_CCM_CTX *ctx,
     size_t olen = 0;
 
     /* Encrypt/decrypt must be performed in place */
-    if (out != in || len < (EVP_CCM_TLS_EXPLICIT_IV_LEN + (size_t)ctx->m))
+    if (in == NULL || out != in || len < EVP_CCM_TLS_EXPLICIT_IV_LEN + ctx->m)
         goto err;
 
     /* If encrypting set explicit IV from sequence number (start of AAD) */

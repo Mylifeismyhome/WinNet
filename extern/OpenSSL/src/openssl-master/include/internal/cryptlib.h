@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -155,9 +155,13 @@ typedef struct ossl_ex_data_global_st {
 # define OPENSSL_CTX_RAND_CRNGT_INDEX               7
 # define OPENSSL_CTX_THREAD_EVENT_HANDLER_INDEX     8
 # define OPENSSL_CTX_FIPS_PROV_INDEX                9
-# define OPENSSL_CTX_SERIALIZER_STORE_INDEX        10
-# define OPENSSL_CTX_SELF_TEST_CB_INDEX            11
-# define OPENSSL_CTX_MAX_INDEXES                   12
+# define OPENSSL_CTX_ENCODER_STORE_INDEX        10
+# define OPENSSL_CTX_DECODER_STORE_INDEX      11
+# define OPENSSL_CTX_SELF_TEST_CB_INDEX            12
+# define OPENSSL_CTX_BIO_PROV_INDEX                13
+# define OPENSSL_CTX_GLOBAL_PROPERTIES             14
+# define OPENSSL_CTX_STORE_LOADER_STORE_INDEX      15
+# define OPENSSL_CTX_MAX_INDEXES                   16
 
 typedef struct openssl_ctx_method {
     void *(*new_func)(OPENSSL_CTX *ctx);
@@ -165,6 +169,8 @@ typedef struct openssl_ctx_method {
 } OPENSSL_CTX_METHOD;
 
 OPENSSL_CTX *openssl_ctx_get_concrete(OPENSSL_CTX *ctx);
+int openssl_ctx_is_default(OPENSSL_CTX *ctx);
+int openssl_ctx_is_global_default(OPENSSL_CTX *ctx);
 
 /* Functions to retrieve pointers to data by index */
 void *openssl_ctx_get_data(OPENSSL_CTX *, int /* index */,
@@ -237,5 +243,10 @@ static ossl_inline void ossl_sleep(unsigned long millis)
 
 char *sk_ASN1_UTF8STRING2text(STACK_OF(ASN1_UTF8STRING) *text, const char *sep,
                               size_t max_len);
+char *ipaddr_to_asc(unsigned char *p, int len);
+
+char *openssl_buf2hexstr_sep(const unsigned char *buf, long buflen, char sep);
+unsigned char *openssl_hexstr2buf_sep(const char *str, long *buflen,
+                                      const char sep);
 
 #endif

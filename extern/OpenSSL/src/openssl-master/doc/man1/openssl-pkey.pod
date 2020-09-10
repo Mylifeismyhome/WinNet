@@ -14,7 +14,7 @@ openssl-pkey - public or private key processing command
 
 B<openssl> B<pkey>
 [B<-help>]
-[B<-inform> B<DER>|B<PEM>]
+[B<-inform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-outform> B<DER>|B<PEM>]
 [B<-in> I<filename>]
 [B<-passin> I<arg>]
@@ -33,7 +33,7 @@ B<openssl> B<pkey>
 [B<-ec_param_enc> I<arg>]
 [B<-engine> I<id>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 =for openssl ifdef engine
 
@@ -50,9 +50,15 @@ converted between various forms and their components printed out.
 
 Print out a usage message.
 
-=item B<-inform> B<DER>|B<PEM>, B<-outform> B<DER>|B<PEM>
+=item B<-inform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
-The input and formats; the default is B<PEM>.
+The key input format; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
+See L<openssl(1)/Format Options> for details.
+
+=item B<-outform> B<DER>|B<PEM>
+
+The key output formats; the default is B<PEM>.
 See L<openssl(1)/Format Options> for details.
 
 =item B<-in> I<filename>
@@ -146,10 +152,11 @@ is currently not implemented in OpenSSL.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -199,9 +206,13 @@ L<openssl-dsa(1)>,
 L<openssl-genrsa(1)>,
 L<openssl-gendsa(1)>
 
+=head1 HISTORY
+
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 COPYRIGHT
 
-Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

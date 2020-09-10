@@ -18,9 +18,9 @@ defined:
 
 =over 4
 
-"provider=default"
+=item "provider=default"
 
-"fips=yes"
+=item "fips=yes"
 
 =back
 
@@ -35,7 +35,7 @@ make sure to get implementations of this provider and none other.
 The "fips=yes" property can be use to make sure only FIPS approved
 implementations are used for crypto operations.  This may also include
 other non-crypto support operations that are not in the fips provider,
-such as asymmetric key serializers,
+such as asymmetric key encoders,
 see L<OSSL_PROVIDER-default(7)/Asymmetric Key Management>.
 
 =head1 OPERATIONS AND ALGORITHMS
@@ -102,6 +102,16 @@ The OpenSSL FIPS provider supports these operations and algorithms:
 
 =item DH, see L<EVP_KEYEXCH-DH(7)>
 
+=item ECDH, see L<EVP_KEYEXCH-ECDH(7)>
+
+=item X25519, see L<EVP_KEYEXCH-X25519(7)>
+
+This has the property "provider=fips,fips=no"
+
+=item X448, see L<EVP_KEYEXCH-X448(7)>
+
+This has the property "provider=fips,fips=no"
+
 =back
 
 =head2 Asymmetric Signature
@@ -109,6 +119,12 @@ The OpenSSL FIPS provider supports these operations and algorithms:
 =over 4
 
 =item DSA, see L<EVP_KEYEXCH-DSA(7)>
+
+=item RSA, see L<EVP_SIGNATURE-RSA(7)>
+
+=item HMAC, see L<EVP_SIGNATURE-HMAC(7)>
+
+=item CMAC, see L<EVP_SIGNATURE-CMAC(7)>
 
 =back
 
@@ -245,11 +261,13 @@ Signature tests used with the "KAT_Signature" type.
 
 =item "ECDH" (B<OSSL_SELF_TEST_DESC_KA_ECDH>)
 
-=item "ECDSA" (B<OSSL_SELF_TEST_DESC_KA_ECDSA>)
+=item "DH" (B<OSSL_SELF_TEST_DESC_KA_DH>)
 
 Key agreement tests used with the "KAT_KA" type.
 
 =item "HKDF" (B<OSSL_SELF_TEST_DESC_KDF_HKDF>)
+
+=item "SSKDF" (B<OSSL_SELF_TEST_DESC_KDF_SSKDF>)
 
 Key Derivation Function tests used with the "KAT_KDF" type.
 
@@ -318,7 +336,7 @@ L<OSSL_SELF_TEST_set_callback(3)>,
 L<OSSL_SELF_TEST_new(3)>,
 L<OSSL_PARAM(3)>,
 L<openssl-core.h(7)>,
-L<openssl-core_numbers.h(7)>,
+L<openssl-core_dispatch.h(7)>,
 L<provider(7)>
 
 =head1 HISTORY

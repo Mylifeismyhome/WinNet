@@ -10,15 +10,30 @@
 #include <openssl/err.h>
 #include "crypto/ecx.h"
 
-ECX_KEY *ecx_key_new(size_t keylen, int haspubkey)
+ECX_KEY *ecx_key_new(OPENSSL_CTX *libctx, ECX_KEY_TYPE type, int haspubkey)
 {
     ECX_KEY *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL)
         return NULL;
 
+    ret->libctx = libctx;
     ret->haspubkey = haspubkey;
-    ret->keylen = keylen;
+    switch (type) {
+    case ECX_KEY_TYPE_X25519:
+        ret->keylen = X25519_KEYLEN;
+        break;
+    case ECX_KEY_TYPE_X448:
+        ret->keylen = X448_KEYLEN;
+        break;
+    case ECX_KEY_TYPE_ED25519:
+        ret->keylen = ED25519_KEYLEN;
+        break;
+    case ECX_KEY_TYPE_ED448:
+        ret->keylen = ED448_KEYLEN;
+        break;
+    }
+    ret->type = type;
     ret->references = 1;
 
     ret->lock = CRYPTO_THREAD_lock_new();

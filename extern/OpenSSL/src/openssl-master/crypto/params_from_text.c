@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -157,7 +157,7 @@ static int construct_from_text(OSSL_PARAM *to, const OSSL_PARAM *paramdef,
     *to = *paramdef;
     to->data = buf;
     to->data_size = buf_n;
-    to->return_size = 0;
+    to->return_size = OSSL_PARAM_UNMODIFIED;
 
     return 1;
 }

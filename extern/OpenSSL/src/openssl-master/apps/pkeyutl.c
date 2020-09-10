@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -15,6 +15,8 @@
 #include <openssl/evp.h>
 #include <sys/stat.h>
 
+DEFINE_STACK_OF_STRING()
+
 #define KEY_NONE        0
 #define KEY_PRIVKEY     1
 #define KEY_PUBKEY      2
@@ -23,7 +25,8 @@
 static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
                               const char *keyfile, int keyform, int key_type,
                               char *passinarg, int pkey_op, ENGINE *e,
-                              const int impl, int rawin, EVP_PKEY **ppkey);
+                              const int impl, int rawin, EVP_PKEY **ppkey,
+                              OPENSSL_CTX *libctx, const char *propq);
 
 static int setup_peer(EVP_PKEY_CTX *ctx, int peerform, const char *file,
                       ENGINE *e);
@@ -45,6 +48,7 @@ typedef enum OPTION_choice {
     OPT_DERIVE, OPT_SIGFILE, OPT_INKEY, OPT_PEERKEY, OPT_PASSIN,
     OPT_PEERFORM, OPT_KEYFORM, OPT_PKEYOPT, OPT_PKEYOPT_PASSIN, OPT_KDF,
     OPT_KDFLEN, OPT_R_ENUM, OPT_PROV_ENUM,
+    OPT_CONFIG,
     OPT_RAWIN, OPT_DIGEST
 } OPTION_CHOICE;
 
@@ -61,6 +65,7 @@ const OPTIONS pkeyutl_options[] = {
     {"encrypt", OPT_ENCRYPT, '-', "Encrypt input data with public key"},
     {"decrypt", OPT_DECRYPT, '-', "Decrypt input data with private key"},
     {"derive", OPT_DERIVE, '-', "Derive shared secret"},
+    OPT_CONFIG_OPTION,
 
     OPT_SECTION("Input"),
     {"in", OPT_IN, '<', "Input file - default stdin"},
@@ -69,11 +74,11 @@ const OPTIONS pkeyutl_options[] = {
     {"inkey", OPT_INKEY, 's', "Input private key file"},
     {"passin", OPT_PASSIN, 's', "Input file pass phrase source"},
     {"peerkey", OPT_PEERKEY, 's', "Peer key file used in key derivation"},
-    {"peerform", OPT_PEERFORM, 'E', "Peer key format - default PEM"},
+    {"peerform", OPT_PEERFORM, 'E', "Peer key format (DER/PEM/P12/ENGINE)"},
     {"certin", OPT_CERTIN, '-', "Input is a cert with a public key"},
     {"rev", OPT_REV, '-', "Reverse the order of the input buffer"},
     {"sigfile", OPT_SIGFILE, '<', "Signature file (verify operation only)"},
-    {"keyform", OPT_KEYFORM, 'E', "Private key format - default PEM"},
+    {"keyform", OPT_KEYFORM, 'E', "Private key format (ENGINE, other values ignored)"},
 
     OPT_SECTION("Output"),
     {"out", OPT_OUT, '>', "Output file - default stdout"},
@@ -98,6 +103,7 @@ const OPTIONS pkeyutl_options[] = {
 
 int pkeyutl_main(int argc, char **argv)
 {
+    CONF *conf = NULL;
     BIO *in = NULL, *out = NULL;
     ENGINE *e = NULL;
     EVP_PKEY_CTX *ctx = NULL;
@@ -120,6 +126,8 @@ int pkeyutl_main(int argc, char **argv)
     int rawin = 0;
     const EVP_MD *md = NULL;
     int filesize = -1;
+    OPENSSL_CTX *libctx = app_get0_libctx();
+    const char *propq = NULL;
 
     prog = opt_init(argc, argv, pkeyutl_options);
     while ((o = opt_next()) != OPT_EOF) {
@@ -155,15 +163,20 @@ int pkeyutl_main(int argc, char **argv)
             passinarg = opt_arg();
             break;
         case OPT_PEERFORM:
-            if (!opt_format(opt_arg(), OPT_FMT_PDE, &peerform))
+            if (!opt_format(opt_arg(), OPT_FMT_ANY, &peerform))
                 goto opthelp;
             break;
         case OPT_KEYFORM:
-            if (!opt_format(opt_arg(), OPT_FMT_PDE, &keyform))
+            if (!opt_format(opt_arg(), OPT_FMT_ANY, &keyform))
                 goto opthelp;
             break;
         case OPT_R_CASES:
             if (!opt_rand(o))
+                goto end;
+            break;
+        case OPT_CONFIG:
+            conf = app_load_config_modules(opt_arg());
+            if (conf == NULL)
                 goto end;
             break;
         case OPT_PROV_CASES:
@@ -279,7 +292,8 @@ int pkeyutl_main(int argc, char **argv)
         goto opthelp;
     }
     ctx = init_ctx(kdfalg, &keysize, inkey, keyform, key_type,
-                   passinarg, pkey_op, e, engine_impl, rawin, &pkey);
+                   passinarg, pkey_op, e, engine_impl, rawin, &pkey,
+                   libctx, propq);
     if (ctx == NULL) {
         BIO_printf(bio_err, "%s: Error initializing context\n", prog);
         ERR_print_errors(bio_err);
@@ -317,9 +331,18 @@ int pkeyutl_main(int argc, char **argv)
             if (passin == NULL) {
                 /* Get password interactively */
                 char passwd_buf[4096];
+                int r;
+
                 BIO_snprintf(passwd_buf, sizeof(passwd_buf), "Enter %s: ", opt);
-                EVP_read_pw_string(passwd_buf, sizeof(passwd_buf) - 1,
-                                   passwd_buf, 0);
+                r = EVP_read_pw_string(passwd_buf, sizeof(passwd_buf) - 1,
+                                       passwd_buf, 0);
+                if (r < 0) {
+                    if (r == -2)
+                        BIO_puts(bio_err, "user abort\n");
+                    else
+                        BIO_puts(bio_err, "entry failed\n");
+                    goto end;
+                }
                 passwd = OPENSSL_strdup(passwd_buf);
                 if (passwd == NULL) {
                     BIO_puts(bio_err, "out of memory\n");
@@ -482,6 +505,7 @@ int pkeyutl_main(int argc, char **argv)
     OPENSSL_free(sig);
     sk_OPENSSL_STRING_free(pkeyopts);
     sk_OPENSSL_STRING_free(pkeyopts_passin);
+    NCONF_free(conf);
     return ret;
 }
 
@@ -489,7 +513,8 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
                               const char *keyfile, int keyform, int key_type,
                               char *passinarg, int pkey_op, ENGINE *e,
                               const int engine_impl, int rawin,
-                              EVP_PKEY **ppkey)
+                              EVP_PKEY **ppkey,
+                              OPENSSL_CTX *libctx, const char *propq)
 {
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *ctx = NULL;
@@ -517,7 +542,7 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
         break;
 
     case KEY_CERT:
-        x = load_cert(keyfile, keyform, "Certificate");
+        x = load_cert(keyfile, FORMAT_UNDEF, "Certificate");
         if (x) {
             pkey = X509_get_pubkey(x);
             X509_free(x);
@@ -545,13 +570,19 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
                 goto end;
             }
         }
-        ctx = EVP_PKEY_CTX_new_id(kdfnid, impl);
+        if (impl != NULL)
+            ctx = EVP_PKEY_CTX_new_id(kdfnid, impl);
+        else
+            ctx = EVP_PKEY_CTX_new_from_name(libctx, kdfalg, propq);
     } else {
         if (pkey == NULL)
             goto end;
 
         *pkeysize = EVP_PKEY_size(pkey);
-        ctx = EVP_PKEY_CTX_new(pkey, impl);
+        if (impl != NULL)
+            ctx = EVP_PKEY_CTX_new(pkey, impl);
+        else
+            ctx = EVP_PKEY_CTX_new_from_pkey(libctx, pkey, propq);
         if (ppkey != NULL)
             *ppkey = pkey;
         EVP_PKEY_free(pkey);

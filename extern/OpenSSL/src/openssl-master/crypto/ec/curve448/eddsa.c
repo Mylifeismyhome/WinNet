@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2017-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2015-2016 Cryptography Research, Inc.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -169,7 +169,7 @@ c448_error_t c448_ed448_sign(
 
     {
         /*
-         * Schedule the secret key, First EDDSA_448_PRIVATE_BYTES is serialised
+         * Schedule the secret key, First EDDSA_448_PRIVATE_BYTES is serialized
          * secret scalar,next EDDSA_448_PRIVATE_BYTES bytes is the seed.
          */
         uint8_t expanded[EDDSA_448_PRIVATE_BYTES * 2];

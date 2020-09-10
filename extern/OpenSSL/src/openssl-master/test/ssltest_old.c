@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -65,6 +65,7 @@
 #ifndef OPENSSL_NO_CT
 # include <openssl/ct.h>
 #endif
+#include <openssl/provider.h>
 
 /*
  * Or gethostname won't be declared properly
@@ -79,6 +80,9 @@
 #else
 # include <unistd.h>
 #endif
+
+DEFINE_STACK_OF(SSL_COMP)
+DEFINE_STACK_OF_STRING()
 
 static SSL_CTX *s_ctx = NULL;
 static SSL_CTX *s_ctx2 = NULL;
@@ -725,6 +729,8 @@ static void sv_usage(void)
     fprintf(stderr, " -client_sess_in <file>     - Read the client session from a file\n");
     fprintf(stderr, " -should_reuse <number>     - The expected state of reusing the session\n");
     fprintf(stderr, " -no_ticket    - do not issue TLS session ticket\n");
+    fprintf(stderr, " -provider <name>    - Load the given provider into the library context\n");
+    fprintf(stderr, " -config <cnf>    - Load the given config file into the library context\n");
 }
 
 static void print_key_details(BIO *out, EVP_PKEY *key)
@@ -775,7 +781,7 @@ static void print_details(SSL *c_ssl, const char *prefix)
                prefix,
                SSL_get_version(c_ssl),
                SSL_CIPHER_get_version(ciph), SSL_CIPHER_get_name(ciph));
-    cert = SSL_get_peer_certificate(c_ssl);
+    cert = SSL_get0_peer_certificate(c_ssl);
     if (cert != NULL) {
         EVP_PKEY* pubkey = X509_get0_pubkey(cert);
 
@@ -783,7 +789,6 @@ static void print_details(SSL *c_ssl, const char *prefix)
             BIO_puts(bio_stdout, ", ");
             print_key_details(bio_stdout, pubkey);
         }
-        X509_free(cert);
     }
     if (SSL_get_peer_tmp_key(c_ssl, &pkey)) {
         BIO_puts(bio_stdout, ", temp key: ");
@@ -922,6 +927,9 @@ int main(int argc, char *argv[])
     SSL_CONF_CTX *s_cctx = NULL, *c_cctx = NULL, *s_cctx2 = NULL;
     STACK_OF(OPENSSL_STRING) *conf_args = NULL;
     char *arg = NULL, *argn = NULL;
+    const char *provider = NULL, *config = NULL;
+    OSSL_PROVIDER *thisprov = NULL, *defctxnull = NULL;
+    OPENSSL_CTX *libctx = NULL;
 
     verbose = 0;
     debug = 0;
@@ -1183,6 +1191,14 @@ int main(int argc, char *argv[])
             should_reuse = !!atoi(*(++argv));
         } else if (strcmp(*argv, "-no_ticket") == 0) {
             no_ticket = 1;
+        } else if (strcmp(*argv, "-provider") == 0) {
+            if (--argc < 1)
+                goto bad;
+            provider = *(++argv);
+        } else if (strcmp(*argv, "-config") == 0) {
+            if (--argc < 1)
+                goto bad;
+            config = *(++argv);
         } else {
             int rv;
             arg = argv[0];
@@ -1350,9 +1366,26 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    c_ctx = SSL_CTX_new(meth);
-    s_ctx = SSL_CTX_new(meth);
-    s_ctx2 = SSL_CTX_new(meth); /* no SSL_CTX_dup! */
+    if (provider != NULL) {
+        defctxnull = OSSL_PROVIDER_load(NULL, "null");
+        if (defctxnull == NULL)
+            goto end;
+        libctx = OPENSSL_CTX_new();
+        if (libctx == NULL)
+            goto end;
+
+        if (config != NULL
+                && !OPENSSL_CTX_load_config(libctx, config))
+            goto end;
+
+        thisprov = OSSL_PROVIDER_load(libctx, provider);
+        if (thisprov == NULL)
+            goto end;
+    }
+
+    c_ctx = SSL_CTX_new_with_libctx(libctx, NULL, meth);
+    s_ctx = SSL_CTX_new_with_libctx(libctx, NULL, meth);
+    s_ctx2 = SSL_CTX_new_with_libctx(libctx, NULL, meth); /* no SSL_CTX_dup! */
     if ((c_ctx == NULL) || (s_ctx == NULL) || (s_ctx2 == NULL)) {
         ERR_print_errors(bio_err);
         goto end;
@@ -1858,6 +1891,10 @@ int main(int argc, char *argv[])
 
     SSL_SESSION_free(server_sess);
     SSL_SESSION_free(client_sess);
+
+    OSSL_PROVIDER_unload(defctxnull);
+    OSSL_PROVIDER_unload(thisprov);
+    OPENSSL_CTX_free(libctx);
 
     BIO_free(bio_err);
     EXIT(ret);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -8,6 +8,9 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+
+/* We need to use some engine deprecated APIs */
+#define OPENSSL_SUPPRESS_DEPRECATED
 
 #include <stdio.h>
 #include <time.h>
@@ -24,6 +27,10 @@
 #include <openssl/engine.h>
 #include <openssl/trace.h>
 #include <internal/cryptlib.h>
+
+DEFINE_STACK_OF(X509)
+DEFINE_STACK_OF(SSL_COMP)
+DEFINE_STACK_OF_CONST(SSL_CIPHER)
 
 static MSG_PROCESS_RETURN tls_process_as_hello_retry_request(SSL *s, PACKET *pkt);
 static MSG_PROCESS_RETURN tls_process_encrypted_extensions(SSL *s, PACKET *pkt);
@@ -1851,12 +1858,20 @@ MSG_PROCESS_RETURN tls_process_server_certificate(SSL *s, PACKET *pkt)
         }
 
         certstart = certbytes;
-        x = d2i_X509(NULL, (const unsigned char **)&certbytes, cert_len);
+        x = X509_new_with_libctx(s->ctx->libctx, s->ctx->propq);
         if (x == NULL) {
+            SSLfatal(s, SSL_AD_DECODE_ERROR,
+                     SSL_F_TLS_PROCESS_SERVER_CERTIFICATE, ERR_R_MALLOC_FAILURE);
+            SSLerr(0, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
+        if (d2i_X509(&x, (const unsigned char **)&certbytes,
+                     cert_len) == NULL) {
             SSLfatal(s, SSL_AD_BAD_CERTIFICATE,
                      SSL_F_TLS_PROCESS_SERVER_CERTIFICATE, ERR_R_ASN1_LIB);
             goto err;
         }
+
         if (certbytes != (certstart + cert_len)) {
             SSLfatal(s, SSL_AD_DECODE_ERROR,
                      SSL_F_TLS_PROCESS_SERVER_CERTIFICATE,
@@ -2152,9 +2167,10 @@ static int tls_process_ske_dhe(SSL *s, PACKET *pkt, EVP_PKEY **pkey)
                  ERR_R_EVP_LIB);
         goto err;
     }
+    dh = NULL;
 
     if (!ssl_security(s, SSL_SECOP_TMP_DH, EVP_PKEY_security_bits(peer_tmp),
-                      0, dh)) {
+                      0, EVP_PKEY_get0_DH(peer_tmp))) {
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PROCESS_SKE_DHE,
                  SSL_R_DH_KEY_TOO_SMALL);
         goto err;
@@ -2340,7 +2356,7 @@ MSG_PROCESS_RETURN tls_process_key_exchange(SSL *s, PACKET *pkt)
 
         if (!tls1_lookup_md(s->ctx, s->s3.tmp.peer_sigalg, &md)) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_KEY_EXCHANGE,
-                     ERR_R_INTERNAL_ERROR);
+                     SSL_R_NO_SUITABLE_DIGEST_ALGORITHM);
             goto err;
         }
         if (SSL_USE_SIGALGS(s))
@@ -2361,7 +2377,10 @@ MSG_PROCESS_RETURN tls_process_key_exchange(SSL *s, PACKET *pkt)
             goto err;
         }
 
-        if (EVP_DigestVerifyInit(md_ctx, &pctx, md, NULL, pkey) <= 0) {
+        if (EVP_DigestVerifyInit_with_libctx(md_ctx, &pctx,
+                                             md == NULL ? NULL : EVP_MD_name(md),
+                                             s->ctx->libctx, s->ctx->propq,
+                                             pkey) <= 0) {
             SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_KEY_EXCHANGE,
                      ERR_R_EVP_LIB);
             goto err;
@@ -2544,7 +2563,7 @@ MSG_PROCESS_RETURN tls_process_certificate_request(SSL *s, PACKET *pkt)
      * after the CertificateVerify message has been received. This is because
      * in TLSv1.3 the CertificateRequest arrives before the Certificate message
      * but in TLSv1.2 it is the other way around. We want to make sure that
-     * SSL_get_peer_certificate() returns something sensible in
+     * SSL_get1_peer_certificate() returns something sensible in
      * client_cert_cb.
      */
     if (SSL_IS_TLS13(s) && s->post_handshake_auth != SSL_PHA_REQUESTED)
@@ -2560,6 +2579,7 @@ MSG_PROCESS_RETURN tls_process_new_session_ticket(SSL *s, PACKET *pkt)
     unsigned int sess_len;
     RAW_EXTENSION *exts = NULL;
     PACKET nonce;
+    EVP_MD *sha256 = NULL;
 
     PACKET_null_init(&nonce);
 
@@ -2675,20 +2695,28 @@ MSG_PROCESS_RETURN tls_process_new_session_ticket(SSL *s, PACKET *pkt)
      * other way is to set zero length session ID when the ticket is
      * presented and rely on the handshake to determine session resumption.
      * We choose the former approach because this fits in with assumptions
-     * elsewhere in OpenSSL. The session ID is set to the SHA256 (or SHA1 is
-     * SHA256 is disabled) hash of the ticket.
+     * elsewhere in OpenSSL. The session ID is set to the SHA256 hash of the
+     * ticket.
      */
+    sha256 = EVP_MD_fetch(s->ctx->libctx, "SHA2-256", s->ctx->propq);
+    if (sha256 == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_NEW_SESSION_TICKET,
+                 SSL_R_ALGORITHM_FETCH_FAILED);
+        goto err;
+    }
     /*
      * TODO(size_t): we use sess_len here because EVP_Digest expects an int
      * but s->session->session_id_length is a size_t
      */
     if (!EVP_Digest(s->session->ext.tick, ticklen,
                     s->session->session_id, &sess_len,
-                    EVP_sha256(), NULL)) {
+                    sha256, NULL)) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PROCESS_NEW_SESSION_TICKET,
                  ERR_R_EVP_LIB);
         goto err;
     }
+    EVP_MD_free(sha256);
+    sha256 = NULL;
     s->session->session_id_length = sess_len;
     s->session->not_resumable = 0;
 
@@ -2727,6 +2755,7 @@ MSG_PROCESS_RETURN tls_process_new_session_ticket(SSL *s, PACKET *pkt)
 
     return MSG_PROCESS_CONTINUE_READING;
  err:
+    EVP_MD_free(sha256);
     OPENSSL_free(exts);
     return MSG_PROCESS_ERROR;
 }
@@ -2990,7 +3019,8 @@ static int tls_construct_cke_rsa(SSL *s, WPACKET *pkt)
                  ERR_R_INTERNAL_ERROR);
         goto err;
     }
-    pctx = EVP_PKEY_CTX_new(pkey, NULL);
+
+    pctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, pkey, s->ctx->propq);
     if (pctx == NULL || EVP_PKEY_encrypt_init(pctx) <= 0
         || EVP_PKEY_encrypt(pctx, NULL, &enclen, pms, pmslen) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_RSA,
@@ -3039,9 +3069,9 @@ static int tls_construct_cke_dhe(SSL *s, WPACKET *pkt)
 {
 #ifndef OPENSSL_NO_DH
     DH *dh_clnt = NULL;
-    const BIGNUM *pub_key;
     EVP_PKEY *ckey = NULL, *skey = NULL;
     unsigned char *keybytes = NULL;
+    int prime_len;
 
     skey = s->s3.peer_tmp;
     if (skey == NULL) {
@@ -3071,15 +3101,19 @@ static int tls_construct_cke_dhe(SSL *s, WPACKET *pkt)
     }
 
     /* send off the data */
-    DH_get0_key(dh_clnt, &pub_key, NULL);
-    if (!WPACKET_sub_allocate_bytes_u16(pkt, BN_num_bytes(pub_key),
-                                        &keybytes)) {
+    prime_len = BN_num_bytes(DH_get0_p(dh_clnt));
+    /*
+     * For interoperability with some versions of the Microsoft TLS
+     * stack, we need to zero pad the DHE pub key to the same length
+     * as the prime, so use the length of the prime here.
+     */
+    if (!WPACKET_sub_allocate_bytes_u16(pkt, prime_len, &keybytes)
+            || BN_bn2binpad(DH_get0_pub_key(dh_clnt), keybytes, prime_len) < 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_DHE,
                  ERR_R_INTERNAL_ERROR);
         goto err;
     }
 
-    BN_bn2bin(pub_key, keybytes);
     EVP_PKEY_free(ckey);
 
     return 1;
@@ -3266,6 +3300,146 @@ static int tls_construct_cke_gost(SSL *s, WPACKET *pkt)
 #endif
 }
 
+#ifndef OPENSSL_NO_GOST
+int gost18_cke_cipher_nid(const SSL *s)
+{
+    if ((s->s3.tmp.new_cipher->algorithm_enc & SSL_MAGMA) != 0)
+        return NID_magma_ctr;
+    else if ((s->s3.tmp.new_cipher->algorithm_enc & SSL_KUZNYECHIK) != 0)
+        return NID_kuznyechik_ctr;
+
+    return NID_undef;
+}
+
+int gost_ukm(const SSL *s, unsigned char *dgst_buf)
+{
+    EVP_MD_CTX * hash = NULL;
+    unsigned int md_len;
+    const EVP_MD *md = ssl_evp_md_fetch(s->ctx->libctx, NID_id_GostR3411_2012_256, s->ctx->propq);
+
+    if (md == NULL)
+        return 0;
+
+    if ((hash = EVP_MD_CTX_new()) == NULL
+        || EVP_DigestInit(hash, md) <= 0
+        || EVP_DigestUpdate(hash, s->s3.client_random, SSL3_RANDOM_SIZE) <= 0
+        || EVP_DigestUpdate(hash, s->s3.server_random, SSL3_RANDOM_SIZE) <= 0
+        || EVP_DigestFinal_ex(hash, dgst_buf, &md_len) <= 0) {
+        EVP_MD_CTX_free(hash);
+        ssl_evp_md_free(md);
+        return 0;
+    }
+
+    EVP_MD_CTX_free(hash);
+    ssl_evp_md_free(md);
+    return 1;
+}
+#endif
+
+static int tls_construct_cke_gost18(SSL *s, WPACKET *pkt)
+{
+#ifndef OPENSSL_NO_GOST
+    /* GOST 2018 key exchange message creation */
+    unsigned char rnd_dgst[32], tmp[255];
+    EVP_PKEY_CTX *pkey_ctx = NULL;
+    X509 *peer_cert;
+    unsigned char *pms = NULL;
+    size_t pmslen = 0;
+    size_t msglen;
+    int cipher_nid = gost18_cke_cipher_nid(s);
+
+    if (cipher_nid == NID_undef) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (gost_ukm(s, rnd_dgst) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                      ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    /* Pre-master secret - random bytes */
+    pmslen = 32;
+    pms = OPENSSL_malloc(pmslen);
+    if (pms == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (RAND_bytes_ex(s->ctx->libctx, pms, (int)pmslen) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+     /* Get server certificate PKEY and create ctx from it */
+    peer_cert = s->session->peer;
+    if (peer_cert == NULL) {
+        SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+               SSL_R_NO_GOST_CERTIFICATE_SENT_BY_PEER);
+        return 0;
+    }
+
+    pkey_ctx = EVP_PKEY_CTX_new_from_pkey(s->ctx->libctx, X509_get0_pubkey(peer_cert), s->ctx->propq);
+    if (pkey_ctx == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (EVP_PKEY_encrypt_init(pkey_ctx) <= 0 ) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    };
+
+    /* Reuse EVP_PKEY_CTRL_SET_IV, make choice in engine code */
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_ENCRYPT,
+                          EVP_PKEY_CTRL_SET_IV, 32, rnd_dgst) < 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+
+    if (EVP_PKEY_CTX_ctrl(pkey_ctx, -1, EVP_PKEY_OP_ENCRYPT,
+                          EVP_PKEY_CTRL_CIPHER, cipher_nid, NULL) < 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+
+    msglen = 255;
+    if (EVP_PKEY_encrypt(pkey_ctx, tmp, &msglen, pms, pmslen) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 SSL_R_LIBRARY_BUG);
+        goto err;
+    }
+
+    if (!WPACKET_memcpy(pkt, tmp, msglen)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    EVP_PKEY_CTX_free(pkey_ctx);
+    s->s3.tmp.pms = pms;
+    s->s3.tmp.pmslen = pmslen;
+
+    return 1;
+ err:
+    EVP_PKEY_CTX_free(pkey_ctx);
+    OPENSSL_clear_free(pms, pmslen);
+    return 0;
+#else
+    SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CKE_GOST18,
+             ERR_R_INTERNAL_ERROR);
+    return 0;
+#endif
+}
+
 static int tls_construct_cke_srp(SSL *s, WPACKET *pkt)
 {
 #ifndef OPENSSL_NO_SRP
@@ -3321,6 +3495,9 @@ int tls_construct_client_key_exchange(SSL *s, WPACKET *pkt)
             goto err;
     } else if (alg_k & SSL_kGOST) {
         if (!tls_construct_cke_gost(s, pkt))
+            goto err;
+    } else if (alg_k & SSL_kGOST18) {
+        if (!tls_construct_cke_gost18(s, pkt))
             goto err;
     } else if (alg_k & SSL_kSRP) {
         if (!tls_construct_cke_srp(s, pkt))

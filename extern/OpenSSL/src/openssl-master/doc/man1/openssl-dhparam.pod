@@ -31,15 +31,12 @@ B<openssl dhparam>
 [B<-rand> I<files>]
 [B<-writerand> I<file>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 [I<numbits>]
 
 =for openssl ifdef dsaparam engine
 
 =head1 DESCRIPTION
-
-This command has been deprecated.
-The L<openssl-pkeyparam(1)> command should be used instead.
 
 This command is used to manipulate DH parameter files.
 
@@ -69,6 +66,8 @@ if this option is not present. The output filename should B<not> be the same
 as the input filename.
 
 =item B<-dsaparam>
+
+This option is deprecated.
 
 If this option is used, DSA rather than DH parameters are read or created;
 they are converted to DH format.  Otherwise, "strong" primes (such
@@ -117,6 +116,7 @@ be loaded by calling the get_dhNNNN() function.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-rand> I<files>, B<-writerand> I<file>
 
@@ -124,7 +124,7 @@ See L<openssl(1)/Random State Options> for details.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -152,11 +152,11 @@ L<openssl-dsaparam(1)>
 
 =head1 HISTORY
 
-This command was deprecated in OpenSSL 3.0.
+The B<-dsaparam> and B<-engine> options were deprecated in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

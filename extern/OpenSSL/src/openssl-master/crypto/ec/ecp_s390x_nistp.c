@@ -1,11 +1,17 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+
+/*
+ * EC_METHOD low level APIs are deprecated for public use, but still ok for
+ * internal use.
+ */
+#include "internal/deprecated.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -332,8 +338,6 @@ const EC_METHOD *EC_GFp_s390x_nistp##bits##_method(void)                \
         ec_GFp_simple_point_clear_finish,                               \
         ec_GFp_simple_point_copy,                                       \
         ec_GFp_simple_point_set_to_infinity,                            \
-        ec_GFp_simple_set_Jprojective_coordinates_GFp,                  \
-        ec_GFp_simple_get_Jprojective_coordinates_GFp,                  \
         ec_GFp_simple_point_set_affine_coordinates,                     \
         ec_GFp_simple_point_get_affine_coordinates,                     \
         NULL, /* point_set_compressed_coordinates */                    \

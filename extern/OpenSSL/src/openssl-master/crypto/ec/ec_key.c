@@ -26,24 +26,25 @@
 static int ecdsa_keygen_pairwise_test(EC_KEY *eckey, OSSL_CALLBACK *cb,
                                       void *cbarg);
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 EC_KEY *EC_KEY_new(void)
 {
-    return ec_key_new_method_int(NULL, NULL);
+    return ec_key_new_method_int(NULL, NULL, NULL);
 }
 #endif
 
-EC_KEY *EC_KEY_new_ex(OPENSSL_CTX *ctx)
+EC_KEY *EC_KEY_new_with_libctx(OPENSSL_CTX *ctx, const char *propq)
 {
-    return ec_key_new_method_int(ctx, NULL);
+    return ec_key_new_method_int(ctx, propq, NULL);
 }
 
-EC_KEY *EC_KEY_new_by_curve_name_ex(OPENSSL_CTX *ctx, int nid)
+EC_KEY *EC_KEY_new_by_curve_name_with_libctx(OPENSSL_CTX *ctx,
+                                             const char *propq, int nid)
 {
-    EC_KEY *ret = EC_KEY_new_ex(ctx);
+    EC_KEY *ret = EC_KEY_new_with_libctx(ctx, propq);
     if (ret == NULL)
         return NULL;
-    ret->group = EC_GROUP_new_by_curve_name_ex(ctx, nid);
+    ret->group = EC_GROUP_new_by_curve_name_with_libctx(ctx, propq, nid);
     if (ret->group == NULL) {
         EC_KEY_free(ret);
         return NULL;
@@ -56,10 +57,10 @@ EC_KEY *EC_KEY_new_by_curve_name_ex(OPENSSL_CTX *ctx, int nid)
     return ret;
 }
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 EC_KEY *EC_KEY_new_by_curve_name(int nid)
 {
-    return EC_KEY_new_by_curve_name_ex(NULL, nid);
+    return EC_KEY_new_by_curve_name_with_libctx(NULL, NULL, nid);
 }
 #endif
 
@@ -79,20 +80,21 @@ void EC_KEY_free(EC_KEY *r)
     if (r->meth != NULL && r->meth->finish != NULL)
         r->meth->finish(r);
 
-#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
     ENGINE_finish(r->engine);
 #endif
 
     if (r->group && r->group->meth->keyfinish)
         r->group->meth->keyfinish(r);
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
     CRYPTO_free_ex_data(CRYPTO_EX_INDEX_EC_KEY, r, &r->ex_data);
 #endif
     CRYPTO_THREAD_lock_free(r->lock);
     EC_GROUP_free(r->group);
     EC_POINT_free(r->pub_key);
     BN_clear_free(r->priv_key);
+    OPENSSL_free(r->propq);
 
     OPENSSL_clear_free((void *)r, sizeof(EC_KEY));
 }
@@ -108,7 +110,7 @@ EC_KEY *EC_KEY_copy(EC_KEY *dest, const EC_KEY *src)
             dest->meth->finish(dest);
         if (dest->group && dest->group->meth->keyfinish)
             dest->group->meth->keyfinish(dest);
-#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
         if (ENGINE_finish(dest->engine) == 0)
             return 0;
         dest->engine = NULL;
@@ -117,10 +119,10 @@ EC_KEY *EC_KEY_copy(EC_KEY *dest, const EC_KEY *src)
     dest->libctx = src->libctx;
     /* copy the parameters */
     if (src->group != NULL) {
-        const EC_METHOD *meth = EC_GROUP_method_of(src->group);
         /* clear the old group */
         EC_GROUP_free(dest->group);
-        dest->group = EC_GROUP_new_ex(src->libctx, meth);
+        dest->group = ec_group_new_with_libctx(src->libctx, src->propq,
+                                               src->group->meth);
         if (dest->group == NULL)
             return NULL;
         if (!EC_GROUP_copy(dest->group, src->group))
@@ -156,14 +158,14 @@ EC_KEY *EC_KEY_copy(EC_KEY *dest, const EC_KEY *src)
     dest->conv_form = src->conv_form;
     dest->version = src->version;
     dest->flags = src->flags;
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
     if (!CRYPTO_dup_ex_data(CRYPTO_EX_INDEX_EC_KEY,
                             &dest->ex_data, &src->ex_data))
         return NULL;
 #endif
 
     if (src->meth != dest->meth) {
-#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODE)
+#if !defined(OPENSSL_NO_ENGINE) && !defined(FIPS_MODULE)
         if (src->engine != NULL && ENGINE_init(src->engine) == 0)
             return NULL;
         dest->engine = src->engine;
@@ -181,7 +183,8 @@ EC_KEY *EC_KEY_copy(EC_KEY *dest, const EC_KEY *src)
 
 EC_KEY *EC_KEY_dup(const EC_KEY *ec_key)
 {
-    EC_KEY *ret = ec_key_new_method_int(ec_key->libctx, ec_key->engine);
+    EC_KEY *ret = ec_key_new_method_int(ec_key->libctx, ec_key->propq,
+                                        ec_key->engine);
 
     if (ret == NULL)
         return NULL;
@@ -312,9 +315,9 @@ int ec_generate_key(OPENSSL_CTX *libctx, EC_KEY *eckey, int pairwise_test)
 
     eckey->dirty_cnt++;
 
-#ifdef FIPS_MODE
+#ifdef FIPS_MODULE
     pairwise_test = 1;
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
     ok = 1;
     if (pairwise_test) {
@@ -346,14 +349,19 @@ int ec_key_simple_generate_key(EC_KEY *eckey)
 int ec_key_simple_generate_public_key(EC_KEY *eckey)
 {
     int ret;
+    BN_CTX *ctx = BN_CTX_new_ex(eckey->libctx);
+
+    if (ctx == NULL)
+        return 0;
 
     /*
      * See SP800-56AR3 5.6.1.2.2: Step (8)
      * pub_key = priv_key * G (where G is a point on the curve)
      */
     ret = EC_POINT_mul(eckey->group, eckey->pub_key, eckey->priv_key, NULL,
-                       NULL, NULL);
+                       NULL, ctx);
 
+    BN_CTX_free(ctx);
     if (ret == 1)
         eckey->dirty_cnt++;
 
@@ -398,7 +406,7 @@ static int ec_key_public_range_check(BN_CTX *ctx, const EC_KEY *key)
     if (!EC_POINT_get_affine_coordinates(key->group, key->pub_key, x, y, ctx))
         goto err;
 
-    if (EC_METHOD_get_field_type(key->group->meth) == NID_X9_62_prime_field) {
+    if (EC_GROUP_get_field_type(key->group) == NID_X9_62_prime_field) {
         if (BN_is_negative(x)
             || BN_cmp(x, key->group->field) >= 0
             || BN_is_negative(y)
@@ -632,6 +640,11 @@ OPENSSL_CTX *ec_key_get_libctx(const EC_KEY *key)
     return key->libctx;
 }
 
+const char *ec_key_get0_propq(const EC_KEY *key)
+{
+    return key->propq;
+}
+
 const EC_GROUP *EC_KEY_get0_group(const EC_KEY *key)
 {
     return key->group;
@@ -688,7 +701,7 @@ int EC_KEY_set_private_key(EC_KEY *key, const BIGNUM *priv_key)
      * This is important also because `BN_dup()` (and `BN_copy()`) do not
      * propagate the `BN_FLG_CONSTTIME` flag from the source `BIGNUM`, and
      * this brings an extra risk of inadvertently losing the flag, even when
-     * the called specifically set it.
+     * the caller specifically set it.
      *
      * The propagation has been turned on and off a few times in the past
      * years because in some conditions has shown unintended consequences in
@@ -781,12 +794,14 @@ void EC_KEY_set_asn1_flag(EC_KEY *key, int flag)
         EC_GROUP_set_asn1_flag(key->group, flag);
 }
 
+#ifndef OPENSSL_NO_DEPRECATED_3_0
 int EC_KEY_precompute_mult(EC_KEY *key, BN_CTX *ctx)
 {
     if (key->group == NULL)
         return 0;
     return EC_GROUP_precompute_mult(key->group, ctx);
 }
+#endif
 
 int EC_KEY_get_flags(const EC_KEY *key)
 {

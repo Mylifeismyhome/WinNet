@@ -1,7 +1,7 @@
 output_helpers.c
-Hinweis: Einlesen der Datei: C:\Rooky\extern\OpenSSL\src\openssl-master\test\testutil\output.h
-Hinweis: Einlesen der Datei:  D:\Programme\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\stdarg.h
-Hinweis: Einlesen der Datei:   D:\Programme\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\vcruntime.h
-Hinweis: Einlesen der Datei:    D:\Programme\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\sal.h
-Hinweis: Einlesen der Datei:     D:\Programme\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\concurrencysal.h
-Hinweis: Einlesen der Datei:    D:\Programme\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.24.28314\include\vadefs.h
+Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\test\testutil\output.h
+Note: including file:  C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdarg.h
+Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\sal.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\ConcurrencySal.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vadefs.h

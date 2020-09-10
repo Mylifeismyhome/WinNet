@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -17,14 +17,16 @@
 #include <openssl/bn.h>
 #include <openssl/engine.h>
 #include <openssl/obj_mac.h>
+#include <openssl/core_names.h>
 #include "internal/cryptlib.h"
 #include "internal/refcount.h"
+#include "crypto/evp.h"
 #include "crypto/dh.h"
 #include "dh_local.h"
 
 static DH *dh_new_intern(ENGINE *engine, OPENSSL_CTX *libctx);
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 int DH_set_method(DH *dh, const DH_METHOD *meth)
 {
     /*
@@ -59,9 +61,9 @@ DH *DH_new_method(ENGINE *engine)
 {
     return dh_new_intern(engine, NULL);
 }
-#endif /* !FIPS_MODE */
+#endif /* !FIPS_MODULE */
 
-DH *dh_new_with_ctx(OPENSSL_CTX *libctx)
+DH *dh_new_with_libctx(OPENSSL_CTX *libctx)
 {
     return dh_new_intern(NULL, libctx);
 }
@@ -85,7 +87,7 @@ static DH *dh_new_intern(ENGINE *engine, OPENSSL_CTX *libctx)
 
     ret->libctx = libctx;
     ret->meth = DH_get_default_method();
-#if !defined(FIPS_MODE) && !defined(OPENSSL_NO_ENGINE)
+#if !defined(FIPS_MODULE) && !defined(OPENSSL_NO_ENGINE)
     ret->flags = ret->meth->flags;  /* early default init */
     if (engine) {
         if (!ENGINE_init(engine)) {
@@ -106,10 +108,10 @@ static DH *dh_new_intern(ENGINE *engine, OPENSSL_CTX *libctx)
 
     ret->flags = ret->meth->flags;
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_DH, ret, &ret->ex_data))
         goto err;
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
     if ((ret->meth->init != NULL) && !ret->meth->init(ret)) {
         DHerr(0, ERR_R_INIT_FAIL);
@@ -138,7 +140,7 @@ void DH_free(DH *r)
 
     if (r->meth != NULL && r->meth->finish != NULL)
         r->meth->finish(r);
-#if !defined(FIPS_MODE)
+#if !defined(FIPS_MODULE)
 # if !defined(OPENSSL_NO_ENGINE)
     ENGINE_finish(r->engine);
 # endif
@@ -165,13 +167,13 @@ int DH_up_ref(DH *r)
     return ((i > 1) ? 1 : 0);
 }
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 int DH_set_ex_data(DH *d, int idx, void *arg)
 {
     return CRYPTO_set_ex_data(&d->ex_data, idx, arg);
 }
 
-void *DH_get_ex_data(DH *d, int idx)
+void *DH_get_ex_data(const DH *d, int idx)
 {
     return CRYPTO_get_ex_data(&d->ex_data, idx);
 }
@@ -207,7 +209,8 @@ void DH_get0_pqg(const DH *dh,
 
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 {
-    /* If the fields p and g in d are NULL, the corresponding input
+    /*
+     * If the fields p and g in d are NULL, the corresponding input
      * parameters MUST be non-NULL.  q may remain NULL.
      */
     if ((dh->params.p == NULL && p == NULL)
@@ -215,7 +218,9 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
         return 0;
 
     ffc_params_set0_pqg(&dh->params, p, q, g);
-    dh->params.nid = NID_undef;
+    dh_cache_named_group(dh);
+    if (q != NULL)
+        dh->length = BN_num_bits(q);
     /*
      * Check if this is a named group. If it finds a named group then the
      * 'q' and 'length' value are either already set or are set by the
@@ -258,6 +263,7 @@ int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
     if (priv_key != NULL) {
         BN_clear_free(dh->priv_key);
         dh->priv_key = priv_key;
+        dh->length = BN_num_bits(priv_key);
     }
 
     dh->dirty_cnt++;
@@ -304,12 +310,12 @@ void DH_set_flags(DH *dh, int flags)
     dh->flags |= flags;
 }
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 ENGINE *DH_get0_engine(DH *dh)
 {
     return dh->engine;
 }
-#endif /*FIPS_MODE */
+#endif /*FIPS_MODULE */
 
 FFC_PARAMS *dh_get0_params(DH *dh)
 {
@@ -318,4 +324,23 @@ FFC_PARAMS *dh_get0_params(DH *dh)
 int dh_get0_nid(const DH *dh)
 {
     return dh->params.nid;
+}
+
+int dh_ffc_params_fromdata(DH *dh, const OSSL_PARAM params[])
+{
+    int ret;
+    FFC_PARAMS *ffc;
+
+    if (dh == NULL)
+        return 0;
+    ffc = dh_get0_params(dh);
+    if (ffc == NULL)
+        return 0;
+
+    ret = ffc_params_fromdata(ffc, params);
+    if (ret) {
+        dh_cache_named_group(dh);
+        dh->dirty_cnt++;
+    }
+    return ret;
 }

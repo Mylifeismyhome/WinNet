@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -10,6 +10,8 @@
  */
 
 #include "cmp_testlib.h"
+
+DEFINE_STACK_OF(ASN1_UTF8STRING)
 
 typedef struct test_fixture {
     const char *test_case_name;

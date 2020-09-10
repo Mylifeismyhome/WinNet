@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -18,6 +18,11 @@
 #include <openssl/pkcs7.h>
 #include <openssl/pem.h>
 #include <openssl/objects.h>
+
+DEFINE_STACK_OF(X509_CRL)
+DEFINE_STACK_OF(X509)
+DEFINE_STACK_OF(X509_INFO)
+DEFINE_STACK_OF_STRING()
 
 static int add_certs_from_file(STACK_OF(X509) *stack, char *certfile);
 

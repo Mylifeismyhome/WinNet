@@ -31,7 +31,7 @@ B<openssl passwd>
 [B<-rand> I<files>]
 [B<-writerand> I<file>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 [I<password>]
 
 =for openssl ifdef crypt
@@ -113,7 +113,7 @@ See L<openssl(1)/Random State Options> for details.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -135,7 +135,7 @@ See L<openssl(1)/Provider Options>.
 
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

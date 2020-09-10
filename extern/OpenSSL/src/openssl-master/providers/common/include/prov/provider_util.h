@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -77,6 +77,21 @@ int ossl_prov_digest_copy(PROV_DIGEST *dst, const PROV_DIGEST *src);
 /* Query the digest and associated engine (if any) */
 const EVP_MD *ossl_prov_digest_md(const PROV_DIGEST *pd);
 ENGINE *ossl_prov_digest_engine(const PROV_DIGEST *pd);
+
+
+/*
+ * Set the various parameters on an EVP_MAC_CTX from the supplied arguments.
+ * If any of the supplied ciphername/mdname etc are NULL then the values
+ * from the supplied params (if non NULL) are used instead.
+ */
+int ossl_prov_set_macctx(EVP_MAC_CTX *macctx,
+                         const OSSL_PARAM params[],
+                         const char *ciphername,
+                         const char *mdname,
+                         const char *engine,
+                         const char *properties,
+                         const unsigned char *key,
+                         size_t keylen);
 
 /* MAC functions */
 /*

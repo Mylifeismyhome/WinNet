@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -57,7 +57,7 @@ const OPTIONS pkey_options[] = {
 
     OPT_SECTION("Input"),
     {"in", OPT_IN, 's', "Input key"},
-    {"inform", OPT_INFORM, 'f', "Input format (DER or PEM)"},
+    {"inform", OPT_INFORM, 'f', "Input format (DER/PEM/P12/ENGINE)"},
     {"passin", OPT_PASSIN, 's', "Input file pass phrase source"},
     {"pubin", OPT_PUBIN, '-',
      "Read public key from input (default is private key)"},

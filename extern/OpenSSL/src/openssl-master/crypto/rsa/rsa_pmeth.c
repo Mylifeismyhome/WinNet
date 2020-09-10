@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -382,6 +382,8 @@ static int check_padding_md(const EVP_MD *md, int padding)
         case NID_sha256:
         case NID_sha384:
         case NID_sha512:
+        case NID_sha512_224:
+        case NID_sha512_256:
         case NID_md5:
         case NID_md5_sha1:
         case NID_md2:

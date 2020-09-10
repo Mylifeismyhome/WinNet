@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2004-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -48,6 +48,8 @@
 #include <openssl/conf.h>
 #include <openssl/x509v3.h>
 #include "ext_dat.h"
+
+DEFINE_STACK_OF(CONF_VALUE)
 
 static int i2r_pci(X509V3_EXT_METHOD *method, PROXY_CERT_INFO_EXTENSION *ext,
                    BIO *out, int indent);
@@ -253,6 +255,7 @@ static PROXY_CERT_INFO_EXTENSION *r2i_pci(X509V3_EXT_METHOD *method,
     vals = X509V3_parse_list(value);
     for (i = 0; i < sk_CONF_VALUE_num(vals); i++) {
         CONF_VALUE *cnf = sk_CONF_VALUE_value(vals, i);
+
         if (!cnf->name || (*cnf->name != '@' && !cnf->value)) {
             X509V3err(X509V3_F_R2I_PCI,
                       X509V3_R_INVALID_PROXY_POLICY_SETTING);

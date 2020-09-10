@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -112,23 +112,22 @@ int EVP_MAC_init(EVP_MAC_CTX *ctx)
 
 int EVP_MAC_update(EVP_MAC_CTX *ctx, const unsigned char *data, size_t datalen)
 {
-    if (datalen == 0)
-        return 1;
     return ctx->meth->update(ctx->data, data, datalen);
 }
 
 int EVP_MAC_final(EVP_MAC_CTX *ctx,
                   unsigned char *out, size_t *outl, size_t outsize)
 {
-    int l = EVP_MAC_size(ctx);
+    size_t l;
+    int res = 1;
 
-    if (l < 0)
-        return 0;
+    if (out != NULL)
+        res = ctx->meth->final(ctx->data, out, &l, outsize);
+    else
+        l = EVP_MAC_size(ctx);
     if (outl != NULL)
         *outl = l;
-    if (out == NULL)
-        return 1;
-    return ctx->meth->final(ctx->data, out, outl, outsize);
+    return res;
 }
 
 /*

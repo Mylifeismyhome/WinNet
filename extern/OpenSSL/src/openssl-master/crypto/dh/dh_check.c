@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -44,7 +44,7 @@ int DH_check_params_ex(const DH *dh)
     return errflags == 0;
 }
 
-#ifdef FIPS_MODE
+#ifdef FIPS_MODULE
 int DH_check_params(const DH *dh, int *ret)
 {
     int nid;
@@ -62,8 +62,8 @@ int DH_check_params(const DH *dh, int *ret)
      * (2b) FFC domain params conform to FIPS-186-4 explicit domain param
      * validity tests.
      */
-    return ffc_params_FIPS186_4_validate(&dh->params, FFC_PARAM_TYPE_DH, NULL,
-                                         FFC_PARAMS_VALIDATE_ALL, ret, NULL);
+    return ffc_params_FIPS186_4_validate(dh->libctx, &dh->params,
+                                         FFC_PARAM_TYPE_DH, ret, NULL);
 }
 #else
 int DH_check_params(const DH *dh, int *ret)
@@ -102,7 +102,7 @@ int DH_check_params(const DH *dh, int *ret)
     BN_CTX_free(ctx);
     return ok;
 }
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 /*-
  * Check that p is a safe prime and
@@ -140,7 +140,7 @@ int DH_check_ex(const DH *dh)
 /* Note: according to documentation - this only checks the params */
 int DH_check(const DH *dh, int *ret)
 {
-#ifdef FIPS_MODE
+#ifdef FIPS_MODULE
     return DH_check_params(dh, ret);
 #else
     int ok = 0, r;
@@ -210,7 +210,7 @@ int DH_check(const DH *dh, int *ret)
     BN_CTX_end(ctx);
     BN_CTX_free(ctx);
     return ok;
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 }
 
 int DH_check_pub_key_ex(const DH *dh, const BIGNUM *pub_key)

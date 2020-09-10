@@ -1,11 +1,14 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
+
+/* We need to use some engine deprecated APIs */
+#define OPENSSL_SUPPRESS_DEPRECATED
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +35,8 @@
 # include <openssl/dsa.h>
 #endif
 
+DEFINE_STACK_OF(CONF_VALUE)
+DEFINE_STACK_OF_STRING()
 
 #define BITS            "default_bits"
 #define KEYFILE         "default_keyfile"
@@ -88,7 +93,7 @@ typedef enum OPTION_choice {
     OPT_PUBKEY, OPT_NEW, OPT_CONFIG, OPT_KEYFORM, OPT_IN, OPT_OUT,
     OPT_KEYOUT, OPT_PASSIN, OPT_PASSOUT, OPT_NEWKEY,
     OPT_PKEYOPT, OPT_SIGOPT, OPT_VFYOPT, OPT_BATCH, OPT_NEWHDR, OPT_MODULUS,
-    OPT_VERIFY, OPT_NODES, OPT_NOOUT, OPT_VERBOSE, OPT_UTF8,
+    OPT_VERIFY, OPT_NOENC, OPT_NODES, OPT_NOOUT, OPT_VERBOSE, OPT_UTF8,
     OPT_NAMEOPT, OPT_REQOPT, OPT_SUBJ, OPT_SUBJECT, OPT_TEXT, OPT_X509,
     OPT_MULTIVALUE_RDN, OPT_DAYS, OPT_SET_SERIAL, OPT_ADDEXT, OPT_EXTENSIONS,
     OPT_REQEXTS, OPT_PRECERT, OPT_MD,
@@ -113,7 +118,7 @@ const OPTIONS req_options[] = {
     {"config", OPT_CONFIG, '<', "Request template file"},
     {"section", OPT_SECTION, 's', "Config section to use (default \"req\")"},
     {"utf8", OPT_UTF8, '-', "Input characters are UTF8 (default ASCII)"},
-    {"nameopt", OPT_NAMEOPT, 's', "Various certificate name options"},
+    {"nameopt", OPT_NAMEOPT, 's', "Certificate subject/issuer name printing options"},
     {"reqopt", OPT_REQOPT, 's', "Various request text options"},
     {"text", OPT_TEXT, '-', "Text form of request"},
     {"x509", OPT_X509, '-',
@@ -122,7 +127,7 @@ const OPTIONS req_options[] = {
     {"subj", OPT_SUBJ, 's', "Set or modify request subject"},
     {"subject", OPT_SUBJECT, '-', "Output the request's subject"},
     {"multivalue-rdn", OPT_MULTIVALUE_RDN, '-',
-     "Enable support for multivalued RDNs"},
+     "Deprecated; multi-valued RDNs support is always on."},
     {"days", OPT_DAYS, 'p', "Number of days cert is valid for"},
     {"set_serial", OPT_SET_SERIAL, 's', "Serial number to use"},
     {"addext", OPT_ADDEXT, 's',
@@ -135,7 +140,7 @@ const OPTIONS req_options[] = {
 
     OPT_SECTION("Keys and Signing"),
     {"key", OPT_KEY, 's', "Private key to use"},
-    {"keyform", OPT_KEYFORM, 'f', "Key file format"},
+    {"keyform", OPT_KEYFORM, 'f', "Key file format (ENGINE, other values ignored)"},
     {"pubkey", OPT_PUBKEY, '-', "Output public key"},
     {"keyout", OPT_KEYOUT, '>', "File to send the key to"},
     {"passin", OPT_PASSIN, 's', "Private key password source"},
@@ -152,7 +157,8 @@ const OPTIONS req_options[] = {
     {"batch", OPT_BATCH, '-',
      "Do not ask anything during request generation"},
     {"verbose", OPT_VERBOSE, '-', "Verbose output"},
-    {"nodes", OPT_NODES, '-', "Don't encrypt the output key"},
+    {"noenc", OPT_NOENC, '-', "Don't encrypt private keys"},
+    {"nodes", OPT_NODES, '-', "Don't encrypt private keys; deprecated"},
     {"noout", OPT_NOOUT, '-', "Do not output REQ"},
     {"newhdr", OPT_NEWHDR, '-', "Output \"NEW\" in the header lines"},
     {"modulus", OPT_MODULUS, '-', "RSA modulus"},
@@ -228,7 +234,7 @@ static int duplicated(LHASH_OF(OPENSSL_STRING) *addexts, char *kv)
 int req_main(int argc, char **argv)
 {
     ASN1_INTEGER *serial = NULL;
-    BIO *in = NULL, *out = NULL;
+    BIO *out = NULL;
     ENGINE *e = NULL, *gen_eng = NULL;
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *genctx = NULL;
@@ -251,8 +257,8 @@ int req_main(int argc, char **argv)
     int ret = 1, x509 = 0, days = 0, i = 0, newreq = 0, verbose = 0;
     int pkey_type = -1, private = 0;
     int informat = FORMAT_PEM, outformat = FORMAT_PEM, keyform = FORMAT_PEM;
-    int modulus = 0, multirdn = 0, verify = 0, noout = 0, text = 0;
-    int nodes = 0, newhdr = 0, subject = 0, pubkey = 0, precert = 0;
+    int modulus = 0, multirdn = 1, verify = 0, noout = 0, text = 0;
+    int noenc = 0, newhdr = 0, subject = 0, pubkey = 0, precert = 0;
     long newkey = -1;
     unsigned long chtype = MBSTRING_ASC, reqflag = 0;
 
@@ -370,7 +376,8 @@ int req_main(int argc, char **argv)
             verify = 1;
             break;
         case OPT_NODES:
-            nodes = 1;
+        case OPT_NOENC:
+            noenc = 1;
             break;
         case OPT_NOOUT:
             noout = 1;
@@ -414,7 +421,7 @@ int req_main(int argc, char **argv)
             subj = opt_arg();
             break;
         case OPT_MULTIVALUE_RDN:
-            multirdn = 1;
+            /* obsolete */
             break;
         case OPT_ADDEXT:
             p = opt_arg();
@@ -467,7 +474,7 @@ int req_main(int argc, char **argv)
         BIO_printf(bio_err, "Using configuration from %s\n", template);
     if ((req_conf = app_load_config(template)) == NULL)
         goto end;
-    if (addext_bio) {
+    if (addext_bio != NULL) {
         if (verbose)
             BIO_printf(bio_err,
                        "Using additional configuration from command line\n");
@@ -588,12 +595,9 @@ int req_main(int argc, char **argv)
 
     if (keyfile != NULL) {
         pkey = load_key(keyfile, keyform, 0, passin, e, "Private Key");
-        if (pkey == NULL) {
-            /* load_key() has already printed an appropriate message */
+        if (pkey == NULL)
             goto end;
-        } else {
-            app_RAND_load_conf(req_conf, section);
-        }
+        app_RAND_load_conf(req_conf, section);
     }
 
     if (newreq && (pkey == NULL)) {
@@ -691,7 +695,7 @@ int req_main(int argc, char **argv)
         }
         if ((p != NULL) && (strcmp(p, "no") == 0))
             cipher = NULL;
-        if (nodes)
+        if (noenc)
             cipher = NULL;
 
         i = 0;
@@ -713,18 +717,9 @@ int req_main(int argc, char **argv)
     }
 
     if (!newreq) {
-        in = bio_open_default(infile, 'r', informat);
-        if (in == NULL)
+        req = load_csr(infile, informat, "X509 request");
+        if (req == NULL)
             goto end;
-
-        if (informat == FORMAT_ASN1)
-            req = d2i_X509_REQ_bio(in, NULL);
-        else
-            req = PEM_read_bio_X509_REQ(in, NULL, NULL, NULL);
-        if (req == NULL) {
-            BIO_printf(bio_err, "unable to load X509 request\n");
-            goto end;
-        }
     }
 
     if (newreq || x509) {
@@ -749,7 +744,8 @@ int req_main(int argc, char **argv)
         if (x509) {
             EVP_PKEY *tmppkey;
             X509V3_CTX ext_ctx;
-            if ((x509ss = X509_new()) == NULL)
+            if ((x509ss = X509_new_with_libctx(app_get0_libctx(),
+                                               app_get0_propq())) == NULL)
                 goto end;
 
             /* Set version to V3 */
@@ -990,7 +986,6 @@ int req_main(int argc, char **argv)
     NCONF_free(req_conf);
     NCONF_free(addext_conf);
     BIO_free(addext_bio);
-    BIO_free(in);
     BIO_free_all(out);
     EVP_PKEY_free(pkey);
     EVP_PKEY_CTX_free(genctx);
@@ -1083,7 +1078,7 @@ static int build_subject(X509_REQ *req, const char *subject, unsigned long chtyp
 {
     X509_NAME *n;
 
-    if ((n = parse_name(subject, chtype, multirdn)) == NULL)
+    if ((n = parse_name(subject, chtype, multirdn, "subject")) == NULL)
         return 0;
 
     if (!X509_REQ_set_subject_name(req, n)) {
@@ -1107,8 +1102,7 @@ static int prompt_info(X509_REQ *req,
     char *type, *value;
     const char *def;
     CONF_VALUE *v;
-    X509_NAME *subj;
-    subj = X509_REQ_get_subject_name(req);
+    X509_NAME *subj = X509_REQ_get_subject_name(req);
 
     if (!batch) {
         BIO_printf(bio_err,
@@ -1193,8 +1187,7 @@ static int prompt_info(X509_REQ *req,
                 return 0;
         }
         if (X509_NAME_entry_count(subj) == 0) {
-            BIO_printf(bio_err,
-                       "error, no objects specified in config file\n");
+            BIO_printf(bio_err, "error, no objects specified in config file\n");
             return 0;
         }
 

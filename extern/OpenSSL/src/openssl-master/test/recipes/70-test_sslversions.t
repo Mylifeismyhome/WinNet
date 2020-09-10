@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -95,6 +95,8 @@ ok(TLSProxy::Message->success()
 #Test 6: no TLSv1.3 or TLSv1.2 version in supported versions extension, but
 #TLSv1.1 and TLSv1.0 are present. Should just use TLSv1.1 and succeed
 $proxy->clear();
+$proxy->clientflags("-cipher DEFAULT:\@SECLEVEL=0");
+$proxy->ciphers("AES128-SHA:\@SECLEVEL=0");
 $testtype = TLS1_1_AND_1_0_ONLY;
 $proxy->start();
 $record = pop @{$proxy->record_list};

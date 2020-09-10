@@ -17,9 +17,9 @@ B<openssl> B<x509>
 [B<-help>]
 [B<-inform> B<DER>|B<PEM>]
 [B<-outform> B<DER>|B<PEM>]
-[B<-keyform> B<DER>|B<PEM>|B<ENGINE>]
-[B<-CAform> B<DER>|B<PEM>]
-[B<-CAkeyform> B<DER>|B<PEM>|B<ENGINE>]
+[B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
+[B<-CAform> B<DER>|B<PEM>|B<P12>]
+[B<-CAkeyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-in> I<filename>]
 [B<-out> I<filename>]
 [B<-serial>]
@@ -84,7 +84,7 @@ B<openssl> B<x509>
 [B<-writerand> I<file>]
 [B<-engine> I<id>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 =for openssl ifdef engine subject_hash_old issuer_hash_old
 
@@ -108,13 +108,18 @@ various sections.
 
 Print out a usage message.
 
-=item B<-inform> B<DER>|B<PEM>, B<-outform> B<DER>|B<PEM>
+=item B<-inform> B<DER>|B<PEM>
 
-The input and formats; the default is B<PEM>.
+The CSR input format; the default is B<PEM>.
 See L<openssl(1)/Format Options> for details.
 
-The input is normally an X.509 certificate, but this can change if other
-options such as B<-req> are used.
+The input is normally an X.509 certificate file of any format,
+but this can change if other options such as B<-req> are used.
+
+B<-outform> B<DER>|B<PEM>
+
+The output format; the default is B<PEM>.
+See L<openssl(1)/Format Options> for details.
 
 =item B<-in> I<filename>
 
@@ -147,10 +152,11 @@ Cannot be used with the B<-days> option.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -373,8 +379,7 @@ can thus behave like a "mini CA".
 =item B<-signkey> I<arg>
 
 This option causes the input file to be self signed using the supplied
-private key or engine. The private key's format is specified with the
-B<-keyform> option.
+private key or engine.
 
 It sets the issuer name to the subject name (i.e., makes it self-issued)
 and changes the public key to the supplied value (unless overridden by
@@ -400,7 +405,8 @@ Names and values of these options are algorithm-specific.
 
 =item B<-passin> I<arg>
 
-The key password source. For more information about the format of I<arg>
+The key and certificate file password source.
+For more information about the format of I<arg>
 see L<openssl(1)/Pass Phrase Options>.
 
 =item B<-clrext>
@@ -410,14 +416,21 @@ certificate is being created from another certificate (for example with
 the B<-signkey> or the B<-CA> options). Normally all extensions are
 retained.
 
-=item B<-keyform> B<DER>|B<PEM>|B<ENGINE>
+=item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
 The key format; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
 See L<openssl(1)/Format Options> for details.
 
-=item B<-CAform> B<DER>|B<PEM>, B<-CAkeyform> B<DER>|B<PEM>|B<ENGINE>
+=item B<-CAform> B<DER>|B<PEM>|B<P12>,
 
-The format for the CA certificate and key; the default is B<PEM>.
+The format for the CA certificate.
+This option has no effect and is retained for backward compatibility.
+
+=item B<-CAkeyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
+
+The format for the CA key; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
 See L<openssl(1)/Format Options> for details.
 
 =item B<-days> I<arg>
@@ -520,16 +533,20 @@ self-signed, for instance when the key cannot be used for signing, such as DH.
 It can also be used in conjunction with b<-new> and B<-subj> to directly
 generate a certificate containing any desired public key.
 
-The format of the key file can be specified using the B<-keyform> option.
-
 =item B<-subj> I<arg>
 
 When a certificate is created set its subject name to the given value.
+
 The arg must be formatted as C</type0=value0/type1=value1/type2=...>.
-Keyword characters may be escaped by \ (backslash), and whitespace is retained.
+Special characters may be escaped by C<\> (backslash), whitespace is retained.
 Empty values are permitted, but the corresponding type will not be included
-in the certificate. Giving a single C</> will lead to an empty sequence of RDNs
-(a NULL subject DN).
+in the certificate.
+Giving a single C</> will lead to an empty sequence of RDNs (a NULL-DN).
+Multi-valued RDNs can be formed by placing a C<+> character instead of a C</>
+between the AttributeValueAssertions (AVAs) that specify the members of the set.
+Example:
+
+C</DC=org/DC=OpenSSL/DC=users/UID=123456+CN=John Doe>
 
 Unless the B<-CA> option is given the issuer is set to the same value.
 
@@ -839,9 +856,16 @@ of the distinguished name. In OpenSSL 1.0.0 and later it is based on a canonical
 version of the DN using SHA1. This means that any directories using the old
 form must have their links rebuilt using L<openssl-rehash(1)> or similar.
 
+All B<-keyform> and B<-CAkeyform> values except B<ENGINE>
+have become obsolete in OpenSSL 3.0.0 and have no effect.
+
+The B<-CAform> option has become obsolete in OpenSSL 3.0.0 and has no effect.
+
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

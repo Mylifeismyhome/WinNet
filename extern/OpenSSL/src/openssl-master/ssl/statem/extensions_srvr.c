@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -11,6 +11,10 @@
 #include "../ssl_local.h"
 #include "statem_local.h"
 #include "internal/cryptlib.h"
+
+DEFINE_STACK_OF(SRTP_PROTECTION_PROFILE)
+DEFINE_STACK_OF(OCSP_RESPID)
+DEFINE_STACK_OF(X509_EXTENSION)
 
 #define COOKIE_STATE_FORMAT_VERSION     0
 
@@ -767,10 +771,11 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 
     /* Verify the HMAC of the cookie */
     hctx = EVP_MD_CTX_create();
-    pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL,
-                                        s->session_ctx->ext.cookie_hmac_key,
-                                        sizeof(s->session_ctx->ext
-                                               .cookie_hmac_key));
+    pkey = EVP_PKEY_new_raw_private_key_with_libctx(s->ctx->libctx, "HMAC",
+                                                    s->ctx->propq,
+                                                    s->session_ctx->ext.cookie_hmac_key,
+                                                    sizeof(s->session_ctx->ext
+                                                           .cookie_hmac_key));
     if (hctx == NULL || pkey == NULL) {
         EVP_MD_CTX_free(hctx);
         EVP_PKEY_free(pkey);
@@ -780,7 +785,8 @@ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     }
 
     hmaclen = SHA256_DIGEST_LENGTH;
-    if (EVP_DigestSignInit(hctx, NULL, EVP_sha256(), NULL, pkey) <= 0
+    if (EVP_DigestSignInit_with_libctx(hctx, NULL, "SHA2-256",
+                                       s->ctx->libctx, s->ctx->propq, pkey) <= 0
             || EVP_DigestSign(hctx, hmac, &hmaclen, data,
                               rawlen - SHA256_DIGEST_LENGTH) <= 0
             || hmaclen != SHA256_DIGEST_LENGTH) {
@@ -1419,6 +1425,7 @@ EXT_RETURN tls_construct_stoc_supported_groups(SSL *s, WPACKET *pkt,
 {
     const uint16_t *groups;
     size_t numgroups, i, first = 1;
+    int version;
 
     /* s->s3.group_id is non zero if we accepted a key_share */
     if (s->s3.group_id == 0)
@@ -1433,10 +1440,11 @@ EXT_RETURN tls_construct_stoc_supported_groups(SSL *s, WPACKET *pkt,
     }
 
     /* Copy group ID if supported */
+    version = SSL_version(s);
     for (i = 0; i < numgroups; i++) {
         uint16_t group = groups[i];
 
-        if (tls_valid_group(s, group, SSL_version(s))
+        if (tls_valid_group(s, group, version, version)
                 && tls_group_allowed(s, group, SSL_SECOP_CURVE_SUPPORTED)) {
             if (first) {
                 /*
@@ -1628,7 +1636,9 @@ EXT_RETURN tls_construct_stoc_etm(SSL *s, WPACKET *pkt, unsigned int context,
     if (s->s3.tmp.new_cipher->algorithm_mac == SSL_AEAD
         || s->s3.tmp.new_cipher->algorithm_enc == SSL_RC4
         || s->s3.tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT
-        || s->s3.tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT12) {
+        || s->s3.tmp.new_cipher->algorithm_enc == SSL_eGOST2814789CNT12
+        || s->s3.tmp.new_cipher->algorithm_enc == SSL_MAGMA
+        || s->s3.tmp.new_cipher->algorithm_enc == SSL_KUZNYECHIK) {
         s->ext.use_etm = 0;
         return EXT_RETURN_NOT_SENT;
     }
@@ -1854,17 +1864,20 @@ EXT_RETURN tls_construct_stoc_cookie(SSL *s, WPACKET *pkt, unsigned int context,
 
     /* HMAC the cookie */
     hctx = EVP_MD_CTX_create();
-    pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL,
-                                        s->session_ctx->ext.cookie_hmac_key,
-                                        sizeof(s->session_ctx->ext
-                                               .cookie_hmac_key));
+    pkey = EVP_PKEY_new_raw_private_key_with_libctx(s->ctx->libctx, "HMAC",
+                                                    s->ctx->propq,
+                                                    s->session_ctx->ext.cookie_hmac_key,
+                                                    sizeof(s->session_ctx->ext
+                                                           .cookie_hmac_key));
     if (hctx == NULL || pkey == NULL) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_COOKIE,
                  ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
-    if (EVP_DigestSignInit(hctx, NULL, EVP_sha256(), NULL, pkey) <= 0
+    if (EVP_DigestSignInit_with_libctx(hctx, NULL, "SHA2-256",
+                                       s->ctx->libctx, s->ctx->propq,
+                                       pkey) <= 0
             || EVP_DigestSign(hctx, hmac, &hmaclen, cookie,
                               totcookielen) <= 0) {
         SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_COOKIE,

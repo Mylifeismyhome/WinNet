@@ -38,12 +38,14 @@ B<openssl> B<ca>
 [B<-md> I<arg>]
 [B<-policy> I<arg>]
 [B<-keyfile> I<arg>]
-[B<-keyform> B<DER>|B<PEM>]
+[B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>]
 [B<-key> I<arg>]
 [B<-passin> I<arg>]
 [B<-cert> I<file>]
+[B<-certform> B<DER>|B<PEM>|B<P12>]
 [B<-selfsign>]
 [B<-in> I<file>]
+[B<-inform> B<DER>|<PEM>]
 [B<-out> I<file>]
 [B<-notext>]
 [B<-outdir> I<dir>]
@@ -67,7 +69,7 @@ B<openssl> B<ca>
 [B<-writerand> I<file>]
 [B<-engine> I<id>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 [I<certreq>...]
 
 =for openssl ifdef engine
@@ -112,6 +114,11 @@ B<default_ca> in the B<ca> section).
 An input filename containing a single certificate request to be
 signed by the CA.
 
+=item B<-inform> B<DER>|B<PEM>
+
+The format of the data in CSR input files.
+The default is PEM.
+
 =item B<-ss_cert> I<filename>
 
 A single self-signed certificate to be signed by the CA.
@@ -139,17 +146,23 @@ The directory to output certificates to. The certificate will be
 written to a filename consisting of the serial number in hex with
 F<.pem> appended.
 
-=item B<-cert>
+=item B<-cert> I<filename>
 
-The CA certificate file.
+The CA certificate, which must match with B<-keyfile>.
+
+=item B<-certform> B<DER>|B<PEM>|B<P12>
+
+The format of the data in certificate input files.
+This option has no effect and is retained for backward compatibility only.
 
 =item B<-keyfile> I<filename>
 
-The private key to sign requests with.
+The CA private key to sign requests with. This must match with B<-cert>.
 
-=item B<-keyform> B<DER>|B<PEM>
+=item B<-keyform> B<DER>|B<PEM>|B<P12>|B<ENGINE>
 
-The format of the private key file; the default is B<PEM>.
+The format of the private key input file; the default is B<PEM>.
+The only value with effect is B<ENGINE>; all others have become obsolete.
 See L<openssl(1)/Format Options> for details.
 
 =item B<-sigopt> I<nm>:I<v>
@@ -174,6 +187,7 @@ The password used to encrypt the private key. Since on some
 systems the command line arguments are visible (e.g., when using
 L<ps(1)> on Unix),
 this option should be used with caution.
+Better use B<-passin>.
 
 =item B<-selfsign>
 
@@ -191,7 +205,8 @@ self-signed certificate.
 
 =item B<-passin> I<arg>
 
-The key password source. For more information about the format of B<arg>
+The key and certificate password source.
+For more information about the format of B<arg>
 see L<openssl(1)/Pass Phrase Options>.
 
 =item B<-notext>
@@ -248,7 +263,7 @@ DNs match the order of the request. This is not needed for Xenroll.
 =item B<-noemailDN>
 
 The DN of a certificate can contain the EMAIL field if present in the
-request DN, however it is good policy just having the e-mail set into
+request DN, however, it is good policy just having the e-mail set into
 the altName extension of the certificate. When this option is set the
 EMAIL field is removed from the certificate' subject and set only in
 the, eventually present, extensions. The B<email_in_dn> keyword can be
@@ -278,11 +293,17 @@ used).
 =item B<-subj> I<arg>
 
 Supersedes subject name given in the request.
+
 The arg must be formatted as C</type0=value0/type1=value1/type2=...>.
-Keyword characters may be escaped by C<\> (backslash), and whitespace is
-retained.
+Special characters may be escaped by C<\> (backslash), whitespace is retained.
 Empty values are permitted, but the corresponding type will not be included
 in the resulting certificate.
+Giving a single C</> will lead to an empty sequence of RDNs (a NULL-DN).
+Multi-valued RDNs can be formed by placing a C<+> character instead of a C</>
+between the AttributeValueAssertions (AVAs) that specify the members of the set.
+Example:
+
+C</DC=org/DC=OpenSSL/DC=users/UID=123456+CN=John Doe>
 
 =item B<-utf8>
 
@@ -306,12 +327,7 @@ This overrides any option or configuration to use a serial number file.
 
 =item B<-multivalue-rdn>
 
-This option causes the -subj argument to be interpreted with full
-support for multivalued RDNs. Example:
-
-C</DC=org/DC=OpenSSL/DC=users/UID=123456+CN=John Doe>
-
-If B<-multi-rdn> is not used then the UID value is C<123456+CN=John Doe>.
+This option has been deprecated and has no effect.
 
 =item B<-rand> I<files>, B<-writerand> I<file>
 
@@ -320,10 +336,11 @@ See L<openssl(1)/Random State Options> for details.
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -435,8 +452,8 @@ any) used.
 
 This specifies a file containing additional B<OBJECT IDENTIFIERS>.
 Each line of the file should consist of the numerical form of the
-object identifier followed by white space then the short name followed
-by white space and finally the long name.
+object identifier followed by whitespace then the short name followed
+by whitespace and finally the long name.
 
 =item B<oid_section>
 
@@ -792,6 +809,14 @@ retained mainly for compatibility reasons.
 
 The B<-section> option was added in OpenSSL 3.0.0.
 
+The B<-certform> and B<-multivalue-rdn> options
+have become obsolete in OpenSSL 3.0.0 and have no effect.
+
+All B<-keyform> values except B<ENGINE> have become obsolete in OpenSSL 3.0.0
+and have no effect.
+
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 SEE ALSO
 
 L<openssl(1)>,
@@ -804,7 +829,7 @@ L<x509v3_config(5)>
 
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

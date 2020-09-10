@@ -31,7 +31,7 @@ B<-query>
 [B<-rand> I<files>]
 [B<-writerand> I<file>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 B<openssl> B<ts>
 B<-reply>
@@ -45,14 +45,13 @@ B<-reply>
 [B<-chain> I<certs_file.pem>]
 [B<-tspolicy> I<object_id>]
 [B<-in> I<response.tsr>]
-[B<-untrusted> I<file>]
 [B<-token_in>]
 [B<-out> I<response.tsr>]
 [B<-token_out>]
 [B<-text>]
 [B<-engine> I<id>]
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 B<openssl> B<ts>
 B<-verify>
@@ -61,6 +60,7 @@ B<-verify>
 [B<-queryfile> I<request.tsq>]
 [B<-in> I<response.tsr>]
 [B<-token_in>]
+[B<-untrusted> I<file>]
 [B<-CAfile> I<file>]
 [B<-CApath> I<dir>]
 [B<-CAstore> I<uri>]
@@ -96,7 +96,7 @@ B<-verify>
 [B<-issuer_checks>]
 
 [B<-provider> I<name>]
-[B<-provider_path> I<path>]
+[B<-provider-path> I<path>]
 
 =for openssl ifdef engine
 
@@ -130,8 +130,8 @@ value that it had sent to the TSA.
 
 =back
 
-There is one DER encoded protocol data unit defined for transporting a time
-stamp request to the TSA and one for sending the timestamp response
+There is one DER encoded protocol data unit defined for transporting a
+timestamp request to the TSA and one for sending the timestamp response
 back to the client. This command has three main functions:
 creating a timestamp request based on a data file,
 creating a timestamp response based on a request, verifying if a
@@ -331,10 +331,11 @@ instead of DER. (Optional)
 =item B<-engine> I<id>
 
 See L<openssl(1)/Engine Options>.
+This option is deprecated.
 
 =item B<-provider> I<name>
 
-=item B<-provider_path> I<path>
+=item B<-provider-path> I<path>
 
 See L<openssl(1)/Provider Options>.
 
@@ -342,8 +343,8 @@ See L<openssl(1)/Provider Options>.
 
 =head2 Timestamp Response verification
 
-The B<-verify> command is for verifying if a timestamp response or time
-stamp token is valid and matches a particular timestamp request or
+The B<-verify> command is for verifying if a timestamp response or
+timestamp token is valid and matches a particular timestamp request or
 data file. The B<-verify> command does not use the configuration file.
 
 =over 4
@@ -430,8 +431,8 @@ section can be overridden with the B<-section> command line switch. (Optional)
 
 This specifies a file containing additional B<OBJECT IDENTIFIERS>.
 Each line of the file should consist of the numerical form of the
-object identifier followed by white space then the short name followed
-by white space and finally the long name. (Optional)
+object identifier followed by whitespace then the short name followed
+by whitespace and finally the long name. (Optional)
 
 =item B<oid_section>
 
@@ -684,6 +685,8 @@ seeding mechanism. The new seeding mechanism makes it unnecessary to
 define a RANDFILE for saving and restoring randomness. This option is
 retained mainly for compatibility reasons.
 
+The B<-engine> option was deprecated in OpenSSL 3.0.
+
 =head1 SEE ALSO
 
 L<openssl(1)>,
@@ -697,7 +700,7 @@ L<ossl_store-file(7)>
 
 =head1 COPYRIGHT
 
-Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

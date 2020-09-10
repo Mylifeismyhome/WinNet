@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2016 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -16,9 +16,6 @@ use OpenSSL::Test::Utils;
 
 setup("test_rsa");
 
-#plan skip_all => "RSA command line tool not built"
-#    if disabled("deprecated-3.0");
-
 plan tests => 10;
 
 require_ok(srctop_file('test', 'recipes', 'tconversion.pl'));
@@ -27,11 +24,7 @@ ok(run(test(["rsa_test"])), "running rsatest");
 
 run_rsa_tests("pkey");
 
- SKIP: {
-    skip "Skipping rsa command line tests", 4 if disabled('deprecated-3.0');
-
-    run_rsa_tests("rsa");
-}
+run_rsa_tests("rsa");
 
 sub run_rsa_tests {
     my $cmd = shift;

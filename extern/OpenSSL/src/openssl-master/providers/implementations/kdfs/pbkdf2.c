@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -35,12 +35,14 @@
 #define KDF_PBKDF2_MIN_ITERATIONS 1000
 #define KDF_PBKDF2_MIN_SALT_LEN   (128 / 8)
 
-static OSSL_OP_kdf_newctx_fn kdf_pbkdf2_new;
-static OSSL_OP_kdf_freectx_fn kdf_pbkdf2_free;
-static OSSL_OP_kdf_reset_fn kdf_pbkdf2_reset;
-static OSSL_OP_kdf_derive_fn kdf_pbkdf2_derive;
-static OSSL_OP_kdf_settable_ctx_params_fn kdf_pbkdf2_settable_ctx_params;
-static OSSL_OP_kdf_set_ctx_params_fn kdf_pbkdf2_set_ctx_params;
+static OSSL_FUNC_kdf_newctx_fn kdf_pbkdf2_new;
+static OSSL_FUNC_kdf_freectx_fn kdf_pbkdf2_free;
+static OSSL_FUNC_kdf_reset_fn kdf_pbkdf2_reset;
+static OSSL_FUNC_kdf_derive_fn kdf_pbkdf2_derive;
+static OSSL_FUNC_kdf_settable_ctx_params_fn kdf_pbkdf2_settable_ctx_params;
+static OSSL_FUNC_kdf_set_ctx_params_fn kdf_pbkdf2_set_ctx_params;
+static OSSL_FUNC_kdf_gettable_ctx_params_fn kdf_pbkdf2_gettable_ctx_params;
+static OSSL_FUNC_kdf_get_ctx_params_fn kdf_pbkdf2_get_ctx_params;
 
 static int  pbkdf2_derive(const char *pass, size_t passlen,
                           const unsigned char *salt, int saltlen, uint64_t iter,
@@ -95,8 +97,10 @@ static void kdf_pbkdf2_free(void *vctx)
 static void kdf_pbkdf2_reset(void *vctx)
 {
     KDF_PBKDF2 *ctx = (KDF_PBKDF2 *)vctx;
+    void *provctx = ctx->provctx;
 
     kdf_pbkdf2_cleanup(ctx);
+    ctx->provctx = provctx;
     kdf_pbkdf2_init(ctx);
 }
 
@@ -196,7 +200,7 @@ static int kdf_pbkdf2_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     return 1;
 }
 
-static const OSSL_PARAM *kdf_pbkdf2_settable_ctx_params(void)
+static const OSSL_PARAM *kdf_pbkdf2_settable_ctx_params(ossl_unused void *p_ctx)
 {
     static const OSSL_PARAM known_settable_ctx_params[] = {
         OSSL_PARAM_utf8_string(OSSL_KDF_PARAM_PROPERTIES, NULL, 0),
@@ -219,7 +223,7 @@ static int kdf_pbkdf2_get_ctx_params(void *vctx, OSSL_PARAM params[])
     return -2;
 }
 
-static const OSSL_PARAM *kdf_pbkdf2_gettable_ctx_params(void)
+static const OSSL_PARAM *kdf_pbkdf2_gettable_ctx_params(ossl_unused void *p_ctx)
 {
     static const OSSL_PARAM known_gettable_ctx_params[] = {
         OSSL_PARAM_size_t(OSSL_KDF_PARAM_SIZE, NULL),

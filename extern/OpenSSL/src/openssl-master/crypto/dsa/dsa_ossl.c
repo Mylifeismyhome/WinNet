@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -50,12 +50,12 @@ static DSA_METHOD openssl_dsa_meth = {
 
 static const DSA_METHOD *default_DSA_method = &openssl_dsa_meth;
 
-#ifndef FIPS_MODE
+#ifndef FIPS_MODULE
 void DSA_set_default_method(const DSA_METHOD *meth)
 {
     default_DSA_method = meth;
 }
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 const DSA_METHOD *DSA_get_default_method(void)
 {

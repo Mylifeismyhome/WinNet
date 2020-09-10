@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -24,7 +24,8 @@
 #include "crypto/evp.h"
 #include <openssl/cms.h>
 #include <openssl/core_names.h>
-#include "internal/param_build.h"
+#include <openssl/param_build.h>
+#include "internal/ffc.h"
 
 /*
  * i2d/d2i like DH parameter functions which use the appropriate routine for
@@ -34,9 +35,19 @@
 static DH *d2i_dhp(const EVP_PKEY *pkey, const unsigned char **pp,
                    long length)
 {
-    if (pkey->ameth == &dhx_asn1_meth)
-        return d2i_DHxparams(NULL, pp, length);
-    return d2i_DHparams(NULL, pp, length);
+    DH *dh = NULL;
+    int is_dhx = (pkey->ameth == &dhx_asn1_meth);
+
+    if (is_dhx)
+        dh = d2i_DHxparams(NULL, pp, length);
+    else
+        dh = d2i_DHparams(NULL, pp, length);
+
+    if (dh != NULL) {
+        DH_clear_flags(dh, DH_FLAG_TYPE_MASK);
+        DH_set_flags(dh, is_dhx ? DH_FLAG_TYPE_DHX : DH_FLAG_TYPE_DH);
+    }
+    return dh;
 }
 
 static int i2d_dhp(const EVP_PKEY *pkey, const DH *a, unsigned char **pp)
@@ -51,7 +62,7 @@ static void int_dh_free(EVP_PKEY *pkey)
     DH_free(pkey->pkey.dh);
 }
 
-static int dh_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
+static int dh_pub_decode(EVP_PKEY *pkey, const X509_PUBKEY *pubkey)
 {
     const unsigned char *p, *pm;
     int pklen, pmlen;
@@ -100,7 +111,6 @@ static int dh_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
     ASN1_INTEGER_free(public_key);
     DH_free(dh);
     return 0;
-
 }
 
 static int dh_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
@@ -437,7 +447,7 @@ static int dh_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2)
     case ASN1_PKEY_CTRL_SET1_TLS_ENCPT:
         return dh_buf2key(EVP_PKEY_get0_DH(pkey), arg2, arg1);
     case ASN1_PKEY_CTRL_GET1_TLS_ENCPT:
-        return dh_key2buf(EVP_PKEY_get0_DH(pkey), arg2);
+        return dh_key2buf(EVP_PKEY_get0_DH(pkey), arg2, 0, 1);
     default:
         return -2;
     }
@@ -490,15 +500,17 @@ static size_t dh_pkey_dirty_cnt(const EVP_PKEY *pkey)
 }
 
 static int dh_pkey_export_to(const EVP_PKEY *from, void *to_keydata,
-                             EVP_KEYMGMT *to_keymgmt)
+                             EVP_KEYMGMT *to_keymgmt, OPENSSL_CTX *libctx,
+                             const char *propq)
 {
     DH *dh = from->pkey.dh;
-    OSSL_PARAM_BLD tmpl;
+    OSSL_PARAM_BLD *tmpl;
     const BIGNUM *p = DH_get0_p(dh), *g = DH_get0_g(dh), *q = DH_get0_q(dh);
     const BIGNUM *pub_key = DH_get0_pub_key(dh);
     const BIGNUM *priv_key = DH_get0_priv_key(dh);
-    OSSL_PARAM *params;
-    int rv;
+    OSSL_PARAM *params = NULL;
+    int selection = 0;
+    int rv = 0;
 
     /*
      * If the DH method is foreign, then we can't be sure of anything, and
@@ -510,33 +522,72 @@ static int dh_pkey_export_to(const EVP_PKEY *from, void *to_keydata,
     if (p == NULL || g == NULL)
         return 0;
 
-    ossl_param_bld_init(&tmpl);
-    if (!ossl_param_bld_push_BN(&tmpl, OSSL_PKEY_PARAM_FFC_P, p)
-        || !ossl_param_bld_push_BN(&tmpl, OSSL_PKEY_PARAM_FFC_G, g))
+    tmpl = OSSL_PARAM_BLD_new();
+    if (tmpl == NULL)
         return 0;
+    if (!OSSL_PARAM_BLD_push_BN(tmpl, OSSL_PKEY_PARAM_FFC_P, p)
+        || !OSSL_PARAM_BLD_push_BN(tmpl, OSSL_PKEY_PARAM_FFC_G, g))
+        goto err;
     if (q != NULL) {
-        if (!ossl_param_bld_push_BN(&tmpl, OSSL_PKEY_PARAM_FFC_Q, q))
-            return 0;
+        if (!OSSL_PARAM_BLD_push_BN(tmpl, OSSL_PKEY_PARAM_FFC_Q, q))
+            goto err;
     }
-    /* A key must at least have a public part. */
-    if (!ossl_param_bld_push_BN(&tmpl, OSSL_PKEY_PARAM_PUB_KEY, pub_key))
-        return 0;
+    selection |= OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS;
+    if (pub_key != NULL) {
+        if (!OSSL_PARAM_BLD_push_BN(tmpl, OSSL_PKEY_PARAM_PUB_KEY, pub_key))
+            goto err;
+        selection |= OSSL_KEYMGMT_SELECT_PUBLIC_KEY;
+    }
     if (priv_key != NULL) {
-        if (!ossl_param_bld_push_BN(&tmpl, OSSL_PKEY_PARAM_PRIV_KEY,
+        if (!OSSL_PARAM_BLD_push_BN(tmpl, OSSL_PKEY_PARAM_PRIV_KEY,
                                     priv_key))
-            return 0;
+            goto err;
+        selection |= OSSL_KEYMGMT_SELECT_PRIVATE_KEY;
     }
 
-    if ((params = ossl_param_bld_to_param(&tmpl)) == NULL)
-        return 0;
+    if ((params = OSSL_PARAM_BLD_to_param(tmpl)) == NULL)
+        goto err;
 
     /* We export, the provider imports */
-    rv = evp_keymgmt_import(to_keymgmt, to_keydata, OSSL_KEYMGMT_SELECT_ALL,
-                            params);
+    rv = evp_keymgmt_import(to_keymgmt, to_keydata, selection, params);
 
-    ossl_param_bld_free(params);
-
+    OSSL_PARAM_BLD_free_params(params);
+err:
+    OSSL_PARAM_BLD_free(tmpl);
     return rv;
+}
+
+static int dh_pkey_import_from_type(const OSSL_PARAM params[], void *vpctx,
+                                    int type)
+{
+    EVP_PKEY_CTX *pctx = vpctx;
+    EVP_PKEY *pkey = EVP_PKEY_CTX_get0_pkey(pctx);
+    DH *dh = dh_new_with_libctx(pctx->libctx);
+
+    if (dh == NULL) {
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    DH_clear_flags(dh, DH_FLAG_TYPE_MASK);
+    DH_set_flags(dh, type == EVP_PKEY_DH ? DH_FLAG_TYPE_DH : DH_FLAG_TYPE_DHX);
+
+    if (!dh_ffc_params_fromdata(dh, params)
+        || !dh_key_fromdata(dh, params)
+        || !EVP_PKEY_assign(pkey, type, dh)) {
+        DH_free(dh);
+        return 0;
+    }
+    return 1;
+}
+
+static int dh_pkey_import_from(const OSSL_PARAM params[], void *vpctx)
+{
+    return dh_pkey_import_from_type(params, vpctx, EVP_PKEY_DH);
+}
+
+static int dhx_pkey_import_from(const OSSL_PARAM params[], void *vpctx)
+{
+    return dh_pkey_import_from_type(params, vpctx, EVP_PKEY_DHX);
 }
 
 const EVP_PKEY_ASN1_METHOD dh_asn1_meth = {
@@ -581,6 +632,7 @@ const EVP_PKEY_ASN1_METHOD dh_asn1_meth = {
 
     dh_pkey_dirty_cnt,
     dh_pkey_export_to,
+    dh_pkey_import_from,
 };
 
 const EVP_PKEY_ASN1_METHOD dhx_asn1_meth = {
@@ -619,7 +671,11 @@ const EVP_PKEY_ASN1_METHOD dhx_asn1_meth = {
 
     0,
     dh_pkey_public_check,
-    dh_pkey_param_check
+    dh_pkey_param_check,
+    0, 0, 0, 0,
+    dh_pkey_dirty_cnt,
+    dh_pkey_export_to,
+    dhx_pkey_import_from,
 };
 
 #ifndef OPENSSL_NO_CMS

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -12,7 +12,9 @@
 #include "cmp_testlib.h"
 #include <openssl/rsa.h> /* needed in case config no-deprecated */
 
-EVP_PKEY *load_pem_key(const char *file)
+DEFINE_STACK_OF(X509)
+
+EVP_PKEY *load_pem_key(const char *file, OPENSSL_CTX *libctx)
 {
     EVP_PKEY *key = NULL;
     BIO *bio = NULL;
@@ -20,21 +22,23 @@ EVP_PKEY *load_pem_key(const char *file)
     if (!TEST_ptr(bio = BIO_new(BIO_s_file())))
         return NULL;
     if (TEST_int_gt(BIO_read_filename(bio, file), 0))
-        (void)TEST_ptr(key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL));
+        (void)TEST_ptr(key = PEM_read_bio_PrivateKey_ex(bio, NULL, NULL, NULL,
+                                                        libctx, NULL));
 
     BIO_free(bio);
     return key;
 }
 
-X509 *load_pem_cert(const char *file)
+X509 *load_pem_cert(const char *file, OPENSSL_CTX *libctx)
 {
     X509 *cert = NULL;
     BIO *bio = NULL;
 
     if (!TEST_ptr(bio = BIO_new(BIO_s_file())))
         return NULL;
-    if (TEST_int_gt(BIO_read_filename(bio, file), 0))
-        (void)TEST_ptr(cert = PEM_read_bio_X509(bio, NULL, NULL, NULL));
+    if (TEST_int_gt(BIO_read_filename(bio, file), 0)
+            && TEST_ptr(cert = X509_new_with_libctx(libctx, NULL)))
+        (void)TEST_ptr(cert = PEM_read_bio_X509(bio, &cert, NULL, NULL));
 
     BIO_free(bio);
     return cert;
@@ -44,7 +48,7 @@ OSSL_CMP_MSG *load_pkimsg(const char *file)
 {
     OSSL_CMP_MSG *msg;
 
-    (void)TEST_ptr((msg = ossl_cmp_msg_load(file)));
+    (void)TEST_ptr((msg = OSSL_CMP_MSG_read(file)));
     return msg;
 }
 
@@ -58,19 +62,6 @@ X509_REQ *load_csr(const char *file)
     (void)TEST_ptr(csr = d2i_X509_REQ_bio(bio, NULL));
     BIO_free(bio);
     return csr;
-}
-
-EVP_PKEY *gen_rsa(void)
-{
-    EVP_PKEY_CTX *ctx = NULL;
-    EVP_PKEY *pkey = NULL;
-
-    (void)(TEST_ptr(ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL))
-               && TEST_int_gt(EVP_PKEY_keygen_init(ctx), 0)
-               && TEST_int_gt(EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 2048), 0)
-               && TEST_int_gt(EVP_PKEY_keygen(ctx, &pkey), 0));
-    EVP_PKEY_CTX_free(ctx);
-    return pkey;
 }
 
 /*
@@ -125,4 +116,10 @@ int STACK_OF_X509_push1(STACK_OF(X509) *sk, X509 *cert)
     if (res <= 0)
         X509_free(cert); /* down-ref */
     return res;
+}
+
+int print_to_bio_out(const char *func, const char *file, int line,
+                     OSSL_CMP_severity level, const char *msg)
+{
+    return OSSL_CMP_print_to_bio(bio_out, func, file, line, level, msg);
 }

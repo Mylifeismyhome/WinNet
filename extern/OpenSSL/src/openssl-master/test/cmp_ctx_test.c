@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -12,6 +12,12 @@
 #include "cmp_testlib.h"
 
 #include <openssl/x509_vfy.h>
+
+DEFINE_STACK_OF(X509)
+DEFINE_STACK_OF(ASN1_UTF8STRING)
+DEFINE_STACK_OF(X509_EXTENSION)
+DEFINE_STACK_OF(OSSL_CMP_ITAV)
+DEFINE_STACK_OF(POLICYINFO)
 
 typedef struct test_fixture {
     const char *test_case_name;
@@ -31,7 +37,7 @@ static OSSL_CMP_CTX_TEST_FIXTURE *set_up(const char *const test_case_name)
 
     if (!TEST_ptr(fixture = OPENSSL_zalloc(sizeof(*fixture))))
         return NULL;
-    if (!TEST_ptr(fixture->ctx = OSSL_CMP_CTX_new())) {
+    if (!TEST_ptr(fixture->ctx = OSSL_CMP_CTX_new(NULL, NULL))) {
         tear_down(fixture);
         return NULL;
     }
@@ -70,6 +76,7 @@ static int execute_CTX_reinit_test(OSSL_CMP_CTX_TEST_FIXTURE *fixture)
     if (!ossl_cmp_ctx_set0_statusString(ctx, sk_ASN1_UTF8STRING_new_null())
             || !ossl_cmp_ctx_set0_newCert(ctx, X509_new())
             || !TEST_ptr(certs = sk_X509_new_1())
+            || !ossl_cmp_ctx_set1_newChain(ctx, certs)
             || !ossl_cmp_ctx_set1_caPubs(ctx, certs)
             || !ossl_cmp_ctx_set1_extraCertsIn(ctx, certs)
             || !ossl_cmp_ctx_set0_validatedSrvCert(ctx, X509_new())
@@ -87,6 +94,7 @@ static int execute_CTX_reinit_test(OSSL_CMP_CTX_TEST_FIXTURE *fixture)
                        && ctx->failInfoCode == -1
                        && ctx->statusString == NULL
                        && ctx->newCert == NULL
+                       && ctx->newChain == NULL
                        && ctx->caPubs == NULL
                        && ctx->extraCertsIn == NULL
                        && ctx->validatedSrvCert == NULL
@@ -118,7 +126,7 @@ static int msg_total_size_log_cb(const char *func, const char *file, int line,
                                  OSSL_CMP_severity level, const char *msg)
 {
     msg_total_size += strlen(msg);
-    TEST_note("total=%d len=%ld msg='%s'\n", msg_total_size, strlen(msg), msg);
+    TEST_note("total=%d len=%zu msg='%s'\n", msg_total_size, strlen(msg), msg);
     return 1;
 }
 
@@ -492,10 +500,13 @@ static X509_STORE *X509_STORE_new_1(void)
 
 #define IS_NEG(x) ((x) < 0)
 #define IS_0(x) ((x) == 0) /* for any type */
-#define IS_DEFAULT_PORT(x) ((x) == OSSL_CMP_DEFAULT_PORT)
 #define DROP(x) (void)(x) /* dummy free() for non-pointer and function types */
 
-#define ERR(x) (CMPerr(0, CMP_R_NULL_ARGUMENT), x)
+#define RET_IF_NULL_ARG(ctx, ret) \
+    if (ctx == NULL) { \
+        CMPerr(0, CMP_R_NULL_ARGUMENT); \
+        return ret; \
+    }
 
 #define DEFINE_SET_GET_TEST(OSSL_CMP, CTX, N, M, DUP, FIELD, TYPE) \
     DEFINE_SET_GET_BASE_TEST(OSSL_CMP##_##CTX, set##N, get##M, DUP, FIELD, \
@@ -520,7 +531,8 @@ static X509_STORE *X509_STORE_new_1(void)
 #define DEFINE_SET_TEST_DEFAULT(OSSL_CMP, CTX, N, DUP, FIELD, TYPE, DEFAULT) \
     static TYPE *OSSL_CMP_CTX_get0_##FIELD(const CMP_CTX *ctx) \
     { \
-        return ctx == NULL ? ERR(NULL) : ctx->FIELD; \
+        RET_IF_NULL_ARG(ctx, NULL); \
+        return (TYPE *)ctx->FIELD; \
     } \
     DEFINE_SET_GET_TEST_DEFAULT(OSSL_CMP, CTX, N, 0, DUP, FIELD, TYPE, DEFAULT)
 #define DEFINE_SET_TEST(OSSL_CMP, CTX, N, DUP, FIELD, TYPE) \
@@ -529,22 +541,22 @@ static X509_STORE *X509_STORE_new_1(void)
 #define DEFINE_SET_SK_TEST(OSSL_CMP, CTX, N, FIELD, TYPE) \
     static STACK_OF(TYPE) *OSSL_CMP_CTX_get0_##FIELD(const CMP_CTX *ctx) \
     { \
-        return ctx == NULL ? ERR(NULL) : ctx->FIELD; \
+        RET_IF_NULL_ARG(ctx, NULL); \
+        return ctx->FIELD; \
     } \
     DEFINE_SET_GET_BASE_TEST(OSSL_CMP##_##CTX, set##N, get0, 1, FIELD, \
                              STACK_OF(TYPE)*, NULL, IS_0, \
                              sk_##TYPE##_new_null(), sk_##TYPE##_free)
 
-typedef OSSL_HTTP_bio_cb_t OSSL_cmp_http_cb_t;
+typedef OSSL_HTTP_bio_cb_t OSSL_CMP_http_cb_t;
 #define DEFINE_SET_CB_TEST(FIELD) \
-    static OSSL_cmp_##FIELD##_t OSSL_CMP_CTX_get_##FIELD(const CMP_CTX *ctx) \
+    static OSSL_CMP_##FIELD##_t OSSL_CMP_CTX_get_##FIELD(const CMP_CTX *ctx) \
     { \
-        if (ctx == NULL) \
-            CMPerr(0, CMP_R_NULL_ARGUMENT); \
-        return ctx == NULL ? NULL /* cannot use ERR(NULL) here */ : ctx->FIELD;\
+        RET_IF_NULL_ARG(ctx, NULL); \
+        return ctx->FIELD; \
     } \
     DEFINE_SET_GET_BASE_TEST(OSSL_CMP_CTX, set, get, 0, FIELD, \
-                             OSSL_cmp_##FIELD##_t, NULL, IS_0, \
+                             OSSL_CMP_##FIELD##_t, NULL, IS_0, \
                              test_##FIELD, DROP)
 #define DEFINE_SET_GET_P_VOID_TEST(FIELD) \
     DEFINE_SET_GET_BASE_TEST(OSSL_CMP_CTX, set, get, 0, FIELD, void *, \
@@ -555,12 +567,13 @@ typedef OSSL_HTTP_bio_cb_t OSSL_cmp_http_cb_t;
                              DEFAULT, 1, DROP)
 #define DEFINE_SET_GET_INT_TEST(OSSL_CMP, CTX, FIELD) \
     DEFINE_SET_GET_INT_TEST_DEFAULT(OSSL_CMP, CTX, FIELD, IS_NEG)
-#define DEFINE_SET_PORT_TEST(FIELD) \
+#define DEFINE_SET_INT_TEST(FIELD) \
     static int OSSL_CMP_CTX_get_##FIELD(const CMP_CTX *ctx) \
     { \
-        return ctx == NULL ? ERR(-1) : ctx->FIELD; \
+        RET_IF_NULL_ARG(ctx, -1); \
+        return ctx->FIELD; \
     } \
-    DEFINE_SET_GET_INT_TEST_DEFAULT(OSSL_CMP, CTX, FIELD, IS_DEFAULT_PORT)
+    DEFINE_SET_GET_INT_TEST_DEFAULT(OSSL_CMP, CTX, FIELD, IS_0)
 
 #define DEFINE_SET_GET_ARG_FN(SETN, GETN, FIELD, ARG, T) \
     static int OSSL_CMP_CTX_##SETN##_##FIELD##_##ARG(CMP_CTX *ctx, T val) \
@@ -582,8 +595,10 @@ typedef OSSL_HTTP_bio_cb_t OSSL_cmp_http_cb_t;
     \
     static char *OSSL_CMP_CTX_get1_##FIELD##_str(const CMP_CTX *ctx) \
     { \
-        const ASN1_OCTET_STRING *bytes = ctx == NULL ? ERR(NULL) : ctx->FIELD; \
+        const ASN1_OCTET_STRING *bytes = NULL; \
         \
+        RET_IF_NULL_ARG(ctx, NULL); \
+        bytes = ctx->FIELD; \
         return bytes == NULL ? NULL : \
             OPENSSL_strndup((char *)bytes->data, bytes->length); \
     }
@@ -716,10 +731,10 @@ DEFINE_SET_GET_BASE_TEST(OSSL_CMP_CTX, set, get, 0, option_16, int, -1, IS_0, \
 DEFINE_SET_CB_TEST(log_cb)
 
 DEFINE_SET_TEST_DEFAULT(OSSL_CMP, CTX, 1, 1, serverPath, char, IS_0)
-DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, serverName, char)
-DEFINE_SET_PORT_TEST(serverPort)
-DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, proxyName, char)
-DEFINE_SET_PORT_TEST(proxyPort)
+DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, server, char)
+DEFINE_SET_INT_TEST(serverPort)
+DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, proxy, char)
+DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, no_proxy, char)
 DEFINE_SET_CB_TEST(http_cb)
 DEFINE_SET_GET_P_VOID_TEST(http_cb_arg)
 DEFINE_SET_CB_TEST(transfer_cb)
@@ -731,9 +746,9 @@ DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, expected_sender, X509_NAME)
 DEFINE_SET_GET_BASE_TEST(OSSL_CMP_CTX, set0, get0, 0, trustedStore,
                          X509_STORE *, NULL,
                          DEFAULT_STORE, X509_STORE_new_1(), X509_STORE_free)
-DEFINE_SET_GET_SK_X509_TEST(OSSL_CMP, CTX, 1, 0, untrusted_certs)
+DEFINE_SET_GET_SK_X509_TEST(OSSL_CMP, CTX, 1, 0, untrusted)
 
-DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 0, clCert, X509)
+DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 0, cert, X509)
 DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 0, pkey, EVP_PKEY)
 
 DEFINE_SET_TEST(OSSL_CMP, CTX, 1, 1, recipient, X509_NAME)
@@ -767,6 +782,7 @@ DEFINE_SET_GET_INT_TEST(ossl_cmp, ctx, status)
 DEFINE_SET_GET_SK_TEST(ossl_cmp, ctx, 0, 0, statusString, ASN1_UTF8STRING)
 DEFINE_SET_GET_INT_TEST(ossl_cmp, ctx, failInfoCode)
 DEFINE_SET_GET_TEST(ossl_cmp, ctx, 0, 0, 0, newCert, X509)
+DEFINE_SET_GET_SK_X509_TEST(ossl_cmp, ctx, 1, 1, newChain)
 DEFINE_SET_GET_SK_X509_TEST(ossl_cmp, ctx, 1, 1, caPubs)
 DEFINE_SET_GET_SK_X509_TEST(ossl_cmp, ctx, 1, 1, extraCertsIn)
 
@@ -801,10 +817,10 @@ int setup_tests(void)
 #endif
     /* message transfer: */
     ADD_TEST(test_CTX_set1_get0_serverPath);
-    ADD_TEST(test_CTX_set1_get0_serverName);
+    ADD_TEST(test_CTX_set1_get0_server);
     ADD_TEST(test_CTX_set_get_serverPort);
-    ADD_TEST(test_CTX_set1_get0_proxyName);
-    ADD_TEST(test_CTX_set_get_proxyPort);
+    ADD_TEST(test_CTX_set1_get0_proxy);
+    ADD_TEST(test_CTX_set1_get0_no_proxy);
     ADD_TEST(test_CTX_set_get_http_cb);
     ADD_TEST(test_CTX_set_get_http_cb_arg);
     ADD_TEST(test_CTX_set_get_transfer_cb);
@@ -814,9 +830,9 @@ int setup_tests(void)
     ADD_TEST(test_CTX_set0_get0_validatedSrvCert);
     ADD_TEST(test_CTX_set1_get0_expected_sender);
     ADD_TEST(test_CTX_set0_get0_trustedStore);
-    ADD_TEST(test_CTX_set1_get0_untrusted_certs);
+    ADD_TEST(test_CTX_set1_get0_untrusted);
     /* client authentication: */
-    ADD_TEST(test_CTX_set1_get0_clCert);
+    ADD_TEST(test_CTX_set1_get0_cert);
     ADD_TEST(test_CTX_set1_get0_pkey);
     /* the following two also test ossl_cmp_asn1_octet_string_set1_bytes(): */
     ADD_TEST(test_CTX_set1_get1_referenceValue_str);
@@ -856,6 +872,7 @@ int setup_tests(void)
     ADD_TEST(test_CTX_set0_get0_statusString);
     ADD_TEST(test_CTX_set_get_failInfoCode);
     ADD_TEST(test_CTX_set0_get0_newCert);
+    ADD_TEST(test_CTX_set1_get1_newChain);
     ADD_TEST(test_CTX_set1_get1_caPubs);
     ADD_TEST(test_CTX_set1_get1_extraCertsIn);
     /* exported for testing and debugging purposes: */

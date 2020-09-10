@@ -8,7 +8,7 @@
  */
 
 #include <openssl/crypto.h>
-#include <openssl/core_numbers.h>
+#include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
 #include <openssl/err.h>
 #include <openssl/params.h>
@@ -22,21 +22,21 @@
 #include "prov/provider_ctx.h"
 #include "crypto/ecx.h"
 
-static OSSL_OP_signature_newctx_fn eddsa_newctx;
-static OSSL_OP_signature_digest_sign_init_fn eddsa_digest_signverify_init;
-static OSSL_OP_signature_digest_sign_fn ed25519_digest_sign;
-static OSSL_OP_signature_digest_sign_fn ed448_digest_sign;
-static OSSL_OP_signature_digest_verify_fn ed25519_digest_verify;
-static OSSL_OP_signature_digest_verify_fn ed448_digest_verify;
-static OSSL_OP_signature_freectx_fn eddsa_freectx;
-static OSSL_OP_signature_dupctx_fn eddsa_dupctx;
+static OSSL_FUNC_signature_newctx_fn eddsa_newctx;
+static OSSL_FUNC_signature_digest_sign_init_fn eddsa_digest_signverify_init;
+static OSSL_FUNC_signature_digest_sign_fn ed25519_digest_sign;
+static OSSL_FUNC_signature_digest_sign_fn ed448_digest_sign;
+static OSSL_FUNC_signature_digest_verify_fn ed25519_digest_verify;
+static OSSL_FUNC_signature_digest_verify_fn ed448_digest_verify;
+static OSSL_FUNC_signature_freectx_fn eddsa_freectx;
+static OSSL_FUNC_signature_dupctx_fn eddsa_dupctx;
 
 typedef struct {
     OPENSSL_CTX *libctx;
     ECX_KEY *key;
 } PROV_EDDSA_CTX;
 
-static void *eddsa_newctx(void *provctx)
+static void *eddsa_newctx(void *provctx, const char *propq_unused)
 {
     PROV_EDDSA_CTX *peddsactx = OPENSSL_zalloc(sizeof(PROV_EDDSA_CTX));
 
@@ -51,12 +51,12 @@ static void *eddsa_newctx(void *provctx)
 }
 
 static int eddsa_digest_signverify_init(void *vpeddsactx, const char *mdname,
-                                        const char *props, void *vedkey)
+                                        void *vedkey)
 {
     PROV_EDDSA_CTX *peddsactx = (PROV_EDDSA_CTX *)vpeddsactx;
     ECX_KEY *edkey = (ECX_KEY *)vedkey;
 
-    if (mdname != NULL) {
+    if (mdname != NULL && mdname[0] != '\0') {
         PROVerr(0, PROV_R_INVALID_DIGEST);
         return 0;
     }
@@ -87,7 +87,8 @@ int ed25519_digest_sign(void *vpeddsactx, unsigned char *sigret,
         return 0;
     }
 
-    if (ED25519_sign(sigret, tbs, tbslen, edkey->pubkey, edkey->privkey) == 0) {
+    if (ED25519_sign(sigret, tbs, tbslen, edkey->pubkey, edkey->privkey,
+                     peddsactx->libctx, NULL) == 0) {
         PROVerr(0, PROV_R_FAILED_TO_SIGN);
         return 0;
     }
@@ -130,7 +131,8 @@ int ed25519_digest_verify(void *vpeddsactx, const unsigned char *sig,
     if (siglen != ED25519_SIGSIZE)
         return 0;
 
-    return ED25519_verify(tbs, tbslen, sig, edkey->pubkey);
+    return ED25519_verify(tbs, tbslen, sig, edkey->pubkey, peddsactx->libctx,
+                          NULL);
 }
 
 int ed448_digest_verify(void *vpeddsactx, const unsigned char *sig,

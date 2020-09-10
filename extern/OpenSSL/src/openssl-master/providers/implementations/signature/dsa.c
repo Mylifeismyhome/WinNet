@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include <openssl/crypto.h>
-#include <openssl/core_numbers.h>
+#include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
 #include <openssl/err.h>
 #include <openssl/dsa.h>
@@ -25,33 +25,35 @@
 #include <openssl/err.h>
 #include "internal/nelem.h"
 #include "internal/sizes.h"
+#include "internal/cryptlib.h"
 #include "prov/providercommonerr.h"
 #include "prov/implementations.h"
 #include "prov/providercommonerr.h"
 #include "prov/provider_ctx.h"
 #include "crypto/dsa.h"
+#include "prov/der_dsa.h"
 
-static OSSL_OP_signature_newctx_fn dsa_newctx;
-static OSSL_OP_signature_sign_init_fn dsa_signature_init;
-static OSSL_OP_signature_verify_init_fn dsa_signature_init;
-static OSSL_OP_signature_sign_fn dsa_sign;
-static OSSL_OP_signature_verify_fn dsa_verify;
-static OSSL_OP_signature_digest_sign_init_fn dsa_digest_signverify_init;
-static OSSL_OP_signature_digest_sign_update_fn dsa_digest_signverify_update;
-static OSSL_OP_signature_digest_sign_final_fn dsa_digest_sign_final;
-static OSSL_OP_signature_digest_verify_init_fn dsa_digest_signverify_init;
-static OSSL_OP_signature_digest_verify_update_fn dsa_digest_signverify_update;
-static OSSL_OP_signature_digest_verify_final_fn dsa_digest_verify_final;
-static OSSL_OP_signature_freectx_fn dsa_freectx;
-static OSSL_OP_signature_dupctx_fn dsa_dupctx;
-static OSSL_OP_signature_get_ctx_params_fn dsa_get_ctx_params;
-static OSSL_OP_signature_gettable_ctx_params_fn dsa_gettable_ctx_params;
-static OSSL_OP_signature_set_ctx_params_fn dsa_set_ctx_params;
-static OSSL_OP_signature_settable_ctx_params_fn dsa_settable_ctx_params;
-static OSSL_OP_signature_get_ctx_md_params_fn dsa_get_ctx_md_params;
-static OSSL_OP_signature_gettable_ctx_md_params_fn dsa_gettable_ctx_md_params;
-static OSSL_OP_signature_set_ctx_md_params_fn dsa_set_ctx_md_params;
-static OSSL_OP_signature_settable_ctx_md_params_fn dsa_settable_ctx_md_params;
+static OSSL_FUNC_signature_newctx_fn dsa_newctx;
+static OSSL_FUNC_signature_sign_init_fn dsa_signature_init;
+static OSSL_FUNC_signature_verify_init_fn dsa_signature_init;
+static OSSL_FUNC_signature_sign_fn dsa_sign;
+static OSSL_FUNC_signature_verify_fn dsa_verify;
+static OSSL_FUNC_signature_digest_sign_init_fn dsa_digest_signverify_init;
+static OSSL_FUNC_signature_digest_sign_update_fn dsa_digest_signverify_update;
+static OSSL_FUNC_signature_digest_sign_final_fn dsa_digest_sign_final;
+static OSSL_FUNC_signature_digest_verify_init_fn dsa_digest_signverify_init;
+static OSSL_FUNC_signature_digest_verify_update_fn dsa_digest_signverify_update;
+static OSSL_FUNC_signature_digest_verify_final_fn dsa_digest_verify_final;
+static OSSL_FUNC_signature_freectx_fn dsa_freectx;
+static OSSL_FUNC_signature_dupctx_fn dsa_dupctx;
+static OSSL_FUNC_signature_get_ctx_params_fn dsa_get_ctx_params;
+static OSSL_FUNC_signature_gettable_ctx_params_fn dsa_gettable_ctx_params;
+static OSSL_FUNC_signature_set_ctx_params_fn dsa_set_ctx_params;
+static OSSL_FUNC_signature_settable_ctx_params_fn dsa_settable_ctx_params;
+static OSSL_FUNC_signature_get_ctx_md_params_fn dsa_get_ctx_md_params;
+static OSSL_FUNC_signature_gettable_ctx_md_params_fn dsa_gettable_ctx_md_params;
+static OSSL_FUNC_signature_set_ctx_md_params_fn dsa_set_ctx_md_params;
+static OSSL_FUNC_signature_settable_ctx_md_params_fn dsa_settable_ctx_md_params;
 
 /*
  * What's passed as an actual key is defined by the KEYMGMT interface.
@@ -61,6 +63,7 @@ static OSSL_OP_signature_settable_ctx_md_params_fn dsa_settable_ctx_md_params;
 
 typedef struct {
     OPENSSL_CTX *libctx;
+    char *propq;
     DSA *dsa;
 
     /*
@@ -74,7 +77,8 @@ typedef struct {
     char mdname[OSSL_MAX_NAME_SIZE];
 
     /* The Algorithm Identifier of the combined signature algorithm */
-    unsigned char aid[OSSL_MAX_ALGORITHM_ID_SIZE];
+    unsigned char aid_buf[OSSL_MAX_ALGORITHM_ID_SIZE];
+    unsigned char *aid;
     size_t  aid_len;
 
     /* main digest */
@@ -128,7 +132,7 @@ static int dsa_get_md_nid(const EVP_MD *md)
     return mdnid;
 }
 
-static void *dsa_newctx(void *provctx)
+static void *dsa_newctx(void *provctx, const char *propq)
 {
     PROV_DSA_CTX *pdsactx = OPENSSL_zalloc(sizeof(PROV_DSA_CTX));
 
@@ -137,34 +141,53 @@ static void *dsa_newctx(void *provctx)
 
     pdsactx->libctx = PROV_LIBRARY_CONTEXT_OF(provctx);
     pdsactx->flag_allow_md = 1;
+    if (propq != NULL && (pdsactx->propq = OPENSSL_strdup(propq)) == NULL) {
+        OPENSSL_free(pdsactx);
+        pdsactx = NULL;
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+    }
     return pdsactx;
 }
 
 static int dsa_setup_md(PROV_DSA_CTX *ctx,
                         const char *mdname, const char *mdprops)
 {
+    if (mdprops == NULL)
+        mdprops = ctx->propq;
+
     if (mdname != NULL) {
         EVP_MD *md = EVP_MD_fetch(ctx->libctx, mdname, mdprops);
         int md_nid = dsa_get_md_nid(md);
-        size_t algorithmidentifier_len = 0;
-        const unsigned char *algorithmidentifier;
+        WPACKET pkt;
 
-        EVP_MD_free(ctx->md);
-        ctx->md = NULL;
-        ctx->mdname[0] = '\0';
-
-        algorithmidentifier =
-            dsa_algorithmidentifier_encoding(md_nid, &algorithmidentifier_len);
-
-        if (algorithmidentifier == NULL) {
+        if (md == NULL || md_nid == NID_undef) {
             EVP_MD_free(md);
             return 0;
         }
 
+        EVP_MD_CTX_free(ctx->mdctx);
+        EVP_MD_free(ctx->md);
+
+        /*
+         * TODO(3.0) Should we care about DER writing errors?
+         * All it really means is that for some reason, there's no
+         * AlgorithmIdentifier to be had, but the operation itself is
+         * still valid, just as long as it's not used to construct
+         * anything that needs an AlgorithmIdentifier.
+         */
+        ctx->aid_len = 0;
+        if (WPACKET_init_der(&pkt, ctx->aid_buf, sizeof(ctx->aid_buf))
+            && DER_w_algorithmIdentifier_DSA_with_MD(&pkt, -1, ctx->dsa,
+                                                     md_nid)
+            && WPACKET_finish(&pkt)) {
+            WPACKET_get_total_written(&pkt, &ctx->aid_len);
+            ctx->aid = WPACKET_get_curr(&pkt);
+        }
+        WPACKET_cleanup(&pkt);
+
+        ctx->mdctx = NULL;
         ctx->md = md;
         OPENSSL_strlcpy(ctx->mdname, mdname, sizeof(ctx->mdname));
-        memcpy(ctx->aid, algorithmidentifier, algorithmidentifier_len);
-        ctx->aid_len = algorithmidentifier_len;
     }
     return 1;
 }
@@ -221,7 +244,7 @@ static int dsa_verify(void *vpdsactx, const unsigned char *sig, size_t siglen,
 }
 
 static int dsa_digest_signverify_init(void *vpdsactx, const char *mdname,
-                                      const char *props, void *vdsa)
+                                      void *vdsa)
 {
     PROV_DSA_CTX *pdsactx = (PROV_DSA_CTX *)vpdsactx;
 
@@ -229,7 +252,7 @@ static int dsa_digest_signverify_init(void *vpdsactx, const char *mdname,
     if (!dsa_signature_init(vpdsactx, vdsa))
         return 0;
 
-    if (!dsa_setup_md(pdsactx, mdname, props))
+    if (!dsa_setup_md(pdsactx, mdname, NULL))
         return 0;
 
     pdsactx->mdctx = EVP_MD_CTX_new();
@@ -315,13 +338,17 @@ int dsa_digest_verify_final(void *vpdsactx, const unsigned char *sig,
 
 static void dsa_freectx(void *vpdsactx)
 {
-    PROV_DSA_CTX *pdsactx = (PROV_DSA_CTX *)vpdsactx;
+    PROV_DSA_CTX *ctx = (PROV_DSA_CTX *)vpdsactx;
 
-    DSA_free(pdsactx->dsa);
-    EVP_MD_CTX_free(pdsactx->mdctx);
-    EVP_MD_free(pdsactx->md);
-
-    OPENSSL_free(pdsactx);
+    OPENSSL_free(ctx->propq);
+    EVP_MD_CTX_free(ctx->mdctx);
+    EVP_MD_free(ctx->md);
+    ctx->propq = NULL;
+    ctx->mdctx = NULL;
+    ctx->md = NULL;
+    ctx->mdsize = 0;
+    DSA_free(ctx->dsa);
+    OPENSSL_free(ctx);
 }
 
 static void *dsa_dupctx(void *vpdsactx)
@@ -385,7 +412,7 @@ static const OSSL_PARAM known_gettable_ctx_params[] = {
     OSSL_PARAM_END
 };
 
-static const OSSL_PARAM *dsa_gettable_ctx_params(void)
+static const OSSL_PARAM *dsa_gettable_ctx_params(ossl_unused void *provctx)
 {
     return known_gettable_ctx_params;
 }
@@ -423,10 +450,11 @@ static int dsa_set_ctx_params(void *vpdsactx, const OSSL_PARAM params[])
 
 static const OSSL_PARAM known_settable_ctx_params[] = {
     OSSL_PARAM_utf8_string(OSSL_SIGNATURE_PARAM_DIGEST, NULL, 0),
+    OSSL_PARAM_utf8_string(OSSL_SIGNATURE_PARAM_PROPERTIES, NULL, 0),
     OSSL_PARAM_END
 };
 
-static const OSSL_PARAM *dsa_settable_ctx_params(void)
+static const OSSL_PARAM *dsa_settable_ctx_params(ossl_unused void *provctx)
 {
     /*
      * TODO(3.0): Should this function return a different set of settable ctx

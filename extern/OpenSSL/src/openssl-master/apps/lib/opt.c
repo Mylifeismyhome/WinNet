@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -209,6 +209,7 @@ int opt_format(const char *s, unsigned long flags, int *result)
 {
     switch (*s) {
     default:
+        opt_printf_stderr("%s: Bad format \"%s\"\n", prog, s);
         return 0;
     case 'D':
     case 'd':
@@ -275,11 +276,47 @@ int opt_format(const char *s, unsigned long flags, int *result)
                 return opt_format_error(s, flags);
             *result = FORMAT_PKCS12;
         } else {
+            opt_printf_stderr("%s: Bad format \"%s\"\n", prog, s);
             return 0;
         }
         break;
     }
     return 1;
+}
+
+/* Return string representing the given format. */
+const char *format2str(int format)
+{
+    switch (format) {
+    default:
+        return "(undefined)";
+    case FORMAT_PEM:
+        return "PEM";
+    case FORMAT_ASN1:
+        return "DER";
+    case FORMAT_TEXT:
+        return "TEXT";
+    case FORMAT_NSS:
+        return "NSS";
+    case FORMAT_SMIME:
+        return "SMIME";
+    case FORMAT_MSBLOB:
+        return "MSBLOB";
+    case FORMAT_ENGINE:
+        return "ENGINE";
+    case FORMAT_HTTP:
+        return "HTTP";
+    case FORMAT_PKCS12:
+        return "P12";
+    case FORMAT_PVK:
+        return "PVK";
+    }
+}
+
+/* Print an error message about unsuitable/unsupported format requested. */
+void print_format_error(int format, unsigned long flags)
+{
+    (void)opt_format_error(format2str(format), flags);
 }
 
 /* Parse a cipher name, put it in *EVP_CIPHER; return 0 on failure, else 1. */
@@ -705,40 +742,29 @@ int opt_next(void)
             break;
         case 'p':
         case 'n':
-            if (!opt_int(arg, &ival)
-                    || (o->valtype == 'p' && ival <= 0)) {
+            if (!opt_int(arg, &ival))
+                return -1;
+            if (o->valtype == 'p' && ival <= 0) {
                 opt_printf_stderr("%s: Non-positive number \"%s\" for -%s\n",
                                   prog, arg, o->name);
                 return -1;
             }
             break;
         case 'M':
-            if (!opt_imax(arg, &imval)) {
-                opt_printf_stderr("%s: Invalid number \"%s\" for -%s\n",
-                                  prog, arg, o->name);
+            if (!opt_imax(arg, &imval))
                 return -1;
-            }
             break;
         case 'U':
-            if (!opt_umax(arg, &umval)) {
-                opt_printf_stderr("%s: Invalid number \"%s\" for -%s\n",
-                                  prog, arg, o->name);
+            if (!opt_umax(arg, &umval))
                 return -1;
-            }
             break;
         case 'l':
-            if (!opt_long(arg, &lval)) {
-                opt_printf_stderr("%s: Invalid number \"%s\" for -%s\n",
-                                  prog, arg, o->name);
+            if (!opt_long(arg, &lval))
                 return -1;
-            }
             break;
         case 'u':
-            if (!opt_ulong(arg, &ulval)) {
-                opt_printf_stderr("%s: Invalid number \"%s\" for -%s\n",
-                                  prog, arg, o->name);
+            if (!opt_ulong(arg, &ulval))
                 return -1;
-            }
             break;
         case 'c':
         case 'E':

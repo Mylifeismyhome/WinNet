@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2011-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -59,6 +59,8 @@ static int aesni_cbc_hmac_sha1_init_key(PROV_CIPHER_CTX *vctx,
     sctx->md = sctx->head;
 
     ctx->payload_length = NO_PAYLOAD_LENGTH;
+
+    vctx->removetlspad = SHA_DIGEST_LENGTH + AES_BLOCK_SIZE;
 
     return ret < 0 ? 0 : 1;
 }

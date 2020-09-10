@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -154,13 +154,29 @@ int gcm_get_ctx_params(void *vctx, OSSL_PARAM params[])
 
     p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IV);
     if (p != NULL) {
-        if (ctx->iv_gen != 1 && ctx->iv_gen_rand != 1)
+        if (ctx->iv_state == IV_STATE_UNINITIALISED)
             return 0;
-        if (ctx->ivlen != p->data_size) {
+        if (ctx->ivlen > p->data_size) {
             ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IV_LENGTH);
             return 0;
         }
-        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, ctx->ivlen)) {
+        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, ctx->ivlen)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->iv, ctx->ivlen)) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
+            return 0;
+        }
+    }
+
+    p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_IV_STATE);
+    if (p != NULL) {
+        if (ctx->iv_state == IV_STATE_UNINITIALISED)
+            return 0;
+        if (ctx->ivlen > p->data_size) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_IV_LENGTH);
+            return 0;
+        }
+        if (!OSSL_PARAM_set_octet_string(p, ctx->iv, ctx->ivlen)
+            && !OSSL_PARAM_set_octet_ptr(p, &ctx->iv, ctx->ivlen)) {
             ERR_raise(ERR_LIB_PROV, PROV_R_FAILED_TO_SET_PARAMETER);
             return 0;
         }
@@ -279,12 +295,12 @@ int gcm_stream_update(void *vctx, unsigned char *out, size_t *outl,
 
     if (outsize < inl) {
         ERR_raise(ERR_LIB_PROV, PROV_R_OUTPUT_BUFFER_TOO_SMALL);
-        return -1;
+        return 0;
     }
 
     if (gcm_cipher_internal(ctx, out, outl, in, inl) <= 0) {
         ERR_raise(ERR_LIB_PROV, PROV_R_CIPHER_OPERATION_FAILED);
-        return -1;
+        return 0;
     }
     return 1;
 }

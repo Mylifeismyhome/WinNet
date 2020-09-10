@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -39,6 +39,7 @@ extern "C" {
 #  endif
 # endif
 
+# include <limits.h>
 # include <errno.h>
 
 # define ERR_TXT_MALLOCED        0x01
@@ -112,8 +113,9 @@ struct err_state_st {
 # define ERR_LIB_CRMF            56
 # define ERR_LIB_PROV            57
 # define ERR_LIB_CMP             58
-# define ERR_LIB_OSSL_SERIALIZER 59
-# define ERR_LIB_HTTP            60
+# define ERR_LIB_OSSL_ENCODER    59
+# define ERR_LIB_OSSL_DECODER    60
+# define ERR_LIB_HTTP            61
 
 # define ERR_LIB_USER            128
 
@@ -163,14 +165,95 @@ struct err_state_st {
 #  define X509err(f, r) ERR_raise_data(ERR_LIB_X509, (r), NULL)
 # endif
 
-# define ERR_PACK(l,f,r) ( \
-        (((unsigned int)(l) & 0x0FF) << 24L) | \
-        (((unsigned int)(f) & 0xFFF) << 12L) | \
-        (((unsigned int)(r) & 0xFFF)       ) )
-# define ERR_GET_LIB(l)          (int)(((l) >> 24L) & 0x0FFL)
-# define ERR_GET_FUNC(l)         (int)(((l) >> 12L) & 0xFFFL)
-# define ERR_GET_REASON(l)       (int)( (l)         & 0xFFFL)
-# define ERR_FATAL_ERROR(l)      (int)( (l)         & ERR_R_FATAL)
+/*-
+ * The error code packs differently depending on if it records a system
+ * error or an OpenSSL error.
+ *
+ * A system error packs like this (we follow POSIX and only allow positive
+ * numbers that fit in an |int|):
+ *
+ * +-+-------------------------------------------------------------+
+ * |1|                     system error number                     |
+ * +-+-------------------------------------------------------------+
+ *
+ * An OpenSSL error packs like this:
+ *
+ * <---------------------------- 32 bits -------------------------->
+ *    <--- 8 bits ---><------------------ 23 bits ----------------->
+ * +-+---------------+---------------------------------------------+
+ * |0|    library    |                    reason                   |
+ * +-+---------------+---------------------------------------------+
+ *
+ * A few of the reason bits are reserved as flags with special meaning:
+ *
+ *                    <4 bits><-------------- 19 bits ------------->
+ *                   +-------+-------------------------------------+
+ *                   | rflags|                reason               |
+ *                   +-------+-------------------------------------+
+ *
+ * We have the reason flags being part of the overall reason code for
+ * backward compatibility reasons, i.e. how ERR_R_FATAL was implemented.
+ */
+
+/* Macros to help decode recorded system errors */
+# define ERR_SYSTEM_FLAG                ((unsigned int)INT_MAX + 1)
+# define ERR_SYSTEM_MASK                ((unsigned int)INT_MAX)
+
+/* Macros to help decode recorded OpenSSL errors */
+# define ERR_LIB_OFFSET                 23L
+# define ERR_LIB_MASK                   0xFF
+# define ERR_RFLAGS_OFFSET              19L
+# define ERR_RFLAGS_MASK                0xF
+# define ERR_REASON_MASK                0X7FFFFF
+
+/*
+ * Reason flags are defined pre-shifted to easily combine with the reason
+ * number.
+ */
+# define ERR_RFLAG_FATAL                (0x1 << ERR_RFLAGS_OFFSET)
+
+# define ERR_SYSTEM_ERROR(errcode)      (((errcode) & ERR_SYSTEM_FLAG) != 0)
+
+static ossl_inline int ERR_GET_LIB(unsigned long errcode)
+{
+    if (ERR_SYSTEM_ERROR(errcode))
+        return ERR_LIB_SYS;
+    return (errcode >> ERR_LIB_OFFSET) & ERR_LIB_MASK;
+}
+
+static ossl_inline int ERR_GET_FUNC(unsigned long errcode ossl_unused)
+{
+    return 0;
+}
+
+static ossl_inline int ERR_GET_RFLAGS(unsigned long errcode)
+{
+    if (ERR_SYSTEM_ERROR(errcode))
+        return 0;
+    return errcode & (ERR_RFLAGS_MASK << ERR_RFLAGS_OFFSET);
+}
+
+static ossl_inline int ERR_GET_REASON(unsigned long errcode)
+{
+    if (ERR_SYSTEM_ERROR(errcode))
+        return errcode & ERR_SYSTEM_MASK;
+    return errcode & ERR_REASON_MASK;
+}
+
+static ossl_inline int ERR_FATAL_ERROR(unsigned long errcode)
+{
+    return (ERR_GET_RFLAGS(errcode) & ERR_RFLAG_FATAL) != 0;
+}
+
+/*
+ * ERR_PACK is a helper macro to properly pack OpenSSL error codes and may
+ * only be used for that purpose.  System errors are packed internally.
+ * ERR_PACK takes reason flags and reason code combined in |reason|.
+ * ERR_PACK ignores |func|, that parameter is just legacy from pre-3.0 OpenSSL.
+ */
+# define ERR_PACK(lib,func,reason)                                      \
+    ( (((unsigned long)(lib)    & ERR_LIB_MASK   ) << ERR_LIB_OFFSET) | \
+      (((unsigned long)(reason) & ERR_REASON_MASK)) )
 
 # ifndef OPENSSL_NO_DEPRECATED_3_0
 #  define SYS_F_FOPEN             0
@@ -200,7 +283,7 @@ struct err_state_st {
 #  define SYS_F_SENDFILE          0
 # endif
 
-/* reasons */
+/* "we came from here" global reason codes, range 1..63 */
 # define ERR_R_SYS_LIB   ERR_LIB_SYS/* 2 */
 # define ERR_R_BN_LIB    ERR_LIB_BN/* 3 */
 # define ERR_R_RSA_LIB   ERR_LIB_RSA/* 4 */
@@ -212,6 +295,7 @@ struct err_state_st {
 # define ERR_R_DSA_LIB   ERR_LIB_DSA/* 10 */
 # define ERR_R_X509_LIB  ERR_LIB_X509/* 11 */
 # define ERR_R_ASN1_LIB  ERR_LIB_ASN1/* 13 */
+# define ERR_R_CRYPTO_LIB ERR_LIB_CRYPTO/* 15 */
 # define ERR_R_EC_LIB    ERR_LIB_EC/* 16 */
 # define ERR_R_BIO_LIB   ERR_LIB_BIO/* 32 */
 # define ERR_R_PKCS7_LIB ERR_LIB_PKCS7/* 33 */
@@ -220,22 +304,28 @@ struct err_state_st {
 # define ERR_R_UI_LIB    ERR_LIB_UI/* 40 */
 # define ERR_R_ECDSA_LIB ERR_LIB_ECDSA/* 42 */
 # define ERR_R_OSSL_STORE_LIB ERR_LIB_OSSL_STORE/* 44 */
+# define ERR_R_OSSL_DECODER_LIB ERR_LIB_OSSL_DECODER/* 60 */
 
-# define ERR_R_NESTED_ASN1_ERROR                 58
-# define ERR_R_MISSING_ASN1_EOS                  63
-
-/* fatal error */
-# define ERR_R_FATAL                             64
-# define ERR_R_MALLOC_FAILURE                    (1|ERR_R_FATAL)
-# define ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED       (2|ERR_R_FATAL)
-# define ERR_R_PASSED_NULL_PARAMETER             (3|ERR_R_FATAL)
-# define ERR_R_INTERNAL_ERROR                    (4|ERR_R_FATAL)
-# define ERR_R_DISABLED                          (5|ERR_R_FATAL)
-# define ERR_R_INIT_FAIL                         (6|ERR_R_FATAL)
-# define ERR_R_PASSED_INVALID_ARGUMENT           (7)
-# define ERR_R_OPERATION_FAIL                    (8|ERR_R_FATAL)
-# define ERR_R_INVALID_PROVIDER_FUNCTIONS        (9|ERR_R_FATAL)
-# define ERR_R_INTERRUPTED_OR_CANCELLED          (10)
+/*
+ * global reason codes, range 64..99 (sub-system specific codes start at 100)
+ *
+ * ERR_R_FATAL had dual purposes in pre-3.0 OpenSSL, as a standalone reason
+ * code as well as a fatal flag.  This is still possible to do, as 2**6 (64)
+ * is present in the whole range of global reason codes.
+ */
+# define ERR_R_FATAL                             (64|ERR_RFLAG_FATAL)
+# define ERR_R_MALLOC_FAILURE                    (65|ERR_RFLAG_FATAL)
+# define ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED       (66|ERR_RFLAG_FATAL)
+# define ERR_R_PASSED_NULL_PARAMETER             (67|ERR_RFLAG_FATAL)
+# define ERR_R_INTERNAL_ERROR                    (68|ERR_RFLAG_FATAL)
+# define ERR_R_DISABLED                          (69|ERR_RFLAG_FATAL)
+# define ERR_R_INIT_FAIL                         (70|ERR_RFLAG_FATAL)
+# define ERR_R_PASSED_INVALID_ARGUMENT           (71)
+# define ERR_R_OPERATION_FAIL                    (72|ERR_RFLAG_FATAL)
+# define ERR_R_INVALID_PROVIDER_FUNCTIONS        (73|ERR_RFLAG_FATAL)
+# define ERR_R_INTERRUPTED_OR_CANCELLED          (74)
+# define ERR_R_NESTED_ASN1_ERROR                 (76)
+# define ERR_R_MISSING_ASN1_EOS                  (77)
 
 /*
  * 99 is the maximum possible ERR_R_... code, higher values are reserved for

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -36,8 +36,20 @@ static OSSL_PARAM ossl_param_construct(const char *key, unsigned int data_type,
     res.data_type = data_type;
     res.data = data;
     res.data_size = data_size;
-    res.return_size = 0;
+    res.return_size = OSSL_PARAM_UNMODIFIED;
     return res;
+}
+
+int OSSL_PARAM_modified(const OSSL_PARAM *p)
+{
+    return p != NULL && p->return_size != OSSL_PARAM_UNMODIFIED;
+}
+
+void OSSL_PARAM_set_all_unmodified(OSSL_PARAM *p)
+{
+    if (p != NULL)
+        while (p->key != NULL)
+            p++->return_size = OSSL_PARAM_UNMODIFIED;
 }
 
 int OSSL_PARAM_get_int(const OSSL_PARAM *p, int *val)
@@ -605,6 +617,33 @@ OSSL_PARAM OSSL_PARAM_construct_size_t(const char *key, size_t *buf)
                                 sizeof(size_t));
 }
 
+int OSSL_PARAM_get_time_t(const OSSL_PARAM *p, time_t *val)
+{
+    switch (sizeof(time_t)) {
+    case sizeof(int32_t):
+        return OSSL_PARAM_get_int32(p, (int32_t *)val);
+    case sizeof(int64_t):
+        return OSSL_PARAM_get_int64(p, (int64_t *)val);
+    }
+    return 0;
+}
+
+int OSSL_PARAM_set_time_t(OSSL_PARAM *p, time_t val)
+{
+    switch (sizeof(time_t)) {
+    case sizeof(int32_t):
+        return OSSL_PARAM_set_int32(p, (int32_t)val);
+    case sizeof(int64_t):
+        return OSSL_PARAM_set_int64(p, (int64_t)val);
+    }
+    return 0;
+}
+
+OSSL_PARAM OSSL_PARAM_construct_time_t(const char *key, time_t *buf)
+{
+    return ossl_param_construct(key, OSSL_PARAM_INTEGER, buf, sizeof(time_t));
+}
+
 int OSSL_PARAM_get_BN(const OSSL_PARAM *p, BIGNUM **val)
 {
     BIGNUM *b;
@@ -768,7 +807,7 @@ static int get_string_internal(const OSSL_PARAM *p, void **val, size_t max_len,
 {
     size_t sz;
 
-    if (val == NULL || p == NULL || p->data_type != type)
+    if ((val == NULL && used_len == NULL) || p == NULL || p->data_type != type)
         return 0;
 
     sz = p->data_size;
@@ -776,16 +815,20 @@ static int get_string_internal(const OSSL_PARAM *p, void **val, size_t max_len,
     if (used_len != NULL)
         *used_len = sz;
 
-    if (sz == 0)
+    if (p->data == NULL)
+        return 0;
+
+    if (val == NULL)
         return 1;
 
     if (*val == NULL) {
-        char *const q = OPENSSL_malloc(sz);
+        char *const q = OPENSSL_malloc(sz > 0 ? sz : 1);
 
         if (q == NULL)
             return 0;
         *val = q;
-        memcpy(q, p->data, sz);
+        if (sz != 0)
+            memcpy(q, p->data, sz);
         return 1;
     }
     if (max_len < sz)
@@ -926,3 +969,29 @@ OSSL_PARAM OSSL_PARAM_construct_end(void)
 
     return end;
 }
+
+static int get_string_ptr_internal(const OSSL_PARAM *p, const void **val,
+                                   size_t *used_len, unsigned int type)
+{
+    if (val == NULL || p == NULL || p->data_type != type)
+        return 0;
+    if (used_len != NULL)
+        *used_len = p->data_size;
+    *val = p->data;
+    return 1;
+}
+
+int OSSL_PARAM_get_utf8_string_ptr(const OSSL_PARAM *p, const char **val)
+{
+    return OSSL_PARAM_get_utf8_ptr(p, val)
+        || get_string_ptr_internal(p, (const void **)val, NULL,
+                                   OSSL_PARAM_UTF8_STRING);
+}
+
+int OSSL_PARAM_get_octet_string_ptr(const OSSL_PARAM *p, const void **val,
+                                    size_t *used_len)
+{
+    return OSSL_PARAM_get_octet_ptr(p, val, used_len)
+        || get_string_ptr_internal(p, val, used_len, OSSL_PARAM_OCTET_STRING);
+}
+

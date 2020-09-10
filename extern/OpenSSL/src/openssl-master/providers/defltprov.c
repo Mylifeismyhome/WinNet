@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -11,21 +11,30 @@
 #include <stdio.h>
 #include <openssl/opensslconf.h>
 #include <openssl/core.h>
-#include <openssl/core_numbers.h>
+#include <openssl/core_dispatch.h>
 #include <openssl/core_names.h>
 #include <openssl/params.h>
 #include "prov/bio.h"
+#include "prov/provider_ctx.h"
 #include "prov/providercommon.h"
 #include "prov/implementations.h"
 #include "prov/provider_util.h"
 #include "internal/nelem.h"
 
+/*
+ * Forward declarations to ensure that interface functions are correctly
+ * defined.
+ */
+static OSSL_FUNC_provider_gettable_params_fn deflt_gettable_params;
+static OSSL_FUNC_provider_get_params_fn deflt_get_params;
+static OSSL_FUNC_provider_query_operation_fn deflt_query;
+
 #define ALGC(NAMES, FUNC, CHECK) { { NAMES, "provider=default", FUNC }, CHECK }
 #define ALG(NAMES, FUNC) ALGC(NAMES, FUNC, NULL)
 
 /* Functions provided by the core */
-static OSSL_core_gettable_params_fn *c_gettable_params = NULL;
-static OSSL_core_get_params_fn *c_get_params = NULL;
+static OSSL_FUNC_core_gettable_params_fn *c_gettable_params = NULL;
+static OSSL_FUNC_core_get_params_fn *c_get_params = NULL;
 
 /* Parameters we provide to the core */
 static const OSSL_PARAM deflt_param_types[] = {
@@ -35,12 +44,12 @@ static const OSSL_PARAM deflt_param_types[] = {
     OSSL_PARAM_END
 };
 
-static const OSSL_PARAM *deflt_gettable_params(const OSSL_PROVIDER *prov)
+static const OSSL_PARAM *deflt_gettable_params(void *provctx)
 {
     return deflt_param_types;
 }
 
-static int deflt_get_params(const OSSL_PROVIDER *prov, OSSL_PARAM params[])
+static int deflt_get_params(void *provctx, OSSL_PARAM params[])
 {
     OSSL_PARAM *p;
 
@@ -53,7 +62,9 @@ static int deflt_get_params(const OSSL_PROVIDER *prov, OSSL_PARAM params[])
     p = OSSL_PARAM_locate(params, OSSL_PROV_PARAM_BUILDINFO);
     if (p != NULL && !OSSL_PARAM_set_utf8_ptr(p, OPENSSL_FULL_VERSION_STR))
         return 0;
-
+    p = OSSL_PARAM_locate(params, OSSL_PROV_PARAM_STATUS);
+    if (p != NULL && !OSSL_PARAM_set_uint(p, 1))
+        return 0;
     return 1;
 }
 
@@ -86,7 +97,7 @@ static int deflt_get_params(const OSSL_PROVIDER *prov, OSSL_PARAM params[])
  */
 static const OSSL_ALGORITHM deflt_digests[] = {
     /* Our primary name:NIST name[:our older names] */
-    { "SHA1:SHA-1", "provider=default", sha1_functions },
+    { "SHA1:SHA-1:SSL3-SHA1", "provider=default", sha1_functions },
     { "SHA2-224:SHA-224:SHA224", "provider=default", sha224_functions },
     { "SHA2-256:SHA-256:SHA256", "provider=default", sha256_functions },
     { "SHA2-384:SHA-384:SHA384", "provider=default", sha384_functions },
@@ -130,7 +141,7 @@ static const OSSL_ALGORITHM deflt_digests[] = {
 #endif /* OPENSSL_NO_SM3 */
 
 #ifndef OPENSSL_NO_MD5
-    { "MD5", "provider=default", md5_functions },
+    { "MD5:SSL3-MD5", "provider=default", md5_functions },
     { "MD5-SHA1", "provider=default", md5_sha1_functions },
 #endif /* OPENSSL_NO_MD5 */
 
@@ -142,9 +153,12 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG("AES-256-ECB", aes256ecb_functions),
     ALG("AES-192-ECB", aes192ecb_functions),
     ALG("AES-128-ECB", aes128ecb_functions),
-    ALG("AES-256-CBC", aes256cbc_functions),
-    ALG("AES-192-CBC", aes192cbc_functions),
-    ALG("AES-128-CBC", aes128cbc_functions),
+    ALG("AES-256-CBC:AES256", aes256cbc_functions),
+    ALG("AES-192-CBC:AES192", aes192cbc_functions),
+    ALG("AES-128-CBC:AES128", aes128cbc_functions),
+    ALG("AES-128-CBC-CTS", aes128cbc_cts_functions),
+    ALG("AES-192-CBC-CTS", aes192cbc_cts_functions),
+    ALG("AES-256-CBC-CTS", aes256cbc_cts_functions),
     ALG("AES-256-OFB", aes256ofb_functions),
     ALG("AES-192-OFB", aes192ofb_functions),
     ALG("AES-128-OFB", aes128ofb_functions),
@@ -254,43 +268,12 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG("DES-EDE3-CFB", tdes_ede3_cfb_functions),
     ALG("DES-EDE3-CFB8", tdes_ede3_cfb8_functions),
     ALG("DES-EDE3-CFB1", tdes_ede3_cfb1_functions),
+    ALG("DES3-WRAP:id-smime-alg-CMS3DESwrap", tdes_wrap_cbc_functions),
     ALG("DES-EDE-ECB:DES-EDE", tdes_ede2_ecb_functions),
     ALG("DES-EDE-CBC", tdes_ede2_cbc_functions),
     ALG("DES-EDE-OFB", tdes_ede2_ofb_functions),
     ALG("DES-EDE-CFB", tdes_ede2_cfb_functions),
-    ALG("DESX-CBC:DESX", tdes_desx_cbc_functions),
-    ALG("DES3-WRAP:id-smime-alg-CMS3DESwrap", tdes_wrap_cbc_functions),
-    ALG("DES-ECB", des_ecb_functions),
-    ALG("DES-CBC:DES", des_cbc_functions),
-    ALG("DES-OFB", des_ofb64_functions),
-    ALG("DES-CFB", des_cfb64_functions),
-    ALG("DES-CFB1", des_cfb1_functions),
-    ALG("DES-CFB8", des_cfb8_functions),
 #endif /* OPENSSL_NO_DES */
-#ifndef OPENSSL_NO_BF
-    ALG("BF-ECB", blowfish128ecb_functions),
-    ALG("BF-CBC:BF:BLOWFISH", blowfish128cbc_functions),
-    ALG("BF-OFB", blowfish64ofb64_functions),
-    ALG("BF-CFB", blowfish64cfb64_functions),
-#endif /* OPENSSL_NO_BF */
-#ifndef OPENSSL_NO_IDEA
-    ALG("IDEA-ECB", idea128ecb_functions),
-    ALG("IDEA-CBC:IDEA", idea128cbc_functions),
-    ALG("IDEA-OFB:IDEA-OFB64", idea128ofb64_functions),
-    ALG("IDEA-CFB:IDEA-CFB64", idea128cfb64_functions),
-#endif /* OPENSSL_NO_IDEA */
-#ifndef OPENSSL_NO_CAST
-    ALG("CAST5-ECB", cast5128ecb_functions),
-    ALG("CAST5-CBC:CAST-CBC:CAST", cast5128cbc_functions),
-    ALG("CAST5-OFB", cast564ofb64_functions),
-    ALG("CAST5-CFB", cast564cfb64_functions),
-#endif /* OPENSSL_NO_CAST */
-#ifndef OPENSSL_NO_SEED
-    ALG("SEED-ECB", seed128ecb_functions),
-    ALG("SEED-CBC:SEED", seed128cbc_functions),
-    ALG("SEED-OFB:SEED-OFB128", seed128ofb128_functions),
-    ALG("SEED-CFB:SEED-CFB128", seed128cfb128_functions),
-#endif /* OPENSSL_NO_SEED */
 #ifndef OPENSSL_NO_SM4
     ALG("SM4-ECB", sm4128ecb_functions),
     ALG("SM4-CBC:SM4", sm4128cbc_functions),
@@ -298,27 +281,6 @@ static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
     ALG("SM4-OFB:SM4-OFB128", sm4128ofb128_functions),
     ALG("SM4-CFB:SM4-CFB128", sm4128cfb128_functions),
 #endif /* OPENSSL_NO_SM4 */
-#ifndef OPENSSL_NO_RC4
-    ALG("RC4", rc4128_functions),
-    ALG("RC4-40", rc440_functions),
-# ifndef OPENSSL_NO_MD5
-    ALG("RC4-HMAC-MD5", rc4_hmac_md5_functions),
-# endif /* OPENSSL_NO_MD5 */
-#endif /* OPENSSL_NO_RC4 */
-#ifndef OPENSSL_NO_RC5
-    ALG("RC5-ECB", rc5128ecb_functions),
-    ALG("RC5-CBC", rc5128cbc_functions),
-    ALG("RC5-OFB", rc5128ofb64_functions),
-    ALG("RC5-CFB", rc5128cfb64_functions),
-#endif /* OPENSSL_NO_RC5 */
-#ifndef OPENSSL_NO_RC2
-    ALG("RC2-ECB", rc2128ecb_functions),
-    ALG("RC2-CBC", rc2128cbc_functions),
-    ALG("RC2-40-CBC", rc240cbc_functions),
-    ALG("RC2-64-CBC", rc264cbc_functions),
-    ALG("RC2-CFB", rc2128cfb128_functions),
-    ALG("RC2-OFB", rc2128ofb128_functions),
-#endif /* OPENSSL_NO_RC2 */
 #ifndef OPENSSL_NO_CHACHA
     ALG("ChaCha20", chacha20_functions),
 # ifndef OPENSSL_NO_POLY1305
@@ -354,6 +316,7 @@ static const OSSL_ALGORITHM deflt_kdfs[] = {
     { "HKDF", "provider=default", kdf_hkdf_functions },
     { "SSKDF", "provider=default", kdf_sskdf_functions },
     { "PBKDF2", "provider=default", kdf_pbkdf2_functions },
+    { "PKCS12KDF", "provider=default", kdf_pkcs12_functions },
     { "SSHKDF", "provider=default", kdf_sshkdf_functions },
     { "X963KDF", "provider=default", kdf_x963_kdf_functions },
     { "TLS1-PRF", "provider=default", kdf_tls1_prf_functions },
@@ -377,6 +340,17 @@ static const OSSL_ALGORITHM deflt_keyexch[] = {
     { "X25519", "provider=default", x25519_keyexch_functions },
     { "X448", "provider=default", x448_keyexch_functions },
 #endif
+    { "TLS1-PRF", "provider=default", kdf_tls1_prf_keyexch_functions },
+    { "HKDF", "provider=default", kdf_hkdf_keyexch_functions },
+    { "SCRYPT:id-scrypt", "provider=default", kdf_scrypt_keyexch_functions },
+    { NULL, NULL, NULL }
+};
+
+static const OSSL_ALGORITHM deflt_rands[] = {
+    { "CTR-DRBG", "provider=default", drbg_ctr_functions },
+    { "HASH-DRBG", "provider=default", drbg_hash_functions },
+    { "HMAC-DRBG", "provider=default", drbg_hmac_functions },
+    { "TEST-RAND", "provider=default", test_rng_functions },
     { NULL, NULL, NULL }
 };
 
@@ -390,6 +364,14 @@ static const OSSL_ALGORITHM deflt_signature[] = {
     { "ED448:Ed448", "provider=default", ed448_signature_functions },
     { "ECDSA", "provider=default", ecdsa_signature_functions },
 #endif
+    { "HMAC", "provider=default", mac_legacy_hmac_signature_functions },
+    { "SIPHASH", "provider=default", mac_legacy_siphash_signature_functions },
+#ifndef OPENSSL_NO_POLY1305
+    { "POLY1305", "provider=default", mac_legacy_poly1305_signature_functions },
+#endif
+#ifndef OPENSSL_NO_CMAC
+    { "CMAC", "provider=default", mac_legacy_cmac_signature_functions },
+#endif
     { NULL, NULL, NULL }
 };
 
@@ -401,11 +383,13 @@ static const OSSL_ALGORITHM deflt_asym_cipher[] = {
 static const OSSL_ALGORITHM deflt_keymgmt[] = {
 #ifndef OPENSSL_NO_DH
     { "DH:dhKeyAgreement", "provider=default", dh_keymgmt_functions },
+    { "DHX:X9.42 DH:dhpublicnumber", "provider=default", dhx_keymgmt_functions },
 #endif
 #ifndef OPENSSL_NO_DSA
     { "DSA:dsaEncryption", "provider=default", dsa_keymgmt_functions },
 #endif
     { "RSA:rsaEncryption", "provider=default", rsa_keymgmt_functions },
+    { "RSA-PSS:RSASSA-PSS", "provider=default", rsapss_keymgmt_functions },
 #ifndef OPENSSL_NO_EC
     { "EC:id-ecPublicKey", "provider=default", ec_keymgmt_functions },
     { "X25519", "provider=default", x25519_keymgmt_functions },
@@ -413,121 +397,52 @@ static const OSSL_ALGORITHM deflt_keymgmt[] = {
     { "ED25519", "provider=default", ed25519_keymgmt_functions },
     { "ED448", "provider=default", ed448_keymgmt_functions },
 #endif
-    { NULL, NULL, NULL }
-};
-
-/*
- * Unlike most algorithms in the default provider, the serializers are allowed
- * for use in FIPS mode because they are not FIPS relevant, and therefore have
- * the "fips=yes" property.
- */
-static const OSSL_ALGORITHM deflt_serializer[] = {
-    { "RSA", "provider=default,fips=yes,format=text,type=private",
-      rsa_priv_text_serializer_functions },
-    { "RSA", "provider=default,fips=yes,format=text,type=public",
-      rsa_pub_text_serializer_functions },
-    { "RSA", "provider=default,fips=yes,format=der,type=private",
-      rsa_priv_der_serializer_functions },
-    { "RSA", "provider=default,fips=yes,format=der,type=public",
-      rsa_pub_der_serializer_functions },
-    { "RSA", "provider=default,fips=yes,format=pem,type=private",
-      rsa_priv_pem_serializer_functions },
-    { "RSA", "provider=default,fips=yes,format=pem,type=public",
-      rsa_pub_pem_serializer_functions },
-
-#ifndef OPENSSL_NO_DH
-    { "DH", "provider=default,fips=yes,format=text,type=private",
-      dh_priv_text_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=text,type=public",
-      dh_pub_text_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=text,type=parameters",
-      dh_param_text_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=der,type=private",
-      dh_priv_der_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=der,type=public",
-      dh_pub_der_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=der,type=parameters",
-      dh_param_der_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=pem,type=private",
-      dh_priv_pem_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=pem,type=public",
-      dh_pub_pem_serializer_functions },
-    { "DH", "provider=default,fips=yes,format=pem,type=parameters",
-      dh_param_pem_serializer_functions },
+    { "TLS1-PRF", "provider=default", kdf_keymgmt_functions },
+    { "HKDF", "provider=default", kdf_keymgmt_functions },
+    { "SCRYPT:id-scrypt", "provider=default", kdf_keymgmt_functions },
+    { "HMAC", "provider=default", mac_legacy_keymgmt_functions },
+    { "SIPHASH", "provider=default", mac_legacy_keymgmt_functions },
+#ifndef OPENSSL_NO_POLY1305
+    { "POLY1305", "provider=default", mac_legacy_keymgmt_functions },
 #endif
-
-#ifndef OPENSSL_NO_DSA
-    { "DSA", "provider=default,fips=yes,format=text,type=private",
-      dsa_priv_text_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=text,type=public",
-      dsa_pub_text_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=text,type=parameters",
-      dsa_param_text_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=der,type=private",
-      dsa_priv_der_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=der,type=public",
-      dsa_pub_der_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=der,type=parameters",
-      dsa_param_der_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=pem,type=private",
-      dsa_priv_pem_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=pem,type=public",
-      dsa_pub_pem_serializer_functions },
-    { "DSA", "provider=default,fips=yes,format=pem,type=parameters",
-      dsa_param_pem_serializer_functions },
-#endif
-
-#ifndef OPENSSL_NO_EC
-    { "X25519", "provider=default,fips=yes,format=text,type=private",
-      x25519_priv_print_serializer_functions },
-    { "X25519", "provider=default,fips=yes,format=text,type=public",
-      x25519_pub_print_serializer_functions },
-    { "X25519", "provider=default,fips=yes,format=der,type=private",
-      x25519_priv_der_serializer_functions },
-    { "X25519", "provider=default,fips=yes,format=der,type=public",
-      x25519_pub_der_serializer_functions },
-    { "X25519", "provider=default,fips=yes,format=pem,type=private",
-      x25519_priv_pem_serializer_functions },
-    { "X25519", "provider=default,fips=yes,format=pem,type=public",
-      x25519_pub_pem_serializer_functions },
-
-    { "X448", "provider=default,format=text,type=private",
-      x448_priv_print_serializer_functions },
-    { "X448", "provider=default,format=text,type=public",
-      x448_pub_print_serializer_functions },
-    { "X448", "provider=default,format=der,type=private",
-      x448_priv_der_serializer_functions },
-    { "X448", "provider=default,format=der,type=public",
-      x448_pub_der_serializer_functions },
-    { "X448", "provider=default,format=pem,type=private",
-      x448_priv_pem_serializer_functions },
-    { "X448", "provider=default,format=pem,type=public",
-      x448_pub_pem_serializer_functions },
-
-    { "EC", "provider=default,fips=yes,format=text,type=private",
-      ec_priv_text_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=text,type=public",
-      ec_pub_text_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=text,type=parameters",
-      ec_param_text_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=der,type=private",
-      ec_priv_der_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=der,type=public",
-      ec_pub_der_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=der,type=parameters",
-      ec_param_der_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=pem,type=private",
-      ec_priv_pem_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=pem,type=public",
-      ec_pub_pem_serializer_functions },
-    { "EC", "provider=default,fips=yes,format=pem,type=parameters",
-      ec_param_pem_serializer_functions },
+#ifndef OPENSSL_NO_CMAC
+    { "CMAC", "provider=default", cmac_legacy_keymgmt_functions },
 #endif
     { NULL, NULL, NULL }
 };
 
-static const OSSL_ALGORITHM *deflt_query(OSSL_PROVIDER *prov,
-                                         int operation_id,
+static const OSSL_ALGORITHM deflt_encoder[] = {
+#define ENCODER(name, _fips, _format, _type, func_table)                    \
+    { name,                                                                 \
+      "provider=default,fips=" _fips ",format=" _format ",type=" _type,     \
+      (func_table) }
+
+#include "encoders.inc"
+    { NULL, NULL, NULL }
+};
+#undef ENCODER
+
+static const OSSL_ALGORITHM deflt_decoder[] = {
+#define DECODER(name, _fips, _input, func_table)                            \
+    { name,                                                                 \
+      "provider=default,fips=" _fips ",input=" _input,                      \
+      (func_table) }
+
+#include "decoders.inc"
+    { NULL, NULL, NULL }
+};
+#undef DECODER
+
+static const OSSL_ALGORITHM deflt_store[] = {
+#define STORE(name, _fips, func_table)                           \
+    { name, "provider=default,fips=" _fips, (func_table) },
+
+#include "stores.inc"
+    { NULL, NULL, NULL }
+#undef STORE
+};
+
+static const OSSL_ALGORITHM *deflt_query(void *provctx, int operation_id,
                                          int *no_cache)
 {
     *no_cache = 0;
@@ -541,6 +456,8 @@ static const OSSL_ALGORITHM *deflt_query(OSSL_PROVIDER *prov,
         return deflt_macs;
     case OSSL_OP_KDF:
         return deflt_kdfs;
+    case OSSL_OP_RAND:
+        return deflt_rands;
     case OSSL_OP_KEYMGMT:
         return deflt_keymgmt;
     case OSSL_OP_KEYEXCH:
@@ -549,41 +466,55 @@ static const OSSL_ALGORITHM *deflt_query(OSSL_PROVIDER *prov,
         return deflt_signature;
     case OSSL_OP_ASYM_CIPHER:
         return deflt_asym_cipher;
-    case OSSL_OP_SERIALIZER:
-        return deflt_serializer;
+    case OSSL_OP_ENCODER:
+        return deflt_encoder;
+    case OSSL_OP_DECODER:
+        return deflt_decoder;
+    case OSSL_OP_STORE:
+        return deflt_store;
     }
     return NULL;
 }
 
+
+static void deflt_teardown(void *provctx)
+{
+    BIO_meth_free(PROV_CTX_get0_core_bio_method(provctx));
+    PROV_CTX_free(provctx);
+}
+
 /* Functions we provide to the core */
 static const OSSL_DISPATCH deflt_dispatch_table[] = {
+    { OSSL_FUNC_PROVIDER_TEARDOWN, (void (*)(void))deflt_teardown },
     { OSSL_FUNC_PROVIDER_GETTABLE_PARAMS, (void (*)(void))deflt_gettable_params },
     { OSSL_FUNC_PROVIDER_GET_PARAMS, (void (*)(void))deflt_get_params },
     { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (void (*)(void))deflt_query },
+    { OSSL_FUNC_PROVIDER_GET_CAPABILITIES, (void (*)(void))provider_get_capabilities },
     { 0, NULL }
 };
 
 OSSL_provider_init_fn ossl_default_provider_init;
 
-int ossl_default_provider_init(const OSSL_PROVIDER *provider,
+int ossl_default_provider_init(const OSSL_CORE_HANDLE *handle,
                                const OSSL_DISPATCH *in,
                                const OSSL_DISPATCH **out,
                                void **provctx)
 {
-    OSSL_core_get_library_context_fn *c_get_libctx = NULL;
+    OSSL_FUNC_core_get_library_context_fn *c_get_libctx = NULL;
+    BIO_METHOD *corebiometh;
 
     if (!ossl_prov_bio_from_dispatch(in))
         return 0;
     for (; in->function_id != 0; in++) {
         switch (in->function_id) {
         case OSSL_FUNC_CORE_GETTABLE_PARAMS:
-            c_gettable_params = OSSL_get_core_gettable_params(in);
+            c_gettable_params = OSSL_FUNC_core_gettable_params(in);
             break;
         case OSSL_FUNC_CORE_GET_PARAMS:
-            c_get_params = OSSL_get_core_get_params(in);
+            c_get_params = OSSL_FUNC_core_get_params(in);
             break;
         case OSSL_FUNC_CORE_GET_LIBRARY_CONTEXT:
-            c_get_libctx = OSSL_get_core_get_library_context(in);
+            c_get_libctx = OSSL_FUNC_core_get_library_context(in);
             break;
         default:
             /* Just ignore anything we don't understand */
@@ -594,13 +525,25 @@ int ossl_default_provider_init(const OSSL_PROVIDER *provider,
     if (c_get_libctx == NULL)
         return 0;
 
-    *out = deflt_dispatch_table;
-
     /*
      * We want to make sure that all calls from this provider that requires
      * a library context use the same context as the one used to call our
-     * functions.  We do that by passing it along as the provider context.
+     * functions.  We do that by passing it along in the provider context.
+     *
+     * This only works for built-in providers.  Most providers should
+     * create their own library context.
      */
-    *provctx = c_get_libctx(provider);
+    if ((*provctx = PROV_CTX_new()) == NULL
+            || (corebiometh = bio_prov_init_bio_method()) == NULL) {
+        PROV_CTX_free(*provctx);
+        *provctx = NULL;
+        return 0;
+    }
+    PROV_CTX_set0_library_context(*provctx, (OPENSSL_CTX *)c_get_libctx(handle));
+    PROV_CTX_set0_handle(*provctx, handle);
+    PROV_CTX_set0_core_bio_method(*provctx, corebiometh);
+
+    *out = deflt_dispatch_table;
+
     return 1;
 }

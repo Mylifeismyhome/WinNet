@@ -12,11 +12,6 @@
 # define OPENSSL_X509V3ERR_H
 # pragma once
 
-# include <openssl/macros.h>
-# ifndef OPENSSL_NO_DEPRECATED_3_0
-#  define HEADER_X509V3ERR_H
-# endif
-
 # include <openssl/opensslconf.h>
 # include <openssl/symhacks.h>
 
@@ -41,6 +36,7 @@ int ERR_load_X509V3_strings(void);
 #  define X509V3_F_DO_EXT_I2D                              0
 #  define X509V3_F_DO_EXT_NCONF                            0
 #  define X509V3_F_GNAMES_FROM_SECTNAME                    0
+#  define X509V3_F_I2R_ISSUER_SIGN_TOOL                    0
 #  define X509V3_F_I2S_ASN1_ENUMERATED                     0
 #  define X509V3_F_I2S_ASN1_IA5STRING                      0
 #  define X509V3_F_I2S_ASN1_INTEGER                        0
@@ -80,6 +76,7 @@ int ERR_load_X509V3_strings(void);
 #  define X509V3_F_V2I_IDP                                 0
 #  define X509V3_F_V2I_IPADDRBLOCKS                        0
 #  define X509V3_F_V2I_ISSUER_ALT                          0
+#  define X509V3_F_V2I_ISSUER_SIGN_TOOL                    0
 #  define X509V3_F_V2I_NAME_CONSTRAINTS                    0
 #  define X509V3_F_V2I_POLICY_CONSTRAINTS                  0
 #  define X509V3_F_V2I_POLICY_MAPPINGS                     0
@@ -130,7 +127,7 @@ int ERR_load_X509V3_strings(void);
 # define X509V3_R_INVALID_MULTIPLE_RDNS                   161
 # define X509V3_R_INVALID_NAME                            106
 # define X509V3_R_INVALID_NULL_ARGUMENT                   107
-# define X509V3_R_INVALID_NULL_NAME                       108
+# define X509V3_R_INVALID_EMPTY_NAME                      108
 # define X509V3_R_INVALID_NULL_VALUE                      109
 # define X509V3_R_INVALID_NUMBER                          140
 # define X509V3_R_INVALID_NUMBERS                         141

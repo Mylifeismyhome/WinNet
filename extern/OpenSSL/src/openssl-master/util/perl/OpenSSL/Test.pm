@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -34,6 +34,8 @@ OpenSSL::Test - a private extension of Test::More
   use OpenSSL::Test;
 
   setup("my_test_name");
+
+  plan tests => 2;
 
   ok(run(app(["openssl", "version"])), "check for openssl presence");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -39,6 +39,10 @@ extern "C" {
 #  define OPENSSL_DH_FIPS_MIN_MODULUS_BITS 1024
 
 #  define DH_FLAG_CACHE_MONT_P     0x01
+
+#  define DH_FLAG_TYPE_MASK             0xF000
+#  define DH_FLAG_TYPE_DH               0x0000
+#  define DH_FLAG_TYPE_DHX              0x1000
 
 #  ifndef OPENSSL_NO_DEPRECATED_1_1_0
 /*
@@ -104,11 +108,10 @@ DECLARE_ASN1_ITEM(DHparams)
 #  define DH_CHECK_P_NOT_STRONG_PRIME     DH_CHECK_P_NOT_SAFE_PRIME
 
 /* DH parameter generation types used by EVP_PKEY_CTX_set_dh_paramgen_type() */
-#   define DH_PARAMGEN_TYPE_GENERATOR    0   /* Use a generator g */
-#   define DH_PARAMGEN_TYPE_FIPS_186_2   1   /* Use legacy FIPS186-2 standard */
+#   define DH_PARAMGEN_TYPE_GENERATOR    0   /* Use a safe prime generator */
+#   define DH_PARAMGEN_TYPE_FIPS_186_2   1   /* Use FIPS186-2 standard */
 #   define DH_PARAMGEN_TYPE_FIPS_186_4   2   /* Use FIPS186-4 standard */
-
-#   define DH_CHECK_P_NOT_STRONG_PRIME     DH_CHECK_P_NOT_SAFE_PRIME
+#   define DH_PARAMGEN_TYPE_GROUP        3   /* Use a named safe prime group */
 
 #   define d2i_DHparams_fp(fp, x) \
         (DH *)ASN1_d2i_fp((char *(*)())DH_new, \
@@ -147,7 +150,7 @@ DEPRECATEDIN_3_0(DH *DH_new_method(ENGINE *engine))
 DH *DH_new(void);
 void DH_free(DH *dh);
 int DH_up_ref(DH *dh);
-DEPRECATEDIN_3_0(int DH_bits(const DH *dh))
+int DH_bits(const DH *dh);
 DEPRECATEDIN_3_0(int DH_size(const DH *dh))
 DEPRECATEDIN_3_0(int DH_security_bits(const DH *dh))
 #  ifndef OPENSSL_NO_DEPRECATED_3_0
@@ -155,7 +158,7 @@ DEPRECATEDIN_3_0(int DH_security_bits(const DH *dh))
         CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_DH, l, p, newf, dupf, freef)
 #  endif
 DEPRECATEDIN_3_0(int DH_set_ex_data(DH *d, int idx, void *arg))
-DEPRECATEDIN_3_0(void *DH_get_ex_data(DH *d, int idx))
+DEPRECATEDIN_3_0(void *DH_get_ex_data(const DH *d, int idx))
 
 /* Deprecated version */
 DEPRECATEDIN_0_9_8(DH *DH_generate_parameters(int prime_len, int generator,
@@ -197,16 +200,14 @@ DH *DH_get_2048_256(void);
 /* Named parameters, currently RFC7919 and RFC3526 */
 /* TODO(3.0): deprecate DH_new_by_nid() after converting ssl/s3_lib.c */
 DH *DH_new_by_nid(int nid);
-DEPRECATEDIN_3_0(int DH_get_nid(DH *dh))
+DEPRECATEDIN_3_0(int DH_get_nid(const DH *dh))
 
-#  ifndef OPENSSL_NO_CMS
 /* RFC2631 KDF */
 DEPRECATEDIN_3_0(int DH_KDF_X9_42(unsigned char *out, size_t outlen,
                                   const unsigned char *Z, size_t Zlen,
                                   ASN1_OBJECT *key_oid,
                                   const unsigned char *ukm,
                                   size_t ukmlen, const EVP_MD *md))
-#  endif
 
 void DH_get0_pqg(const DH *dh,
                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
@@ -223,8 +224,8 @@ void DH_clear_flags(DH *dh, int flags);
 int DH_test_flags(const DH *dh, int flags);
 void DH_set_flags(DH *dh, int flags);
 DEPRECATEDIN_3_0(ENGINE *DH_get0_engine(DH *d))
-DEPRECATEDIN_3_0(long DH_get_length(const DH *dh))
-DEPRECATEDIN_3_0(int DH_set_length(DH *dh, long length))
+long DH_get_length(const DH *dh);
+int DH_set_length(DH *dh, long length);
 
 DEPRECATEDIN_3_0(DH_METHOD *DH_meth_new(const char *name, int flags))
 DEPRECATEDIN_3_0(void DH_meth_free(DH_METHOD *dhm))
@@ -270,76 +271,29 @@ DEPRECATEDIN_3_0(int DH_meth_set_generate_params(DH_METHOD *dhm,
                                                      (DH *, int, int,
                                                       BN_GENCB *)))
 
-#  define EVP_PKEY_CTX_set_dh_paramgen_prime_len(ctx, len) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN, len, NULL)
-
-#  define EVP_PKEY_CTX_set_dh_paramgen_subprime_len(ctx, len) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_PARAMGEN_SUBPRIME_LEN, len, NULL)
-
-#  define EVP_PKEY_CTX_set_dh_paramgen_type(ctx, typ) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_PARAMGEN_TYPE, typ, NULL)
-
-#  define EVP_PKEY_CTX_set_dh_paramgen_generator(ctx, gen) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR, gen, NULL)
-
-#  define EVP_PKEY_CTX_set_dh_rfc5114(ctx, gen) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_RFC5114, gen, NULL)
-
-#  define EVP_PKEY_CTX_set_dhx_rfc5114(ctx, gen) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_PARAMGEN, \
-                          EVP_PKEY_CTRL_DH_RFC5114, gen, NULL)
-
-#  define EVP_PKEY_CTX_set_dh_nid(ctx, nid) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DH, \
-                        EVP_PKEY_OP_PARAMGEN | EVP_PKEY_OP_KEYGEN, \
-                        EVP_PKEY_CTRL_DH_NID, nid, NULL)
-
+int EVP_PKEY_CTX_set_dh_paramgen_type(EVP_PKEY_CTX *ctx, int typ);
+int EVP_PKEY_CTX_set_dh_paramgen_gindex(EVP_PKEY_CTX *ctx, int gindex);
+int EVP_PKEY_CTX_set_dh_paramgen_seed(EVP_PKEY_CTX *ctx,
+                                      const unsigned char *seed,
+                                      size_t seedlen);
+int EVP_PKEY_CTX_set_dh_paramgen_prime_len(EVP_PKEY_CTX *ctx, int pbits);
+int EVP_PKEY_CTX_set_dh_paramgen_subprime_len(EVP_PKEY_CTX *ctx, int qlen);
+int EVP_PKEY_CTX_set_dh_paramgen_generator(EVP_PKEY_CTX *ctx, int gen);
+int EVP_PKEY_CTX_set_dh_nid(EVP_PKEY_CTX *ctx, int nid);
+int EVP_PKEY_CTX_set_dh_rfc5114(EVP_PKEY_CTX *ctx, int gen);
+int EVP_PKEY_CTX_set_dhx_rfc5114(EVP_PKEY_CTX *ctx, int gen);
 int EVP_PKEY_CTX_set_dh_pad(EVP_PKEY_CTX *ctx, int pad);
 
-#  define EVP_PKEY_CTX_set_dh_kdf_type(ctx, kdf) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_TYPE, kdf, NULL)
-
-#  define EVP_PKEY_CTX_get_dh_kdf_type(ctx) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_TYPE, -2, NULL)
-
-#  define EVP_PKEY_CTX_set0_dh_kdf_oid(ctx, oid) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_OID, 0, (void *)(oid))
-
-#  define EVP_PKEY_CTX_get0_dh_kdf_oid(ctx, poid) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX,  EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_GET_DH_KDF_OID, 0, (void *)(poid))
-
-#  define EVP_PKEY_CTX_set_dh_kdf_md(ctx, md) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_MD, 0, (void *)(md))
-
-#  define EVP_PKEY_CTX_get_dh_kdf_md(ctx, pmd) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_GET_DH_KDF_MD, 0, (void *)(pmd))
-
-#  define EVP_PKEY_CTX_set_dh_kdf_outlen(ctx, len) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_OUTLEN, len, NULL)
-
-#  define EVP_PKEY_CTX_get_dh_kdf_outlen(ctx, plen) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX, EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_GET_DH_KDF_OUTLEN, 0, (void *)(plen))
-
-#  define EVP_PKEY_CTX_set0_dh_kdf_ukm(ctx, p, plen) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX,  EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_DH_KDF_UKM, plen, (void *)(p))
-
-#  define EVP_PKEY_CTX_get0_dh_kdf_ukm(ctx, p) \
-        EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DHX,  EVP_PKEY_OP_DERIVE, \
-                          EVP_PKEY_CTRL_GET_DH_KDF_UKM, 0, (void *)(p))
+int EVP_PKEY_CTX_set_dh_kdf_type(EVP_PKEY_CTX *ctx, int kdf);
+int EVP_PKEY_CTX_get_dh_kdf_type(EVP_PKEY_CTX *ctx);
+int EVP_PKEY_CTX_set0_dh_kdf_oid(EVP_PKEY_CTX *ctx, ASN1_OBJECT *oid);
+int EVP_PKEY_CTX_get0_dh_kdf_oid(EVP_PKEY_CTX *ctx, ASN1_OBJECT **oid);
+int EVP_PKEY_CTX_set_dh_kdf_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);
+int EVP_PKEY_CTX_get_dh_kdf_md(EVP_PKEY_CTX *ctx, const EVP_MD **md);
+int EVP_PKEY_CTX_set_dh_kdf_outlen(EVP_PKEY_CTX *ctx, int len);
+int EVP_PKEY_CTX_get_dh_kdf_outlen(EVP_PKEY_CTX *ctx, int *len);
+int EVP_PKEY_CTX_set0_dh_kdf_ukm(EVP_PKEY_CTX *ctx, unsigned char *ukm, int len);
+int EVP_PKEY_CTX_get0_dh_kdf_ukm(EVP_PKEY_CTX *ctx, unsigned char **ukm);
 
 #  define EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN     (EVP_PKEY_ALG_CTRL + 1)
 #  define EVP_PKEY_CTRL_DH_PARAMGEN_GENERATOR     (EVP_PKEY_ALG_CTRL + 2)
@@ -360,9 +314,7 @@ int EVP_PKEY_CTX_set_dh_pad(EVP_PKEY_CTX *ctx, int pad);
 
 /* KDF types */
 #  define EVP_PKEY_DH_KDF_NONE                            1
-#  ifndef OPENSSL_NO_CMS
-#   define EVP_PKEY_DH_KDF_X9_42                          2
-#  endif
+#  define EVP_PKEY_DH_KDF_X9_42                           2
 
 #  ifdef  __cplusplus
 }

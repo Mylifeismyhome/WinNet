@@ -101,7 +101,7 @@ EVP_MD_do_all_provided
 
 =head1 DESCRIPTION
 
-The EVP digest routines are a high level interface to message digests,
+The EVP digest routines are a high-level interface to message digests,
 and should be used instead of the digest-specific functions.
 
 The B<EVP_MD> type is a structure for digest method implementation.
@@ -226,7 +226,7 @@ EVP_DigestInit_ex() can be called to initialize a new digest operation.
 =item EVP_DigestFinalXOF()
 
 Interfaces to extendable-output functions, XOFs, such as SHAKE128 and SHAKE256.
-It retrieves the digest value from I<ctx> and places it in I<len>-sized <B>md.
+It retrieves the digest value from I<ctx> and places it in I<len>-sized I<md>.
 After calling this function no additional calls to EVP_DigestUpdate() can be
 made, but EVP_DigestInit_ex() can be called to initialize a new operation.
 
@@ -536,7 +536,7 @@ This function has no return value.
 =head1 NOTES
 
 The B<EVP> interface to message digests should almost always be used in
-preference to the low level interfaces. This is because the code then becomes
+preference to the low-level interfaces. This is because the code then becomes
 transparent to the digest used and much more flexible.
 
 New applications should use the SHA-2 (such as L<EVP_sha256(3)>) or the SHA-3
@@ -647,7 +647,7 @@ and EVP_MD_CTX_get_params() functions were added in 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2000-2019 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

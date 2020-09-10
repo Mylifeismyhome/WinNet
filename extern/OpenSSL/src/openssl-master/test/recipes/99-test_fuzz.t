@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -9,32 +9,30 @@
 use strict;
 use warnings;
 
-use OpenSSL::Glob;
 use OpenSSL::Test qw/:DEFAULT srctop_file/;
 use OpenSSL::Test::Utils;
 
 setup("test_fuzz");
 
-my @fuzzers = ('asn1', 'asn1parse', 'bignum', 'bndiv', 'client', 'conf', 'crl', 'server', 'x509');
-if (!disabled("cms")) {
-    push @fuzzers, 'cms';
+my @fuzzers = ();
+@fuzzers = split /\s+/, $ENV{FUZZ_TESTS} if $ENV{FUZZ_TESTS};
+
+if (!@fuzzers) {
+    @fuzzers = (
+        # those commented here as very slow could be moved to separate runs
+        'asn1', # very slow
+        'asn1parse', 'bignum', 'bndiv', 'conf','crl',
+        'client', # very slow
+        'server', # very slow
+        'x509'
+        );
+    push @fuzzers, 'cmp' if !disabled("cmp");
+    push @fuzzers, 'cms' if !disabled("cms");
+    push @fuzzers, 'ct' if !disabled("ct");
 }
-if (!disabled("ct")) {
-    push @fuzzers, 'ct';
-}
-plan tests => scalar @fuzzers;
 
-foreach my $f (@fuzzers) {
-    subtest "Fuzzing $f" => sub {
-        my @dirs = glob(srctop_file('fuzz', 'corpora', $f));
-        push @dirs, glob(srctop_file('fuzz', 'corpora', "$f-*"));
+plan tests => scalar @fuzzers + 1; # one more due to below require_ok(...)
 
-        plan skip_all => "No corpora for $f-test" unless @dirs;
+require_ok(srctop_file('test','recipes','fuzz.pl'));
 
-        plan tests => scalar @dirs;
-
-        foreach (@dirs) {
-            ok(run(fuzz(["$f-test", $_])));
-        }
-    }
-}
+&fuzz_tests(@fuzzers);

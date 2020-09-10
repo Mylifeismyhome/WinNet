@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -21,79 +21,7 @@
 #include "internal/nelem.h"
 #include "crypto/asn1_dsa.h"
 
-#ifndef FIPS_MODE
-
-int EC_GROUP_get_basis_type(const EC_GROUP *group)
-{
-    int i;
-
-    if (EC_METHOD_get_field_type(EC_GROUP_method_of(group)) !=
-        NID_X9_62_characteristic_two_field)
-        /* everything else is currently not supported */
-        return 0;
-
-    /* Find the last non-zero element of group->poly[] */
-    for (i = 0;
-         i < (int)OSSL_NELEM(group->poly) && group->poly[i] != 0;
-         i++)
-        continue;
-
-    if (i == 4)
-        return NID_X9_62_ppBasis;
-    else if (i == 2)
-        return NID_X9_62_tpBasis;
-    else
-        /* everything else is currently not supported */
-        return 0;
-}
-
-#ifndef OPENSSL_NO_EC2M
-int EC_GROUP_get_trinomial_basis(const EC_GROUP *group, unsigned int *k)
-{
-    if (group == NULL)
-        return 0;
-
-    if (EC_METHOD_get_field_type(EC_GROUP_method_of(group)) !=
-        NID_X9_62_characteristic_two_field
-        || !((group->poly[0] != 0) && (group->poly[1] != 0)
-             && (group->poly[2] == 0))) {
-        ECerr(EC_F_EC_GROUP_GET_TRINOMIAL_BASIS,
-              ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
-        return 0;
-    }
-
-    if (k)
-        *k = group->poly[1];
-
-    return 1;
-}
-
-int EC_GROUP_get_pentanomial_basis(const EC_GROUP *group, unsigned int *k1,
-                                   unsigned int *k2, unsigned int *k3)
-{
-    if (group == NULL)
-        return 0;
-
-    if (EC_METHOD_get_field_type(EC_GROUP_method_of(group)) !=
-        NID_X9_62_characteristic_two_field
-        || !((group->poly[0] != 0) && (group->poly[1] != 0)
-             && (group->poly[2] != 0) && (group->poly[3] != 0)
-             && (group->poly[4] == 0))) {
-        ECerr(EC_F_EC_GROUP_GET_PENTANOMIAL_BASIS,
-              ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
-        return 0;
-    }
-
-    if (k1)
-        *k1 = group->poly[3];
-    if (k2)
-        *k2 = group->poly[2];
-    if (k3)
-        *k3 = group->poly[1];
-
-    return 1;
-}
-#endif
+#ifndef FIPS_MODULE
 
 /* some structures needed for the asn1 encoding */
 typedef struct x9_62_pentanomial_st {
@@ -262,7 +190,7 @@ static int ec_asn1_group2fieldid(const EC_GROUP *group, X9_62_FIELDID *field)
     ASN1_OBJECT_free(field->fieldType);
     ASN1_TYPE_free(field->p.other);
 
-    nid = EC_METHOD_get_field_type(EC_GROUP_method_of(group));
+    nid = EC_GROUP_get_field_type(group);
     /* set OID for the field */
     if ((field->fieldType = OBJ_nid2obj(nid)) == NULL) {
         ECerr(EC_F_EC_ASN1_GROUP2FIELDID, ERR_R_OBJ_LIB);
@@ -447,7 +375,7 @@ static int ec_asn1_group2curve(const EC_GROUP *group, X9_62_CURVE *curve)
 }
 
 ECPARAMETERS *EC_GROUP_get_ecparameters(const EC_GROUP *group,
-                                               ECPARAMETERS *params)
+                                        ECPARAMETERS *params)
 {
     size_t len = 0;
     ECPARAMETERS *ret = NULL;
@@ -556,9 +484,16 @@ ECPKPARAMETERS *EC_GROUP_get_ecpkparameters(const EC_GROUP *group,
          */
         tmp = EC_GROUP_get_curve_name(group);
         if (tmp) {
-            ret->type = 0;
-            if ((ret->value.named_curve = OBJ_nid2obj(tmp)) == NULL)
+            ASN1_OBJECT *asn1obj = OBJ_nid2obj(tmp);
+
+            if (asn1obj == NULL || OBJ_length(asn1obj) == 0) {
+                ASN1_OBJECT_free(asn1obj);
+                ECerr(EC_F_EC_GROUP_GET_ECPKPARAMETERS, EC_R_MISSING_OID);
                 ok = 0;
+            } else {
+                ret->type = 0;
+                ret->value.named_curve = asn1obj;
+            }
         } else
             /* we don't know the nid => ERROR */
             ok = 0;
@@ -1237,7 +1172,7 @@ int i2o_ECPublicKey(const EC_KEY *a, unsigned char **out)
 DECLARE_ASN1_FUNCTIONS(ECDSA_SIG)
 DECLARE_ASN1_ENCODE_FUNCTIONS_name(ECDSA_SIG, ECDSA_SIG)
 
-#endif /* FIPS_MODE */
+#endif /* FIPS_MODULE */
 
 ECDSA_SIG *ECDSA_SIG_new(void)
 {

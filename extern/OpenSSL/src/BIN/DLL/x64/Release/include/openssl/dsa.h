@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -76,7 +76,7 @@ typedef struct DSA_SIG_st DSA_SIG;
 
 /*
  * TODO(3.0): consider removing the ASN.1 encoding and decoding when
- * deserialisation is completed elsewhere.
+ * deserialization is completed elsewhere.
  */
 #  define d2i_DSAparams_fp(fp, x) \
         (DSA *)ASN1_d2i_fp((char *(*)())DSA_new, \
@@ -114,7 +114,7 @@ void DSA_free(DSA *r);
 /* "up" the DSA object's reference count */
 int DSA_up_ref(DSA *r);
 DEPRECATEDIN_3_0(int DSA_size(const DSA *))
-DEPRECATEDIN_3_0(int DSA_bits(const DSA *d))
+int DSA_bits(const DSA *d);
 DEPRECATEDIN_3_0(int DSA_security_bits(const DSA *d))
         /* next 4 return -1 on error */
 DEPRECATEDIN_3_0(int DSA_sign_setup(DSA *dsa, BN_CTX *ctx_in, BIGNUM **kinvp,
@@ -130,7 +130,7 @@ DEPRECATEDIN_3_0(int DSA_verify(int type, const unsigned char *dgst,
         CRYPTO_get_ex_new_index(CRYPTO_EX_INDEX_DSA, l, p, newf, dupf, freef)
 #  endif
 DEPRECATEDIN_3_0(int DSA_set_ex_data(DSA *d, int idx, void *arg))
-DEPRECATEDIN_3_0(void *DSA_get_ex_data(DSA *d, int idx))
+DEPRECATEDIN_3_0(void *DSA_get_ex_data(const DSA *d, int idx))
 
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(DSA, DSAPublicKey)
 DECLARE_ASN1_ENCODE_FUNCTIONS_only(DSA, DSAPrivateKey)
@@ -182,15 +182,17 @@ DEPRECATEDIN_3_0(int DSA_print_fp(FILE *bp, const DSA *x, int off))
 DEPRECATEDIN_3_0(DH *DSA_dup_DH(const DSA *r))
 #  endif
 
-#  define EVP_PKEY_CTX_set_dsa_paramgen_bits(ctx, nbits) \
-         EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DSA, EVP_PKEY_OP_PARAMGEN, \
-                           EVP_PKEY_CTRL_DSA_PARAMGEN_BITS, nbits, NULL)
-#  define EVP_PKEY_CTX_set_dsa_paramgen_q_bits(ctx, qbits) \
-         EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DSA, EVP_PKEY_OP_PARAMGEN, \
-                           EVP_PKEY_CTRL_DSA_PARAMGEN_Q_BITS, qbits, NULL)
-#  define EVP_PKEY_CTX_set_dsa_paramgen_md(ctx, md) \
-         EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DSA, EVP_PKEY_OP_PARAMGEN, \
-                           EVP_PKEY_CTRL_DSA_PARAMGEN_MD, 0, (void *)(md))
+int EVP_PKEY_CTX_set_dsa_paramgen_bits(EVP_PKEY_CTX *ctx, int nbits);
+int EVP_PKEY_CTX_set_dsa_paramgen_q_bits(EVP_PKEY_CTX *ctx, int qbits);
+int EVP_PKEY_CTX_set_dsa_paramgen_md_props(EVP_PKEY_CTX *ctx,
+                                           const char *md_name,
+                                           const char *md_properties);
+int EVP_PKEY_CTX_set_dsa_paramgen_gindex(EVP_PKEY_CTX *ctx, int gindex);
+int EVP_PKEY_CTX_set_dsa_paramgen_type(EVP_PKEY_CTX *ctx, const char *name);
+int EVP_PKEY_CTX_set_dsa_paramgen_seed(EVP_PKEY_CTX *ctx,
+                                       const unsigned char *seed,
+                                       size_t seedlen);
+int EVP_PKEY_CTX_set_dsa_paramgen_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);
 
 #  define EVP_PKEY_CTRL_DSA_PARAMGEN_BITS         (EVP_PKEY_ALG_CTRL + 1)
 #  define EVP_PKEY_CTRL_DSA_PARAMGEN_Q_BITS       (EVP_PKEY_ALG_CTRL + 2)
