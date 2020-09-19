@@ -1,5 +1,5 @@
 @echo off
-set /p Build=<../../TOOLSET
+set /p Build=<../../Config/BUILDPATH
 call "%Build%"
 
 set pathMSBuild=%CD%\src\

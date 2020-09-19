@@ -1,6 +1,6 @@
 @echo off
-set /p BuildOpenssl=<../../BUILDPATH_OPENSSL
-set /p Build=<../../VCVARSALL
+set /p BuildOpenssl=<../../Config/BUILDPATH_OPENSSL
+set /p Build=<../../Config/VCVARSALL
 call "%BuildOpenssl%vcvars32.bat"
 call "%Build%" x86
 
