@@ -1,6 +1,8 @@
 @echo off
-call "D:\Programme\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
-call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+set /p BuildOpenssl=<../../BUILDPATH_OPENSSL
+set /p Build=<../../VCVARSALL
+call "%BuildOpenssl%vcvars32.bat"
+call "%Build%" x86
 
 cd openssl-master
 

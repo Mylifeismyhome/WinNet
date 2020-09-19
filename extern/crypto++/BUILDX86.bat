@@ -1,5 +1,7 @@
 @echo off
-call "C:\Program Files (x86)\Microsoft Visual C++ Build Tools\vcbuildtools_msbuild.bat"
+set /p Build=<../../TOOLSET
+call "%Build%"
+
 set pathMSBuild=%CD%\src\
 cd %pathMSBuild%
 
