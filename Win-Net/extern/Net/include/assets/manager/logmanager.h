@@ -7,22 +7,22 @@
 NET_DSA_BEGIN
 
 // Color codes
-#define BLACK 0
-#define BLUE 1
-#define GREEN 2
-#define CYAN 3
-#define RED 4
-#define MAGENTA 5
-#define BROWN 6
-#define LIGHTGRAY 7
-#define DARKGRAY 8
-#define LIGHTBLUE 9
-#define LIGHTGREEN 10
-#define LIGHTCYAN 11
-#define LIGHTRED 12
-#define LIGHTMAGENTA 13
-#define YELLOW 14
-#define WHITE 15
+constexpr auto BLACK = 0;
+constexpr auto BLUE = 1;
+constexpr auto GREEN = 2;
+constexpr auto CYAN = 3;
+constexpr auto RED = 4;
+constexpr auto MAGENTA = 5;
+constexpr auto BROWN = 6;
+constexpr auto LIGHTGRAY = 7;
+constexpr auto DARKGRAY = 8;
+constexpr auto LIGHTBLUE = 9;
+constexpr auto LIGHTGREEN = 10;
+constexpr auto LIGHTCYAN = 11;
+constexpr auto LIGHTRED = 12;
+constexpr auto LIGHTMAGENTA = 13;
+constexpr auto YELLOW = 14;
+constexpr auto WHITE = 15;
 
 //// CONSOLE LOG ONLY
 #define CLOG(...) \
