@@ -1298,7 +1298,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, pkg.GetPackage(), JsonBuffer.GetAllocator());
+	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
 	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
 
 	rapidjson::Value idValue;
@@ -2138,15 +2138,15 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 	if (!data)
 		return false;
 
-	Package pkg;
-	pkg.Parse(reinterpret_cast<char*>(data));
-	if (!pkg.GetPackage().HasMember(CSTRING("ID")))
+	Package PKG;
+	PKG.Parse(reinterpret_cast<char*>(data));
+	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
 		LOG_PEER(CSTRING("Missing member 'ID' in the package"));
 		return false;
 	}
 
-	const auto id = pkg.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
 		LOG_PEER(CSTRING("Member 'ID' is smaller than zero and gets blocked"));
@@ -2154,7 +2154,7 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 		return false;
 	}
 
-	if (!pkg.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("Missing member 'CONTENT' in the package"));
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
@@ -2163,8 +2163,8 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 
 	Package Content;
 
-	if (!pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
+		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	if (!CheckDataN(peer, id, Content))
 	{

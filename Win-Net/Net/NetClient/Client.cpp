@@ -903,7 +903,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, pkg.GetPackage(), JsonBuffer.GetAllocator());
+	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
 	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
 
 	rapidjson::Value idValue;
@@ -983,9 +983,9 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		if (GetCompressPackage())
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encryptString(data.value(), data.size());
 		}
@@ -993,16 +993,16 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + sizeof(NET_AES_KEY) - 1 + sizeof(NET_AES_IV) - 1 + KeySize + IVSize + 8;
 
 		// Append Raw data package size
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
 			if (GetCompressPackage())
 			{
-				const auto rawData = pkg.GetRawData();
+				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
 					CompressData(data.reference(), data.size());
 			}
 
-			combinedSize += pkg.GetRawDataFullSize();
+			combinedSize += PKG.GetRawDataFullSize();
 		}
 
 		std::string dataSizeStr;
@@ -1049,9 +1049,9 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(IV, IVSize);
 
 		/* Append Package Data */
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto data : rawData)
 			{
 				// Append Key
@@ -1073,7 +1073,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length());
 				SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1);
 				SingleSend(data.value(), data.size());
-				pkg.DoNotDestruct();
+				PKG.DoNotDestruct();
 			}
 		}
 
@@ -1106,16 +1106,16 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			combinedSize = buffer.GetSize() + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + 4;
 
 		// Append Raw data package size
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
 			if (GetCompressPackage())
 			{
-				const auto rawData = pkg.GetRawData();
+				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
 					CompressData(data.reference(), data.size());
 			}
 
-			combinedSize += pkg.GetRawDataFullSize();
+			combinedSize += PKG.GetRawDataFullSize();
 		}
 
 		std::string dataSizeStr;
@@ -1142,9 +1142,9 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1);
 
 		/* Append Package Data */
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto data : rawData)
 			{
 				// Append Key
@@ -1166,7 +1166,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length());
 				SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1);
 				SingleSend(data.value(), data.size());
-				pkg.DoNotDestruct();
+				PKG.DoNotDestruct();
 			}
 		}
 
@@ -1909,16 +1909,16 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 		return;
 	}
 
-	Package pkg;
-	pkg.Parse(reinterpret_cast<char*>(data.get()));
-	if (!pkg.GetPackage().HasMember(CSTRING("ID")))
+	Package PKG;
+	PKG.Parse(reinterpret_cast<char*>(data.get()));
+	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
 		data.free();
 		return;
 	}
 
-	const auto id = pkg.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
@@ -1926,7 +1926,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 		return;
 	}
 
-	if (!pkg.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("Package Content is invalid!"));
 		data.free();
@@ -1936,8 +1936,8 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 	Package Content;
 	Content.DoNotDestruct();
 
-	if (!pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
+		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	// set raw data
 	if (!rawData.empty())
@@ -2096,7 +2096,7 @@ ConnectionClosed();
 
 LOG_SUCCESS(CSTRING("Connection has been closed by Server"));
 
-const auto code = pkg.Int(CSTRING("code"));
+const auto code = PKG.Int(CSTRING("code"));
 if (!code.valid())
 {
 	// Callback

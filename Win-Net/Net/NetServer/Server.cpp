@@ -595,8 +595,8 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 	if (!peer)
 		return;
 
-	Package pkg;
-	pkg.Append(CSTRING("code"), code);
+	Package PKG;
+	PKG.Append(CSTRING("code"), code);
 	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 
 	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer.getIPAddr(), NetGetErrorMessage(code));
@@ -1251,7 +1251,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, pkg.GetPackage(), JsonBuffer.GetAllocator());
+	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
 	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
 
 	rapidjson::Value idValue;
@@ -1329,9 +1329,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		dataBuffer.get()[dataBufferSize] = '\0';
 		aes.encryptString(dataBuffer.get(), dataBufferSize);
 
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encryptString(data.value(), data.size());
 		}
@@ -1339,16 +1339,16 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + sizeof(NET_AES_KEY) - 1 + sizeof(NET_AES_IV) - 1 + KeySize + IVSize + 8;
 
 		// Append Raw data package size
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
 			if (GetCompressPackage())
 			{
-				const auto rawData = pkg.GetRawData();
+				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
 					CompressData(data.reference(), data.size());
 			}
 
-			combinedSize += pkg.GetRawDataFullSize();
+			combinedSize += PKG.GetRawDataFullSize();
 		}
 
 		std::string dataSizeStr;
@@ -1395,9 +1395,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		SingleSend(peer, IV, IVSize);
 
 		/* Append Package Data */
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto data : rawData)
 			{
 				// Append Key
@@ -1419,7 +1419,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length());
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1);
 				SingleSend(peer, data.value(), data.size());
-				pkg.DoNotDestruct();
+				PKG.DoNotDestruct();
 			}
 		}
 
@@ -1452,16 +1452,16 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			combinedSize = buffer.GetSize() + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + 4;
 
 		// Append Raw data package size
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
 			if (GetCompressPackage())
 			{
-				const auto rawData = pkg.GetRawData();
+				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
 					CompressData(data.reference(), data.size());
 			}
 
-			combinedSize += pkg.GetRawDataFullSize();
+			combinedSize += PKG.GetRawDataFullSize();
 		}
 
 		std::string dataSizeStr;
@@ -1488,9 +1488,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1);
 
 		/* Append Package Data */
-		if (pkg.HasRawData())
+		if (PKG.HasRawData())
 		{
-			const auto rawData = pkg.GetRawData();
+			const auto rawData = PKG.GetRawData();
 			for (auto data : rawData)
 			{
 				// Append Key
@@ -1512,7 +1512,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length());
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1);
 				SingleSend(peer, data.value(), data.size());
-				pkg.DoNotDestruct();
+				PKG.DoNotDestruct();
 			}
 		}
 
@@ -1794,14 +1794,14 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 		/* Create new RSA Key Pair */
 		peer.cryption.createKeyPair(GetRSAKeySize());
 
-		Package pkg;
-		pkg.Append<const char*>(CSTRING("PublicKey"), peer.cryption.getPublicKey());
+		Package PKG;
+		PKG.Append<const char*>(CSTRING("PublicKey"), peer.cryption.getPublicKey());
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
 	else
 	{
 		// keep it empty, we get it filled back
-		Package pkg;
+		Package PKG;
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
@@ -2550,16 +2550,16 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		return;
 	}
 
-	Package pkg;
-	pkg.Parse(reinterpret_cast<char*>(data.get()));
-	if (!pkg.GetPackage().HasMember(CSTRING("ID")))
+	Package PKG;
+	PKG.Parse(reinterpret_cast<char*>(data.get()));
+	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
 		data.free();
 		return;
 	}
 
-	const auto id = pkg.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
@@ -2567,7 +2567,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		return;
 	}
 
-	if (!pkg.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("Package Content is invalid!"));
 		data.free();
@@ -2577,8 +2577,8 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	Package Content;
 	Content.DoNotDestruct();
 
-	if (!pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(pkg.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
+		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	// set raw data
 	if (!rawData.empty())
@@ -2652,7 +2652,7 @@ if (peer.cryption.getHandshakeStatus())
 	return;
 }
 
-const auto publicKey = pkg.String(CSTRING("PublicKey"));
+const auto publicKey = PKG.String(CSTRING("PublicKey"));
 
 if (!publicKey.valid()) // empty
 {
@@ -2695,10 +2695,10 @@ if (GetCryptPackage() && !peer.cryption.getHandshakeStatus())
 	return;
 }
 
-const auto majorVersion = pkg.Int(CSTRING("MajorVersion"));
-const auto minorVersion = pkg.Int(CSTRING("MinorVersion"));
-const auto revision = pkg.Int(CSTRING("Revision"));
-const auto key = pkg.String(CSTRING("Key"));
+const auto majorVersion = PKG.Int(CSTRING("MajorVersion"));
+const auto minorVersion = PKG.Int(CSTRING("MinorVersion"));
+const auto revision = PKG.Int(CSTRING("Revision"));
+const auto key = PKG.String(CSTRING("Key"));
 
 if (!majorVersion.valid()
 	|| !minorVersion.valid()
