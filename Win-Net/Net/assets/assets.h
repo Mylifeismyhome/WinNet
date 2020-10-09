@@ -1,13 +1,7 @@
 #pragma once
 #include <Net/Net.h>
-#include <Net/NetString.h>
-#include <assets/manager/filemanager.h>
 #include <assets/manager/dirmanager.h>
-
-// Log
-#include <assets/manager/logmanager.h>
-
-#include <random>
+#include <Cryption/XOR.h>
 
 NET_DSA_BEGIN
 
@@ -43,50 +37,6 @@ NET_DSA_BEGIN
 NET_NAMESPACE_BEGIN(Net)
 void ShowMessageBox(const char*, const char*);
 void ShowMessageBox(const wchar_t*, const wchar_t*);
-
-NET_NAMESPACE_BEGIN(Console)
-enum class LogStates
-{
-	normal = 0,
-	debug,
-	warning,
-	error,
-	success,
-	peer
-};
-
-struct LogInformations
-{
-	explicit operator bool() const
-	{
-		return (buffer ? true : wbuffer ? true : false);
-	}
-
-	char* buffer; // msg
-	wchar_t* wbuffer; // wmsg
-	LogStates state; // debug, warning, peer, error, success
-
-	LogInformations()
-	{
-		buffer = nullptr;
-		wbuffer = nullptr;
-		state = LogStates::normal;
-	}
-};
-
-extern "C" NET_API tm TM_GetTime();
-void Log(LogStates, const char*, const char*, ...);
-void Log(LogStates, const char*, const wchar_t*, ...);
-extern "C" NET_API void ChangeStdOutputColor(int);
-
-extern "C" NET_API void InsertLog(LogInformations&);
-extern "C" NET_API std::vector<LogInformations>& GetLogs();
-extern "C" NET_API void ClearLogs();
-
-extern "C" NET_API void SetPrintF(bool);
-extern "C" NET_API bool GetPrintFState();
-extern "C" NET_API WORD GetColorFromState(LogStates);
-NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Clock)
 extern "C" NET_API double GetClockTime();
