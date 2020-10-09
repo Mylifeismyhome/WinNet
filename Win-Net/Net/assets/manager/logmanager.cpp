@@ -3,22 +3,30 @@
 
 void SetFname(const char* name)
 {
-	fname = name;
+	NetString tmp(name);
+	if(tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+	{
+		if(tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+			strcpy_s(fname, name);
+		else
+		{
+			strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
+			strcpy_s(fname, name);
+		}
+	}
+	else
+	{
+		strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
+		strcat_s(fname, name);
+	}
 }
 
-const char* GetFname()
+char* GetFname()
 {
 	return fname;
-}
-
-void SetPath(const char* p)
-{
-	path = p;
-}
-
-char* GetPath()
-{
-	return (char*)path;
 }
 
 void SetAreaInUse(const bool status)
@@ -35,23 +43,10 @@ NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 Log::Log()
 {
-	if (strcmp(GetPath(), "") != 0)
-	{
-		NET_CREATEDIR(GetPath());
-		const auto len = strlen(GetFname()) + strlen(GetPath()) + 6;
-		auto fname = ALLOC<char>(len + 1);
-		sprintf_s(fname, len, CSTRING("%s/%s.log"), GetPath(), GetFname());
-		file = new NET_FILEMANAGER(fname, NET_FILE_APPAND | NET_FILE_READWRITE);
-		FREE(fname);
-	}
-	else
-	{
-		const auto len = strlen(GetFname()) + 5;
-		auto fname = ALLOC<char>(len + 1);
-		sprintf_s(fname, len, CSTRING("%s.log"), GetFname());
-		file = new NET_FILEMANAGER(fname, NET_FILE_APPAND | NET_FILE_READWRITE);
-		FREE(fname);
-	}
+	char tmp[MAX_PATH];
+	strcpy_s(tmp, GetFname());
+	strcat_s(tmp, CSTRING(".log"));
+	file = new NET_FILEMANAGER(tmp, NET_FILE_APPAND | NET_FILE_READWRITE);
 }
 
 Log::~Log()

@@ -214,9 +214,6 @@ else \
 ///////////////////////
 
 /* LOG AREAS (FILENAME) */
-#define CHANGE_LOG_PATH(path) \
-SetPath(path);
-
 #define BEGIN_AREA_LOG(fname) \
 SetFname(fname); \
 SetAreaInUse(true);
@@ -224,17 +221,12 @@ SetAreaInUse(true);
 #define END_AREA_LOG \
 SetAreaInUse(false);
 
-static const char* fname = "";
-static const char* path = "";
+static char fname[MAX_PATH];
 static bool AreaInUse = false;
 extern "C" NET_API void SetFname(const char*);
-extern "C" NET_API const char* GetFname();
-extern "C" NET_API void SetPath(const char*);
-NET_API char* GetPath();
+extern "C" NET_API char* GetFname();
 extern "C" NET_API void SetAreaInUse(bool);
 extern "C" NET_API bool IsAreaInUse();
-
-#define SET_LOG_LIMIT Net::Console::SetLogLimit
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
