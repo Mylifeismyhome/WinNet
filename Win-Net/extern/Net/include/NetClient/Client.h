@@ -24,6 +24,19 @@ constexpr auto DEFAULT_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 NET_DSA_BEGIN
 
+#define PKG pkg
+#define FUNCTION_NAME NET_FUNCTIONNAME
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) { \
+	const char* NET_FUNCTIONNAME = CSTRING("On"#fnc);
+
+#define NET_END_FUNC_PACKAGE }
+#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
+#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKAGE)
+#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+
+#define NET_SEND DoSend
+
 #ifdef _WIN64
 typedef DWORD64 lt;
 #else
@@ -184,11 +197,11 @@ void GetPackageDataSize();
 void ProcessPackages();
 void ExecutePackage(size_t, size_t);
 
-void OnRSAHandshake(NET_PACKAGE pkg);
-void OnKeysPackage(NET_PACKAGE);
-void OnVersionPackage(NET_PACKAGE);
-void OnEstabilishConnectionPackage(NET_PACKAGE);
-void OnClosePackage(NET_PACKAGE);
+NET_DEF_FNC_PKG(RSAHandshake);
+NET_DEF_FNC_PKG(KeysPackage);
+NET_DEF_FNC_PKG(VersionPackage);
+NET_DEF_FNC_PKG(EstabilishConnectionPackage);
+NET_DEF_FNC_PKG(ClosePackage);
 
 NET_CLASS_PROTECTED
 // Callback

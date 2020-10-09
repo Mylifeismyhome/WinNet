@@ -16,6 +16,20 @@ NET_DSA_BEGIN
 #define NET_IPEER peerInfo
 #define NET_PEER peerInfo&
 
+#define PEER peer
+#define PKG pkg
+#define FUNCTION_NAME NET_FUNCTIONNAME
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
+	const char* NET_FUNCTIONNAME = CSTRING("On"#fnc);
+
+#define NET_END_FUNC_PACKAGE }
+#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
+#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKAGE)
+#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+
+#define NET_SEND DoSend
+
 #include <Cryption/AES.h>
 #include <Cryption/RSA.h>
 #include <Coding/MD5.h>
@@ -284,8 +298,8 @@ void ExecutePackage(NET_PEER, size_t, size_t);
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 
 /* Native Packages */
-void OnRSAHandshake(NET_PEER, NET_PACKAGE);
-void OnVersionPackage(NET_PEER, NET_PACKAGE);
+NET_DEF_FNC_PKG(RSAHandshake);
+NET_DEF_FNC_PKG(VersionPackage);
 
 NET_CLASS_PROTECTED
 /* CALLBACKS */

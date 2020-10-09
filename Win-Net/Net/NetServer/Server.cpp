@@ -597,7 +597,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 
 	Package pkg;
 	pkg.Append(CSTRING("code"), code);
-	DoSend(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
+	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 
 	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer.getIPAddr(), NetGetErrorMessage(code));
 
@@ -1796,13 +1796,13 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 
 		Package pkg;
 		pkg.Append<const char*>(CSTRING("PublicKey"), peer.cryption.getPublicKey());
-		DoSend(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
 	else
 	{
 		// keep it empty, we get it filled back
 		Package pkg;
-		DoSend(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
+		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
 	while (peer)
@@ -2640,103 +2640,101 @@ NET_SERVER_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
 NET_SERVER_DEFINE_PACKAGE(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
 NET_SERVER_END_DATA_PACKAGE
 
-void Server::OnRSAHandshake(NET_PEER peer, NET_PACKAGE pkg)
+NET_BEGIN_FNC_PKG(Server, RSAHandshake)
+if (peer.estabilished)
 {
-	if (peer.estabilished)
-	{
-		LOG_ERROR(CSTRING("[%s][OnRSAHandshake] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), peer.getIPAddr());
-		return;
-	}
-	if (peer.cryption.getHandshakeStatus())
-	{
-		LOG_ERROR(CSTRING("[%s][OnRSAHandshake] - Peer ('%s'): has already done the RSA Handshake, something went wrong!"), GetServerName(), peer.getIPAddr());
-		return;
-	}
-
-	const auto publicKey = pkg.String(CSTRING("PublicKey"));
-
-	if (!publicKey.valid()) // empty
-	{
-		LOG_ERROR(CSTRING("[%s] - Weird, Peer ('%s'): has sent an empty RSA Public Key!"), GetServerName(), peer.getIPAddr());
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_EmptyRSAPublicKey);
-		return;
-	}
-
-	// overwrite stored Public Key with new from Server
-	const auto size = strlen(publicKey.value());
-	/*peer.cryption.RSAPublicKey.Set(ALLOC<char>(size + 1));
-	memcpy(peer.cryption.RSAPublicKey.get(), publicKey.value(), size);
-	peer.cryption.RSAPublicKey.get()[size] = '\0';*/
-
-	peer.cryption.setPublicKey(ALLOC<char>(size + 1));
-	memcpy(peer.cryption.getPublicKey(), publicKey.value(), size);
-	peer.cryption.getPublicKey()[size] = '\0';
-
-	// from now we use the Cryption, synced with Server
-	peer.cryption.setHandshakeStatus(true);
-
-	// RSA Handshake has been finished, keep going with normal process
-	LOG_PEER(CSTRING("[%s] - RSA Key Handshake were successfully with Peer ('%s')"), GetServerName(), peer.getIPAddr());
-
-	// keep it empty, we get it filled back
-	Package pkgVersionsCheck;
-	DoSend(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgVersionsCheck);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	return;
+}
+if (peer.cryption.getHandshakeStatus())
+{
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already done the RSA Handshake, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	return;
 }
 
-void Server::OnVersionPackage(NET_PEER peer, NET_PACKAGE pkg)
+const auto publicKey = pkg.String(CSTRING("PublicKey"));
+
+if (!publicKey.valid()) // empty
 {
-	// should not happen
-	if (peer.estabilished)
-	{
-		LOG_ERROR(CSTRING("[%s][OnVersionPackage] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), peer.getIPAddr());
-		return;
-	}
-	if (GetCryptPackage() && !peer.cryption.getHandshakeStatus())
-	{
-		LOG_ERROR(CSTRING("[%s][OnVersionPackage] - Peer ('%s'): has not done the RSA Handshake yet, something went wrong!"), GetServerName(), peer.getIPAddr());
-		return;
-	}
-
-	const auto majorVersion = pkg.Int(CSTRING("MajorVersion"));
-	const auto minorVersion = pkg.Int(CSTRING("MinorVersion"));
-	const auto revision = pkg.Int(CSTRING("Revision"));
-	const auto key = pkg.String(CSTRING("Key"));
-
-	if (!majorVersion.valid()
-		|| !minorVersion.valid()
-		|| !revision.valid()
-		|| !key.valid())
-	{
-		LOG_ERROR(CSTRING("[%s][OnVersionPackage] - Peer ('%s'): has sent an invalid versions package"), GetServerName(), peer.getIPAddr());
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
-		return;
-	}
-
-	if ((majorVersion.value() == NET_MAJOR_VERSION())
-		&& (minorVersion.value() == NET_MINOR_VERSION())
-		&& (revision.value() == NET_REVISION())
-		&& strcmp(key.value(), NET_KEY()) == 0)
-	{
-		peer.NetVersionMatched = true;
-
-		Package estabilish;
-		DoSend(peer, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage, estabilish);
-
-		peer.estabilished = true;
-
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been estabilished"), GetServerName(), peer.getIPAddr());
-
-		// callback
-		OnPeerEstabilished(peer);
-	}
-	else
-	{
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has sent different Net-Version:\n%i.%i.%i-%s"), GetServerName(), peer.getIPAddr(), majorVersion.value(), minorVersion.value(), revision.value(), key.value());
-
-		// version or key missmatch, disconnect peer
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
-	}
+	LOG_ERROR(CSTRING("[%s][%s] - Weird, Peer ('%s'): has sent an empty RSA Public Key!"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_EmptyRSAPublicKey);
+	return;
 }
+
+// overwrite stored Public Key with new from Server
+const auto size = strlen(publicKey.value());
+/*peer.cryption.RSAPublicKey.Set(ALLOC<char>(size + 1));
+memcpy(peer.cryption.RSAPublicKey.get(), publicKey.value(), size);
+peer.cryption.RSAPublicKey.get()[size] = '\0';*/
+
+peer.cryption.setPublicKey(ALLOC<char>(size + 1));
+memcpy(peer.cryption.getPublicKey(), publicKey.value(), size);
+peer.cryption.getPublicKey()[size] = '\0';
+
+// from now we use the Cryption, synced with Server
+peer.cryption.setHandshakeStatus(true);
+
+// RSA Handshake has been finished, keep going with normal process
+LOG_PEER(CSTRING("[%s][%s] - RSA Key Handshake were successfully with Peer ('%s')"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+
+// keep it empty, we get it filled back
+Package pkgVersionsCheck;
+NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgVersionsCheck);
+NET_END_FNC_PKG
+
+NET_BEGIN_FNC_PKG(Server, VersionPackage)
+// should not happen
+if (peer.estabilished)
+{
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	return;
+}
+if (GetCryptPackage() && !peer.cryption.getHandshakeStatus())
+{
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has not done the RSA Handshake yet, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	return;
+}
+
+const auto majorVersion = pkg.Int(CSTRING("MajorVersion"));
+const auto minorVersion = pkg.Int(CSTRING("MinorVersion"));
+const auto revision = pkg.Int(CSTRING("Revision"));
+const auto key = pkg.String(CSTRING("Key"));
+
+if (!majorVersion.valid()
+	|| !minorVersion.valid()
+	|| !revision.valid()
+	|| !key.valid())
+{
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent an invalid versions package"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
+	return;
+}
+
+if ((majorVersion.value() == NET_MAJOR_VERSION())
+	&& (minorVersion.value() == NET_MINOR_VERSION())
+	&& (revision.value() == NET_REVISION())
+	&& strcmp(key.value(), NET_KEY()) == 0)
+{
+	peer.NetVersionMatched = true;
+
+	Package estabilish;
+	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage, estabilish);
+
+	peer.estabilished = true;
+
+	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has been estabilished"), GetServerName(), FUNCTION_NAME, peer.getIPAddr());
+
+	// callback
+	OnPeerEstabilished(peer);
+}
+else
+{
+	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has sent different Net-Version:\n%i.%i.%i-%s"), GetServerName(), FUNCTION_NAME, peer.getIPAddr(), majorVersion.value(), minorVersion.value(), revision.value(), key.value());
+
+	// version or key missmatch, disconnect peer
+	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
+}
+NET_END_FNC_PKG
 
 void Server::Shutdown()
 {

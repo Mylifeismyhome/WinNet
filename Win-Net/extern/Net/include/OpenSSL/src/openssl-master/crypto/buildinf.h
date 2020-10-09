@@ -10,8 +10,8 @@
  * https://www.openssl.org/source/license.html
  */
 
-#define PLATFORM "platform: VC-WIN32"
-#define DATE "built on: Thu Sep 10 15:48:28 2020 UTC"
+#define PLATFORM "platform: VC-WIN64A"
+#define DATE "built on: Thu Sep 10 18:17:43 2020 UTC"
 
 /*
  * Generate compiler_flags as an array of individual characters. This is a
@@ -24,6 +24,6 @@ static const char compiler_flags[] = {
     '.','p','d','b',' ','/','M','T',' ','/','Z','l',' ','/','G','s',
     '0',' ','/','G','F',' ','/','G','y',' ','/','W','3',' ','/','w',
     'd','4','0','9','0',' ','/','n','o','l','o','g','o',' ','/','O',
-    '2',' ','-','D','L','_','E','N','D','I','A','N',' ','-','D','O',
+    'd',' ','-','D','L','_','E','N','D','I','A','N',' ','-','D','O',
     'P','E','N','S','S','L','_','P','I','C','\0'
 };

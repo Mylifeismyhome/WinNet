@@ -2005,115 +2005,111 @@ NET_CLIENT_DEFINE_PACKAGE(EstabilishConnectionPackage, NET_NATIVE_PACKAGE_ID::PK
 NET_CLIENT_DEFINE_PACKAGE(ClosePackage, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage)
 NET_CLIENT_END_DATA_PACKAGE
 
-void Client::OnRSAHandshake(NET_PACKAGE pkg)
+NET_BEGIN_FNC_PKG(Client, RSAHandshake)
+if (network.estabilished)
 {
-	if (network.estabilished)
-	{
-		LOG_ERROR(CSTRING("[OnRSAHandshake] - Client has already been estabilished, something went wrong!"));
-		return;
-	}
-	if (network.RSAHandshake)
-	{
-		LOG_ERROR(CSTRING("[OnRSAHandshake] - Client has already done the RSA Handshake, something went wrong!"));
-		return;
-	}
-
-	const auto tmpSize = strlen(network.RSAPublicKey.get());
-	CPOINTER<char> tmpPublicKey(ALLOC<char>(tmpSize + 1));
-	memcpy(tmpPublicKey.get(), network.RSAPublicKey.get(), tmpSize);
-	tmpPublicKey.get()[tmpSize] = '\0';
-
-	NET_JOIN_PACKAGE(pkg, pkgRel);
-
-	const auto publicKey = pkgRel.String(CSTRING("PublicKey"));
-
-	if (!publicKey.valid())
-	{
-		Disconnect();
-		return;
-	}
-
-	// overwrite stored Public Key with new from Server
-	const auto size = strlen(publicKey.value());
-	network.RSAPublicKey.free();
-	network.RSAPublicKey = ALLOC<char>(size + 1);
-	memcpy(network.RSAPublicKey.get(), publicKey.value(), size);
-	network.RSAPublicKey.get()[size] = '\0';
-
-	// send our generated Public Key to the Server
-	pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), tmpPublicKey.get());
-	DoSend(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
-	tmpPublicKey.free();
-
-	// from now we use the Cryption, synced with Server
-	network.RSAHandshake = true;
+	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	return;
+}
+if (network.RSAHandshake)
+{
+	LOG_ERROR(CSTRING("[%s] - Client has already done the RSA Handshake, something went wrong!"), FUNCTION_NAME);
+	return;
 }
 
-void Client::OnVersionPackage(NET_PACKAGE pkg)
+const auto tmpSize = strlen(network.RSAPublicKey.get());
+CPOINTER<char> tmpPublicKey(ALLOC<char>(tmpSize + 1));
+memcpy(tmpPublicKey.get(), network.RSAPublicKey.get(), tmpSize);
+tmpPublicKey.get()[tmpSize] = '\0';
+
+NET_JOIN_PACKAGE(pkg, pkgRel);
+
+const auto publicKey = pkgRel.String(CSTRING("PublicKey"));
+
+if (!publicKey.valid())
 {
-	// should not happen
-	if (network.estabilished)
-	{
-		LOG_ERROR(CSTRING("[OnVersionPackage] - Client has already been estabilished, something went wrong!"));
-		return;
-	}
-	if (GetCryptPackage() && !network.RSAHandshake)
-	{
-		LOG_ERROR(CSTRING("[OnVersionPackage] - Client has not done the RSA Handshake yet, something went wrong!"));
-		return;
-	}
-
-	NET_JOIN_PACKAGE(pkg, pkgRel);
-
-	pkgRel.Append<int>(CSTRING("MajorVersion"), NET_MAJOR_VERSION());
-	pkgRel.Append<int>(CSTRING("MinorVersion"), NET_MINOR_VERSION());
-	pkgRel.Append<int>(CSTRING("Revision"), NET_REVISION());
-	pkgRel.Append<const char*>(CSTRING("Key"), NET_KEY());
-	DoSend(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
+	Disconnect();
+	return;
 }
 
-void Client::OnEstabilishConnectionPackage(NET_PACKAGE pkg)
+// overwrite stored Public Key with new from Server
+const auto size = strlen(publicKey.value());
+network.RSAPublicKey.free();
+network.RSAPublicKey = ALLOC<char>(size + 1);
+memcpy(network.RSAPublicKey.get(), publicKey.value(), size);
+network.RSAPublicKey.get()[size] = '\0';
+
+// send our generated Public Key to the Server
+pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), tmpPublicKey.get());
+NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
+tmpPublicKey.free();
+
+// from now we use the Cryption, synced with Server
+network.RSAHandshake = true;
+NET_END_FNC_PKG
+
+NET_BEGIN_FNC_PKG(Client, VersionPackage)
+// should not happen
+if (network.estabilished)
 {
-	// should not happen
-	if (network.estabilished)
-	{
-		LOG_ERROR(CSTRING("[OnEstabilishConnectionPackage] - Client has already been estabilished, something went wrong!"));
-		return;
-	}
-	if (GetCryptPackage() && !network.RSAHandshake)
-	{
-		LOG_ERROR(CSTRING("[OnEstabilishConnectionPackage] - Client has not done the RSA Handshake yet, something went wrong!"));
-		return;
-	}
+	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	return;
+}
+if (GetCryptPackage() && !network.RSAHandshake)
+{
+	LOG_ERROR(CSTRING("[%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	return;
+}
 
-	network.estabilished = true;
+NET_JOIN_PACKAGE(pkg, pkgRel);
 
+pkgRel.Append<int>(CSTRING("MajorVersion"), NET_MAJOR_VERSION());
+pkgRel.Append<int>(CSTRING("MinorVersion"), NET_MINOR_VERSION());
+pkgRel.Append<int>(CSTRING("Revision"), NET_REVISION());
+pkgRel.Append<const char*>(CSTRING("Key"), NET_KEY());
+NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
+NET_END_FNC_PKG
+
+NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
+// should not happen
+if (network.estabilished)
+{
+	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	return;
+}
+if (GetCryptPackage() && !network.RSAHandshake)
+{
+	LOG_ERROR(CSTRING("[%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	return;
+}
+
+network.estabilished = true;
+
+// Callback
+// connection has been estabilished, now call entry function
+OnConnectionEstabilished();
+NET_END_FNC_PKG
+
+NET_BEGIN_FNC_PKG(Client, ClosePackage)
+// connection has been closed
+ConnectionClosed();
+
+LOG_SUCCESS(CSTRING("Connection has been closed by Server"));
+
+const auto code = pkg.Int(CSTRING("code"));
+if (!code.valid())
+{
 	// Callback
-	// connection has been estabilished, now call entry function
-	OnConnectionEstabilished();
+	OnForcedDisconnect(-1);
+	return;
 }
 
-void Client::OnClosePackage(NET_PACKAGE pkg)
-{
-	// connection has been closed
-	ConnectionClosed();
+// callback Different Version
+if (code.value() == NET_ERROR_CODE::NET_ERR_Versionmismatch)
+OnVersionMismatch();
 
-	LOG_SUCCESS(CSTRING("Connection has been closed by Server"));
-
-	const auto code = pkg.Int(CSTRING("code"));
-	if (!code.valid())
-	{
-		// Callback
-		OnForcedDisconnect(-1);
-		return;
-	}
-
-	// callback Different Version
-	if (code.value() == NET_ERROR_CODE::NET_ERR_Versionmismatch)
-		OnVersionMismatch();
-
-	// Callback
-	OnForcedDisconnect(code.value());
-}
+// Callback
+OnForcedDisconnect(code.value());
+NET_END_FNC_PKG
 NET_NAMESPACE_END
 NET_NAMESPACE_END
