@@ -1,5 +1,5 @@
 #pragma once
-#define DISABLE_POINTERCRYPTION
+#undef DISABLE_POINTERCRYPTION
 #define CPOINTER PointerCryption
 
 #include <random>
@@ -19,19 +19,6 @@ static uintptr_t GetRandSeed()
 	return GetRandNumber<uintptr_t>();
 }
 
-constexpr static auto Time2String(const char* str, const int offset) {
-	return static_cast<std::uint32_t>(str[offset] - '0') * 10 +
-		static_cast<std::uint32_t>(str[offset + 1] - '0');
-}
-
-constexpr static auto RndSeed() {
-	return Time2String(__TIME__, 0) * 60 * 60 + Time2String(__TIME__, 3) * 60 + Time2String(__TIME__, 6);
-}
-
-constexpr uintptr_t PointerCryptionCompileTimeXORKey = {
-	 RndSeed()
-};
-
 template <typename T>
 class PointerCryptionUniquePointer
 {
@@ -41,7 +28,6 @@ class PointerCryptionUniquePointer
 	T* encode(T* pointer) const
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 		pointer = (T*)EncodePointer(pointer);
 #endif
@@ -76,7 +62,6 @@ class PointerCryption
 	T* encode(T* pointer) noexcept
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 		pointer = (T*)EncodePointer(pointer);
 #endif
@@ -86,7 +71,6 @@ class PointerCryption
 	T* encode(const T*& pointer) noexcept
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 		pointer = (T*)EncodePointer(pointer);
 #endif
@@ -98,7 +82,6 @@ class PointerCryption
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)DecodePointer(pointer);
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
 #endif
 		return pointer;
 	}
