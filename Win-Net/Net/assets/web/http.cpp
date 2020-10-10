@@ -38,12 +38,12 @@ SOCKET HTTPHead::GetSocket() const
 	return connectSocket;
 }
 
-void HTTPHead::SetBufferSize(const int size)
+void HTTPHead::SetBufferSize(const size_t size)
 {
 	BufferSize = size;
 }
 
-int HTTPHead::GetBufferSize() const
+size_t HTTPHead::GetBufferSize() const
 {
 	return BufferSize;
 }
@@ -63,7 +63,7 @@ std::string& HTTPHead::GetPath()
 	return path;
 }
 
-int HTTPHead::GetPort() const
+short HTTPHead::GetPort() const
 {
 	return port;
 }
@@ -985,7 +985,7 @@ bool HTTPS::Init(std::string& fullURL, const NET_SSL_METHOD METHOD)
 			return false;
 		}
 
-		port = std::stoi(tmpport);
+		port = static_cast<short>(std::stoi(tmpport));
 	}
 
 	WSADATA wsaData;
@@ -1083,7 +1083,7 @@ size_t HTTPS::DoReceive(byte*& buffer) const
 	for (;;)
 	{
 		auto tmpReceive = ALLOC<byte>(GetBufferSize() + 1);
-		const auto result = SSL_read(ssl, tmpReceive, GetBufferSize());
+		const auto result = static_cast<size_t>(SSL_read(ssl, tmpReceive, GetBufferSize()));
 		if (result <= 0)
 		{
 			const auto err = SSL_get_error(ssl, result);
