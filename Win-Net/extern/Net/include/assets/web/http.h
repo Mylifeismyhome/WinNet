@@ -19,9 +19,9 @@ NET_CLASS_PROTECTED
 std::string protocol;
 std::string url;
 std::string path;
-int port;
+short port;
 
-int BufferSize;
+size_t BufferSize;
 
 std::string contentType;
 
@@ -56,13 +56,13 @@ NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(HTTPHead)
 NET_CLASS_DESTRUCTUR(HTTPHead)
 
-void SetBufferSize(int);
-int GetBufferSize() const;
+void SetBufferSize(size_t);
+size_t GetBufferSize() const;
 
 std::string& GetProtocol();
 std::string& GetURL();
 std::string& GetPath();
-int GetPort() const;
+short GetPort() const;
 
 std::string& GetHeaderContent();
 std::string& GetBodyContent();

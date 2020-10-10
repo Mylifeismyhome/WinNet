@@ -41,9 +41,9 @@ class PointerCryptionUniquePointer
 	T* encode(T* pointer) const
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		//pointer = (T*)EncodePointer(pointer);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
+		pointer = (T*)EncodePointer(pointer);
 #endif
 		return pointer;
 	}
@@ -76,9 +76,9 @@ class PointerCryption
 	T* encode(T* pointer) noexcept
 	{
 #ifndef DISABLE_POINTERCRYPTION
-	//	pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
-	//	pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-	//	pointer = (T*)EncodePointer(pointer);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
+		pointer = (T*)EncodePointer(pointer);
 #endif
 		return pointer;
 	}
@@ -86,9 +86,9 @@ class PointerCryption
 	T* encode(const T*& pointer) noexcept
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		//pointer = (T*)EncodePointer(pointer);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
+		pointer = (T*)EncodePointer(pointer);
 #endif
 		return pointer;
 	}
@@ -96,9 +96,9 @@ class PointerCryption
 	T* decode(T* pointer) const
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		//pointer = (T*)DecodePointer(pointer);
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		//pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
+		pointer = (T*)DecodePointer(pointer);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)PointerCryptionCompileTimeXORKey);
 #endif
 		return pointer;
 	}
