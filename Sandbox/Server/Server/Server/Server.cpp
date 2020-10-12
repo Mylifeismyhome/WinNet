@@ -18,9 +18,9 @@ void Server::OnPeerEstabilished(NET_PEER peer)
 
 	byte* data = nullptr;
 	size_t size = NULL;
-	if(fmanager.read(data, size))
+	if (fmanager.read(data, size))
 	{
-		Package pkg;	
+		Package pkg;
 		pkg.AppendRawData(CSTRING("FILE"), data, size);
 		//DoSend(peer, Packages::PKG_TEST, pkg);
 	}
@@ -34,11 +34,10 @@ void Server::OnPeerUpdate(NET_PEER peer)
 {
 }
 
-void Server::OnJulianStinkt(NET_PEER peer, NET_PACKAGE pkg)
-{
-	const auto arg = pkg.String(CSTRING("Thor"));
-	if (!arg.valid())
-		return;
+NET_BEGIN_FNC_PKG(Server, JulianStinkt)
+const auto arg = pkg.String(CSTRING("Thor"));
+if (!arg.valid())
+return;
 
-	LOG(CSTRING("Yes Julians Cock ist extreme: %s"), arg.value());
-}
+LOG(CSTRING("Yes Julians Cock ist extreme: %s"), arg.value());
+NET_END_FNC_PKG

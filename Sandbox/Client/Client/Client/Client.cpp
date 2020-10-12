@@ -40,7 +40,7 @@ static JuliansJSONRef GetRndJulian()
 		return JuliansJSONRef();
 
 	const auto time = jsonOBJ.Double(CSTRING("Timer"));
-	if(!time.valid())
+	if (!time.valid())
 		return JuliansJSONRef();
 
 	const auto str = ALLOC<char>(strlen(val.value()) + 1);
@@ -92,7 +92,7 @@ void Client::Tick()
 
 			Package pkg;
 			pkg.Append<const char*>(CSTRING("Thor"), val.str);
-			DoSend(Packages::PKG_JulianStinkt, pkg);
+			NET_SEND(Packages::PKG_JulianStinkt, pkg);
 
 			FREE(val.str);
 
@@ -135,13 +135,12 @@ void Client::OnVersionMismatch()
 {
 }
 
-void Client::OnTest(NET_PACKAGE pkg)
-{
-	LOG("OK");
-	const auto file = pkg.RawData(CSTRING("FILE"));
-	if (!file.valid())
-		return;
+NET_BEGIN_FNC_PKG(Client, Test)
+LOG("OK");
+const auto file = pkg.RawData(CSTRING("FILE"));
+if (!file.valid())
+return;
 
-	const NET_FILEMANAGER fmanager(CSTRING("test2.mp4"), NET_FILE_BINARY | NET_FILE_WRITE | NET_FILE_DISCARD);
-	fmanager.write(file.value(), file.size());
-}
+const NET_FILEMANAGER fmanager(CSTRING("test2.mp4"), NET_FILE_BINARY | NET_FILE_WRITE | NET_FILE_DISCARD);
+fmanager.write(file.value(), file.size());
+NET_END_FNC_PKG

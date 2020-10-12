@@ -134,6 +134,7 @@ size_t XOR::length() const
 
 void XOR::free()
 {
+	_Key.free();
 	_buffer.free();
 }
 NET_NAMESPACE_END

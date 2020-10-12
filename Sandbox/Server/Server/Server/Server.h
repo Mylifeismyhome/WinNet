@@ -13,5 +13,5 @@ NET_ASSOCIATION(Server, NET_SERVER)
 	NET_CALLBACK(bool, CheckData, NET_PEER, int, NET_PACKAGE);
 
 	NET_CLASS_PUBLIC;
-	void OnJulianStinkt(NET_PEER, NET_PACKAGE);
+	NET_DEF_FNC_PKG(JulianStinkt);
 };
