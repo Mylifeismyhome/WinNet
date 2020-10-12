@@ -47,10 +47,11 @@ int main()
 {
 	const std::string test("123DU HURENSOHN");
 	auto crc = CalcCRC32(test);
-	for(size_t i = 0; i < 100000; ++i)
+	for(size_t i = 0; i < 200; ++i)
 	{
 		NetString str("%s", crc);
-		//LOG(str.data().data());
+		LOG(str.str().data());
+		LOG(str.str().data());
 	}
 	FREE(crc);
 	Server server;

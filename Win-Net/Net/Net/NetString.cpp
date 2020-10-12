@@ -177,7 +177,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::str()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert(false);
+	return _string.Revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER NetString::cstr()
@@ -185,7 +185,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::cstr()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert(false);
+	return _string.Revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER NetString::get()
@@ -193,7 +193,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::get()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 	
-	return _string.Revert(false);
+	return _string.Revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER NetString::revert()
@@ -201,7 +201,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::revert()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert(false);
+	return _string.Revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER NetString::data()
@@ -209,7 +209,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::data()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert(false);
+	return _string.Revert();
 }
 
 void NetString::clear()
