@@ -64,6 +64,16 @@ typedef DWORD typeLatency;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
+NET_CLASS_BEGIN(IPRef)
+char* pointer;
+
+NET_CLASS_PUBLIC
+NET_CLASS_CONSTRUCTUR(IPRef, PCSTR)
+NET_CLASS_DESTRUCTUR(IPRef)
+
+PCSTR get() const;
+NET_CLASS_END
+
 NET_ABSTRAC_CLASS_BEGIN(Server, Package)
 NET_CLASS_PUBLIC
 #pragma region PEERS TABLE
@@ -176,7 +186,7 @@ NET_STRUCT_END_CONTRUCTION
 void clear();
 void setAsync(bool);
 typeLatency getLatency() const;
-const char* getIPAddr() const;
+IPRef IPAddr() const;
 NET_STRUCT_END
 
 NET_CLASS_PRIVATE
