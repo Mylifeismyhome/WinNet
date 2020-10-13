@@ -42,15 +42,13 @@ NET_DSA_BEGIN
 /* DEFAULT SETTINGS AS MACRO */
 constexpr auto DEFAULT_SERVER_SERVERNAME = "UNKNOWN";
 constexpr auto DEFAULT_SERVER_SERVERPORT = 50000;
-constexpr auto DEFAULT_SERVER_SHUTDOWN_TIMER = 10.0f;
 constexpr auto DEFAULT_SERVER_FREQUENZ = 30;
 constexpr auto DEFAULT_SERVER_MAX_THREADS = 3;
 constexpr auto DEFAULT_SERVER_RSA_KEY_SIZE = 1024;
 constexpr auto DEFAULT_SERVER_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
 constexpr auto DEFAULT_SERVER_CRYPT_PACKAGES = false;
 constexpr auto DEFAULT_SERVER_COMPRESS_PACKAGES = false;
-constexpr auto DEFAULT_SERVER_MAX_PACKET_SIZE = 65535;
-constexpr auto DEFAULT_SERVER_SHUTDOWN_KEY = KEYBOARD::F4;
+constexpr auto DEFAULT_SERVER_MAX_PACKET_SIZE = 1024;
 constexpr auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
@@ -212,13 +210,11 @@ float GetReceivedPackageSizeAsPerc(NET_PEER) const;
 char sServerName[SERVERNAME_LENGTH];
 u_short sServerPort;
 long long sfrequenz;
-float sShutdownTimer;
 u_short sMaxThreads;
 size_t sRSAKeySize;
 size_t sAESKeySize;
 bool sCryptPackage;
 bool sCompressPackage;
-u_short sShutdownKey;
 long sTCPReadTimeout;
 long sCalcLatencyInterval;
 
@@ -227,27 +223,23 @@ void SetAllToDefault();
 void SetServerName(const char*);
 void SetServerPort(u_short);
 void SetFrequenz(long long);
-void SetShutdownTimer(float);
 void SetMaxThreads(u_short);
 void SetTimeSpamProtection(float);
 void SetRSAKeySize(size_t);
 void SetAESKeySize(size_t);
 void SetCryptPackage(bool);
 void SetCompressPackage(bool);
-void SetShutdownKey(u_short);
 void SetTCPReadTimeout(long);
 void SetCalcLatencyInterval(long);
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
 long long GetFrequenz() const;
-float GetShutdownTimer() const;
 u_short GetMaxThreads() const;
 size_t GetRSAKeySize() const;
 size_t GetAESKeySize() const;
 bool GetCryptPackage() const;
 bool GetCompressPackage() const;
-u_short GetShutdownKey() const;
 long GetTCPReadTimeout() const;
 long GetCalcLatencyInterval() const;
 
@@ -257,19 +249,15 @@ SOCKET AcceptSocket;
 
 bool DoExit;
 bool bRunning;
-bool bShuttingDown;
-bool DoShutdown;
 
 NET_CLASS_PUBLIC
 void SetListenSocket(SOCKET);
 void SetAcceptSocket(SOCKET);
 void SetRunning(bool);
-void SetShutdown(bool);
 
 SOCKET GetListenSocket() const;
 SOCKET GetAcceptSocket() const;
 bool IsRunning() const;
-bool IsShutdown() const;
 
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
@@ -286,7 +274,6 @@ NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
 bool NeedExit() const;
-void Shutdown();
 
 void SingleSend(NET_PEER, const char*, size_t);
 void SingleSend(NET_PEER, BYTE*&, size_t);
@@ -299,7 +286,6 @@ NET_CLASS_PRIVATE
 void ReceiveThread(sockaddr_in, SOCKET);
 void TickThread();
 void AcceptorThread();
-void LatencyThread(NET_PEER);
 void DoReceive(NET_PEER);
 void GetPackageDataSize(NET_PEER) const;
 void ProcessPackages(NET_PEER);

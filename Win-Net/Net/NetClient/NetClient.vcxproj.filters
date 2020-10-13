@@ -37,9 +37,6 @@
     <Filter Include="Cryption\BCrypt">
       <UniqueIdentifier>{a8b5ca7f-40ad-4db2-b301-dbc62e12d0ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Protection">
-      <UniqueIdentifier>{f3ad2c46-fddb-4fa3-b1f7-235cf667af9b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\assets\assets.h">
@@ -117,9 +114,6 @@
     </ClInclude>
     <ClInclude Include="..\Cryption\PointerCryption.h">
       <Filter>Cryption</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Protection\Junk.hpp">
-      <Filter>Protection</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

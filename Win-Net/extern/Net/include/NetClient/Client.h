@@ -19,7 +19,7 @@ constexpr auto DEFAULT_CRYPT_PACKAGES = false;
 constexpr auto DEFAULT_COMPRESS_PACKAGES = false;
 constexpr auto DEFAULT_BLOCKING_MODE = false;
 constexpr auto DEFAULT_FREQUENZ = 66;
-constexpr auto DEFAULT_MAX_PACKET_SIZE = 65535;
+constexpr auto DEFAULT_MAX_PACKET_SIZE = 1024;
 constexpr auto DEFAULT_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 NET_DSA_BEGIN

@@ -35,7 +35,6 @@ void Server::SetAllToDefault()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	sfrequenz = DEFAULT_WEBSERVER_FREQUENZ;
-	sShutdownTimer = DEFAULT_WEBSERVER_SHUTDOWN_TIMER;
 	DoExit = NULL;
 	sTimeSpamProtection = DEFAULT_WEBSERVER_SPAM_PROTECTION_TIMER;
 	sMaxPeers = DEFAULT_WEBSERVER_MAX_PEERS;
@@ -45,22 +44,17 @@ void Server::SetAllToDefault()
 	strcpy_s(sKeyFileName, DEFAULT_WEBSERVER_KeyFileName);
 	strcpy_s(sCaFileName, DEFAULT_WEBSERVER_CaFileName);
 
-	DoShutdown = false;
-
 	sMaxThreads = DEFAULT_WEBSERVER_MAX_THREADS;
 	hUseCustom = DEFAULT_WEBSERVER_CustomHandshake;
 	hOrigin = nullptr;
 	sCompressPackage = DEFAULT_WEBSERVER_COMPRESS_PACKAGES;
-	sShutdownKey = DEFAULT_WEBSERVER_SHUTDOWN_KEY;
 	sTCPReadTimeout = DEFAULT_WEBSERVER_TCP_READ_TIMEOUT;
 	bWithoutHandshake = DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE;
 
 	SetRunning(false);
-	SetShutdown(false);
 
 	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
 	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
-	LOG_DEBUG(CSTRING("Shutdown-Timer has been set to default value of %.2f"), sShutdownTimer);
 	LOG_DEBUG(CSTRING("Spam-Protection timer has been set to default value of %.2f"), sTimeSpamProtection);
 	LOG_DEBUG(CSTRING("Max Peers has been set to default value of %i"), sMaxPeers);
 	LOG_DEBUG(CSTRING("SSL has been set to default value of %s"), sSSL ? CSTRING("enabled") : CSTRING("disabled"));
@@ -70,7 +64,6 @@ void Server::SetAllToDefault()
 	LOG_DEBUG(CSTRING("Use Custom Handshake has been set to default value of %s"), hUseCustom ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("Max Threads has been set to default value of %i"), sMaxThreads);
 	LOG_DEBUG(CSTRING("Compress Package has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Shutdown Key has been set to default value of %s"), GET_KEYBOARD_KEYNAME(sShutdownKey));
 	LOG_DEBUG(CSTRING("TCP Read timeout has been set to default value of %i"), sTCPReadTimeout);
 	LOG_DEBUG(CSTRING("Without Handshake has been set to default value of %s"), bWithoutHandshake ? "TRUE" : "FALSE");
 	LOG_DEBUG(CSTRING("---------------------------------------------"));
@@ -116,20 +109,6 @@ void Server::SetFrequenz(const long long sfrequenz)
 	else
 	{
 		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lld"), GetServerName(), sfrequenz);
-	}
-}
-
-void Server::SetShutdownTimer(const float sShutdownTimer)
-{
-	this->sShutdownTimer = sShutdownTimer;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Shutdown-Timer has been set to %.2f"), sShutdownTimer);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Shutdown-Timer has been set to %.2f"), GetServerName(), sShutdownTimer);
 	}
 }
 
@@ -279,20 +258,6 @@ void Server::SetCompressPackage(const bool sCompressPackage)
 	}
 }
 
-void Server::SetShutdownKey(const u_short sShutdownKey)
-{
-	this->sShutdownKey = sShutdownKey;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Shutdown Key has been set to %s"), GetServerName(), GET_KEYBOARD_KEYNAME(sShutdownKey));
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Shutdown Key has been set to %s"), GetServerName(), GET_KEYBOARD_KEYNAME(sShutdownKey));
-	}
-}
-
 void Server::SetTCPReadTimeout(const long sTCPReadTimeout)
 {
 	this->sTCPReadTimeout = sTCPReadTimeout;
@@ -330,11 +295,6 @@ const char* Server::GetServerName() const
 u_short Server::GetServerPort() const
 {
 	return sServerPort;
-}
-
-float Server::GetShutdownTimer() const
-{
-	return sShutdownTimer;
 }
 
 u_short Server::GetMaxThreads() const
@@ -390,11 +350,6 @@ CPOINTER<char> Server::GetHandshakeOriginCompare() const
 bool Server::GetCompressPackage() const
 {
 	return sCompressPackage;
-}
-
-u_short Server::GetShutdownKey() const
-{
-	return sShutdownKey;
 }
 
 long Server::GetTCPReadTimeout() const
@@ -530,7 +485,7 @@ Server::NET_IPEER Server::InsertPeer(const sockaddr_in client_addr, const SOCKET
 	newPeer.client_addr = client_addr;
 
 	/* Set Read Timeout */
-	auto tv = timeval();
+	timeval tv = {};
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
 	setsockopt(newPeer.pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
@@ -668,11 +623,6 @@ void Server::SetRunning(const bool bRunning)
 	this->bRunning = bRunning;
 }
 
-void Server::SetShutdown(const bool bShuttingDown)
-{
-	this->bShuttingDown = bShuttingDown;
-}
-
 SOCKET Server::GetListenSocket() const
 {
 	return ListenSocket;
@@ -686,11 +636,6 @@ SOCKET Server::GetAcceptSocket() const
 bool Server::IsRunning() const
 {
 	return bRunning;
-}
-
-bool Server::IsShutdown() const
-{
-	return bShuttingDown;
 }
 
 bool Server::Start(const char* serverName, const u_short serverPort, const NET_SSL_METHOD Method)
@@ -1286,13 +1231,6 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		if (IsShutdown())
-		{
-			LOG_ERROR(CSTRING("[%s] - Declined connection, reason: Server Shutdown!"), GetServerName());
-			closesocket(GetAcceptSocket());
-			return;
-		}
-
 		// disable nagle on the client's socket
 		char value = 1;
 		setsockopt(GetAcceptSocket(), IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
@@ -2198,11 +2136,6 @@ void Server::onSSLTimeout(NET_PEER peer)
 {
 	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): timouted!"), GetServerName(), peer.IPAddr().get());
 	ErasePeer(peer);
-}
-
-void Server::Shutdown()
-{
-	DoShutdown = !DoShutdown;
 }
 
 size_t Server::getCountPeers() const

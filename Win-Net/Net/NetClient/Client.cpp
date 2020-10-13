@@ -458,9 +458,7 @@ void Client::BaseTick()
 		// Calculate latency interval
 		if (network.lastCalcLatency < CURRENTCLOCKTIME)
 		{
-			std::thread LatencyTickThread(&Client::LatencyTick, this);
-			LatencyTickThread.detach();
-
+			std::thread(&Client::LatencyTick, this).detach();
 			network.lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
 		}
 	}

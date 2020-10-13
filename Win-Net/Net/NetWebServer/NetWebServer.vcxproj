@@ -837,7 +837,6 @@
     <ClInclude Include="..\Net\NetCodes.hpp" />
     <ClInclude Include="..\Net\NetString.h" />
     <ClInclude Include="..\Net\Package.h" />
-    <ClInclude Include="..\Protection\Junk.hpp" />
     <ClInclude Include="WebServer.h" />
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,18 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
+static void LatencyThread(Server::NET_PEER peer)
+{
+	if (!peer)
+		return;
+
+	const auto ip = peer.IPAddr();
+	ICMP _icmp(ip.get());
+	_icmp.execute();
+
+	peer.latency = _icmp.getLatency();
+}
+
 IPRef::IPRef(PCSTR const pointer)
 {
 	this->pointer = (char*)pointer;
@@ -34,32 +46,25 @@ void Server::SetAllToDefault()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	sfrequenz = DEFAULT_SERVER_FREQUENZ;
-	sShutdownTimer = DEFAULT_SERVER_SHUTDOWN_TIMER;
 	DoExit = NULL;
-
-	DoShutdown = false;
 
 	sMaxThreads = DEFAULT_SERVER_MAX_THREADS;
 	sRSAKeySize = DEFAULT_SERVER_RSA_KEY_SIZE;
 	sAESKeySize = DEFAULT_SERVER_AES_KEY_SIZE;
 	sCryptPackage = DEFAULT_SERVER_CRYPT_PACKAGES;
 	sCompressPackage = DEFAULT_SERVER_COMPRESS_PACKAGES;
-	sShutdownKey = DEFAULT_SERVER_SHUTDOWN_KEY;
 	sTCPReadTimeout = DEFAULT_SERVER_TCP_READ_TIMEOUT;
 	sCalcLatencyInterval = DEFAULT_SERVER_CALC_LATENCY_INTERVAL;
 
 	SetRunning(false);
-	SetShutdown(false);
 
 	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
 	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
-	LOG_DEBUG(CSTRING("Shutdown-Timer has been set to default value of %.2f"), sShutdownTimer);
 	LOG_DEBUG(CSTRING("Max Threads has been set to default value of %i"), sMaxThreads);
 	LOG_DEBUG(CSTRING("RSA Key size has been set to default value of %llu"), sRSAKeySize);
 	LOG_DEBUG(CSTRING("AES Key size has been set to default value of %llu"), sAESKeySize);
 	LOG_DEBUG(CSTRING("Crypt Package has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("Compress Package has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Shutdown Key has been set to default value of %s"), GET_KEYBOARD_KEYNAME(sShutdownKey));
 	LOG_DEBUG(CSTRING("TCP Read timeout has been set to default value of %i"), sTCPReadTimeout);
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
 	LOG_DEBUG(CSTRING("---------------------------------------------"));
@@ -105,20 +110,6 @@ void Server::SetFrequenz(const long long sfrequenz)
 	else
 	{
 		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lld"), GetServerName(), sfrequenz);
-	}
-}
-
-void Server::SetShutdownTimer(const float sShutdownTimer)
-{
-	this->sShutdownTimer = sShutdownTimer;
-
-	if (strcmp(GetServerName(), DEFAULT_SERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Shutdown-Timer has been set to %.2f"), sShutdownTimer);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Shutdown-Timer has been set to %.2f"), GetServerName(), sShutdownTimer);
 	}
 }
 
@@ -206,20 +197,6 @@ void Server::SetCompressPackage(const bool sCompressPackage)
 	}
 }
 
-void Server::SetShutdownKey(const u_short sShutdownKey)
-{
-	this->sShutdownKey = sShutdownKey;
-
-	if (strcmp(GetServerName(), DEFAULT_SERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Shutdown Key has been set to %s"), GET_KEYBOARD_KEYNAME(sShutdownKey));
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Shutdown Key has been set to %s"), GetServerName(), GET_KEYBOARD_KEYNAME(sShutdownKey));
-	}
-}
-
 void Server::SetTCPReadTimeout(const long sTCPReadTimeout)
 {
 	this->sTCPReadTimeout = sTCPReadTimeout;
@@ -258,11 +235,6 @@ u_short Server::GetServerPort() const
 	return sServerPort;
 }
 
-float Server::GetShutdownTimer() const
-{
-	return sShutdownTimer;
-}
-
 u_short Server::GetMaxThreads() const
 {
 	return sMaxThreads;
@@ -291,11 +263,6 @@ bool Server::GetCryptPackage() const
 bool Server::GetCompressPackage() const
 {
 	return sCompressPackage;
-}
-
-u_short Server::GetShutdownKey() const
-{
-	return sShutdownKey;
 }
 
 long Server::GetTCPReadTimeout() const
@@ -337,7 +304,7 @@ byte* Server::network_t::getData() const
 
 void Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, DEFAULT_SERVER_MAX_PACKET_SIZE * sizeof(byte));
+	memset(_dataReceive, NULL, DEFAULT_SERVER_MAX_PACKET_SIZE);
 }
 
 void Server::network_t::clear()
@@ -410,25 +377,21 @@ bool Server::cryption_t::getHandshakeStatus() const
 
 void Server::cryption_t::setPublicKey(char* publicKey)
 {
-	//_RSAPublicKey.Set(publicKey);
 	_RSAPublicKey = publicKey;
 }
 
 void Server::cryption_t::setPrivateKey(char* privateKey)
 {
-	//_RSAPrivateKey.Set(privateKey);
 	_RSAPrivateKey = privateKey;
 }
 
 char* Server::cryption_t::getPublicKey() const
 {
-	//return _RSAPublicKey.get();
 	return _RSAPublicKey;
 }
 
 char* Server::cryption_t::getPrivateKey() const
 {
-	//return _RSAPrivateKey.get();
 	return _RSAPrivateKey;
 }
 
@@ -475,7 +438,7 @@ Server::NET_IPEER Server::InsertPeer(const sockaddr_in client_addr, const SOCKET
 	newPeer.client_addr = client_addr;
 
 	/* Set Read Timeout */
-	auto tv = timeval();
+	timeval tv ={};
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
 	setsockopt(newPeer.pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
@@ -529,9 +492,7 @@ void Server::UpdatePeer(NET_PEER peer)
 	// Calculate latency interval
 	if (peer.lastCalcLatency < CURRENTCLOCKTIME)
 	{
-		std::thread LatencyThread(&Server::LatencyThread, this, peer);
-		LatencyThread.detach();
-
+		std::thread(&LatencyThread, peer).detach();
 		peer.lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
 	}
 }
@@ -650,16 +611,6 @@ void Server::AcceptorThread()
 	LOG_DEBUG(CSTRING("AcceptorThread() has been closed!"));
 }
 
-void Server::LatencyThread(NET_PEER peer)
-{
-	if (!peer)
-		return;
-
-	const auto ip = inet_ntoa(peer.client_addr.sin_addr);
-	ICMP _icmp(ip);
-	_icmp.execute();
-}
-
 void Server::SetListenSocket(const SOCKET ListenSocket)
 {
 	this->ListenSocket = ListenSocket;
@@ -675,11 +626,6 @@ void Server::SetRunning(const bool bRunning)
 	this->bRunning = bRunning;
 }
 
-void Server::SetShutdown(const bool bShuttingDown)
-{
-	this->bShuttingDown = bShuttingDown;
-}
-
 SOCKET Server::GetListenSocket() const
 {
 	return ListenSocket;
@@ -693,11 +639,6 @@ SOCKET Server::GetAcceptSocket() const
 bool Server::IsRunning() const
 {
 	return bRunning;
-}
-
-bool Server::IsShutdown() const
-{
-	return bShuttingDown;
 }
 
 bool Server::Start(const char* serverName, const u_short serverPort)
@@ -1280,7 +1221,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	JsonBuffer.Accept(writer);
 
 	size_t combinedSize = NULL;
-	CPOINTER<BYTE> combined;
 
 	/* Crypt */
 	if (GetCryptPackage() && peer.cryption.getHandshakeStatus())
@@ -1317,7 +1257,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		/* Encrypt AES Keypair using RSA */
-		size_t KeySize = GetAESKeySize();
+		auto KeySize = GetAESKeySize();
 		if (!rsa.encryptStringBase64(Key.reference().get(), KeySize))
 		{
 			Key.free();
@@ -1743,13 +1683,6 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		if (IsShutdown())
-		{
-			LOG_ERROR(CSTRING("[%s] - Declined connection, reason: Server Shutdown!"), GetServerName());
-			closesocket(GetAcceptSocket());
-			return;
-		}
-
 		// disable nagle on the client's socket
 		char value = 1;
 		setsockopt(GetAcceptSocket(), IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
@@ -2751,11 +2684,6 @@ else
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_FNC_PKG
-
-void Server::Shutdown()
-{
-	DoShutdown = !DoShutdown;
-}
 
 size_t Server::getCountPeers() const
 {

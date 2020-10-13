@@ -31,7 +31,6 @@ constexpr auto WS_PAYLOAD_LENGTH_63 = 127;
 /* DEFAULT SETTINGS AS MACRO */
 constexpr auto DEFAULT_WEBSERVER_SERVERNAME = "UNKNOWN";
 constexpr auto DEFAULT_WEBSERVER_SERVERPORT = NULL;
-constexpr auto DEFAULT_WEBSERVER_SHUTDOWN_TIMER = 10.0f;
 constexpr auto DEFAULT_WEBSERVER_FREQUENZ = 30;
 constexpr auto DEFAULT_WEBSERVER_SPAM_PROTECTION_TIMER = 0.5f;
 constexpr auto DEFAULT_WEBSERVER_MAX_PEERS = 256;
@@ -42,8 +41,7 @@ constexpr auto DEFAULT_WEBSERVER_KeyFileName = "key.pem";
 constexpr auto DEFAULT_WEBSERVER_CaFileName = "ca.pem";
 constexpr auto DEFAULT_WEBSERVER_CustomHandshake = false;
 constexpr auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
-constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 65535;
-constexpr auto DEFAULT_WEBSERVER_SHUTDOWN_KEY = KEYBOARD::F4;
+constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 1024;
 constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
 
@@ -187,7 +185,6 @@ void UpdatePeer(NET_PEER);
 char sServerName[128];
 u_short sServerPort;
 long long sfrequenz;
-float sShutdownTimer;
 u_short sMaxThreads;
 float sTimeSpamProtection;
 unsigned int sMaxPeers;
@@ -198,7 +195,6 @@ char sCaFileName[MAX_PATH];
 bool hUseCustom;
 CPOINTER<char> hOrigin;
 bool sCompressPackage;
-u_short sShutdownKey;
 long sTCPReadTimeout;
 bool bWithoutHandshake;
 
@@ -207,7 +203,6 @@ void SetAllToDefault();
 void SetServerName(const char*);
 void SetServerPort(u_short);
 void SetFrequenz(long long);
-void SetShutdownTimer(float);
 void SetMaxThreads(u_short);
 void SetTimeSpamProtection(float);
 void SetMaxPeers(unsigned int);
@@ -218,14 +213,12 @@ void SetCaFileName(const char*);
 void SetCustomHandshakeMethode(bool);
 void SetHandshakeOriginCompare(const char*);
 void SetCompressPackage(bool);
-void SetShutdownKey(u_short);
 void SetTCPReadTimeout(long);
 void SetWithoutHandshake(bool);
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
 long long GetFrequenz() const;
-float GetShutdownTimer() const;
 u_short GetMaxThreads() const;
 float GetTimeSpamProtection() const;
 unsigned int GetMaxPeers() const;
@@ -236,7 +229,6 @@ const char* GetCaFileName() const;
 bool GetCustomHandshakeMethode() const;
 CPOINTER<char> GetHandshakeOriginCompare() const;
 bool GetCompressPackage() const;
-u_short GetShutdownKey() const;
 long GetTCPReadTimeout() const;
 bool GetWithoutHandshake() const;
 
@@ -252,13 +244,10 @@ NET_CLASS_PUBLIC
 void SetListenSocket(SOCKET);
 void SetAcceptSocket(SOCKET);
 void SetRunning(bool);
-void SetShutdown(bool);
 
 SOCKET GetListenSocket() const;
 SOCKET GetAcceptSocket() const;
 bool IsRunning() const;
-bool IsShutdown() const;
-bool DoShutdown;
 
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
@@ -279,7 +268,6 @@ NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
 bool NeedExit() const;
-void Shutdown();
 
 void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = OPCODE_TEXT);
 
