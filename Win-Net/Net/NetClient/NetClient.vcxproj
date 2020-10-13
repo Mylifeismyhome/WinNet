@@ -259,7 +259,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -271,6 +271,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -305,7 +307,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -317,6 +319,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -351,7 +355,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -363,6 +367,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -397,7 +403,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -409,6 +415,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -443,7 +451,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -455,6 +463,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
@@ -490,7 +500,7 @@
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -502,6 +512,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
@@ -535,7 +547,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -546,6 +558,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -578,7 +592,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -589,6 +603,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -621,7 +637,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -632,6 +648,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -664,7 +682,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -675,6 +693,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -707,7 +727,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -718,6 +738,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
@@ -751,7 +773,7 @@
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
       <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -762,6 +784,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
