@@ -8,14 +8,22 @@ int main()
 	NET_RSA rsa;
 	rsa.GenerateKeys(1024, 3);
 
+	system("pause");
+	
 	byte* test = new byte[10];
 	memset(test, 'a', 10);
 	size_t size = 10;
-	rsa.encrypt(test, size);
-	rsa.decrypt(test, size);
-	LOG("%s", test);
-	system("pause");
 	
+	for (size_t i = 0; i < 20000; ++i)
+	{
+		rsa.encrypt(test, size);
+		rsa.decrypt(test, size);
+	}
+	
+	LOG("%s", test);
+	FREE(test);
+	system("pause");
+
 	//for(size_t i=  0; i < 10000; ++i)
 	//{
 	//	std::vector<NET_FILE_ATTR> file;

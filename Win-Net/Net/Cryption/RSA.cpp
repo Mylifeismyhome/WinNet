@@ -147,7 +147,8 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 	if (pkey)
 	{
 		const auto publicKey = EVP_PKEY_get1_RSA(pkey);
-
+		EVP_PKEY_free(pkey);
+		
 		if (publicKey != nullptr)
 		{
 			const auto tmpEncSize = RSA_size((const RSA*)publicKey);
@@ -162,7 +163,6 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 
 				BIO_free(bio);
 				RSA_free(publicKey);
-				//pkey.free();
 				return true;
 			}
 
@@ -170,8 +170,6 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 			FREE(tmpEnc);
 			RSA_free(publicKey);
 		}
-
-		//pkey.free();
 	}
 
 	BIO_free(bio);
@@ -218,7 +216,8 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 	if (pkey != nullptr)
 	{
 		const auto privateKey = EVP_PKEY_get1_RSA(pkey);
-
+		EVP_PKEY_free(pkey);
+		
 		if (privateKey != nullptr)
 		{
 			const auto tmpDecSize = RSA_size((const RSA*)privateKey);
@@ -233,7 +232,6 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 
 				BIO_free(bio);
 				RSA_free(privateKey);
-				//free(pkey);
 				return true;
 			}
 
@@ -241,8 +239,6 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 			FREE(tmpDec);
 			RSA_free(privateKey);
 		}
-
-		//free(pkey);
 	}
 
 	BIO_free(bio);
