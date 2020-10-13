@@ -63,8 +63,7 @@ CPOINTER<byte> data;
 size_t data_size;
 size_t data_full_size;
 bool recordingData;
-CPOINTER<char> RSAPublicKey; // Server Public Key
-CPOINTER<char> RSAPrivateKey; // own Private Key
+NET_RSA RSA;
 bool RSAHandshake; // set to true as soon as we have the public key from the Server
 
 bool estabilished;
@@ -78,8 +77,6 @@ data = nullptr;
 data_size = 0;
 data_full_size = 0;
 recordingData = false;
-RSAPublicKey = nullptr;
-RSAPrivateKey = nullptr;
 RSAHandshake = false;
 estabilished = false;
 latency = -1;

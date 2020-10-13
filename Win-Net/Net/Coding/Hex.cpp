@@ -2,7 +2,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Coding)
-bool HEX::encode(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
+static bool ProcessEncode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	try
 	{
@@ -14,21 +14,21 @@ bool HEX::encode(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
 		encoder.Get(encoded, hexSize);
 		encoded[hexSize] = '\0';
 
-		FREE(*out);
-		*out = encoded; // pointer swap
-		out[0][hexSize] = '\0';
+		FREE(out);
+		out = encoded; // pointer swap
+		out[hexSize] = '\0';
 
 		size = hexSize;
 		return true;
 	}
-	catch (const CryptoPP::Exception & ex)
+	catch (const CryptoPP::Exception& ex)
 	{
 		LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
 		return false;
 	}
 }
 
-bool HEX::encode(CryptoPP::byte** data, size_t& size) const
+static bool ProcessEncode(CryptoPP::byte*& data, size_t& size)
 {
 	try
 	{
@@ -40,31 +40,21 @@ bool HEX::encode(CryptoPP::byte** data, size_t& size) const
 		encoder.Get(encoded, hexSize);
 		encoded[hexSize] = '\0';
 
-		FREE(*data);
-		*data = encoded; // pointer swap
-		data[0][hexSize] = '\0';
-		
+		FREE(data);
+		data = encoded; // pointer swap
+		data[hexSize] = '\0';
+
 		size = hexSize;
 		return true;
 	}
-	catch (const CryptoPP::Exception & ex)
+	catch (const CryptoPP::Exception& ex)
 	{
 		LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
 		return false;
 	}
 }
 
-bool HEX::encodeString(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
-{
-	return encode(data, out, size);
-}
-
-bool HEX::encodeString(CryptoPP::byte** data, size_t& size) const
-{
-	return encode(data, size);
-}
-
-bool HEX::decode(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
+static bool ProcessDecode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	try
 	{
@@ -83,14 +73,14 @@ bool HEX::decode(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
 		size = originalSize;
 		return true;
 	}
-	catch (const CryptoPP::Exception & ex)
+	catch (const CryptoPP::Exception& ex)
 	{
 		LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
 		return false;
 	}
 }
 
-bool HEX::decode(CryptoPP::byte** data, size_t& size) const
+static bool ProcessDecode(CryptoPP::byte*& data, size_t& size)
 {
 	try
 	{
@@ -102,28 +92,38 @@ bool HEX::decode(CryptoPP::byte** data, size_t& size) const
 		decoder.Get(decoded, originalSize);
 		decoded[originalSize] = '\0';
 
-		FREE(*data);
-		*data = decoded; // pointer swap
-		data[0][originalSize] = '\0';
+		FREE(data);
+		data = decoded; // pointer swap
+		data[originalSize] = '\0';
 
 		size = originalSize;
 		return true;
 	}
-	catch (const CryptoPP::Exception & ex)
+	catch (const CryptoPP::Exception& ex)
 	{
 		LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
 		return false;
 	}
 }
 
-bool HEX::decodeString(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size) const
+bool HEX::encode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size) const
 {
-	return decode(data, out, size);
+	return ProcessEncode(data, out, size);
 }
 
-bool HEX::decodeString(CryptoPP::byte** data, size_t& size) const
+bool HEX::encode(CryptoPP::byte*& data, size_t& size) const
 {
-	return decode(data, size);
+	return ProcessEncode(data, size);
+}
+
+bool HEX::decode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size) const
+{
+	return ProcessDecode(data, out, size);
+}
+
+bool HEX::decode(CryptoPP::byte*& data, size_t& size) const
+{
+	return ProcessDecode(data, size);
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

@@ -164,16 +164,11 @@ inline unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Coding)
 NET_CLASS_BEGIN(Base64)
-bool encode(BYTE*, BYTE**, size_t&) const;
-bool encode(BYTE**, size_t&) const;
-bool decode(BYTE*, BYTE**, size_t&) const;
-bool decode(BYTE**, size_t&) const;
-
 NET_CLASS_PUBLIC
-bool encodeString(BYTE*, BYTE**, size_t&) const;
-bool encodeString(BYTE**, size_t&) const;
-bool decodeString(BYTE*, BYTE**, size_t&) const;
-bool decodeString(BYTE**, size_t&)const ;
+bool encode(BYTE*, BYTE*&, size_t&) const;
+bool encode(BYTE*&, size_t&) const;
+bool decode(BYTE*, BYTE*&, size_t&) const;
+bool decode(BYTE*&, size_t&)const ;
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

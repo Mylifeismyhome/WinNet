@@ -432,16 +432,13 @@ void Client::SetRecordingData(const bool status)
 
 void Client::Network::createNewRSAKeys(const size_t keySize)
 {
-	NET_RSA rsa;
-	RSAPublicKey = rsa.CreatePublicKey(keySize, 3);
-	RSAPrivateKey = rsa.CreatePrivateKey(keySize, 3);
+	RSA.GenerateKeys(keySize, 3);
 	RSAHandshake = false;
 }
 
 void Client::Network::deleteRSAKeys()
 {
-	RSAPublicKey.free();
-	RSAPrivateKey.free();
+	RSA.DeleteKeys();
 	RSAHandshake = false;
 }
 
@@ -940,7 +937,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		NET_RSA rsa;
-		if (!rsa.Init(network.RSAPublicKey.get(), (char*)CSTRING("")))
+		if (!rsa.Init(network.RSA.PublicKey().get(), (char*)CSTRING("")))
 		{
 			Key.free();
 			IV.free();
@@ -951,7 +948,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 
 		/* Encrypt AES Keypair using RSA */
 		auto KeySize = GetAESKeySize();
-		if (!rsa.encryptStringBase64(Key.reference().get(), KeySize))
+		if (!rsa.encryptBase64(Key.reference().ref(), KeySize))
 		{
 			Key.free();
 			IV.free();
@@ -961,7 +958,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-		if (!rsa.encryptStringBase64(IV.reference().get(), IVSize))
+		if (!rsa.encryptBase64(IV.reference().ref(), IVSize))
 		{
 			Key.free();
 			IV.free();
@@ -976,7 +973,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
 		buffer.Flush();
 		dataBuffer.get()[dataBufferSize] = '\0';
-		aes.encryptString(dataBuffer.get(), dataBufferSize);
+		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
 		if (GetCompressPackage())
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
@@ -985,7 +982,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		{
 			const auto rawData = PKG.GetRawData();
 			for (auto& data : rawData)
-				aes.encryptString(data.value(), data.size());
+				aes.encrypt(data.value(), data.size());
 		}
 
 		combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + sizeof(NET_AES_KEY) - 1 + sizeof(NET_AES_IV) - 1 + KeySize + IVSize + 8;
@@ -1611,7 +1608,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 
 		// Init RSA
 		NET_RSA rsa;
-		if (!rsa.Init((char*)CSTRING(""), network.RSAPrivateKey.get()))
+		if (!rsa.Init((char*)CSTRING(""), network.RSA.PrivateKey().get()))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1621,7 +1618,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 			return;
 		}
 
-		if (!rsa.decryptStringBase64(AESKey.reference().get(), AESKeySize))
+		if (!rsa.decryptBase64(AESKey.reference().ref(), AESKeySize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1631,7 +1628,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 			return;
 		}
 
-		if (!rsa.decryptStringBase64(AESIV.reference().get(), AESIVSize))
+		if (!rsa.decryptBase64(AESIV.reference().ref(), AESIVSize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1720,7 +1717,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 						DecompressData(entry.reference(), entry.size());
 
 					/* decrypt aes */
-					if (!aes.decryptString(entry.value(), entry.size()))
+					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						LOG_PEER(CSTRING("Failure on decrypting buffer"));
 						return;
@@ -1769,7 +1766,7 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 					DecompressData(data.reference().get(), packageSize);
 
 				/* decrypt aes */
-				if (!aes.decryptString(data.get(), packageSize))
+				if (!aes.decrypt(data.get(), packageSize))
 				{
 					LOG_PEER(CSTRING("Failure on decrypting buffer"));
 					data.free();
@@ -2015,9 +2012,9 @@ if (network.RSAHandshake)
 	return;
 }
 
-const auto tmpSize = strlen(network.RSAPublicKey.get());
+const auto tmpSize = strlen(network.RSA.PublicKey().get());
 CPOINTER<char> tmpPublicKey(ALLOC<char>(tmpSize + 1));
-memcpy(tmpPublicKey.get(), network.RSAPublicKey.get(), tmpSize);
+memcpy(tmpPublicKey.get(), network.RSA.PublicKey().get(), tmpSize);
 tmpPublicKey.get()[tmpSize] = '\0';
 
 NET_JOIN_PACKAGE(pkg, pkgRel);
@@ -2032,10 +2029,11 @@ if (!publicKey.valid())
 
 // overwrite stored Public Key with new from Server
 const auto size = strlen(publicKey.value());
-network.RSAPublicKey.free();
-network.RSAPublicKey = ALLOC<char>(size + 1);
-memcpy(network.RSAPublicKey.get(), publicKey.value(), size);
-network.RSAPublicKey.get()[size] = '\0';
+const auto PublicKey = ALLOC<char>(size + 1);
+memcpy(PublicKey, publicKey.value(), size);
+PublicKey[size] = '\0';
+
+network.RSA.SetPublicKey(PublicKey);
 
 // send our generated Public Key to the Server
 pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), tmpPublicKey.get());

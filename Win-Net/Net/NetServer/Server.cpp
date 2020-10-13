@@ -348,71 +348,24 @@ byte* Server::network_t::getDataReceive()
 #pragma region Cryption Structure
 void Server::cryption_t::createKeyPair(const size_t size)
 {
-	NET_RSA rsa;
-	setPublicKey(rsa.CreatePublicKey(size, 3));
-	setPrivateKey(rsa.CreatePrivateKey(size, 3));
-
-	setPublicKeySize(size);
-	setPrivateKeySize(size);
-
+	RSA.GenerateKeys(size, 3);
 	setHandshakeStatus(false);
 }
 
 void Server::cryption_t::deleteKeyPair()
 {
-	FREE(_RSAPublicKey);
-	FREE(_RSAPrivateKey);
+	RSA.DeleteKeys();
 	setHandshakeStatus(false);
 }
 
 void Server::cryption_t::setHandshakeStatus(const bool status)
 {
-	_RSAHandshake = status;
+	RSAHandshake = status;
 }
 
 bool Server::cryption_t::getHandshakeStatus() const
 {
-	return _RSAHandshake;
-}
-
-void Server::cryption_t::setPublicKey(char* publicKey)
-{
-	_RSAPublicKey = publicKey;
-}
-
-void Server::cryption_t::setPrivateKey(char* privateKey)
-{
-	_RSAPrivateKey = privateKey;
-}
-
-char* Server::cryption_t::getPublicKey() const
-{
-	return _RSAPublicKey;
-}
-
-char* Server::cryption_t::getPrivateKey() const
-{
-	return _RSAPrivateKey;
-}
-
-void  Server::cryption_t::setPublicKeySize(const size_t size)
-{
-	_RSAPublicKeySize = size;
-}
-
-void Server::cryption_t::setPrivateKeySize(const size_t size)
-{
-	_RSAPrivateKeySize = size;
-}
-
-size_t Server::cryption_t::getPublicKeySize()  const
-{
-	return _RSAPublicKeySize;
-}
-
-size_t Server::cryption_t::getPrivateKeySize() const
-{
-	return _RSAPrivateKeySize;
+	return RSAHandshake;
 }
 #pragma endregion
 
@@ -1242,7 +1195,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		NET_RSA rsa;
-		if (!rsa.Init(peer.cryption.getPublicKey(), (char*)CSTRING("")))
+		if (!rsa.Init(peer.cryption.RSA.PublicKey().get(), (char*)CSTRING("")))
 		{
 			Key.free();
 			IV.free();
@@ -1253,7 +1206,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 		/* Encrypt AES Keypair using RSA */
 		auto KeySize = GetAESKeySize();
-		if (!rsa.encryptStringBase64(Key.reference().get(), KeySize))
+		if (!rsa.encryptBase64(Key.reference().ref(), KeySize))
 		{
 			Key.free();
 			IV.free();
@@ -1263,7 +1216,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-		if (!rsa.encryptStringBase64(IV.reference().get(), IVSize))
+		if (!rsa.encryptBase64(IV.reference().ref(), IVSize))
 		{
 			Key.free();
 			IV.free();
@@ -1278,13 +1231,13 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
 		buffer.Flush();
 		dataBuffer.get()[dataBufferSize] = '\0';
-		aes.encryptString(dataBuffer.get(), dataBufferSize);
+		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
 		if (PKG.HasRawData())
 		{
 			const auto rawData = PKG.GetRawData();
 			for (auto& data : rawData)
-				aes.encryptString(data.value(), data.size());
+				aes.encrypt(data.value(), data.size());
 		}
 
 		combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + sizeof(NET_AES_KEY) - 1 + sizeof(NET_AES_IV) - 1 + KeySize + IVSize + 8;
@@ -1739,7 +1692,7 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 		peer.cryption.createKeyPair(GetRSAKeySize());
 
 		Package PKG;
-		PKG.Append<const char*>(CSTRING("PublicKey"), peer.cryption.getPublicKey());
+		PKG.Append<const char*>(CSTRING("PublicKey"), peer.cryption.RSA.PublicKey().get());
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
 	else
@@ -2197,8 +2150,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 		// Init RSA
 		NET_RSA rsa;
-		//if (!rsa.Init((char*)CSTRING(""), peer.cryption.RSAPrivateKey.get()))
-		if (!rsa.Init((char*)CSTRING(""), peer.cryption.getPrivateKey()))
+		if (!rsa.Init((char*)CSTRING(""), peer.cryption.RSA.PrivateKey().get()))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2208,7 +2160,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			return;
 		}
 
-		if (!rsa.decryptStringBase64(AESKey.reference().get(), AESKeySize))
+		if (!rsa.decryptBase64(AESKey.reference().ref(), AESKeySize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2218,7 +2170,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			return;
 		}
 
-		if (!rsa.decryptStringBase64(AESIV.reference().get(), AESIVSize))
+		if (!rsa.decryptBase64(AESIV.reference().ref(), AESIVSize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2307,7 +2259,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 						DecompressData(entry.reference(), entry.size());
 
 					/* decrypt aes */
-					if (!aes.decryptString(entry.value(), entry.size()))
+					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						LOG_PEER(CSTRING("Failure on decrypting buffer"));
 						return;
@@ -2356,7 +2308,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 					DecompressData(data.reference().get(), packageSize);
 
 				/* decrypt aes */
-				if (!aes.decryptString(data.get(), packageSize))
+				if (!aes.decrypt(data.get(), packageSize))
 				{
 					LOG_PEER(CSTRING("Failure on decrypting buffer"));
 					data.free();
@@ -2607,13 +2559,10 @@ if (!publicKey.valid()) // empty
 
 // overwrite stored Public Key with new from Server
 const auto size = strlen(publicKey.value());
-/*peer.cryption.RSAPublicKey.Set(ALLOC<char>(size + 1));
-memcpy(peer.cryption.RSAPublicKey.get(), publicKey.value(), size);
-peer.cryption.RSAPublicKey.get()[size] = '\0';*/
-
-peer.cryption.setPublicKey(ALLOC<char>(size + 1));
-memcpy(peer.cryption.getPublicKey(), publicKey.value(), size);
-peer.cryption.getPublicKey()[size] = '\0';
+const auto PublicKey = ALLOC<char>(size + 1);
+memcpy(PublicKey, publicKey.value(), size);
+PublicKey[size] = '\0';
+peer.cryption.RSA.SetPublicKey(PublicKey);
 
 // from now we use the Cryption, synced with Server
 peer.cryption.setHandshakeStatus(true);

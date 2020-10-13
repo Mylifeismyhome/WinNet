@@ -1,6 +1,5 @@
 #pragma once
 #define NET_RSA Net::Cryption::NETRSA
-#define NET_RSA_END CSTRING("-----")
 
 #include <Net/Net.h>
 
@@ -25,12 +24,13 @@ NET_DSA_BEGIN
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Cryption)
 NET_CLASS_BEGIN(NETRSA)
-// Used to Gen new Keys
-CPOINTER<rsa_st> keypair;
+CPOINTER<RSA> KeyPair;
+
+void GenerateKeyPair(size_t, int);
 
 // KEYS
-RUNTIMEXOR PublicKey;
-RUNTIMEXOR PrivateKey;
+RUNTIMEXOR _PublicKey;
+RUNTIMEXOR _PrivateKey;
 bool Set;
 
 NET_CLASS_PUBLIC
@@ -38,18 +38,25 @@ NET_CLASS_CONSTRUCTUR(NETRSA)
 NET_CLASS_DESTRUCTUR(NETRSA)
 
 bool GenerateKeys(size_t, int);
-char* CreatePublicKey(size_t, int);
-char* CreatePrivateKey(size_t, int);
 
+XOR_UNIQUEPOINTER PublicKey();
+XOR_UNIQUEPOINTER PrivateKey();
+
+void SetPublicKey(char*);
+void SetPrivateKey(char*);
+
+void DeleteKeys();
+
+bool Init(const char*, const char*);
 bool Init(char*, char*);
 bool IsSet() const { return Set; }
 
-bool encryptString(CryptoPP::byte**, size_t&);
-bool encryptStringHex(CryptoPP::byte**, size_t&);
-bool encryptStringBase64(CryptoPP::byte**, size_t&);
-bool decryptString(CryptoPP::byte**, size_t&);
-bool decryptStringHex(CryptoPP::byte**, size_t&);
-bool decryptStringBase64(CryptoPP::byte**, size_t&);
+bool encrypt(CryptoPP::byte*&, size_t&);
+bool encryptHex(CryptoPP::byte*&, size_t&);
+bool encryptBase64(CryptoPP::byte*&, size_t&);
+bool decrypt(CryptoPP::byte*&, size_t&);
+bool decryptHex(CryptoPP::byte*&, size_t&);
+bool decryptBase64(CryptoPP::byte*&, size_t&);
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

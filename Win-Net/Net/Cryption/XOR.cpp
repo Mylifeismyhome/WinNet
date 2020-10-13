@@ -57,6 +57,11 @@ XOR::XOR()
 
 XOR::XOR(char* str)
 {
+	Init(str);
+}
+
+void XOR::Init(char* str)
+{
 	if (!str)
 	{
 		_length = -1;

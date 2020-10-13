@@ -112,19 +112,11 @@ NET_STRUCT_END
 
 #pragma region Cryption Structure
 NET_STRUCT_BEGIN(cryption_t)
-char* _RSAPublicKey; // client Public Key
-char* _RSAPrivateKey;  // own Private Key
-bool _RSAHandshake; // set to true as soon as we have the public key from the Peer
-
-size_t _RSAPublicKeySize;
-size_t _RSAPrivateKeySize;
+NET_RSA RSA;
+bool RSAHandshake; // set to true as soon as we have the public key from the Peer
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(cryption_t)
-_RSAPublicKey = nullptr;
-_RSAPrivateKey = nullptr;
-_RSAHandshake = false;
-_RSAPublicKeySize = NULL;
-_RSAPrivateKeySize = NULL;
+RSAHandshake = false;
 NET_STRUCT_END_CONTRUCTION
 
 void createKeyPair(size_t);
@@ -132,16 +124,6 @@ void deleteKeyPair();
 
 void setHandshakeStatus(bool);
 bool getHandshakeStatus() const;
-
-void setPublicKey(char*);
-void setPrivateKey(char*);
-char* getPublicKey() const;
-char* getPrivateKey() const;
-
-void setPublicKeySize(size_t);
-void setPrivateKeySize(size_t);
-size_t getPublicKeySize() const;
-size_t getPrivateKeySize() const;
 NET_STRUCT_END
 #pragma endregion
 

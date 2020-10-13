@@ -51,6 +51,11 @@ public:
 	{
 		return _pointer;
 	}
+
+	T*& ref()
+	{
+		return *_pointer;
+	}
 };
 
 template <typename T>

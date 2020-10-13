@@ -41,51 +41,51 @@ bool AES::encrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 	}
 }
 
-bool AES::encryptString(CryptoPP::byte* data, const size_t size)
+bool AES::encrypt(CryptoPP::byte* data, const size_t size)
 {
 	return encrypt(data, size, Key.Revert().get(), IV.Revert().get());
 }
 
-bool AES::encryptStringHex(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size)
+bool AES::encryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
-	if (encryptString(data, size))
+	if (encrypt(data, size))
 	{
 		const NET_HEX hex;
-		return hex.encodeString(data, out, size);
+		return hex.encode(data, out, size);
 	}
 
 	return true;
 }
 
-bool AES::encryptStringHex(CryptoPP::byte** data, size_t& size)
+bool AES::encryptHex(CryptoPP::byte*& data, size_t& size)
 {
-	if (encryptString(*data, size))
+	if (encrypt(data, size))
 	{
 		const NET_HEX hex;
-		return hex.encodeString(data, size);
+		return hex.encode(data, size);
 	}
 
 	return true;
 }
 
-bool AES::encryptStringBase64(CryptoPP::byte** data, size_t& size)
+bool AES::encryptBase64(CryptoPP::byte*& data, size_t& size)
 {
-	if (encryptString(*data, size))
+	if (encrypt(data, size))
 	{
 		NET_BASE64 base64;
-		base64.encodeString(data, size);
+		base64.encode(data, size);
 		return true;
 	}
 
 	return false;
 }
 
-bool AES::encryptStringBase64(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size)
+bool AES::encryptBase64(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
-	if (encryptString(data, size))
+	if (encrypt(data, size))
 	{
 		NET_BASE64 base64;
-		base64.encodeString(data, out, size);
+		base64.encode(data, out, size);
 		FREE(data);
 		return true;
 	}
@@ -108,50 +108,50 @@ bool AES::decrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 	}
 }
 
-bool AES::decryptString(CryptoPP::byte* data, const size_t size)
+bool AES::decrypt(CryptoPP::byte* data, const size_t size)
 {
 	return decrypt(data, size, Key.Revert().get(), IV.Revert().get());
 }
 
-bool AES::decryptStringHex(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size)
+bool AES::decryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	const NET_HEX hex;
-	if (hex.decodeString(data, out, size))
+	if (hex.decode(data, out, size))
 	{
-		if (decryptString(*out, size))
+		if (decrypt(out, size))
 			return true;
 	}
 
 	return false;
 }
 
-bool AES::decryptStringHex(CryptoPP::byte** data, size_t& size)
+bool AES::decryptHex(CryptoPP::byte*& data, size_t& size)
 {
 	const NET_HEX hex;
-	if (hex.decodeString(data, size))
+	if (hex.decode(data, size))
 	{
-		if (decryptString(*data, size))
+		if (decrypt(data, size))
 			return true;
 	}
 
 	return false;
 }
 
-bool AES::decryptStringBase64(CryptoPP::byte** data, size_t& size)
+bool AES::decryptBase64(CryptoPP::byte*& data, size_t& size)
 {
 	NET_BASE64 base64;
-	base64.decodeString(data, size);
-	if (decryptString(*data, size))
+	base64.decode(data, size);
+	if (decrypt(data, size))
 		return true;
 
 	return false;
 }
 
-bool AES::decryptStringBase64(CryptoPP::byte* data, CryptoPP::byte** out, size_t& size)
+bool AES::decryptBase64(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	NET_BASE64 base64;
-	base64.decodeString(data, out, size);
-	if (decryptString(*out, size))
+	base64.decode(data, out, size);
+	if (decrypt(out, size))
 	{
 		FREE(data);
 		return true;

@@ -35,16 +35,16 @@ NET_CLASS_DESTRUCTUR(AES)
 /* FIRST INIT AES */
 bool Init(char*, char*, size_t = CryptoPP::AES::DEFAULT_KEYLENGTH);
 
-bool encryptString(CryptoPP::byte*, size_t);
-bool encryptStringHex(CryptoPP::byte*, CryptoPP::byte**, size_t&);
-bool encryptStringHex(CryptoPP::byte**, size_t&);
-bool encryptStringBase64(CryptoPP::byte**, size_t&);
-bool encryptStringBase64(CryptoPP::byte*, CryptoPP::byte**, size_t&);
-bool decryptString(CryptoPP::byte*, size_t);
-bool decryptStringHex(CryptoPP::byte*, CryptoPP::byte**, size_t&);
-bool decryptStringHex(CryptoPP::byte**, size_t&);
-bool decryptStringBase64(CryptoPP::byte**, size_t&);
-bool decryptStringBase64(CryptoPP::byte*, CryptoPP::byte**, size_t&);
+bool encrypt(CryptoPP::byte*, size_t);
+bool encryptHex(CryptoPP::byte*, CryptoPP::byte*&, size_t&);
+bool encryptHex(CryptoPP::byte*&, size_t&);
+bool encryptBase64(CryptoPP::byte*&, size_t&);
+bool encryptBase64(CryptoPP::byte*, CryptoPP::byte*&, size_t&);
+bool decrypt(CryptoPP::byte*, size_t);
+bool decryptHex(CryptoPP::byte*, CryptoPP::byte*&, size_t&);
+bool decryptHex(CryptoPP::byte*&, size_t&);
+bool decryptBase64(CryptoPP::byte*&, size_t&);
+bool decryptBase64(CryptoPP::byte*, CryptoPP::byte*&, size_t&);
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

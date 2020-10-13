@@ -40,6 +40,7 @@ char* Decrypt() const;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(XOR)
 NET_CLASS_CONSTRUCTUR(XOR, char*)
+void Init(char*);
 size_t size() const;
 size_t length() const;
 XOR_UNIQUEPOINTER Revert(bool = true);
