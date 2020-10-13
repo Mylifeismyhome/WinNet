@@ -215,7 +215,7 @@ else \
 
 /* LOG (FILENAME) */
 #define BEGIN_LOG(fname) \
-SetFname(fname); \
+SetFname(CSTRING(fname)); \
 SetAreaInUse(true);
 
 #define END_LOG \

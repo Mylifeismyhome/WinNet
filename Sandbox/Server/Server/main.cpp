@@ -5,6 +5,14 @@
 
 int main()
 {
+	//for(size_t i=  0; i < 10000; ++i)
+	//{
+	//	std::vector<NET_FILE_ATTR> file;
+	//	NET_SCANDIR((char*)NET_CURRENTDIR.data(), file);
+	//}
+	//
+	BEGIN_LOG("TEST")
+	
 	Server server;
 	//server.SetCryptPackage(true);
 	if (!server.Start(SANDBOX_SERVERNAME, SANDBOX_PORT))
@@ -16,6 +24,8 @@ int main()
 			Sleep(1000);
 		}
 	}
+
+	END_LOG
 
 	return 0;
 }

@@ -91,15 +91,18 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	if (str.empty())
 		return;
 
-	char* time = nullptr;
+	char time[TIME_LENGTH];
 	CURRENTTIME(time);
+
+	char date[DATE_LENGTH];
+	CURRENTDATE(date);
 
 	if (strcmp(func, CSTRING("")) == 0)
 	{
 		const auto prefix = GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 11;
+		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s] %s\n"), time, prefix.data(), str.data());
+		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
@@ -115,9 +118,9 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	else
 	{
 		const auto prefix = GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 13;
+		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), time, prefix.data(), func, str.data());
+		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
@@ -130,8 +133,6 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 
 		FREE(buffer);
 	}
-
-	FREE(time);
 }
 
 void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
@@ -146,15 +147,18 @@ void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
 	if (str.empty())
 		return;
 
-	char* time = nullptr;
+	char time[TIME_LENGTH];
 	CURRENTTIME(time);
+
+	char date[DATE_LENGTH];
+	CURRENTDATE(date);
 
 	if (strcmp(func, CSTRING("")) == 0)
 	{
 		const auto prefix = GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 11;
+		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s] %s\n"), time, prefix.data(), str.data());
+		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
@@ -170,9 +174,9 @@ void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
 	else
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 13;
+		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), time, prefix.data(), func, str.data());
+		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
@@ -185,8 +189,6 @@ void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
 
 		FREE(buffer);
 	}
-
-	FREE(time);
 }
 
 void ChangeStdOutputColor(const int Color)
@@ -262,15 +264,18 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	if (str.empty())
 		return;
 
-	char* time = nullptr;
+	char time[TIME_LENGTH];
 	CURRENTTIME(time);
+
+	char date[DATE_LENGTH];
+	CURRENTDATE(date);
 
 	if (strcmp(func, CSTRING("")) == 0)
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 11;
+		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s] %s\n"), time, prefix.data(), str.data());
+		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
@@ -293,9 +298,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	else
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 13;
+		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), time, prefix.data(), func, str.data());
+		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
@@ -315,8 +320,6 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 
 		FREE(buffer);
 	}
-
-	FREE(time);
 }
 
 void Log::doLog(const Console::LogStates state, const char* func, const wchar_t* msg, ...) const
@@ -331,15 +334,18 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 	if (str.empty())
 		return;
 
-	char* time = nullptr;
+	char time[TIME_LENGTH];
 	CURRENTTIME(time);
+
+	char date[DATE_LENGTH];
+	CURRENTDATE(date);
 
 	if (strcmp(func, CSTRING("")) == 0)
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 11;
+		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s] %s\n"), time, prefix.data(), str.data());
+		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
@@ -362,9 +368,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 	else
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 13;
+		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), time, prefix.data(), func, str.data());
+		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
@@ -384,8 +390,6 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 
 		FREE(buffer);
 	}
-
-	FREE(time);
 }
 
 bool Log::WriteToFile(const char* msg) const

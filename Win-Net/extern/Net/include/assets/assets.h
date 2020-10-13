@@ -5,6 +5,13 @@
 
 NET_DSA_BEGIN
 
+constexpr auto BASE_DATE = 1900;
+
+#define TIME_LENGTH 6
+#define TIME_LEN TIME_LENGTH
+#define DATE_LENGTH 11
+#define DATE_LEN DATE_LENGTH
+
 // Messagebox
 #define SHOW_MESSAGEBOX(...) Net::ShowMessageBox("", __VA_ARGS__);
 #define SHOW_MESSAGEBOX_ERROR(...) Net::ShowMessageBox("ERROR", __VA_ARGS__);
@@ -41,8 +48,8 @@ void ShowMessageBox(const wchar_t*, const wchar_t*);
 NET_NAMESPACE_BEGIN(Clock)
 extern "C" NET_API double GetClockTime();
 extern "C" NET_API double AddTime(double);
-extern "C" NET_API void GetTime(char*&);
-extern "C" NET_API void GetDate(char*&);
+extern "C" NET_API void GetTime(char*);
+extern "C" NET_API void GetDate(char*);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Keyboard)

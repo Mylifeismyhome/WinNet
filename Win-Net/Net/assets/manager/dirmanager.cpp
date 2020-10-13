@@ -2,7 +2,6 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
-
 // Return true if the folder exists, false otherwise
 bool dirmanager::folderExists(const char* folderName) {
 	if (_access(folderName, 0) == -1) {
@@ -10,8 +9,7 @@ bool dirmanager::folderExists(const char* folderName) {
 		return false;
 	}
 
-	DWORD attr = GetFileAttributes((LPCSTR)folderName);
-	if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	if (!(GetFileAttributes((LPCSTR)folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
 		return false;
 	}
@@ -23,12 +21,12 @@ bool dirmanager::folderExists(const char* folderName) {
 bool dirmanager::createFolderTree(const char* path)
 {
 	const std::string folderName = path;
-	
+
 	std::list<std::string> folderLevels;
-	char* c_str = (char*)folderName.c_str();
+	const auto c_str = (char*)folderName.c_str();
 
 	// Point to end of the string
-	char* strPtr = &c_str[strlen(c_str) - 1];
+	auto strPtr = &c_str[strlen(c_str) - 1];
 
 	// Create a list of the folders which do not currently exist
 	do {
@@ -48,11 +46,11 @@ bool dirmanager::createFolderTree(const char* path)
 	}
 
 	// Create the folders iteratively
-	for (std::list<std::string>::iterator it = folderLevels.begin(); it != folderLevels.end(); it++) {
-		if (CreateDirectory(it->c_str(), NULL) == 0) {
+	for (const auto& entry : folderLevels) {
+		if (CreateDirectory(entry.c_str(), nullptr) == 0) {
 			return true;
 		}
-		_chdir(it->c_str());
+		_chdir(entry.c_str());
 	}
 
 	return false;
@@ -65,14 +63,13 @@ bool dirmanager::createDir(char* Dirname)
 
 bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 {
-	HANDLE          hFile = nullptr;                       // Handle to directory
 	std::string     strFilePath;                 // Filepath
 	std::string     strPattern;                  // Pattern
 	WIN32_FIND_DATA FileInformation;             // File information
 
-	const std::string str = dirname;
-	strPattern = str + "\\*.*";
-	hFile = ::FindFirstFile((LPCSTR)strPattern.c_str(), &FileInformation);
+	const std::string str(dirname);
+	strPattern = str + CSTRING("\\*.*");
+	const auto hFile = ::FindFirstFile((LPCSTR)strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		do
@@ -80,7 +77,7 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 			if (FileInformation.cFileName[0] != '.')
 			{
 				strFilePath.erase();
-				strFilePath = str + "\\" + (const char*)FileInformation.cFileName;
+				strFilePath = str + CSTRING("\\") + (const char*)FileInformation.cFileName;
 
 				if (FileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
@@ -134,15 +131,14 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
 {
 	WIN32_FIND_DATA ffblk;
-	HANDLE hFind = nullptr;
 	char buf[MAX_PATH];
 
 	if (!Dirname)
-		sprintf_s(buf, "%s", "*.*");
+		sprintf_s(buf, CSTRING("%s"), CSTRING("*.*"));
 	else
-		sprintf_s(buf, "%s\\%s", Dirname, "*.*");
+		sprintf_s(buf, CSTRING("%s\\%s"), Dirname, CSTRING("*.*"));
 
-	hFind = FindFirstFile((LPCSTR)buf, &ffblk);
+	const auto hFind = FindFirstFile((LPCSTR)buf, &ffblk);
 	if (hFind == INVALID_HANDLE_VALUE) {
 		return;
 	}
@@ -150,11 +146,11 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
 	do
 	{
 		if (!Dirname)
-			sprintf_s(buf, "%s", ffblk.cFileName);
+			sprintf_s(buf, CSTRING("%s"), ffblk.cFileName);
 		else
-			sprintf_s(buf, "%s\\%s", Dirname, ffblk.cFileName);
+			sprintf_s(buf, CSTRING("%s\\%s"), Dirname, ffblk.cFileName);
 
-		if (strcmp(reinterpret_cast<const char*>(ffblk.cFileName), ".") == 0 || strcmp(reinterpret_cast<const char*>(ffblk.cFileName), "..") == 0)
+		if (strcmp(reinterpret_cast<const char*>(ffblk.cFileName), CSTRING(".")) == 0 || strcmp(reinterpret_cast<const char*>(ffblk.cFileName), CSTRING("..")) == 0)
 			continue;
 
 		const auto isDir = (ffblk.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
@@ -168,6 +164,8 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
 	} while (FindNextFile(hFind, &ffblk) != 0);
 
 	FindClose(hFind);
+
+	memset(buf, NULL, MAX_PATH);
 }
 
 std::string dirmanager::currentDir()

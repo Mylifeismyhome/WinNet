@@ -24,34 +24,28 @@ double AddTime(const double Time)
 	return (double)clock() + (1000 * Time);
 }
 
-void GetTime(char*& time)
+void GetTime(char* time)
 {
-	FREE(time);
-	const size_t size = 6;
-	time = ALLOC<char>(size + 1);
 	if (Console::TM_GetTime().tm_hour < 10 && Console::TM_GetTime().tm_min < 10)
-		sprintf_s(time, size, CSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf_s(time, TIME_LENGTH, CSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_hour < 10)
-		sprintf_s(time, size, CSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf_s(time, TIME_LENGTH, CSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_min < 10)
-		sprintf_s(time, size, CSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf_s(time, TIME_LENGTH, CSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else
-		sprintf_s(time, size, CSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf_s(time, TIME_LENGTH, CSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 }
 
-void GetDate(char*& date)
+void GetDate(char* date)
 {
-	FREE(date);
-	const size_t size = 6;
-	date = ALLOC<char>(size + 1);
-	if (Console::TM_GetTime().tm_mday < 10)
-		sprintf_s(date, size, CSTRING("0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1);
-	else if (Console::TM_GetTime().tm_mon < 10)
-		sprintf_s(date, size, CSTRING("%i-0%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1);
-	else if (Console::TM_GetTime().tm_mday < 10 && Console::TM_GetTime().tm_mon < 10)
-		sprintf_s(date, size, CSTRING("0%i-0%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1);
+	if (Console::TM_GetTime().tm_mday < 9)
+		sprintf_s(date, DATE_LENGTH, CSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+	else if (Console::TM_GetTime().tm_mon < 9)
+		sprintf_s(date, DATE_LENGTH, CSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+	else if (Console::TM_GetTime().tm_mday < 9 && Console::TM_GetTime().tm_mon < 9)
+		sprintf_s(date, DATE_LENGTH, CSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else
-		sprintf_s(date, size, CSTRING("%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1);
+		sprintf_s(date, DATE_LENGTH, CSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 }
 NET_NAMESPACE_END
 
