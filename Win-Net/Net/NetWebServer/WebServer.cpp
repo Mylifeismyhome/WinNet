@@ -725,13 +725,8 @@ bool Server::Start(const char* serverName, const u_short serverPort, const NET_S
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	/* convert port to char */
-	const auto Port = GetServerPort();
-	const auto PortLength = std::to_string(Port).length() + 1;
-	CPOINTER<char> strPort(ALLOC<char>(PortLength + 1));
-	sprintf_s(strPort.get(), PortLength, CSTRING("%d"), Port);
-	res = getaddrinfo(nullptr, strPort.get(), &hints, &result);
-	strPort.free();
+	const auto Port = std::to_string(GetServerPort());
+	res = getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0)
 	{
