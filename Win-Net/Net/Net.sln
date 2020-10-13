@@ -3,13 +3,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetFeature", "NetFeature\NetFeature.vcxproj", "{EFBB82EF-8979-483B-B926-AD76721839AE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetCore", "NetCore\NetCore.vcxproj", "{EFBB82EF-8979-483B-B926-AD76721839AE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetClient", "NetClient\NetClient.vcxproj", "{CCC0A527-7FF2-4B1A-8452-8D4A17C9B273}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EFBB82EF-8979-483B-B926-AD76721839AE} = {EFBB82EF-8979-483B-B926-AD76721839AE}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetServer", "NetServer\NetServer.vcxproj", "{D5BF4E66-A68F-488E-BA4E-1612DE31FC08}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EFBB82EF-8979-483B-B926-AD76721839AE} = {EFBB82EF-8979-483B-B926-AD76721839AE}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetWebServer", "NetWebServer\NetWebServer.vcxproj", "{80F9040F-0B79-49E9-9628-54D1C9327123}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EFBB82EF-8979-483B-B926-AD76721839AE} = {EFBB82EF-8979-483B-B926-AD76721839AE}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
