@@ -43,16 +43,11 @@ public:
 
 	~PointerCryptionUniquePointer()
 	{
-		if(*_pointer)
+		if (*_pointer)
 			*_pointer = encode(*_pointer);
 	}
 
-	T** get()
-	{
-		return _pointer;
-	}
-
-	T*& ref()
+	T*& get()
 	{
 		return *_pointer;
 	}

@@ -2,7 +2,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
-void ZLib::Compress(BYTE** bytes, size_t& size, const int level) const
+void ZLib::Compress(BYTE*& bytes, size_t& size, const int level) const
 {
 	std::vector<uint8_t> buffer;
 	auto compressed = ALLOC<BYTE>(size + 1);
@@ -10,7 +10,7 @@ void ZLib::Compress(BYTE** bytes, size_t& size, const int level) const
 	z_stream strm;
 	strm.zalloc = nullptr;
 	strm.zfree = nullptr;
-	strm.next_in = *bytes;
+	strm.next_in = bytes;
 	strm.avail_in = static_cast<uInt>(size);
 	strm.next_out = compressed;
 	strm.avail_out = static_cast<uInt>(size);
@@ -53,21 +53,21 @@ void ZLib::Compress(BYTE** bytes, size_t& size, const int level) const
 	buffer.insert(buffer.end(), compressed, compressed + size - strm.avail_out);
 	deflateEnd(&strm);
 
-	FREE(*bytes);
+	FREE(bytes);
 
 	size = buffer.size();
-	*bytes = compressed; // pointer swap
-	bytes[0][size] = '\0';
+	bytes = compressed; // pointer swap
+	bytes[size] = '\0';
 }
 
-void ZLib::Decompress(BYTE** bytes, size_t& size, const size_t maxAvailOut) const
+void ZLib::Decompress(BYTE*& bytes, size_t& size, const size_t maxAvailOut) const
 {
 	auto decompressed = ALLOC<BYTE>(maxAvailOut + 1);
 
 	z_stream strm = { nullptr };
 	strm.total_in = strm.avail_in = static_cast<uInt>(size);
 	strm.total_out = strm.avail_out = static_cast<uInt>(maxAvailOut);
-	strm.next_in = *bytes;
+	strm.next_in = bytes;
 	strm.next_out = decompressed;
 	strm.zalloc = nullptr;
 	strm.zfree = nullptr;
@@ -92,11 +92,11 @@ void ZLib::Decompress(BYTE** bytes, size_t& size, const size_t maxAvailOut) cons
 
 	inflateEnd(&strm);
 
-	FREE(*bytes);
+	FREE(bytes);
 
 	size = strm.total_out;
-	*bytes = decompressed;
-	bytes[0][size] = '\0'; // pointer swap
+	bytes = decompressed;
+	bytes[size] = '\0'; // pointer swap
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

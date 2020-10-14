@@ -63,7 +63,7 @@ CPOINTER<byte> data;
 size_t data_size;
 size_t data_full_size;
 bool recordingData;
-NET_RSA RSA;
+NET_RSA* RSA;
 bool RSAHandshake; // set to true as soon as we have the public key from the Server
 
 bool estabilished;
@@ -77,6 +77,7 @@ data = nullptr;
 data_size = 0;
 data_full_size = 0;
 recordingData = false;
+RSA = nullptr;
 RSAHandshake = false;
 estabilished = false;
 latency = -1;
@@ -142,8 +143,8 @@ void ConnectionClosed();
 void ReceiveThread();
 void BaseTickThread();
 
-void CompressData(BYTE**, size_t&) const;
-void DecompressData(BYTE**, size_t&) const;
+void CompressData(BYTE*&, size_t&) const;
+void DecompressData(BYTE*&, size_t&) const;
 
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(Client)

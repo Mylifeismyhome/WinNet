@@ -38,3 +38,7 @@ void Client::OnTimeout()
 void Client::OnVersionMismatch()
 {
 }
+
+NET_BEGIN_FNC_PKG(Client, Test)
+LOG("A");
+NET_END_FNC_PKG

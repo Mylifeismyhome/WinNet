@@ -13,6 +13,8 @@ void Server::OnPeerConnect(NET_PEER peer)
 
 void Server::OnPeerEstabilished(NET_PEER peer)
 {
+	Package pkg;
+	NET_SEND(peer, Packages::PKG_TEST, pkg);
 }
 
 void Server::OnPeerDisconnect(NET_PEER peer)

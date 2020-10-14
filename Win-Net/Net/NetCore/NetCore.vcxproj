@@ -272,7 +272,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -320,7 +320,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -368,7 +368,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -420,7 +420,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -470,7 +470,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -519,7 +519,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -565,7 +565,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -610,7 +610,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -655,7 +655,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -700,7 +700,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -745,7 +745,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -791,7 +791,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <StringPooling>true</StringPooling>
+      <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>

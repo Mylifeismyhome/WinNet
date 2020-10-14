@@ -446,36 +446,30 @@ TYPE GetRandNumber(TYPE min, TYPE max)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
-void GetRandString(char** out, const size_t len)
+void GetRandString(char*& out, const size_t len)
 {
-	if (*out)
-		FREE(*out);
-
-	if (!*out)
-		*out = ALLOC< char >(len + 1);
+	FREE(out);
+	out = ALLOC< char >(len + 1);
 
 	const auto charset = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
 	for (size_t i = 0; i < len; i++)
-		out[0][i] = charset[Net::Math::GetRandNumber< int >(0, 60)];
+		out[i] = charset[Net::Math::GetRandNumber< int >(0, 60)];
 
-	out[0][len] = '\0';
+	out[len] = '\0';
 }
 
-void GetRandStringNew(BYTE** out, const size_t len)
+void GetRandStringNew(BYTE*& out, const size_t len)
 {
-	if (*out)
-		FREE(*out);
-
-	if (!*out)
-		*out = ALLOC< BYTE >(len + 1);
+	FREE(out);
+	out = ALLOC< BYTE >(len + 1);
 
 	const auto charset = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
 	for (size_t i = 0; i < len; i++)
-		out[0][i] = charset[Net::Math::GetRandNumber< int >(0, 60)];
+		out[i] = charset[Net::Math::GetRandNumber< int >(0, 60)];
 
-	out[0][len] = '\0';
+	out[len] = '\0';
 }
 
 uintptr_t GetRandSeed()

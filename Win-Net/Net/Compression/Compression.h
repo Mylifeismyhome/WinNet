@@ -19,8 +19,8 @@ NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
 NET_CLASS_BEGIN(ZLib)
 NET_CLASS_PUBLIC
-void Compress(BYTE**, size_t&, int = BEST_COMPRESSION) const;
-void Decompress(BYTE**, size_t&, size_t = (128 * 1024)) const;
+void Compress(BYTE*&, size_t&, int = BEST_COMPRESSION) const;
+void Decompress(BYTE*&, size_t&, size_t = (128 * 1024)) const;
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

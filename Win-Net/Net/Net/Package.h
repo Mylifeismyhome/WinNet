@@ -62,11 +62,6 @@ byte*& value()
 	return _data;
 }
 
-byte** reference()
-{
-	return &_data;
-}
-
 size_t size() const
 {
 	return _size;
