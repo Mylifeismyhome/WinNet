@@ -4,7 +4,7 @@
 #pragma warning(disable: 4081)
 #define _WINSOCKET_DEPRECATED_NO_WARNINGS
 
-#define NET_TEST_MEMORY_LEAKS
+#undef NET_TEST_MEMORY_LEAKS
 
 #include <stdio.h>
 #include <iostream>
