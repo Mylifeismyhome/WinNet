@@ -9,11 +9,36 @@ void SetFname(const char* name)
 		|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
 	{
 		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+		{
 			strcpy_s(fname, name);
+		}
 		else
 		{
 			strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
 			strcpy_s(fname, name);
+
+			// Create Folder if needed
+			for (auto it = tmp.size() - 1; it > 0; --it)
+			{
+				if (tmp.at(it) == '/'
+					|| tmp.at(it) == '/' && tmp.at(it + 1) == '/'
+					|| tmp.at(it) == '\\'
+					|| tmp.at(it) == '\\' && tmp.at(it + 1) == '\\')
+				{
+					auto tmpPath = tmp.substr(it);
+					NetString path(tmpPath);
+					if (path.find(CSTRING("/")) != NET_STRING_NOT_FOUND
+						|| path.find(CSTRING("//")) != NET_STRING_NOT_FOUND
+						|| path.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
+						|| path.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+						NET_DIRMANAGER::createFolderTree(path.get().data());
+					else
+						NET_DIRMANAGER::createDir(path.get().data());
+
+					FREE(tmpPath);
+					break;
+				}
+			}
 		}
 	}
 	else
@@ -66,7 +91,7 @@ std::string GetLogStatePrefix(LogStates state)
 		return std::string(CSTRING("WARNING"));
 
 	case (int)LogStates::error:
-		return std::string(CSTRING("[ERROR]"));
+		return std::string(CSTRING("ERROR"));
 
 	case (int)LogStates::success:
 		return std::string(CSTRING("SUCCESS"));

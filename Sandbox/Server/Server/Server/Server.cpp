@@ -5,10 +5,10 @@ NET_SERVER_END_DATA_PACKAGE
 
 void Server::Tick()
 {
-	if(KEYWASPRESSED(KEYBOARD::F6))
+	/*if(KEYWASPRESSED(KEYBOARD::F6))
 	{
 		NET_TEST_MEMORY_SHOW_DIAGNOSTIC();
-	}
+	}*/
 }
 
 void Server::OnPeerConnect(NET_PEER peer)

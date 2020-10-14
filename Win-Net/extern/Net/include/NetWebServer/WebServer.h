@@ -41,7 +41,7 @@ constexpr auto DEFAULT_WEBSERVER_KeyFileName = "key.pem";
 constexpr auto DEFAULT_WEBSERVER_CaFileName = "ca.pem";
 constexpr auto DEFAULT_WEBSERVER_CustomHandshake = false;
 constexpr auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
-constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 1024;
+constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 16000;
 constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
 

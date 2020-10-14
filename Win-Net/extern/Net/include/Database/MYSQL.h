@@ -84,6 +84,7 @@ sql::ResultSet* result;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(MYSQL_RESULT);
 NET_CLASS_CONSTRUCTUR(MYSQL_RESULT, const char* n, sql::ResultSet* res);
+NET_CLASS_DESTRUCTUR(MYSQL_RESULT);
 
 bool IsValid() const;
 bool Empty() const;
@@ -116,7 +117,7 @@ std::vector<MYSQL_QUERY> query;
 
 NET_CLASS_PUBLIC
 MYSQL_MUTLIQUERY() = default;
-NET_CLASS_CONSTRUCTUR(MYSQL_MUTLIQUERY, const std::vector<MYSQL_QUERY> q);
+NET_CLASS_CONSTRUCTUR(MYSQL_MUTLIQUERY, std::vector<MYSQL_QUERY>& q);
 
 void Add(const char* name, char*& q);
 void Add(const MYSQL_QUERY q);

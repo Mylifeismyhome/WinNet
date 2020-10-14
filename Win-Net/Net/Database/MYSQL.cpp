@@ -59,6 +59,11 @@ MYSQL_RESULT::MYSQL_RESULT(const char* n, sql::ResultSet* res)
 	valid = true;
 }
 
+MYSQL_RESULT::~MYSQL_RESULT()
+{
+	delete result;
+}
+
 bool MYSQL_RESULT::IsValid() const
 {
 	return valid;
@@ -107,7 +112,7 @@ void MYSQL_QUERY::Free()
 	FREESTRING(query);
 }
 
-MYSQL_MUTLIQUERY::MYSQL_MUTLIQUERY(const std::vector<MYSQL_QUERY> q)
+MYSQL_MUTLIQUERY::MYSQL_MUTLIQUERY(std::vector<MYSQL_QUERY>& q)
 {
 	query = q;
 }
@@ -137,7 +142,7 @@ std::vector<MYSQL_QUERY> MYSQL_MUTLIQUERY::Get() const
 	return query;
 }
 
-void MYSQL_MULTIRESULT::Add(MYSQL_RESULT res)
+void MYSQL_MULTIRESULT::Add(const MYSQL_RESULT res)
 {
 	results.emplace_back(res);
 }
@@ -240,7 +245,7 @@ char* MYSQL::GetLastError() const
 	return lastError;
 }
 
-MYSQL_RESULT MYSQL::query(char* query, bool retry)
+MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 {
 	if (!msqldriver)
 	{
@@ -250,6 +255,7 @@ MYSQL_RESULT MYSQL::query(char* query, bool retry)
 				return this->query(query, true);
 		}
 
+		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
@@ -262,6 +268,7 @@ MYSQL_RESULT MYSQL::query(char* query, bool retry)
 				return this->query(query, true);
 		}
 
+		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
@@ -274,6 +281,7 @@ MYSQL_RESULT MYSQL::query(char* query, bool retry)
 				return this->query(query, true);
 		}
 
+		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
 	}
@@ -299,6 +307,8 @@ MYSQL_RESULT MYSQL::query(char* query, bool retry)
 				return this->query(query, true);
 		}
 
+		FREESTRING(query);
+		
 		SetLastError(e.what());
 
 		if(memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
@@ -308,7 +318,7 @@ MYSQL_RESULT MYSQL::query(char* query, bool retry)
 	return {};
 }
 
-MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
+MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 {
 	if (!msqldriver)
 	{
@@ -318,6 +328,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 				return this->query(query, true);
 		}
 
+		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
@@ -330,6 +341,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 				return this->query(query, true);
 		}
 
+		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
@@ -342,6 +354,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 				return this->query(query, true);
 		}
 
+		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
 	}
@@ -367,6 +380,8 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 				return this->query(query, true);
 		}
 
+		query.Free();
+
 		SetLastError(e.what());
 	
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
@@ -376,7 +391,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, bool retry)
 	return {};
 }
 
-MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
+MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 {
 	if (!msqldriver)
 	{
@@ -386,6 +401,9 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
 				return this->multiQuery(query, true);
 		}
 
+		for (auto& curquery : query.Get())
+			curquery.Free();
+		
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		return {};
 	}
@@ -398,6 +416,9 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
 				return this->multiQuery(query, true);
 		}
 
+		for (auto& curquery : query.Get())
+			curquery.Free();
+		
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		return {};
 	}
@@ -409,6 +430,9 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
 			if (reconnect())
 				return this->multiQuery(query, true);
 		}
+
+		for (auto& curquery : query.Get())
+			curquery.Free();
 
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		return {};
@@ -439,6 +463,9 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, bool retry)
 			if (reconnect())
 				return this->multiQuery(query, true);
 		}
+
+		for (auto& curquery : query.Get())
+			curquery.Free();
 
 		SetLastError(e.what());
 		
