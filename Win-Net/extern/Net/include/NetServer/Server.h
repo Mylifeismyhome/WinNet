@@ -182,7 +182,7 @@ NET_CLASS_PRIVATE
 size_t _CounterPeersTable;
 void IncreasePeersCounter();
 void DecreasePeersCounter();
-NET_IPEER InsertPeer(sockaddr_in, SOCKET);
+NET_IPEER CreatePeer(sockaddr_in, SOCKET);
 bool ErasePeer(NET_PEER);
 void UpdatePeer(NET_PEER);
 

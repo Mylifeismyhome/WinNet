@@ -355,7 +355,7 @@ void Server::cryption_t::createKeyPair(const size_t size)
 
 void Server::cryption_t::deleteKeyPair()
 {
-	RSA->DeleteKeys();
+	delete RSA;
 	setHandshakeStatus(false);
 }
 
@@ -383,27 +383,27 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
-Server::NET_IPEER Server::InsertPeer(const sockaddr_in client_addr, const SOCKET socket)
+Server::NET_IPEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
-	NET_IPEER newPeer;
-	newPeer.UniqueID = socket;
-	newPeer.pSocket = socket;
-	newPeer.client_addr = client_addr;
+	NET_IPEER peer;
+	peer.UniqueID = socket;
+	peer.pSocket = socket;
+	peer.client_addr = client_addr;
 
 	/* Set Read Timeout */
 	timeval tv ={};
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
-	setsockopt(newPeer.pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(peer.pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	IncreasePeersCounter();
 
 	// callback
-	OnPeerConnect(newPeer);
+	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), GetServerName(), newPeer.IPAddr().get());
-	return newPeer;
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), GetServerName(), peer.IPAddr().get());
+	return peer;
 }
 
 bool Server::ErasePeer(NET_PEER peer)
@@ -517,7 +517,7 @@ typeLatency Server::NET_IPEER::getLatency() const
 
 IPRef Server::NET_IPEER::IPAddr() const
 {
-	const auto buf = new char[INET_ADDRSTRLEN];
+	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
 }
 
@@ -1642,7 +1642,7 @@ void Server::Acceptor()
 
 void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 {
-	auto peer = InsertPeer(client_addr, socket);
+	auto peer = CreatePeer(client_addr, socket);
 
 	do
 	{

@@ -439,7 +439,7 @@ void Client::Network::createNewRSAKeys(const size_t keySize)
 
 void Client::Network::deleteRSAKeys()
 {
-	RSA->DeleteKeys();
+	delete RSA;
 	RSAHandshake = false;
 }
 

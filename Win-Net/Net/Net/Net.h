@@ -4,6 +4,8 @@
 #pragma warning(disable: 4081)
 #define _WINSOCKET_DEPRECATED_NO_WARNINGS
 
+#define NET_TEST_MEMORY_LEAKS
+
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
@@ -194,6 +196,18 @@ typedef unsigned int INDEX;
 //////////////////////////////////////////////////////
 //    SECTION - Allocation & Deallocation     //
 ////////////////////////////////////////////////////
+#ifdef NET_TEST_MEMORY_LEAKS
+static std::vector<void*> NET_TEST_MEMORY_LEAKS_POINTER_LIST;
+
+__forceinline void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
+{
+	printf("----- POINTER INSTANCE(s) -----\n");
+	for(const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
+		printf("Allocated Instance: %p\n", entry);
+	printf("----------------------------------------\n");
+}
+#endif
+
 template <typename T>
 T* NET_ALLOC_MEM(const size_t n)
 {
@@ -201,7 +215,14 @@ T* NET_ALLOC_MEM(const size_t n)
 	{
 		T* pointer = new T[n];
 		if (pointer)
+		{
+#ifdef NET_TEST_MEMORY_LEAKS
+			printf("Allocated: %llu Byte(s) ; %p\n", n, pointer);
+			NET_TEST_MEMORY_LEAKS_POINTER_LIST.emplace_back(pointer);
+#endif
+
 			return pointer;
+		}
 
 		throw std::bad_alloc();
 	}
@@ -216,6 +237,18 @@ __forceinline void NET_FREE_MEM(void* pointer)
 {
 	if (!pointer)
 		return;
+
+#ifdef NET_TEST_MEMORY_LEAKS
+	printf("Deallocated: %p\n", pointer);
+	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
+	{
+		if (*it == pointer)
+		{
+			NET_TEST_MEMORY_LEAKS_POINTER_LIST.erase(it);
+			break;
+		}
+	}
+#endif
 	
 	free(pointer);
 	pointer = nullptr;

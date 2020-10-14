@@ -24,7 +24,7 @@ NET_DSA_BEGIN
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Cryption)
 NET_CLASS_BEGIN(NETRSA)
-CPOINTER<RSA> KeyPair;
+RSA* KeyPair;
 
 void GenerateKeyPair(size_t, int);
 

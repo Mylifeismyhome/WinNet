@@ -16,24 +16,14 @@ NETRSA::NETRSA()
 
 NETRSA::~NETRSA()
 {
-	if(KeyPair.valid())
-	{
-		RSA_free(KeyPair.get());
-		KeyPair = nullptr;
-	}
-
+	RSA_free(KeyPair);
 	_PublicKey.free();
 	_PrivateKey.free();
 }
 
 void NETRSA::GenerateKeyPair(const size_t num_bits, const int e)
 {
-	if (KeyPair.valid())
-	{
-		RSA_free(KeyPair.get());
-		KeyPair = nullptr;
-	}
-	
+	RSA_free(KeyPair);
 	KeyPair = RSA_generate_key(static_cast<int>(num_bits), e, nullptr, nullptr);
 }
 
@@ -51,7 +41,7 @@ bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
 			return false;
 		}
 
-		PEM_write_bio_RSA_PUBKEY(bio, KeyPair.get());
+		PEM_write_bio_RSA_PUBKEY(bio, KeyPair);
 		const auto len = BIO_pending(bio);
 		
 		CPOINTER<char> key(ALLOC<char>(static_cast<size_t>(len) + 1));
@@ -74,7 +64,7 @@ bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
 			return false;
 		}
 
-		PEM_write_bio_RSAPrivateKey(bio, KeyPair.get(), nullptr, nullptr, 0, nullptr, nullptr);
+		PEM_write_bio_RSAPrivateKey(bio, KeyPair, nullptr, nullptr, 0, nullptr, nullptr);
 		const auto len = BIO_pending(bio);
 		
 		CPOINTER<char> key(ALLOC<char>(static_cast<size_t>(len) + 1));
@@ -112,12 +102,7 @@ void NETRSA::SetPrivateKey(char* key)
 
 void NETRSA::DeleteKeys()
 {
-	if (KeyPair.valid())
-	{
-		RSA_free(KeyPair.get());
-		KeyPair = nullptr;
-	}
-	
+	RSA_free(KeyPair);
 	_PublicKey.free();
 	_PrivateKey.free();
 }
