@@ -155,8 +155,8 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 		return false;
 	}
 
-	const auto tmp = PublicKey().get();
-	BIO_write(bio, tmp, static_cast<int>(PublicKey().length()));
+	const auto uniquePointer = PublicKey();
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(PublicKey().length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PUBKEY(bio, &pkey, nullptr, nullptr);
@@ -225,7 +225,8 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 		return false;
 	}
 
-	BIO_write(bio, _PrivateKey.Revert().get(), static_cast<int>(_PrivateKey.length()));
+	const auto uniquePointer = PrivateKey();
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(PrivateKey().length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);

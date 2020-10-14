@@ -1195,6 +1195,16 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			return;
 		}
 
+		if (!peer.cryption.RSA)
+		{
+			Key.free();
+			IV.free();
+
+			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
+			return;
+		}
+
 		/* Encrypt AES Keypair using RSA */
 		auto KeySize = GetAESKeySize();
 		if (!peer.cryption.RSA->encryptBase64(Key.reference().get(), KeySize))
@@ -2139,6 +2149,16 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESIV.get()[AESIVSize] = '\0';
 
 			offset += AESIVSize;
+		}
+
+		if (!peer.cryption.RSA)
+		{
+			AESKey.free();
+			AESIV.free();
+
+			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
+			return;
 		}
 
 		if (!peer.cryption.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))

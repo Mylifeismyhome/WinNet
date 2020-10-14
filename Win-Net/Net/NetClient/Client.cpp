@@ -937,6 +937,16 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			return;
 		}
 
+		if (!network.RSA)
+		{
+			Key.free();
+			IV.free();
+
+			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			Disconnect();
+			return;
+		}
+
 		/* Encrypt AES Keypair using RSA */
 		auto KeySize = GetAESKeySize();
 		if (!network.RSA->encryptBase64(Key.reference().get(), KeySize))
@@ -1597,6 +1607,16 @@ void Client::ExecutePackage(const size_t size, const size_t begin)
 			offset += AESIVSize;
 		}
 
+		if (!network.RSA)
+		{
+			AESKey.free();
+			AESIV.free();
+
+			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			Disconnect();
+			return;
+		}
+
 		if (!network.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
 		{
 			AESKey.free();
@@ -2007,8 +2027,6 @@ pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), PublicKeyRef.get());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
 
 network.RSA->SetPublicKey((char*)publicKey.value());
-
-LOG(network.RSA->PublicKey().get());
 
 // from now we use the Cryption, synced with Server
 network.RSAHandshake = true;
