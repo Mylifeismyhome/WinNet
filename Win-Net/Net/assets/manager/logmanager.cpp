@@ -289,7 +289,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!WriteToFile(buffer))
 		{
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!"));
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 		}
 
@@ -314,7 +314,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!WriteToFile(buffer))
 		{
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!"));
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 		}
 
@@ -359,7 +359,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 		if (!WriteToFile(buffer))
 		{
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!"));
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 		}
 
@@ -384,7 +384,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 		if (!WriteToFile(buffer))
 		{
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!"));
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 		}
 

@@ -34,7 +34,7 @@ static bool ProcessEncode(CryptoPP::byte*& data, size_t& size)
 	{
 		const auto hexSize = (size * 2);
 		CryptoPP::HexEncoder encoder;
-		encoder.Put(*data, size);
+		encoder.Put(data, size);
 		encoder.MessageEnd();
 		const auto encoded = ALLOC<byte>(hexSize + 1);
 		encoder.Get(encoded, hexSize);
@@ -86,7 +86,7 @@ static bool ProcessDecode(CryptoPP::byte*& data, size_t& size)
 	{
 		const auto originalSize = (size / 2);
 		CryptoPP::HexDecoder decoder;
-		decoder.Put(*data, size);
+		decoder.Put(data, size);
 		decoder.MessageEnd();
 		const auto decoded = ALLOC<byte>(originalSize + 1);
 		decoder.Get(decoded, originalSize);

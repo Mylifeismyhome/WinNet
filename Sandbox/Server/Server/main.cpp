@@ -5,8 +5,6 @@
 
 int main()
 {
-	BEGIN_LOG("TEST")
-	
 	Server server;
 	server.SetCryptPackage(true);
 	if (!server.Start(SANDBOX_SERVERNAME, SANDBOX_PORT))
