@@ -11,40 +11,21 @@ void SetFname(const char* name)
 		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
 		{
 			strcpy_s(fname, name);
+			strcat_s(fname, CSTRING(".log"));
 		}
 		else
 		{
 			strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
 			strcpy_s(fname, name);
-
-			// Create Folder if needed
-			for (auto it = tmp.size() - 1; it > 0; --it)
-			{
-				if (tmp.at(it) == '/'
-					|| tmp.at(it) == '/' && tmp.at(it + 1) == '/'
-					|| tmp.at(it) == '\\'
-					|| tmp.at(it) == '\\' && tmp.at(it + 1) == '\\')
-				{
-					auto tmpPath = tmp.substr(it);
-					NetString path(tmpPath);
-					if (path.find(CSTRING("/")) != NET_STRING_NOT_FOUND
-						|| path.find(CSTRING("//")) != NET_STRING_NOT_FOUND
-						|| path.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
-						|| path.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
-						NET_DIRMANAGER::createFolderTree(path.get().data());
-					else
-						NET_DIRMANAGER::createDir(path.get().data());
-
-					FREE(tmpPath);
-					break;
-				}
-			}
+			strcat_s(fname, CSTRING(".log"));
+			NET_DIRMANAGER::createDir(fname);
 		}
 	}
 	else
 	{
 		strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
 		strcat_s(fname, name);
+		strcat_s(fname, CSTRING(".log"));
 	}
 }
 
@@ -262,10 +243,7 @@ NET_NAMESPACE_END
 NET_NAMESPACE_BEGIN(manager)
 Log::Log()
 {
-	char tmp[MAX_PATH];
-	strcpy_s(tmp, GetFname());
-	strcat_s(tmp, CSTRING(".log"));
-	file = new NET_FILEMANAGER(tmp, NET_FILE_APPAND | NET_FILE_READWRITE);
+	file = new NET_FILEMANAGER(GetFname(), NET_FILE_APPAND | NET_FILE_READWRITE);
 }
 
 Log::~Log()

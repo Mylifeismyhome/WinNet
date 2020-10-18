@@ -17,48 +17,85 @@ bool dirmanager::folderExists(const char* folderName) {
 	return true;
 }
 
-// Returns false on success, true on error
-bool dirmanager::createFolderTree(const char* path)
+static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
 {
-	const std::string folderName = path;
+	const auto len = strlen(path);
 
-	std::list<std::string> folderLevels;
-	const auto c_str = (char*)folderName.c_str();
+	// recrusive entries
+	for (auto it = offset; it < len; ++it)
+	{
+		if (!memcmp(&path[it], CSTRING("/"), 1))
+		{
+			char directory[MAX_PATH];
+			strcpy_s(directory, MAX_PATH, &path[offset]);
+			directory[it - offset] = '\0';
 
-	// Point to end of the string
-	auto strPtr = &c_str[strlen(c_str) - 1];
+			if (directory[0] != '\0')
+				directories.emplace_back(directory);
 
-	// Create a list of the folders which do not currently exist
-	do {
-		if (folderExists(c_str)) {
+			offset = it + 1;
+			return ProcessCreateDirectory(path, directories, offset);
+		}
+	}
+
+	// last entry
+	char directory[MAX_PATH];
+	strcpy_s(directory, MAX_PATH, &path[offset]);
+	directory[len] = '\0';
+
+	auto bDirectory = true;
+	for (size_t it = 0; it < len; ++it)
+	{
+		if (!memcmp(&directory[it], ".", 1))
+		{
+			bDirectory = false;
 			break;
 		}
-		// Break off the last folder name, store in folderLevels list
-		do {
-			strPtr--;
-		} while ((*strPtr != '\\') && (*strPtr != '/') && (strPtr >= c_str));
-		folderLevels.push_front(std::string(strPtr + 1));
-		strPtr[1] = 0;
-	} while (strPtr >= c_str);
-
-	if (_chdir(c_str)) {
-		return true;
 	}
 
-	// Create the folders iteratively
-	for (const auto& entry : folderLevels) {
-		if (CreateDirectory(entry.c_str(), nullptr) == 0) {
-			return true;
-		}
-		_chdir(entry.c_str());
+	if (bDirectory)
+		directories.emplace_back(directory);
+
+	for (auto entry : directories)
+	{
+		if (!CreateDirectoryA(entry, nullptr))
+			return dirmanager::createDirRes::ERR;
+
+		if (_chdir(entry) != 0)
+			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
 	}
 
-	return false;
+	for (size_t it = 0; it < directories.size(); ++it)
+	{
+		if (_chdir(CSTRING("..")) != 0)
+			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
+	}
+
+	return dirmanager::createDirRes::SUCCESS;
 }
 
-bool dirmanager::createDir(char* Dirname)
+dirmanager::createDirRes dirmanager::createDir(char* path)
 {
-	return CreateDirectory(Dirname, nullptr);
+	const auto len = strlen(path);
+
+	char fixed[MAX_PATH];
+	size_t flen = NULL;
+	for (size_t it = 0; it < len; ++it)
+	{
+		if (memcmp(&path[it], CSTRING("//"), 2) != 0
+			&& memcmp(&path[it], CSTRING("\\\\"), 2) != 0)
+		{
+			memcpy(&fixed[flen], &path[it], 1);
+			flen++;
+		}
+	}
+	for (size_t it = 0; it < flen; ++it)
+	{
+		if (fixed[it] == '\\')
+			fixed[it] = '/';
+	}
+	fixed[flen] = '\0';
+	return ProcessCreateDirectory(fixed);
 }
 
 bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)

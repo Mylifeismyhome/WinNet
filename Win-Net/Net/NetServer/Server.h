@@ -166,7 +166,7 @@ void CompressData(BYTE*&, size_t&) const;
 void DecompressData(BYTE*&, size_t&) const;
 
 NET_CLASS_PUBLIC
-void DisconnectPeer(NET_PEER, int);
+void DisconnectPeer(NET_PEER, int, bool = false);
 #pragma endregion
 
 NET_CLASS_PRIVATE

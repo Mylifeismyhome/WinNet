@@ -23,7 +23,6 @@ struct NET_FILE_ATTR
 
 #define NET_DIRMANAGER Net::manager::dirmanager
 #define NET_CREATEDIR Net::manager::dirmanager::createDir
-#define NET_CREATEDIRTREE Net::manager::dirmanager::createFolderTree
 #define NET_DELETEDIR Net::manager::dirmanager::deleteDir
 #define NET_SCANDIR Net::manager::dirmanager::scandir
 #define NET_CURRENTDIR Net::manager::dirmanager::currentDir()
@@ -32,9 +31,15 @@ struct NET_FILE_ATTR
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 NET_NAMESPACE_BEGIN(dirmanager)
+enum class createDirRes
+{
+	SUCCESS = 0,
+	ERR,
+	CAN_NOT_CHANGE_DIR
+};
+
 extern "C" NET_API bool folderExists(const char*);
-extern "C" NET_API bool createFolderTree(const char*);
-extern "C" NET_API bool createDir(char*);
+extern "C" NET_API createDirRes createDir(char*);
 extern "C" NET_API bool deleteDir(char*, bool = true);
 extern "C" NET_API void scandir(char*, std::vector<NET_FILE_ATTR>&);
 std::string currentDir();

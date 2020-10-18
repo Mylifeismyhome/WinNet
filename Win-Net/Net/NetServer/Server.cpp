@@ -533,15 +533,18 @@ IPRef Server::NET_IPEER::IPAddr() const
 	return IPRef(inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
 }
 
-void Server::DisconnectPeer(NET_PEER peer, const int code)
+void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)
 {
 	PEER_NOT_VALID(peer,
 		return;
 	);
 
-	Package PKG;
-	PKG.Append(CSTRING("code"), code);
-	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
+	if(!skipNotify)
+	{
+		Package PKG;
+		PKG.Append(CSTRING("code"), code);
+		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
+	}
 
 	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), NetGetErrorMessage(code));
 
