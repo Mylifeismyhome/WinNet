@@ -2,6 +2,21 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
+static void LatencyThread(Server::NET_PEER peer)
+{
+	if (!peer)
+		return;
+
+	peer->bLatency = true;
+
+	const auto ip = peer->IPAddr();
+	ICMP _icmp(ip.get());
+	_icmp.execute();
+
+	peer->latency = _icmp.getLatency();
+	peer->bLatency = false;
+}
+
 IPRef::IPRef(PCSTR const pointer)
 {
 	this->pointer = (char*)pointer;
@@ -50,6 +65,7 @@ void Server::SetAllToDefault()
 	sCompressPackage = DEFAULT_WEBSERVER_COMPRESS_PACKAGES;
 	sTCPReadTimeout = DEFAULT_WEBSERVER_TCP_READ_TIMEOUT;
 	bWithoutHandshake = DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE;
+	sCalcLatencyInterval = DEFAULT_SERVER_CALC_LATENCY_INTERVAL;
 
 	SetRunning(false);
 
@@ -66,6 +82,7 @@ void Server::SetAllToDefault()
 	LOG_DEBUG(CSTRING("Compress Package has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("TCP Read timeout has been set to default value of %i"), sTCPReadTimeout);
 	LOG_DEBUG(CSTRING("Without Handshake has been set to default value of %s"), bWithoutHandshake ? "TRUE" : "FALSE");
+	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
 	LOG_DEBUG(CSTRING("---------------------------------------------"));
 }
 
@@ -287,6 +304,20 @@ void Server::SetWithoutHandshake(const bool bWithoutHandshake)
 	}
 }
 
+void Server::SetCalcLatencyInterval(const long sCalcLatencyInterval)
+{
+	this->sCalcLatencyInterval = sCalcLatencyInterval;
+
+	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
+	{
+		LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
+	}
+	else
+	{
+		LOG_DEBUG(CSTRING("[%s] - Calculate latency interval has been set to %i"), GetServerName(), sCalcLatencyInterval);
+	}
+}
+
 const char* Server::GetServerName() const
 {
 	return sServerName;
@@ -360,6 +391,11 @@ long Server::GetTCPReadTimeout() const
 bool Server::GetWithoutHandshake() const
 {
 	return bWithoutHandshake;
+}
+
+long Server::GetCalcLatencyInterval() const
+{
+	return sCalcLatencyInterval;
 }
 
 #pragma region Network Structure
@@ -540,6 +576,13 @@ void Server::UpdatePeer(NET_PEER peer)
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	// Calculate latency interval
+	if (peer->lastCalcLatency < CURRENTCLOCKTIME)
+	{
+		std::thread(LatencyThread, peer).detach();
+		peer->lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
+	}
 }
 
 void Server::NET_IPEER::clear()
@@ -550,6 +593,9 @@ void Server::NET_IPEER::clear()
 	estabilished = false;
 	isAsync = false;
 	handshake = false;
+	bLatency = false;
+	latency = -1;
+	lastCalcLatency = 0;
 
 	network.clear();
 	network.reset();
@@ -1616,6 +1662,12 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
 	}
+
+	// wait until thread has finished
+	while (peer && peer->bLatency)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
+	};
 
 	// erase him
 	peer->setAsync(false);

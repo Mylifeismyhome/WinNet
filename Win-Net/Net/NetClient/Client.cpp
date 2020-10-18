@@ -443,7 +443,7 @@ void Client::Network::deleteRSAKeys()
 	RSAHandshake = false;
 }
 
-lt Client::Network::getLatency() const
+typeLatency Client::Network::getLatency() const
 {
 	return latency;
 }

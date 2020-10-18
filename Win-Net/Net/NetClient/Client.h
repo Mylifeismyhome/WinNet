@@ -37,12 +37,6 @@ NET_DSA_BEGIN
 
 #define NET_SEND DoSend
 
-#ifdef _WIN64
-typedef DWORD64 lt;
-#else
-typedef DWORD lt;
-#endif
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 NET_STRUCT_BEGIN(rawData_t)
@@ -68,7 +62,7 @@ bool RSAHandshake; // set to true as soon as we have the public key from the Ser
 
 bool estabilished;
 
-lt latency;
+typeLatency latency;
 double lastCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
@@ -89,7 +83,7 @@ void AllocData(size_t);
 void clearData();
 void createNewRSAKeys(size_t);
 void deleteRSAKeys();
-lt getLatency() const;
+typeLatency getLatency() const;
 NET_STRUCT_END
 NET_CLASS_PUBLIC
 Network network;

@@ -54,12 +54,6 @@ constexpr auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 constexpr auto SERVERNAME_LENGTH = 128;
 
-#ifdef _WIN64
-typedef DWORD64 typeLatency;
-#else
-typedef DWORD typeLatency;
-#endif
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
 NET_CLASS_BEGIN(IPRef)
@@ -146,6 +140,7 @@ bool isAsync;
 bool NetVersionMatched;
 
 typeLatency latency;
+bool bLatency;
 double lastCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
@@ -156,6 +151,7 @@ estabilished = false;
 isAsync = false;
 NetVersionMatched = false;
 latency = -1;
+bLatency = false;
 lastCalcLatency = 0;
 NET_STRUCT_END_CONTRUCTION
 

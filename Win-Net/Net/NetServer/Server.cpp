@@ -7,11 +7,14 @@ static void LatencyThread(Server::NET_PEER peer)
 	if (!peer)
 		return;
 
+	peer->bLatency = true;
+
 	const auto ip = peer->IPAddr();
 	ICMP _icmp(ip.get());
 	_icmp.execute();
 
 	peer->latency = _icmp.getLatency();
+	peer->bLatency = false;
 }
 
 IPRef::IPRef(PCSTR const pointer)
@@ -451,7 +454,7 @@ void Server::UpdatePeer(NET_PEER peer)
 	// Calculate latency interval
 	if (peer->lastCalcLatency < CURRENTCLOCKTIME)
 	{
-		std::thread(&LatencyThread, peer).detach();
+		std::thread(LatencyThread, peer).detach();
 		peer->lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
 	}
 }
@@ -504,6 +507,7 @@ void Server::NET_IPEER::clear()
 	estabilished = false;
 	isAsync = false;
 	NetVersionMatched = false;
+	bLatency = false;
 	latency = -1;
 	lastCalcLatency = 0;
 
@@ -1737,6 +1741,12 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
 	}
+
+	// wait until thread has finished
+	while (peer && peer->bLatency)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
+	};
 
 	// erase him
 	peer->setAsync(false);

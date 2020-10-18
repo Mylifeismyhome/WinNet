@@ -44,6 +44,7 @@ constexpr auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
 constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 16000;
 constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
+constexpr auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 #define NET_WEB_SERVER Net::WebServer::Server
 
@@ -73,6 +74,8 @@ constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
 
 #include <OpenSSL/ssl.h>
 #include <OpenSSL/err.h>
+
+#include <ICMP/icmp.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
@@ -151,6 +154,10 @@ SSL* ssl;
 /* Handshake */
 bool handshake;
 
+typeLatency latency;
+bool bLatency;
+double lastCalcLatency;
+
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
@@ -159,6 +166,9 @@ estabilished = false;
 isAsync = false;
 ssl = nullptr;
 handshake = false;
+latency = -1;
+bLatency = false;
+lastCalcLatency = 0;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
@@ -192,6 +202,7 @@ CPOINTER<char> hOrigin;
 bool sCompressPackage;
 long sTCPReadTimeout;
 bool bWithoutHandshake;
+long sCalcLatencyInterval;
 
 NET_CLASS_PUBLIC
 void SetAllToDefault();
@@ -210,6 +221,7 @@ void SetHandshakeOriginCompare(const char*);
 void SetCompressPackage(bool);
 void SetTCPReadTimeout(long);
 void SetWithoutHandshake(bool);
+void SetCalcLatencyInterval(long);
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
@@ -226,6 +238,7 @@ CPOINTER<char> GetHandshakeOriginCompare() const;
 bool GetCompressPackage() const;
 long GetTCPReadTimeout() const;
 bool GetWithoutHandshake() const;
+long GetCalcLatencyInterval() const;
 
 NET_CLASS_PRIVATE
 SOCKET ListenSocket;
