@@ -132,7 +132,7 @@ switch (id) \
 #define NET_SERVER_BEGIN_DATA_PACKAGE(classname) \
 bool classname::CheckData(NET_PEER peer, const int id, NET_PACKAGE pkg) \
 { \
-if(!peer || !peer.estabilished) \
+if(!peer || !peer->estabilished) \
 	return false; \
 switch (id) \
 {
@@ -293,6 +293,16 @@ static void Free(T*& data)
 #define NET_UID size_t
 #define INVALID_UID  (size_t)(~0)
 #define INVALID_SIZE (size_t)(~0)
+
+#define SOCKET_VALID(socket) if(socket != INVALID_SOCKET)
+#define SOCKET_NOT_VALID(socket) if(socket == INVALID_SOCKET)
+
+#define PEER_VALID(peer) if(peer)
+#define PEER_NOT_VALID(peer, stuff) if(!peer) \
+	{ \
+		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), GetServerName()); \
+		stuff \
+	}
 
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //

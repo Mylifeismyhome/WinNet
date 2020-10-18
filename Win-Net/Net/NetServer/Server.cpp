@@ -7,11 +7,11 @@ static void LatencyThread(Server::NET_PEER peer)
 	if (!peer)
 		return;
 
-	const auto ip = peer.IPAddr();
+	const auto ip = peer->IPAddr();
 	ICMP _icmp(ip.get());
 	_icmp.execute();
 
-	peer.latency = _icmp.getLatency();
+	peer->latency = _icmp.getLatency();
 }
 
 IPRef::IPRef(PCSTR const pointer)
@@ -383,56 +383,60 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
-Server::NET_IPEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
+Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
-	NET_IPEER peer;
-	peer.UniqueID = socket;
-	peer.pSocket = socket;
-	peer.client_addr = client_addr;
+	const auto peer = new NET_IPEER();
+	peer->UniqueID = socket;
+	peer->pSocket = socket;
+	peer->client_addr = client_addr;
 
 	/* Set Read Timeout */
-	timeval tv ={};
+	timeval tv = {};
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
-	setsockopt(peer.pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	IncreasePeersCounter();
 
 	// callback
 	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), GetServerName(), peer.IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), GetServerName(), peer->IPAddr().get());
 	return peer;
 }
 
 bool Server::ErasePeer(NET_PEER peer)
 {
-	if (!peer.isAsync)
+	PEER_NOT_VALID(peer,
+		return false;
+	);
+
+	if (!peer->isAsync)
 	{
 		// close endpoint
-		if (peer.pSocket)
+		SOCKET_VALID(peer->pSocket)
 		{
-			closesocket(peer.pSocket);
-			peer.pSocket = INVALID_SOCKET;
+			closesocket(peer->pSocket);
+			peer->pSocket = INVALID_SOCKET;
 		}
 
 		// callback
 		OnPeerDisconnect(peer);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), GetServerName(), peer.IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), GetServerName(), peer->IPAddr().get());
 
-		peer.clear();
+		peer->clear();
 
 		DecreasePeersCounter();
 		return true;
 	}
 
 	// close endpoint
-	if (peer.pSocket)
+	SOCKET_VALID(peer->pSocket)
 	{
-		closesocket(peer.pSocket);
-		peer.pSocket = INVALID_SOCKET;
+		closesocket(peer->pSocket);
+		peer->pSocket = INVALID_SOCKET;
 	}
 
 	return true;
@@ -440,46 +444,50 @@ bool Server::ErasePeer(NET_PEER peer)
 
 void Server::UpdatePeer(NET_PEER peer)
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return;
+	);
 
 	// Calculate latency interval
-	if (peer.lastCalcLatency < CURRENTCLOCKTIME)
+	if (peer->lastCalcLatency < CURRENTCLOCKTIME)
 	{
 		std::thread(&LatencyThread, peer).detach();
-		peer.lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
+		peer->lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
 	}
 }
 
 size_t Server::GetNextPackageSize(NET_PEER peer) const
 {
-	if (!peer)
-		return 0;
+	PEER_NOT_VALID(peer,
+		return NULL;
+	);
 
-	return peer.network.getDataFullSize();
+	return peer->network.getDataFullSize();
 }
 
 size_t Server::GetReceivedPackageSize(NET_PEER peer) const
 {
-	if (!peer)
-		return 0;
+	PEER_NOT_VALID(peer,
+		return NULL;
+	);
 
-	return peer.network.getDataSize();
+	return peer->network.getDataSize();
 }
 
 float Server::GetReceivedPackageSizeAsPerc(NET_PEER peer) const
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return 0.0f;
+	);
 
 	// Avoid dividing zero with zero
-	if (peer.network.getDataSize() <= 0)
+	if (peer->network.getDataSize() <= 0)
 		return 0.0f;
 
-	if (peer.network.getDataFullSize() <= 0)
+	if (peer->network.getDataFullSize() <= 0)
 		return 0;
 
-	auto perc = static_cast<float>(peer.network.getDataSize()) / static_cast<float>(peer.network.getDataFullSize()) * 100;
+	auto perc = static_cast<float>(peer->network.getDataSize()) / static_cast<float>(peer->network.getDataFullSize()) * 100;
 	if (perc < 0.0f) // should never happen, just in case
 		perc = 0.0f;
 	else if (perc > 100.0f) // could happen, as we play around with the sizes later on
@@ -523,14 +531,15 @@ IPRef Server::NET_IPEER::IPAddr() const
 
 void Server::DisconnectPeer(NET_PEER peer, const int code)
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return;
+	);
 
 	Package PKG;
 	PKG.Append(CSTRING("code"), code);
 	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer.IPAddr().get(), NetGetErrorMessage(code));
+	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), NetGetErrorMessage(code));
 
 	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
@@ -732,73 +741,74 @@ bool Server::NeedExit() const
 
 void Server::SingleSend(NET_PEER peer, const char* data, size_t size)
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return;
+	);
 
 	do
 	{
-		const auto res = send(peer.pSocket, data, static_cast<int>(size), 0);
+		const auto res = send(peer->pSocket, data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEACCES:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINTR:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINPROGRESS:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEFAULT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOBUFS:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTCONN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTSOCK:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEOPNOTSUPP:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAESHUTDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
@@ -806,37 +816,37 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size)
 				continue;
 
 			case WSAEMSGSIZE:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEHOSTUNREACH:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINVAL:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNABORTED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAETIMEDOUT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			default:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 			}
@@ -850,88 +860,87 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size)
 
 void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size)
 {
-	if (!peer)
-	{
+	PEER_NOT_VALID(peer,
 		FREE(data);
-		return;
-	}
+	return;
+	);
 
 	do
 	{
-		const auto res = send(peer.pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
+		const auto res = send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETDOWN:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEACCES:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINTR:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINPROGRESS:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEFAULT:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETRESET:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOBUFS:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTCONN:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTSOCK:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEOPNOTSUPP:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAESHUTDOWN:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
@@ -940,43 +949,43 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size)
 
 			case WSAEMSGSIZE:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEHOSTUNREACH:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINVAL:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNABORTED:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNRESET:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAETIMEDOUT:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			default:
 				FREE(data);
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 			}
@@ -992,88 +1001,87 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size)
 
 void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size)
 {
-	if (!peer)
-	{
+	PEER_NOT_VALID(peer,
 		data.free();
-		return;
-	}
+	return;
+	);
 
 	do
 	{
-		const auto res = send(peer.pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
+		const auto res = send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETDOWN:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEACCES:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINTR:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINPROGRESS:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEFAULT:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENETRESET:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOBUFS:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTCONN:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAENOTSOCK:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEOPNOTSUPP:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAESHUTDOWN:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
@@ -1082,43 +1090,43 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size)
 
 			case WSAEMSGSIZE:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEHOSTUNREACH:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAEINVAL:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNABORTED:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAECONNRESET:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			case WSAETIMEDOUT:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 
 			default:
 				data.free();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer.IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
 				return;
 			}
@@ -1151,8 +1159,9 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size)
  */
 void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return;
+	);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1172,7 +1181,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (GetCryptPackage() && peer.cryption.getHandshakeStatus())
+	if (GetCryptPackage() && peer->cryption.getHandshakeStatus())
 	{
 		NET_AES aes;
 
@@ -1195,7 +1204,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			return;
 		}
 
-		if (!peer.cryption.RSA)
+		if (!peer->cryption.RSA)
 		{
 			Key.free();
 			IV.free();
@@ -1207,7 +1216,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 		/* Encrypt AES Keypair using RSA */
 		auto KeySize = GetAESKeySize();
-		if (!peer.cryption.RSA->encryptBase64(Key.reference().get(), KeySize))
+		if (!peer->cryption.RSA->encryptBase64(Key.reference().get(), KeySize))
 		{
 			Key.free();
 			IV.free();
@@ -1217,7 +1226,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-		if (!peer.cryption.RSA->encryptBase64(IV.reference().get(), IVSize))
+		if (!peer->cryption.RSA->encryptBase64(IV.reference().get(), IVSize))
 		{
 			Key.free();
 			IV.free();
@@ -1438,148 +1447,149 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 short Server::Handshake(NET_PEER peer)
 {
-	if (!peer)
+	PEER_NOT_VALID(peer,
 		return ServerHandshake::peer_not_valid;
+	);
 
-	const auto data_size = recv(peer.pSocket, reinterpret_cast<char*>(peer.network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
+	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAENETDOWN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEFAULT:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAENOTCONN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEINTR:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEINPROGRESS:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAENETRESET:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAENOTSOCK:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEOPNOTSUPP:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAESHUTDOWN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEWOULDBLOCK:
-			peer.network.reset();
+			peer->network.reset();
 			return ServerHandshake::would_block;
 
 		case WSAEMSGSIZE:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAEINVAL:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAECONNABORTED:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAETIMEDOUT:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		case WSAECONNRESET:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 
 		default:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return ServerHandshake::error;
 		}
 	}
 	if (data_size == 0)
 	{
-		peer.network.reset();
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer.IPAddr().get());
+		peer->network.reset();
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
 		ErasePeer(peer);
 		return ServerHandshake::error;
 	}
-	peer.network.getDataReceive()[data_size] = '\0';
+	peer->network.getDataReceive()[data_size] = '\0';
 
-	if (!peer.network.dataValid())
+	if (!peer->network.dataValid())
 	{
-		peer.network.allocData(data_size);
-		memcpy(peer.network.getData(), peer.network.getDataReceive(), data_size);
+		peer->network.allocData(data_size);
+		memcpy(peer->network.getData(), peer->network.getDataReceive(), data_size);
 	}
 	else
 	{
 		//* store incomming */
-		const auto newBuffer = ALLOC<BYTE>(peer.network.getDataSize() + data_size + 1);
-		memcpy(newBuffer, peer.network.getData(), peer.network.getDataSize());
-		memcpy(&newBuffer[peer.network.getDataSize()], peer.network.getDataReceive(), data_size);
-		peer.network.setDataSize(peer.network.getDataSize() + data_size);
-		peer.network.setData(newBuffer); // pointer swap
+		const auto newBuffer = ALLOC<BYTE>(peer->network.getDataSize() + data_size + 1);
+		memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+		memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+		peer->network.setDataSize(peer->network.getDataSize() + data_size);
+		peer->network.setData(newBuffer); // pointer swap
 	}
 
-	peer.network.reset();
+	peer->network.reset();
 
-	std::string tmp(reinterpret_cast<const char*>(peer.network.getData()));
+	std::string tmp(reinterpret_cast<const char*>(peer->network.getData()));
 	const auto pos = tmp.find(CSTRING("GET / HTTP/1.1"));
 	if (pos != std::string::npos)
 	{
 		std::map<std::string, std::string> entries;
 
-		std::istringstream s(reinterpret_cast<const char*>(peer.network.getData()));
+		std::istringstream s(reinterpret_cast<const char*>(peer->network.getData()));
 		std::string header;
 		std::string::size_type end;
 
@@ -1603,7 +1613,7 @@ short Server::Handshake(NET_PEER peer)
 		}
 
 		// clear data
-		peer.network.clear();
+		peer->network.clear();
 
 		const auto stringUpdate = CSTRING("Upgrade");
 
@@ -1614,10 +1624,10 @@ short Server::Handshake(NET_PEER peer)
 		return ServerHandshake::is_not_websocket;
 	}
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), GetServerName(), peer.IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), GetServerName(), peer->IPAddr().get());
 
 	// clear data
-	peer.network.clear();
+	peer->network.clear();
 	return ServerHandshake::error;
 }
 
@@ -1646,53 +1656,53 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 
 	do
 	{
-		peer.setAsync(true);
+		peer->setAsync(true);
 		const auto res = Handshake(peer);
 		if (res == ServerHandshake::peer_not_valid)
 		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), GetServerName(), peer.IPAddr().get());
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), GetServerName(), peer->IPAddr().get());
 
 			// erase him
-			peer.setAsync(false);
+			peer->setAsync(false);
 			ErasePeer(peer);
 			return;
 		}
 		if (res == ServerHandshake::would_block)
 		{
-			peer.setAsync(false);
+			peer->setAsync(false);
 			break;
 		}
 		if (res == ServerHandshake::is_websocket)
 		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to websocket!"), GetServerName(), peer.IPAddr().get());
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to websocket!"), GetServerName(), peer->IPAddr().get());
 
 			// erase him
-			peer.setAsync(false);
+			peer->setAsync(false);
 			ErasePeer(peer);
 			return;
 		}
 		if (res == ServerHandshake::error)
 		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), GetServerName(), peer.IPAddr().get());
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), GetServerName(), peer->IPAddr().get());
 
-			peer.setAsync(false);
+			peer->setAsync(false);
 			ErasePeer(peer);
 			return;
 		}
 		if (res == ServerHandshake::is_not_websocket)
 		{
-			peer.setAsync(false);
+			peer->setAsync(false);
 			break;
 		}
-		peer.setAsync(false);
+		peer->setAsync(false);
 	} while (!DoExit);
 
 	if (GetCryptPackage())
 	{
 		/* Create new RSA Key Pair */
-		peer.cryption.createKeyPair(GetRSAKeySize());
+		peer->cryption.createKeyPair(GetRSAKeySize());
 
-		const auto PublicKey = peer.cryption.RSA->PublicKey();
+		const auto PublicKey = peer->cryption.RSA->PublicKey();
 
 		Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
@@ -1713,15 +1723,15 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 		UpdatePeer(peer);
 		OnPeerUpdate(peer);
 
-		if (peer.pSocket)
+		SOCKET_VALID(peer->pSocket)
 		{
-			peer.setAsync(true);
+			peer->setAsync(true);
 			DoReceive(peer);
-			peer.setAsync(false);
+			peer->setAsync(false);
 		}
 		else
 		{
-			peer.setAsync(false);
+			peer->setAsync(false);
 			break;
 		}
 
@@ -1729,8 +1739,11 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 	}
 
 	// erase him
-	peer.setAsync(false);
+	peer->setAsync(false);
 	ErasePeer(peer);
+
+	delete peer;
+	peer = nullptr;
 }
 
 /*
@@ -1752,215 +1765,223 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
  */
 void Server::DoReceive(NET_PEER peer)
 {
-	if (!peer || !peer.pSocket)
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	SOCKET_NOT_VALID(peer->pSocket)
 		return;
 
-	const auto data_size = recv(peer.pSocket, reinterpret_cast<char*>(peer.network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
+	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAENETDOWN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEFAULT:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAENOTCONN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEINTR:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEINPROGRESS:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAENETRESET:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAENOTSOCK:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEOPNOTSUPP:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAESHUTDOWN:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEWOULDBLOCK:
 			ProcessPackages(peer);
-			peer.network.reset();
+			peer->network.reset();
 			return;
 
 		case WSAEMSGSIZE:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAEINVAL:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 
 		case WSAECONNABORTED:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAETIMEDOUT:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		case WSAECONNRESET:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 
 		default:
-			peer.network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer.IPAddr().get());
+			peer->network.reset();
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
 			return;
 		}
 	}
 	if (data_size == 0)
 	{
-		peer.network.reset();
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer.IPAddr().get());
+		peer->network.reset();
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
 		ErasePeer(peer);
 		return;
 	}
 
-	if (!peer.network.dataValid())
+	if (!peer->network.dataValid())
 	{
 		// check if incomming is even valid
-		if (memcmp(&peer.network.getDataReceive()[0], NET_PACKAGE_BRACKET_OPEN, 1) != 0)
+		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_BRACKET_OPEN, 1) != 0)
 		{
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
-			peer.network.reset();
+			peer->network.reset();
 			return;
 		}
-		if (memcmp(&peer.network.getDataReceive()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
+		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
 		{
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
-			peer.network.reset();
+			peer->network.reset();
 			return;
 		}
 
-		peer.network.allocData(data_size);
-		memcpy(peer.network.getData(), peer.network.getDataReceive(), data_size);
+		peer->network.allocData(data_size);
+		memcpy(peer->network.getData(), peer->network.getDataReceive(), data_size);
 	}
 	else
 	{
-		if (peer.network.getDataFullSize() > 0)
+		if (peer->network.getDataFullSize() > 0)
 		{
-			if (peer.network.getDataSize() + data_size > peer.network.getDataFullSize())
+			if (peer->network.getDataSize() + data_size > peer->network.getDataFullSize())
 			{
-				peer.network.setDataFullSize(peer.network.getDataFullSize() + data_size);
+				peer->network.setDataFullSize(peer->network.getDataFullSize() + data_size);
 
 				/* store incomming */
-				const auto newBuffer = ALLOC<BYTE>(peer.network.getDataFullSize() + 1);
-				memcpy(newBuffer, peer.network.getData(), peer.network.getDataSize());
-				memcpy(&newBuffer[peer.network.getDataSize()], peer.network.getDataReceive(), data_size);
-				peer.network.setDataSize(peer.network.getDataSize() + data_size);
-				peer.network.setData(newBuffer); // pointer swap
+				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
+				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+				memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+				peer->network.setDataSize(peer->network.getDataSize() + data_size);
+				peer->network.setData(newBuffer); // pointer swap
 			}
 			else
 			{
-				memcpy(&peer.network.getData()[peer.network.getDataSize()], peer.network.getDataReceive(), data_size);
-				peer.network.setDataSize(peer.network.getDataSize() + data_size);
+				memcpy(&peer->network.getData()[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+				peer->network.setDataSize(peer->network.getDataSize() + data_size);
 			}
 		}
 		else
 		{
 			//* store incomming */
-			const auto newBuffer = ALLOC<BYTE>(peer.network.getDataSize() + data_size + 1);
-			memcpy(newBuffer, peer.network.getData(), peer.network.getDataSize());
-			memcpy(&newBuffer[peer.network.getDataSize()], peer.network.getDataReceive(), data_size);
-			peer.network.setDataSize(peer.network.getDataSize() + data_size);
-			peer.network.setData(newBuffer); // pointer swap
+			const auto newBuffer = ALLOC<BYTE>(peer->network.getDataSize() + data_size + 1);
+			memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+			memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+			peer->network.setDataSize(peer->network.getDataSize() + data_size);
+			peer->network.setData(newBuffer); // pointer swap
 		}
 	}
 
 	// check if we have something to process already - since we have a fixed data receive size, should this be fine to process in everytick
 	for (size_t it = DEFAULT_SERVER_MAX_PACKET_SIZE - 1; it > 0; --it)
 	{
-		if (!memcmp(&peer.network.getDataReceive()[it], NET_PACKAGE_BRACKET_OPEN, 1))
+		if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 		{
-			if (!memcmp(&peer.network.getDataReceive()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
+			if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
 			{
 				ProcessPackages(peer);
-				peer.network.reset();
+				peer->network.reset();
 				return;
 			}
 		}
 	}
 
-	peer.network.reset();
+	peer->network.reset();
 	GetPackageDataSize(peer);
 }
 
 void Server::GetPackageDataSize(NET_PEER peer) const
 {
-	if (!peer.network.getDataSize()
-		|| peer.network.getDataSize() == INVALID_SIZE)
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	if (!peer->network.getDataSize()
+		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
-	if (peer.network.getDataFullSize() > 0)
+	if (peer->network.getDataFullSize() > 0)
 		return;
 
-	for (size_t it = 0; it < peer.network.getDataSize(); ++it)
+	for (size_t it = 0; it < peer->network.getDataSize(); ++it)
 	{
-		if (!memcmp(&peer.network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
+		if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 		{
 			// find data full size
-			if (!memcmp(&peer.network.getData()[it], NET_PACKAGE_SIZE, sizeof(NET_PACKAGE_SIZE) - 1))
+			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_SIZE, sizeof(NET_PACKAGE_SIZE) - 1))
 			{
 				const auto startPos = it + sizeof(NET_PACKAGE_SIZE) - 1;
 				size_t endPos = NULL;
-				for (auto z = startPos; z < peer.network.getDataSize(); ++z)
+				for (auto z = startPos; z < peer->network.getDataSize(); ++z)
 				{
-					if (!memcmp(&peer.network.getData()[z], NET_PACKAGE_BRACKET_CLOSE, 1))
+					if (!memcmp(&peer->network.getData()[z], NET_PACKAGE_BRACKET_CLOSE, 1))
 					{
 						endPos = z;
 						break;
@@ -1972,16 +1993,16 @@ void Server::GetPackageDataSize(NET_PEER peer) const
 
 				const auto size = endPos - startPos - 1;
 				CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-				memcpy(dataSizeStr.get(), &peer.network.getData()[startPos + 1], size);
+				memcpy(dataSizeStr.get(), &peer->network.getData()[startPos + 1], size);
 				dataSizeStr.get()[size] = '\0';
 				const auto dataSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-				peer.network.setDataFullSize(dataSize);
+				peer->network.setDataFullSize(dataSize);
 				dataSizeStr.free();
 
-				const auto newBuffer = ALLOC<BYTE>(peer.network.getDataFullSize() + 1);
-				memcpy(newBuffer, peer.network.getData(), peer.network.getDataSize());
-				newBuffer[peer.network.getDataFullSize()] = '\0';
-				peer.network.setData(newBuffer); // pointer swap
+				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
+				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+				newBuffer[peer->network.getDataFullSize()] = '\0';
+				peer->network.setData(newBuffer); // pointer swap
 
 				break;
 			}
@@ -1991,8 +2012,12 @@ void Server::GetPackageDataSize(NET_PEER peer) const
 
 void Server::ProcessPackages(NET_PEER peer)
 {
-	if (!peer.network.getDataSize()
-		|| peer.network.getDataSize() == INVALID_SIZE)
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	if (!peer->network.getDataSize()
+		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
 	do
@@ -2000,18 +2025,18 @@ void Server::ProcessPackages(NET_PEER peer)
 		auto continuePackage = false;
 
 		// search for footer
-		for (auto it = peer.network.getDataSize() - 1; it > 0; --it)
+		for (auto it = peer->network.getDataSize() - 1; it > 0; --it)
 		{
-			if (!memcmp(&peer.network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
+			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 			{
-				if (!memcmp(&peer.network.getData()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
+				if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
 				{
 					// check if we have a header
 					auto idx = NULL;
-					if (memcmp(&peer.network.getData()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
+					if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
 					{
 						LOG_ERROR(CSTRING("Package has no header"));
-						peer.network.clear();
+						peer->network.clear();
 						return;
 					}
 
@@ -2021,14 +2046,14 @@ void Server::ProcessPackages(NET_PEER peer)
 					size_t entirePackageSize = NULL;
 					size_t offsetBegin = NULL;
 					{
-						for (size_t y = idx; y < peer.network.getDataSize(); ++y)
+						for (size_t y = idx; y < peer->network.getDataSize(); ++y)
 						{
-							if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 							{
 								offsetBegin = y;
 								const auto size = y - idx - 1;
 								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-								memcpy(dataSizeStr.get(), &peer.network.getData()[idx + 1], size);
+								memcpy(dataSizeStr.get(), &peer->network.getData()[idx + 1], size);
 								dataSizeStr.get()[size] = '\0';
 								entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 								dataSizeStr.free();
@@ -2041,21 +2066,21 @@ void Server::ProcessPackages(NET_PEER peer)
 					ExecutePackage(peer, entirePackageSize, offsetBegin);
 
 					// re-alloc buffer
-					const auto leftSize = static_cast<int>(peer.network.getDataSize() - entirePackageSize) > 0 ? peer.network.getDataSize() - entirePackageSize : INVALID_SIZE;
+					const auto leftSize = static_cast<int>(peer->network.getDataSize() - entirePackageSize) > 0 ? peer->network.getDataSize() - entirePackageSize : INVALID_SIZE;
 					if (leftSize != INVALID_SIZE
 						&& leftSize > 0)
 					{
 						const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
-						memcpy(leftBuffer, &peer.network.getData()[entirePackageSize], leftSize);
+						memcpy(leftBuffer, &peer->network.getData()[entirePackageSize], leftSize);
 						leftBuffer[leftSize] = '\0';
-						peer.network.setData(leftBuffer); // swap pointer
-						peer.network.setDataSize(leftSize);
-						peer.network.setDataFullSize(NULL);
+						peer->network.setData(leftBuffer); // swap pointer
+						peer->network.setDataSize(leftSize);
+						peer->network.setDataFullSize(NULL);
 
 						continuePackage = true;
 					}
 					else
-						peer.network.clear();
+						peer->network.clear();
 
 					break;
 				}
@@ -2070,10 +2095,14 @@ void Server::ProcessPackages(NET_PEER peer)
 
 void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin)
 {
-	if (memcmp(&peer.network.getData()[size - sizeof(NET_PACKAGE_FOOTER) + 1], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1) != 0)
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	if (memcmp(&peer->network.getData()[size - sizeof(NET_PACKAGE_FOOTER) + 1], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1) != 0)
 	{
 		LOG_ERROR(CSTRING("Package has no footer"));
-		peer.network.clear();
+		peer->network.clear();
 		return;
 	}
 
@@ -2081,7 +2110,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if (GetCryptPackage() && peer.cryption.getHandshakeStatus())
+	if (GetCryptPackage() && peer->cryption.getHandshakeStatus())
 	{
 		auto offset = begin + 1;
 
@@ -2089,18 +2118,18 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		size_t AESKeySize;
 
 		// look for key tag
-		if (!memcmp(&peer.network.getData()[offset], NET_AES_KEY, sizeof(NET_AES_KEY) - 1))
+		if (!memcmp(&peer->network.getData()[offset], NET_AES_KEY, sizeof(NET_AES_KEY) - 1))
 		{
 			offset += sizeof(NET_AES_KEY) - 1;
 
 			// read size
-			for (auto y = offset; y < peer.network.getDataSize(); ++y)
+			for (auto y = offset; y < peer->network.getDataSize(); ++y)
 			{
-				if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+				if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 				{
 					const auto psize = y - offset - 1;
 					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-					memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+					memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 					dataSizeStr.get()[psize] = '\0';
 					AESKeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 					dataSizeStr.free();
@@ -2112,7 +2141,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 			// read the data
 			AESKey = ALLOC<BYTE>(AESKeySize + 1);
-			memcpy(AESKey.get(), &peer.network.getData()[offset], AESKeySize);
+			memcpy(AESKey.get(), &peer->network.getData()[offset], AESKeySize);
 			AESKey.get()[AESKeySize] = '\0';
 
 			offset += AESKeySize;
@@ -2122,18 +2151,18 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		size_t AESIVSize;
 
 		// look for iv tag
-		if (!memcmp(&peer.network.getData()[offset], NET_AES_IV, sizeof(NET_AES_IV) - 1))
+		if (!memcmp(&peer->network.getData()[offset], NET_AES_IV, sizeof(NET_AES_IV) - 1))
 		{
 			offset += sizeof(NET_AES_IV) - 1;
 
 			// read size
-			for (auto y = offset; y < peer.network.getDataSize(); ++y)
+			for (auto y = offset; y < peer->network.getDataSize(); ++y)
 			{
-				if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+				if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 				{
 					const auto psize = y - offset - 1;
 					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-					memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+					memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 					dataSizeStr.get()[psize] = '\0';
 					AESIVSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 					dataSizeStr.free();
@@ -2145,13 +2174,13 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 			// read the data
 			AESIV = ALLOC<BYTE>(AESIVSize + 1);
-			memcpy(AESIV.get(), &peer.network.getData()[offset], AESIVSize);
+			memcpy(AESIV.get(), &peer->network.getData()[offset], AESIVSize);
 			AESIV.get()[AESIVSize] = '\0';
 
 			offset += AESIVSize;
 		}
 
-		if (!peer.cryption.RSA)
+		if (!peer->cryption.RSA)
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2161,7 +2190,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			return;
 		}
 
-		if (!peer.cryption.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
+		if (!peer->cryption.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2171,7 +2200,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			return;
 		}
 
-		if (!peer.cryption.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
+		if (!peer->cryption.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2198,7 +2227,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		do
 		{
 			// look for raw data tag
-			if (!memcmp(&peer.network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
 			{
 				offset += sizeof(NET_RAW_DATA_KEY) - 1;
 
@@ -2206,13 +2235,13 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 				CPOINTER<BYTE> key;
 				size_t KeySize = NULL;
 				{
-					for (auto y = offset; y < peer.network.getDataSize(); ++y)
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-							memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							KeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
@@ -2224,26 +2253,26 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 					// read the data
 					key = ALLOC<BYTE>(KeySize + 1);
-					memcpy(key.get(), &peer.network.getData()[offset], KeySize);
+					memcpy(key.get(), &peer->network.getData()[offset], KeySize);
 					key.get()[KeySize] = '\0';
 
 					offset += KeySize;
 				}
 
-				if (!memcmp(&peer.network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
 				{
 					offset += sizeof(NET_RAW_DATA) - 1;
 
 					// read size
 					size_t packageSize = NULL;
 					{
-						for (auto y = offset; y < peer.network.getDataSize(); ++y)
+						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
-							if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 							{
 								const auto psize = y - offset - 1;
 								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-								memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 								dataSizeStr.get()[psize] = '\0';
 								packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 								dataSizeStr.free();
@@ -2254,7 +2283,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer.network.getData()[offset], packageSize };
+					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
 
 					if (GetCompressPackage())
 						DecompressData(entry.value(), entry.size());
@@ -2274,20 +2303,20 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// look for data tag
-			if (!memcmp(&peer.network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
 			{
 				offset += sizeof(NET_DATA) - 1;
 
 				// read size
 				size_t packageSize = NULL;
 				{
-					for (auto y = offset; y < peer.network.getDataSize(); ++y)
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-							memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
@@ -2300,7 +2329,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 				// read the data
 				data = ALLOC<BYTE>(packageSize + 1);
-				memcpy(data.get(), &peer.network.getData()[offset], packageSize);
+				memcpy(data.get(), &peer->network.getData()[offset], packageSize);
 				data.get()[packageSize] = '\0';
 
 				offset += packageSize;
@@ -2330,7 +2359,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		do
 		{
 			// look for raw data tag
-			if (!memcmp(&peer.network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
 			{
 				offset += sizeof(NET_RAW_DATA_KEY) - 1;
 
@@ -2338,13 +2367,13 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 				CPOINTER<BYTE> key;
 				size_t KeySize = NULL;
 				{
-					for (auto y = offset; y < peer.network.getDataSize(); ++y)
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-							memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							KeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
@@ -2356,26 +2385,26 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 					// read the data
 					key = ALLOC<BYTE>(KeySize + 1);
-					memcpy(key.get(), &peer.network.getData()[offset], KeySize);
+					memcpy(key.get(), &peer->network.getData()[offset], KeySize);
 					key.get()[KeySize] = '\0';
 
 					offset += KeySize;
 				}
 
-				if (!memcmp(&peer.network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
 				{
 					offset += sizeof(NET_RAW_DATA) - 1;
 
 					// read size
 					size_t packageSize = NULL;
 					{
-						for (auto y = offset; y < peer.network.getDataSize(); ++y)
+						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
-							if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 							{
 								const auto psize = y - offset - 1;
 								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-								memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 								dataSizeStr.get()[psize] = '\0';
 								packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 								dataSizeStr.free();
@@ -2386,7 +2415,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer.network.getData()[offset], packageSize };
+					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
 
 					if (GetCompressPackage())
 						DecompressData(entry.value(), entry.size());
@@ -2399,20 +2428,20 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// look for data tag
-			if (!memcmp(&peer.network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
 			{
 				offset += sizeof(NET_DATA) - 1;
 
 				// read size
 				size_t packageSize = NULL;
 				{
-					for (auto y = offset; y < peer.network.getDataSize(); ++y)
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer.network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-							memcpy(dataSizeStr.get(), &peer.network.getData()[offset + 1], psize);
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
@@ -2425,7 +2454,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 				// read the data
 				data = ALLOC<BYTE>(packageSize + 1);
-				memcpy(data.get(), &peer.network.getData()[offset], packageSize);
+				memcpy(data.get(), &peer->network.getData()[offset], packageSize);
 				data.get()[packageSize] = '\0';
 
 				offset += packageSize;
@@ -2490,7 +2519,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	}
 
 	data.free();
-}
+		}
 
 void Server::CompressData(BYTE*& data, size_t& size) const
 {
@@ -2505,8 +2534,8 @@ void Server::CompressData(BYTE*& data, size_t& size) const
 #ifdef DEBUG
 		LOG_DEBUG(CSTRING("Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
-	}
 }
+	}
 
 void Server::DecompressData(BYTE*& data, size_t& size) const
 {
@@ -2538,14 +2567,14 @@ NET_SERVER_DEFINE_PACKAGE(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPack
 NET_SERVER_END_DATA_PACKAGE
 
 NET_BEGIN_FNC_PKG(Server, RSAHandshake)
-if (peer.estabilished)
+if (peer->estabilished)
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
-if (peer.cryption.getHandshakeStatus())
+if (peer->cryption.getHandshakeStatus())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already done the RSA Handshake, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already done the RSA Handshake, something went wrong!"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 
@@ -2553,18 +2582,18 @@ const auto publicKey = PKG.String(CSTRING("PublicKey"));
 
 if (!publicKey.valid()) // empty
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Weird, Peer ('%s'): has sent an empty RSA Public Key!"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Weird, Peer ('%s'): has sent an empty RSA Public Key!"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_EmptyRSAPublicKey);
 	return;
 }
 
-peer.cryption.RSA->SetPublicKey((char*)publicKey.value());
+peer->cryption.RSA->SetPublicKey((char*)publicKey.value());
 
 // from now we use the Cryption, synced with Server
-peer.cryption.setHandshakeStatus(true);
+peer->cryption.setHandshakeStatus(true);
 
 // RSA Handshake has been finished, keep going with normal process
-LOG_PEER(CSTRING("[%s][%s] - RSA Key Handshake were successfully with Peer ('%s')"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+LOG_PEER(CSTRING("[%s][%s] - RSA Key Handshake were successfully with Peer ('%s')"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 
 // keep it empty, we get it filled back
 Package pkgVersionsCheck;
@@ -2573,14 +2602,14 @@ NET_END_FNC_PKG
 
 NET_BEGIN_FNC_PKG(Server, VersionPackage)
 // should not happen
-if (peer.estabilished)
+if (peer->estabilished)
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
-if (GetCryptPackage() && !peer.cryption.getHandshakeStatus())
+if (GetCryptPackage() && !peer->cryption.getHandshakeStatus())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has not done the RSA Handshake yet, something went wrong!"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has not done the RSA Handshake yet, something went wrong!"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 
@@ -2594,7 +2623,7 @@ if (!majorVersion.valid()
 	|| !revision.valid()
 	|| !key.valid())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent an invalid versions package"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent an invalid versions package"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 	return;
 }
@@ -2604,21 +2633,21 @@ if ((majorVersion.value() == NET_MAJOR_VERSION())
 	&& (revision.value() == NET_REVISION())
 	&& strcmp(key.value(), NET_KEY()) == 0)
 {
-	peer.NetVersionMatched = true;
+	peer->NetVersionMatched = true;
 
 	Package estabilish;
 	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage, estabilish);
 
-	peer.estabilished = true;
+	peer->estabilished = true;
 
-	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has been estabilished"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get());
+	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has been estabilished"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get());
 
 	// callback
 	OnPeerEstabilished(peer);
 }
 else
 {
-	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has sent different Net-Version:\n%i.%i.%i-%s"), GetServerName(), FUNCTION_NAME, peer.IPAddr().get(), majorVersion.value(), minorVersion.value(), revision.value(), key.value());
+	LOG_PEER(CSTRING("[%s][%s] - Peer ('%s'): has sent different Net-Version:\n%i.%i.%i-%s"), GetServerName(), FUNCTION_NAME, peer->IPAddr().get(), majorVersion.value(), minorVersion.value(), revision.value(), key.value());
 
 	// version or key missmatch, disconnect peer
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);

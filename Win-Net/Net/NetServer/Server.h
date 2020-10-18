@@ -14,7 +14,7 @@ NET_DSA_BEGIN
 #define NET_SERVER Net::Server::Server
 
 #define NET_IPEER peerInfo
-#define NET_PEER peerInfo&
+#define NET_PEER peerInfo*
 
 #define PEER peer
 #define PKG pkg
@@ -130,11 +130,6 @@ NET_STRUCT_END
 
 // table to keep track of each client's socket
 NET_STRUCT_BEGIN(NET_IPEER)
-explicit operator bool() const
-{
-	return pSocket != INVALID_SOCKET;
-}
-
 NET_UID UniqueID;
 SOCKET pSocket;
 struct sockaddr_in client_addr;
@@ -182,7 +177,7 @@ NET_CLASS_PRIVATE
 size_t _CounterPeersTable;
 void IncreasePeersCounter();
 void DecreasePeersCounter();
-NET_IPEER CreatePeer(sockaddr_in, SOCKET);
+NET_PEER CreatePeer(sockaddr_in, SOCKET);
 bool ErasePeer(NET_PEER);
 void UpdatePeer(NET_PEER);
 
