@@ -44,7 +44,7 @@ constexpr auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
 constexpr auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 16000;
 constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
-constexpr auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
+constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 #define NET_WEB_SERVER Net::WebServer::Server
 
