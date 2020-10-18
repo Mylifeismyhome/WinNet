@@ -297,6 +297,13 @@ static void Free(T*& data)
 #define SOCKET_VALID(socket) if(socket != INVALID_SOCKET)
 #define SOCKET_NOT_VALID(socket) if(socket == INVALID_SOCKET)
 
+#define PEER_VALID(peer) if(peer)
+#define PEER_NOT_VALID(peer, stuff) if(!peer) \
+	{ \
+		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), GetServerName()); \
+		stuff \
+	}
+
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
 ////////////////////////////////////////////////////
