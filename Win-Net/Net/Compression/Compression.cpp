@@ -74,7 +74,7 @@ void ZLib::Decompress(BYTE*& bytes, size_t& size, const size_t maxAvailOut) cons
 	strm.opaque = nullptr;
 
 	/* 15 window bits, and the +32 tells zlib to to detect if using gzip or zlib */
-	if (inflateInit2(&strm, (15 + 32)) == Z_OK)
+	if (inflateInit2(&strm, (MAX_WBITS + 32)) == Z_OK)
 	{
 		if (inflate(&strm, Z_FINISH) != Z_STREAM_END)
 		{

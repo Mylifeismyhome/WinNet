@@ -3,51 +3,51 @@
 static const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return "w";
+		return "wb";
 	if (Mode == NET_FILE_READ)
-		return "r";
+		return "rb";
 	if (Mode == NET_FILE_APPAND)
-		return "a";
+		return "ab";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return "a+";
+		return "ab+";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return "w+";
+		return "wb+";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return "r+";
+		return "rb+";
 
-	return "r";
+	return "rb";
 }
 
 static const wchar_t* GetModeW(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return L"w";
+		return L"wb";
 	if (Mode == NET_FILE_READ)
-		return L"r";
+		return L"rb";
 	if (Mode == NET_FILE_APPAND)
-		return L"a";
+		return L"ab";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return L"a+";
+		return L"ab+";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return L"w+";
+		return L"wb+";
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return L"r+";
+		return L"rb+";
 
-	return L"r";
+	return L"rb";
 }
 
 NET_NAMESPACE_BEGIN(Net)
@@ -96,21 +96,21 @@ bool FileManagerW::CanOpenFile()
 bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size)
 {
 	fseek(file, 0, SEEK_END);
-	const auto size = ftell(file);
-	fseek(file, 0, NULL);
+	const auto size = static_cast<size_t>(ftell(file));
+	rewind(file);
 
-	auto buffer = ALLOC<char>(static_cast<size_t>(size) + 1);
+	auto buffer = ALLOC<BYTE>(size + 1);
 	const auto read = fread(buffer, 1, size, file);
-	if (read == NULL)
+	if (read != size)
 	{
 		FREE(buffer);
 		closeFile();
 		return false;
 	}
 
-	buffer[size] = '\0';
-	out_data = (BYTE*)buffer;
-	out_size = static_cast<size_t>(size);
+	buffer[read] = '\0';
+	out_data = buffer;
+	out_size = read;
 	closeFile();
 
 	return true;
@@ -141,15 +141,7 @@ bool FileManagerW::read(char*& out_data)
 		BYTE* out_byte = nullptr;
 		size_t out_size = NULL;
 		const auto res = getFileBuffer(out_byte, out_size);
-		if (res && out_size > 0)
-		{
-			out_data = ALLOC<char>(out_size + 1);
-			memcpy(out_data, out_byte, out_size);
-			out_data[out_size] = '\0';
-		}
-
-		FREE(out_byte);
-
+		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
 		return res;
 	}
 
@@ -161,7 +153,7 @@ bool FileManagerW::write(BYTE* data, const size_t size)
 	if (!openFile())
 		return false;
 	
-	const auto written = fwrite(data, sizeof BYTE, size, file);
+	const auto written = fwrite(data, 1, size, file);
 	close();
 	return written != NULL;
 }
@@ -239,21 +231,21 @@ bool FileManagerA::CanOpenFile()
 bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size)
 {
 	fseek(file, 0, SEEK_END);
-	const auto size = ftell(file);
-	fseek(file, 0, NULL);
+	const auto size = static_cast<size_t>(ftell(file));
+	rewind(file);
 
-	auto buffer = ALLOC<char>(static_cast<size_t>(size) + 1);
+	auto buffer = ALLOC<BYTE>(size + 1);
 	const auto read = fread(buffer, 1, size, file);
-	if (read == NULL)
+	if (read != size)
 	{
 		FREE(buffer);
 		closeFile();
 		return false;
 	}
 
-	buffer[size] = '\0';
-	out_data = (BYTE*)buffer;
-	out_size = static_cast<size_t>(size);
+	buffer[read] = '\0';
+	out_data = buffer;
+	out_size = read;
 	closeFile();
 
 	return true;
@@ -284,15 +276,7 @@ bool FileManagerA::read(char*& out_data)
 		BYTE* out_byte = nullptr;
 		size_t out_size = NULL;
 		const auto res = getFileBuffer(out_byte, out_size);
-		if (res && out_size > 0)
-		{
-			out_data = ALLOC<char>(out_size + 1);
-			memcpy(out_data, out_byte, out_size);
-			out_data[out_size] = '\0';
-		}
-
-		FREE(out_byte);
-
+		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
 		return res;
 	}
 
@@ -304,7 +288,7 @@ bool FileManagerA::write(BYTE* data, const size_t size)
 	if (!openFile())
 		return false;
 
-	const auto written = fwrite(data, sizeof BYTE, size, file);
+	const auto written = fwrite(data, 1, size, file);
 	close();
 	return written != NULL;
 }
