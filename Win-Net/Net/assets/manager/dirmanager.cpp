@@ -3,18 +3,91 @@
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 // Return true if the folder exists, false otherwise
-bool dirmanager::folderExists(const char* folderName) {
-	if (_access(folderName, 0) == -1) {
+bool dirmanager::folderExists(const wchar_t* folderName)
+{
+	if (_waccess(folderName, 0) == -1) {
 		//File not found
 		return false;
 	}
 
-	if (!(GetFileAttributes((LPCSTR)folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
+	if (!(GetFileAttributesW(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
 		return false;
 	}
 
 	return true;
+}
+
+bool dirmanager::folderExists(const char* folderName)
+{
+	if (_access(folderName, 0) == -1) {
+		//File not found
+		return false;
+	}
+
+	if (!(GetFileAttributesA(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
+		// File is not a directory
+		return false;
+	}
+
+	return true;
+}
+
+static dirmanager::createDirRes ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
+{
+	const auto len = wcslen(path);
+
+	// recrusive entries
+	for (auto it = offset; it < len; ++it)
+	{
+		if (!wmemcmp(&path[it], CWSTRING("/"), 1))
+		{
+			wchar_t directory[MAX_PATH];
+			wcscpy_s(directory, MAX_PATH, &path[offset]);
+			directory[it - offset] = '\0';
+
+			if (directory[0] != '\0')
+				directories.emplace_back(directory);
+
+			offset = it + 1;
+			return ProcessCreateDirectory(path, directories, offset);
+		}
+	}
+
+	// last entry
+	wchar_t directory[MAX_PATH];
+	wcscpy_s(directory, MAX_PATH, &path[offset]);
+	directory[len] = '\0';
+
+	auto bDirectory = true;
+	for (size_t it = 0; it < len; ++it)
+	{
+		if (!memcmp(&directory[it], ".", 1))
+		{
+			bDirectory = false;
+			break;
+		}
+	}
+
+	if (bDirectory)
+		directories.emplace_back(directory);
+
+	for (auto entry : directories)
+	{
+		if (!CreateDirectoryW(entry, nullptr))
+			return dirmanager::createDirRes::ERR;
+
+		if (_wchdir(entry) != 0)
+			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
+	}
+
+	for (size_t it = 0; it < directories.size(); ++it)
+	{
+		if (_chdir(CSTRING("..")) != 0)
+			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
+	}
+
+	return dirmanager::createDirRes::SUCCESS;
 }
 
 static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
@@ -74,6 +147,30 @@ static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<c
 	return dirmanager::createDirRes::SUCCESS;
 }
 
+dirmanager::createDirRes dirmanager::createDir(wchar_t* path)
+{
+	const auto len = wcslen(path);
+
+	wchar_t fixed[MAX_PATH];
+	size_t flen = NULL;
+	for (size_t it = 0; it < len; ++it)
+	{
+		if (wmemcmp(&path[it], CWSTRING("//"), 2) != 0
+			&& wmemcmp(&path[it], CWSTRING("\\\\"), 2) != 0)
+		{
+			memcpy(&fixed[flen], &path[it], 1);
+			flen++;
+		}
+	}
+	for (size_t it = 0; it < flen; ++it)
+	{
+		if (fixed[it] == '\\')
+			fixed[it] = '/';
+	}
+	fixed[flen] = '\0';
+	return ProcessCreateDirectory(fixed);
+}
+
 dirmanager::createDirRes dirmanager::createDir(char* path)
 {
 	const auto len = strlen(path);
@@ -98,6 +195,73 @@ dirmanager::createDirRes dirmanager::createDir(char* path)
 	return ProcessCreateDirectory(fixed);
 }
 
+bool dirmanager::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
+{
+	std::wstring     strFilePath;                 // Filepath
+	std::wstring     strPattern;                  // Pattern
+	WIN32_FIND_DATAW FileInformation;             // File information
+
+	const std::wstring str(dirname);
+	strPattern = str + CWSTRING("\\*.*");
+	const auto hFile = ::FindFirstFileW(strPattern.c_str(), &FileInformation);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (FileInformation.cFileName[0] != '.')
+			{
+				strFilePath.erase();
+				strFilePath = str + CWSTRING("\\") + FileInformation.cFileName;
+
+				if (FileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					if (bDeleteSubdirectories)
+					{
+						// Delete subdirectory
+						const auto iRC = deleteDir((wchar_t*)strFilePath.data(), bDeleteSubdirectories);
+						if (iRC)
+							return iRC;
+					}
+				}
+				else
+				{
+					// Set file attributes
+					if (::SetFileAttributesW(strFilePath.c_str(),
+						FILE_ATTRIBUTE_NORMAL) == FALSE)
+						return ::GetLastError();
+
+					// Delete file
+					if (::DeleteFileW(strFilePath.c_str()) == FALSE)
+						return ::GetLastError();
+				}
+			}
+		} while (::FindNextFileW(hFile, &FileInformation) == TRUE);
+
+		// Close handle
+		::FindClose(hFile);
+
+		const auto dwError = ::GetLastError();
+		if (dwError != ERROR_NO_MORE_FILES)
+			return dwError;
+		else
+		{
+			if (!bDeleteSubdirectories)
+			{
+				// Set directory attributes
+				if (::SetFileAttributesW(dirname,
+					FILE_ATTRIBUTE_NORMAL) == FALSE)
+					return ::GetLastError();
+
+				// Delete directory
+				if (::RemoveDirectoryW(dirname) == FALSE)
+					return ::GetLastError();
+			}
+		}
+	}
+
+	return true;
+}
+
 bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 {
 	std::string     strFilePath;                 // Filepath
@@ -106,7 +270,7 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 
 	const std::string str(dirname);
 	strPattern = str + CSTRING("\\*.*");
-	const auto hFile = ::FindFirstFile((LPCSTR)strPattern.c_str(), &FileInformation);
+	const auto hFile = ::FindFirstFileA(strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		do
@@ -114,7 +278,7 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 			if (FileInformation.cFileName[0] != '.')
 			{
 				strFilePath.erase();
-				strFilePath = str + CSTRING("\\") + (const char*)FileInformation.cFileName;
+				strFilePath = str + CSTRING("\\") + FileInformation.cFileName;
 
 				if (FileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
@@ -129,16 +293,16 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 				else
 				{
 					// Set file attributes
-					if (::SetFileAttributes((LPCSTR)strFilePath.c_str(),
+					if (::SetFileAttributesA((LPCSTR)strFilePath.c_str(),
 						FILE_ATTRIBUTE_NORMAL) == FALSE)
 						return ::GetLastError();
 
 					// Delete file
-					if (::DeleteFile((LPCSTR)strFilePath.c_str()) == FALSE)
+					if (::DeleteFileA((LPCSTR)strFilePath.c_str()) == FALSE)
 						return ::GetLastError();
 				}
 			}
-		} while (::FindNextFile(hFile, &FileInformation) == TRUE);
+		} while (::FindNextFileA(hFile, &FileInformation) == TRUE);
 
 		// Close handle
 		::FindClose(hFile);
@@ -151,12 +315,12 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 			if (!bDeleteSubdirectories)
 			{
 				// Set directory attributes
-				if (::SetFileAttributes((LPCSTR)dirname,
+				if (::SetFileAttributesA(dirname,
 					FILE_ATTRIBUTE_NORMAL) == FALSE)
 					return ::GetLastError();
 
 				// Delete directory
-				if (::RemoveDirectory((LPCSTR)dirname) == FALSE)
+				if (::RemoveDirectoryA(dirname) == FALSE)
 					return ::GetLastError();
 			}
 		}
@@ -165,7 +329,47 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
+void dirmanager::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
+{
+	WIN32_FIND_DATAW ffblk;
+	wchar_t buf[MAX_PATH];
+
+	if (!Dirname)
+		swprintf_s(buf, CWSTRING("%s"), CWSTRING("*.*"));
+	else
+		swprintf_s(buf, CWSTRING("%s\\%s"), Dirname, CWSTRING("*.*"));
+
+	const auto hFind = FindFirstFileW(buf, &ffblk);
+	if (hFind == INVALID_HANDLE_VALUE) {
+		return;
+	}
+
+	do
+	{
+		if (!Dirname)
+			swprintf_s(buf, CWSTRING("%s"), ffblk.cFileName);
+		else
+			swprintf_s(buf, CWSTRING("%s\\%s"), Dirname, ffblk.cFileName);
+
+		if (wcscmp(reinterpret_cast<const wchar_t*>(ffblk.cFileName), CWSTRING(".")) == 0 || wcscmp(reinterpret_cast<const wchar_t*>(ffblk.cFileName), CWSTRING("..")) == 0)
+			continue;
+
+		const auto isDir = (ffblk.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+
+		// recurse to directory
+		if (isDir)
+			scandir(buf, Vector);
+		else
+			Vector.emplace_back(NET_FILE_ATTRW(ffblk, buf));
+
+	} while (FindNextFileW(hFind, &ffblk) != 0);
+
+	FindClose(hFind);
+
+	memset(buf, NULL, MAX_PATH);
+}
+
+void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 {
 	WIN32_FIND_DATA ffblk;
 	char buf[MAX_PATH];
@@ -196,7 +400,7 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
 		if (isDir)
 			scandir(buf, Vector);
 		else
-			Vector.emplace_back(NET_FILE_ATTR(ffblk, buf));
+			Vector.emplace_back(NET_FILE_ATTRA(ffblk, buf));
 
 	} while (FindNextFile(hFind, &ffblk) != 0);
 
@@ -205,7 +409,28 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTR>& Vector)
 	memset(buf, NULL, MAX_PATH);
 }
 
-std::string dirmanager::currentDir()
+std::wstring dirmanager::currentDirW()
+{
+	do
+	{
+		wchar_t result[MAX_PATH];
+		const auto size = GetModuleFileNameW(nullptr, result, MAX_PATH);
+		if (!size)
+			continue;
+
+		const std::wstring tmp(result, size);
+		const auto f = tmp.find_last_of('\\');
+		if (f != std::wstring::npos)
+		{
+			const auto sub = tmp.substr(0, f + 1);
+			return std::wstring(sub);
+		}
+
+		return std::wstring(result, size);
+	} while (true);
+}
+
+std::string dirmanager::currentDirA()
 {
 	do
 	{
@@ -226,7 +451,28 @@ std::string dirmanager::currentDir()
 	} while (true);
 }
 
-std::string dirmanager::currentFileName()
+std::wstring dirmanager::currentFileNameW()
+{
+	do
+	{
+		wchar_t result[MAX_PATH];
+		const auto size = GetModuleFileNameW(nullptr, result, MAX_PATH);
+		if (!size)
+			continue;
+
+		const std::wstring tmp(result, size);
+		const auto f = tmp.find_last_of('\\');
+		if (f != std::wstring::npos)
+		{
+			const auto sub = tmp.substr(f + 1);
+			return std::wstring(sub);
+		}
+
+		return std::wstring(result, size);
+	} while (true);
+}
+
+std::string dirmanager::currentFileNameA()
 {
 	do
 	{

@@ -21,8 +21,14 @@ constexpr auto BASE_DATE = 1900;
 // Clock
 #define CURRENTCLOCKTIME Net::Clock::GetClockTime()
 #define CREATETIMER(x) Net::Clock::AddTime(x)
-#define CURRENTTIME Net::Clock::GetTime
-#define CURRENTDATE Net::Clock::GetDate
+
+#ifdef UNICODE
+#define CURRENTTIME Net::Clock::GetTimeW
+#define CURRENTDATE Net::Clock::GetDateW
+#else
+#define CURRENTTIME Net::Clock::GetTimeA
+#define CURRENTDATE Net::Clock::GetDateA
+#endif
 
 #define TIMER static double
 
@@ -46,10 +52,12 @@ void ShowMessageBox(const char*, const char*);
 void ShowMessageBox(const wchar_t*, const wchar_t*);
 
 NET_NAMESPACE_BEGIN(Clock)
-extern "C" NET_API double GetClockTime();
-extern "C" NET_API double AddTime(double);
-extern "C" NET_API void GetTime(char*);
-extern "C" NET_API void GetDate(char*);
+double GetClockTime();
+double AddTime(double);
+void GetTimeW(wchar_t*);
+void GetTimeA(char*);
+void GetDateW(wchar_t*);
+void GetDateA(char*);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Keyboard)

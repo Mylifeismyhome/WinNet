@@ -7,8 +7,14 @@ NET_DSA_BEGIN
 #define RUNTIMEXOR Net::Cryption::XOR
 #define COMPILETIME_XOR(string) []{ constexpr size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); constexpr Net::Cryption::CXOR<(sizeof(string)/sizeof(char)), char, COMPILETIME_XORKEY> expr(string); return expr; }().decrypt()
 #define WCOMPILETIME_XOR(string) []{ constexpr size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); constexpr Net::Cryption::CXOR<(sizeof(string)/sizeof(wchar_t)), wchar_t, COMPILETIME_XORKEY> expr(string); return expr; }().decrypt()
-#define CSTRING(string) COMPILETIME_XOR(string)
-#define CWSTRING(string) WCOMPILETIME_XOR(string)
+#define CASTRING(string) COMPILETIME_XOR(string)
+#define CWSTRING(string) WCOMPILETIME_XOR(L##string)
+
+#ifdef UNICODE
+#define CSTRING(string) CWSTRING(string)
+#else
+#define CSTRING(string) CASTRING(string)
+#endif
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Cryption)

@@ -7,19 +7,44 @@
 
 NET_DSA_BEGIN
 
-struct NET_FILE_ATTR
+struct NET_FILE_ATTRW
+{
+	_WIN32_FIND_DATAW w32Data;
+	wchar_t path[MAX_PATH];
+
+	NET_FILE_ATTRW(const _WIN32_FIND_DATAW w32Data, const wchar_t* path)
+	{
+		this->w32Data = w32Data;
+		wcscpy_s(this->path, path);
+	}
+};
+
+struct NET_FILE_ATTRA
 {
 	_WIN32_FIND_DATAA w32Data;
 	char path[MAX_PATH];
 
-	NET_FILE_ATTR(const _WIN32_FIND_DATAA w32Data, const char* path)
+	NET_FILE_ATTRA(const _WIN32_FIND_DATAA w32Data, const char* path)
 	{
 		this->w32Data = w32Data;
 		strcpy_s(this->path, path);
 	}
 };
 
-#define NET_FILES std::vector<NET_FILE_ATTR>
+#ifdef UNICODE
+#define NET_FILE_ATTR_ NET_FILE_ATTRW
+
+#define currentDir currentDirW
+#define currentFileName currentFileNameW
+#else
+#define NET_FILE_ATTR_ NET_FILE_ATTRA
+
+#define currentDir currentDirA
+#define currentFileName currentFileNameA
+#endif
+#define NET_FILE_ATTR std::vector<NET_FILE_ATTR_>
+
+#define NET_FILES NET_FILE_ATTR
 
 #define NET_DIRMANAGER Net::manager::dirmanager
 #define NET_CREATEDIR Net::manager::dirmanager::createDir
@@ -38,12 +63,18 @@ enum class createDirRes
 	CAN_NOT_CHANGE_DIR
 };
 
-extern "C" NET_API bool folderExists(const char*);
-extern "C" NET_API createDirRes createDir(char*);
-extern "C" NET_API bool deleteDir(char*, bool = true);
-extern "C" NET_API void scandir(char*, std::vector<NET_FILE_ATTR>&);
-std::string currentDir();
-std::string currentFileName();
+bool folderExists(const wchar_t*);
+bool folderExists(const char*);
+createDirRes createDir(wchar_t*);
+createDirRes createDir(char*);
+bool deleteDir(wchar_t*, bool = true);
+bool deleteDir(char*, bool = true);
+void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);
+void scandir(char*, std::vector<NET_FILE_ATTRA>&);
+std::wstring currentDirW();
+std::string currentDirA();
+std::wstring currentFileNameW();
+std::string currentFileNameA();
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

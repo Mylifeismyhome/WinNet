@@ -149,7 +149,7 @@ const char* name() const
 
 rapidjson::Value::Object value()
 {
-	return _value.GetObjectA();
+	return _value.GetObject();
 }
 NET_CLASS_END
 

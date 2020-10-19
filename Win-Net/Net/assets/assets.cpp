@@ -24,7 +24,19 @@ double AddTime(const double Time)
 	return (double)clock() + (1000 * Time);
 }
 
-void GetTime(char* time)
+void GetTimeW(wchar_t* time)
+{
+	if (Console::TM_GetTime().tm_hour < 10 && Console::TM_GetTime().tm_min < 10)
+		swprintf_s(time, TIME_LENGTH, CWSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+	else if (Console::TM_GetTime().tm_hour < 10)
+		swprintf_s(time, TIME_LENGTH, CWSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+	else if (Console::TM_GetTime().tm_min < 10)
+		swprintf_s(time, TIME_LENGTH, CWSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+	else
+		swprintf_s(time, TIME_LENGTH, CWSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+}
+
+void GetTimeA(char* time)
 {
 	if (Console::TM_GetTime().tm_hour < 10 && Console::TM_GetTime().tm_min < 10)
 		sprintf_s(time, TIME_LENGTH, CSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
@@ -36,7 +48,19 @@ void GetTime(char* time)
 		sprintf_s(time, TIME_LENGTH, CSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 }
 
-void GetDate(char* date)
+void GetDateW(wchar_t* date)
+{
+	if (Console::TM_GetTime().tm_mday < 9)
+		swprintf_s(date, DATE_LENGTH, CWSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+	else if (Console::TM_GetTime().tm_mon < 9)
+		swprintf_s(date, DATE_LENGTH, CWSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+	else if (Console::TM_GetTime().tm_mday < 9 && Console::TM_GetTime().tm_mon < 9)
+		swprintf_s(date, DATE_LENGTH, CWSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+	else
+		swprintf_s(date, DATE_LENGTH, CWSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+}
+
+void GetDateA(char* date)
 {
 	if (Console::TM_GetTime().tm_mday < 9)
 		sprintf_s(date, DATE_LENGTH, CSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);

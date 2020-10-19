@@ -164,13 +164,13 @@ void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
 		const auto prefix = GetLogStatePrefix(state);
 		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), GetColorFromState(state));
 
-		wprintf(CWSTRING(L"%s"), buffer);
+		wprintf(CWSTRING("%s"), buffer);
 
 		if (!GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
@@ -182,13 +182,13 @@ void Log(const LogStates state, const char* func, const wchar_t* msg, ...)
 		const auto prefix = Console::GetLogStatePrefix(state);
 		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), GetColorFromState(state));
 
-		wprintf(CWSTRING(L"%s"), buffer);
+		wprintf(CWSTRING("%s"), buffer);
 
 		if (!GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
@@ -268,10 +268,10 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		return;
 
 	char time[TIME_LENGTH];
-	CURRENTTIME(time);
+	Clock::GetTimeA(time);
 
 	char date[DATE_LENGTH];
-	CURRENTDATE(date);
+	Clock::GetDateA(date);
 
 	if (strcmp(func, CSTRING("")) == 0)
 	{
@@ -325,8 +325,11 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	}
 }
 
-void Log::doLog(const Console::LogStates state, const char* func, const wchar_t* msg, ...) const
+void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...) const
 {
+	wchar_t func[2048];
+	swprintf(func, sizeof(func), CWSTRING("%s"), funcA);
+	
 	va_list vaArgs;
 	va_start(vaArgs, msg);
 	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
@@ -337,24 +340,24 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 	if (str.empty())
 		return;
 
-	char time[TIME_LENGTH];
-	CURRENTTIME(time);
+	wchar_t time[TIME_LENGTH];
+	Clock::GetTimeW(time);
 
-	char date[DATE_LENGTH];
-	CURRENTDATE(date);
+	wchar_t date[DATE_LENGTH];
+	Clock::GetDateW(date);
 
-	if (strcmp(func, CSTRING("")) == 0)
+	if (wcscmp(func, CWSTRING("")) == 0)
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
 		const auto bsize = str.size() + prefix.size() + 23;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
 
-		wprintf(CWSTRING(L"%s"), buffer);
+		wprintf(CWSTRING("%s"), buffer);
 
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
@@ -371,15 +374,15 @@ void Log::doLog(const Console::LogStates state, const char* func, const wchar_t*
 	else
 	{
 		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
+		const auto bsize = str.size() + prefix.size() + wcslen(func) + 25;
 		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING(L"[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 		buffer[bsize] = '\0';
 
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
 
-		wprintf(CWSTRING(L"%s"), buffer);
+		wprintf(CWSTRING("%s"), buffer);
 
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
