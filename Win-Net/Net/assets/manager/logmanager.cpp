@@ -289,7 +289,12 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		while(!WriteToFile(buffer)){}
+		if (!WriteToFile(buffer))
+		{
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		}
 
 		FREE(buffer);
 	}
@@ -309,7 +314,12 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		while (!WriteToFile(buffer)) {}
+		if (!WriteToFile(buffer))
+		{
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		}
 
 		FREE(buffer);
 	}
@@ -352,7 +362,12 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		while (!WriteToFile(buffer)) {}
+		if (!WriteToFile(buffer))
+		{
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		}
 
 		FREE(buffer);
 	}
@@ -372,7 +387,12 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		while (!WriteToFile(buffer)) {}
+		if (!WriteToFile(buffer))
+		{
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		}
 
 		FREE(buffer);
 	}
@@ -380,12 +400,28 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 
 bool Log::WriteToFile(const char* msg) const
 {
-	return file->write(msg);
+	size_t attemps = NULL;
+	while (!file->write(msg))
+	{
+		++attemps;
+		if (attemps == 1000)
+			return false;
+	}
+
+	return true;
 }
 
 bool Log::WriteToFile(const wchar_t* msg) const
 {
-	return file->write(msg);
+	size_t attemps = NULL;
+	while(!file->write(msg))
+	{
+		++attemps;
+		if (attemps == 1000)
+			return false;
+	}
+
+	return true;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
