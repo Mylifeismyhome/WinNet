@@ -243,7 +243,7 @@ NET_NAMESPACE_END
 NET_NAMESPACE_BEGIN(manager)
 Log::Log()
 {
-	file = new NET_FILEMANAGER(GetFname(), NET_FILE_APPAND | NET_FILE_READWRITE);
+	file = new NET_FILEMANAGER(GetFname(), NET_FILE_WRITE | NET_FILE_APPAND);
 }
 
 Log::~Log()
@@ -289,12 +289,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		if (!WriteToFile(buffer))
-		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+		while(!WriteToFile(buffer)){}
 
 		FREE(buffer);
 	}
@@ -314,12 +309,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		if (!WriteToFile(buffer))
-		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+		while (!WriteToFile(buffer)) {}
 
 		FREE(buffer);
 	}
@@ -362,12 +352,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		if (!WriteToFile(buffer))
-		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+		while (!WriteToFile(buffer)) {}
 
 		FREE(buffer);
 	}
@@ -387,12 +372,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 		if (!Console::GetPrintFState())
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
 
-		if (!WriteToFile(buffer))
-		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Could not write buffer to File!\n"));
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+		while (!WriteToFile(buffer)) {}
 
 		FREE(buffer);
 	}

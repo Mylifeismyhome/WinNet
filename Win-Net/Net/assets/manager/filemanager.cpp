@@ -8,11 +8,18 @@ static const char* GetModeA(const uint8_t Mode)
 		return "r";
 	if (Mode == NET_FILE_APPAND)
 		return "a";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE & NET_FILE_APPAND))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
+		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
+		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
 		return "a+";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE & NET_FILE_DISCARD))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
+		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
+		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
 		return "w+";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
 		return "r+";
 
 	return "r";
@@ -26,11 +33,18 @@ static const wchar_t* GetModeW(const uint8_t Mode)
 		return L"r";
 	if (Mode == NET_FILE_APPAND)
 		return L"a";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE & NET_FILE_APPAND))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
+		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
+		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
 		return L"a+";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE & NET_FILE_DISCARD))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
+		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
+		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
 		return L"w+";
-	if (Mode == (NET_FILE_READ & NET_FILE_WRITE))
+
+	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
 		return L"r+";
 
 	return L"r";
@@ -53,6 +67,12 @@ FileManagerW::~FileManagerW()
 bool FileManagerW::openFile()
 {
 	_wfopen_s(&file, fname, GetModeW(Mode));
+	if(!file)
+	{
+		_wfopen_s(&file, fname, GetModeW(NET_FILE_WRITE));
+		close();
+		_wfopen_s(&file, fname, GetModeW(Mode));
+	}
 	return file != nullptr;
 }
 
@@ -67,9 +87,10 @@ void FileManagerW::closeFile()
 
 bool FileManagerW::CanOpenFile()
 {
-	const auto success = openFile();
+	_wfopen_s(&file, fname, GetModeW(Mode));
+	const auto status = file != nullptr;
 	closeFile();
-	return success;
+	return status;
 }
 
 bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size)
@@ -189,6 +210,12 @@ FileManagerA::~FileManagerA()
 bool FileManagerA::openFile()
 {
 	fopen_s(&file, fname, GetModeA(Mode));
+	if (!file)
+	{
+		fopen_s(&file, fname, GetModeA(NET_FILE_WRITE));
+		close();
+		fopen_s(&file, fname, GetModeA(Mode));
+	}
 	return file != nullptr;
 }
 
@@ -203,9 +230,10 @@ void FileManagerA::closeFile()
 
 bool FileManagerA::CanOpenFile()
 {
-	const auto success = openFile();
+	fopen_s(&file, fname, GetModeA(Mode));
+	const auto status = file != nullptr;
 	closeFile();
-	return success;
+	return status;
 }
 
 bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size)
