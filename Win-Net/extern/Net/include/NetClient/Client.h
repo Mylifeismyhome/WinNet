@@ -178,9 +178,9 @@ void Packager();
 bool CheckDataN(int id, NET_PACKAGE pkg);
 NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return false; }
 
-void SingleSend(const char*, size_t);
-void SingleSend(BYTE*&, size_t);
-void SingleSend(CPOINTER<BYTE>&, size_t);
+void SingleSend(const char*, size_t, bool&);
+void SingleSend(BYTE*&, size_t, bool&);
+void SingleSend(CPOINTER<BYTE>&, size_t, bool&);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE

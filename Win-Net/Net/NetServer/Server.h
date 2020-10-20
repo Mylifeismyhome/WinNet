@@ -249,9 +249,9 @@ NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
 bool NeedExit() const;
 
-void SingleSend(NET_PEER, const char*, size_t);
-void SingleSend(NET_PEER, BYTE*&, size_t);
-void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t);
+void SingleSend(NET_PEER, const char*, size_t, bool&);
+void SingleSend(NET_PEER, BYTE*&, size_t, bool&);
+void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&);
 void DoSend(NET_PEER, int, NET_PACKAGE);
 
 size_t getCountPeers() const;
