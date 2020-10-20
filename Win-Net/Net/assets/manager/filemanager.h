@@ -22,10 +22,50 @@ NET_DSA_BEGIN
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
+enum class ErrorCodes
+{
+	ERR_OK = 0,
+	ERR_PERM,
+	ERR_NOENT,
+	ERR_SRCH,
+	ERR_INTR,
+	ERR_IO,
+	ERR_NXIO,
+	ERR_2BIG,
+	ERR_NOEXEC,
+	ER_RBADF,
+	ERR_CHILD,
+	ERR_AGAIN,
+	ERR_NOMEM,
+	ERR_ACCES,
+	ERR_FAULT,
+	ERR_NOTBLK,
+	ERR_BUSY,
+	ERR_EXIST,
+	ERR_XDEV,
+	ERR_NODEV,
+	ERR_NOTDIR,
+	ERR_ISDIR,
+	ERR_INVAL,
+	ERR_NFILE,
+	ERR_MFILE,
+	ERR_NOTTY,
+	ERR_TXTBSY,
+	ERR_FBIG,
+	ERR_NOSPC,
+	ERR_SPIPE,
+	ERR_ROFS,
+	ERR_MLINK,
+	ERR_PIPE,
+	ERR_DOM,
+	ERR_RANGE
+};
+
 NET_CLASS_BEGIN(FileManagerW)
 wchar_t fname[MAX_PATH];
 FILE* file;
 uint8_t Mode;
+errno_t err;
 
 bool getFileBuffer(BYTE*&, size_t&);
 NET_CLASS_PUBLIC
@@ -42,11 +82,13 @@ bool write(const char*);
 bool write(const wchar_t*);
 void clear()const;
 void close();
+ErrorCodes getLastError() const;
 NET_CLASS_END
 NET_CLASS_BEGIN(FileManagerA)
 char fname[MAX_PATH];
 FILE* file;
 uint8_t Mode;
+errno_t err;
 
 bool getFileBuffer(BYTE*&, size_t&);
 NET_CLASS_PUBLIC
@@ -63,6 +105,7 @@ bool write(const char*);
 bool write(const wchar_t*);
 void clear()const;
 void close();
+ErrorCodes getLastError() const;
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

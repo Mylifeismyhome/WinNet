@@ -54,6 +54,7 @@ NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 FileManagerW::FileManagerW(const wchar_t* fname, const uint8_t Mode)
 {
+	err = (errno_t)ErrorCodes::ERR_OK;
 	file = nullptr;
 	wcscpy_s(this->fname, fname);
 	this->Mode = Mode;
@@ -66,12 +67,12 @@ FileManagerW::~FileManagerW()
 
 bool FileManagerW::openFile()
 {
-	_wfopen_s(&file, fname, GetModeW(Mode));
+	err = _wfopen_s(&file, fname, GetModeW(Mode));
 	if(!file)
 	{
-		_wfopen_s(&file, fname, GetModeW(NET_FILE_WRITE));
+		err = _wfopen_s(&file, fname, GetModeW(NET_FILE_WRITE));
 		close();
-		_wfopen_s(&file, fname, GetModeW(Mode));
+		err = _wfopen_s(&file, fname, GetModeW(Mode));
 	}
 	return file != nullptr;
 }
@@ -87,8 +88,8 @@ void FileManagerW::closeFile()
 
 bool FileManagerW::CanOpenFile()
 {
-	_wfopen_s(&file, fname, GetModeW(Mode));
-	const auto status = file != nullptr;
+	err = _wfopen_s(&file, fname, GetModeW(NET_FILE_READ));
+	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
 	closeFile();
 	return status;
 }
@@ -187,8 +188,15 @@ void FileManagerW::close()
 {
 	closeFile();
 }
+
+ErrorCodes FileManagerW::getLastError() const
+{
+	return (ErrorCodes)err;
+}
+
 FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
 {
+	err = (errno_t)ErrorCodes::ERR_OK;
 	file = nullptr;
 	strcpy_s(this->fname, fname);
 	this->Mode = Mode;
@@ -201,12 +209,12 @@ FileManagerA::~FileManagerA()
 
 bool FileManagerA::openFile()
 {
-	fopen_s(&file, fname, GetModeA(Mode));
+	err = fopen_s(&file, fname, GetModeA(Mode));
 	if (!file)
 	{
-		fopen_s(&file, fname, GetModeA(NET_FILE_WRITE));
+		err = fopen_s(&file, fname, GetModeA(NET_FILE_WRITE));
 		close();
-		fopen_s(&file, fname, GetModeA(Mode));
+		err = fopen_s(&file, fname, GetModeA(Mode));
 	}
 	return file != nullptr;
 }
@@ -222,8 +230,8 @@ void FileManagerA::closeFile()
 
 bool FileManagerA::CanOpenFile()
 {
-	fopen_s(&file, fname, GetModeA(Mode));
-	const auto status = file != nullptr;
+	err = fopen_s(&file, fname, GetModeA(NET_FILE_READ));
+	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
 	closeFile();
 	return status;
 }
@@ -321,6 +329,11 @@ void FileManagerA::clear() const
 void FileManagerA::close()
 {
 	closeFile();
+}
+
+ErrorCodes FileManagerA::getLastError() const
+{
+	return (ErrorCodes)err;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
