@@ -52,6 +52,31 @@ static const wchar_t* GetModeW(const uint8_t Mode)
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
+FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
+{
+	strerror_s(buffer, ERRORCODEDESC_LEN, (int)code);
+}
+
+FileManagerErrorRef::~FileManagerErrorRef()
+{
+	memset(buffer, NULL, ERRORCODEDESC_LEN);
+}
+
+char* FileManagerErrorRef::get()
+{
+	return buffer;
+}
+
+char* FileManagerErrorRef::data()
+{
+	return buffer;
+}
+
+char* FileManagerErrorRef::str()
+{
+	return buffer;
+}
+
 FileManagerW::FileManagerW(const wchar_t* fname, const uint8_t Mode)
 {
 	err = (errno_t)ErrorCodes::ERR_OK;
@@ -194,6 +219,11 @@ ErrorCodes FileManagerW::getLastError() const
 	return (ErrorCodes)err;
 }
 
+FileManagerErrorRef FileManagerW::ErrorDescription(const ErrorCodes code) const
+{
+	return FileManagerErrorRef(code);
+}
+
 FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
 {
 	err = (errno_t)ErrorCodes::ERR_OK;
@@ -334,6 +364,11 @@ void FileManagerA::close()
 ErrorCodes FileManagerA::getLastError() const
 {
 	return (ErrorCodes)err;
+}
+
+FileManagerErrorRef FileManagerA::ErrorDescription(const ErrorCodes code) const
+{
+	return FileManagerErrorRef(code);
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

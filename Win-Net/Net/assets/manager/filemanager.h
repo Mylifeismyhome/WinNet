@@ -20,6 +20,8 @@ NET_DSA_BEGIN
 #define NET_FILE_READWRITE (NET_FILE_READ | NET_FILE_WRITE)
 #define NET_FILE_READWRITE_APPEND (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND)
 
+#define ERRORCODEDESC_LEN 80
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 enum class ErrorCodes
@@ -61,6 +63,18 @@ enum class ErrorCodes
 	ERR_RANGE
 };
 
+NET_CLASS_BEGIN(FileManagerErrorRef)
+char buffer[ERRORCODEDESC_LEN];
+
+NET_CLASS_PUBLIC
+NET_CLASS_CONSTRUCTUR(FileManagerErrorRef, ErrorCodes);
+NET_CLASS_DESTRUCTUR(FileManagerErrorRef);
+
+char* get();
+char* data();
+char* str();
+NET_CLASS_END
+
 NET_CLASS_BEGIN(FileManagerW)
 wchar_t fname[MAX_PATH];
 FILE* file;
@@ -83,6 +97,7 @@ bool write(const wchar_t*);
 void clear()const;
 void close();
 ErrorCodes getLastError() const;
+FileManagerErrorRef ErrorDescription(ErrorCodes) const;
 NET_CLASS_END
 NET_CLASS_BEGIN(FileManagerA)
 char fname[MAX_PATH];
@@ -106,6 +121,7 @@ bool write(const wchar_t*);
 void clear()const;
 void close();
 ErrorCodes getLastError() const;
+FileManagerErrorRef ErrorDescription(ErrorCodes) const;
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
