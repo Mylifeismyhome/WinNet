@@ -2,7 +2,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
-int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level) const
+int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level)
 {
 	z_stream stream;
 	const auto max = (uInt)-1;
@@ -14,7 +14,9 @@ int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level) cons
 	auto err = deflateInit(&stream, (int)level);
 	if (err != Z_OK) return err;
 
-	stream.next_out = data;
+	const auto out = ALLOC<BYTE>(size + 1);
+
+	stream.next_out = out;
 	stream.avail_out = max;
 	stream.next_in = (z_const Bytef*)data;
 	stream.avail_in = size;
@@ -28,22 +30,13 @@ int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level) cons
 	size = stream.total_out;
 	deflateEnd(&stream);
 
+	FREE(data);
+	data = out;
+
 	return err == Z_STREAM_END ? Z_OK : err;
 }
 
-const size_t chunk = 1024;
-
-struct ChunkVector
-{
-	byte data[chunk];
-
-	explicit ChunkVector(byte* data)
-	{
-		memcpy(this->data, data, chunk);
-	}
-};
-
-int ZLib::Decompress(BYTE*& data, size_t& size) const
+int ZLib::Decompress(BYTE*& data, size_t& size)
 {
 	z_stream stream;
 	stream.zalloc = (alloc_func)nullptr;
@@ -53,35 +46,43 @@ int ZLib::Decompress(BYTE*& data, size_t& size) const
 	auto err = inflateInit(&stream);
 	if (err != Z_OK) return err;
 
-	byte out[chunk];
+	auto out = ALLOC<BYTE>(chunk + 1);
+
 	std::vector<ChunkVector> chunkList;
 
+	stream.next_out = out;
+	stream.avail_out = NULL;
 	stream.next_in = (z_const Bytef*)data;
 	stream.avail_in = size;
 
 	do {
 		stream.next_out = out;
 		stream.avail_out = chunk;
-		err = inflate(&stream, Z_FINISH);
-		if (err != Z_STREAM_END)
-			chunkList.emplace_back(ChunkVector(out));
-	} while (err != Z_STREAM_END);
+		stream.avail_in = size;
+		err = inflate(&stream, Z_NO_FLUSH);
 
-	FREE(data);
+		if (err == Z_OK
+			|| err == Z_STREAM_END)
+			chunkList.emplace_back(ChunkVector(out, err, chunkList.size(), stream.total_out));
+	} while (err == Z_OK);
+
 	size = stream.total_out;
-	data = ALLOC<BYTE>(size + 1);
-
-	size_t curPart = NULL;
-	for (const auto& entry : chunkList)
-	{
-
-		memcpy(&data[curPart], entry.data, chunk);
-		curPart += chunk;
-	}
-
 	inflateEnd(&stream);
 
-	return Z_OK;
+	FREE(out);
+	FREE(data);
+	data = ALLOC<BYTE>(size + 1);
+	size_t curPart = NULL;
+	size_t it = NULL;
+	for (const auto& entry : chunkList)
+	{
+		memcpy(&data[curPart], entry.data, it == chunkList.size() - 1 ? size - curPart : chunk);
+		curPart += chunk;
+		++it;
+	}
+	data[size] = '\0';
+
+	return err == Z_STREAM_END ? Z_OK : err;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

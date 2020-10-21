@@ -7,6 +7,19 @@
 
 NET_DSA_BEGIN
 
+const size_t chunk = 1024;
+
+struct ChunkVector
+{
+	byte data[chunk];
+
+	explicit ChunkVector(byte* data, const int err, const size_t listSize, const size_t totalOut)
+	{
+		memset(this->data, NULL, chunk);
+		memcpy(this->data, data, err == Z_STREAM_END ? totalOut - listSize * chunk : chunk);
+	}
+};
+
 enum class CompressionLevel
 {
 	NO_COMPRESSION = Z_NO_COMPRESSION,
@@ -17,11 +30,10 @@ enum class CompressionLevel
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
-NET_CLASS_BEGIN(ZLib)
-NET_CLASS_PUBLIC
-int Compress(BYTE*&, size_t&, CompressionLevel = CompressionLevel::BEST_COMPRESSION) const;
-int Decompress(BYTE*&, size_t&) const;
-NET_CLASS_END
+NET_NAMESPACE_BEGIN(ZLib)
+int Compress(BYTE*&, size_t&, CompressionLevel = CompressionLevel::BEST_COMPRESSION);
+int Decompress(BYTE*&, size_t&);
+NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 
