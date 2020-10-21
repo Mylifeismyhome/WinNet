@@ -837,74 +837,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\assets\assets.h" />
-    <ClInclude Include="..\assets\benchmark.h" />
-    <ClInclude Include="..\assets\manager\dirmanager.h" />
-    <ClInclude Include="..\assets\manager\filemanager.h" />
-    <ClInclude Include="..\assets\manager\logmanager.h" />
-    <ClInclude Include="..\assets\timer.h" />
-    <ClInclude Include="..\assets\web\http.h" />
-    <ClInclude Include="..\Coding\BASE64.h" />
-    <ClInclude Include="..\Coding\Hex.h" />
-    <ClInclude Include="..\Coding\MD5.h" />
-    <ClInclude Include="..\Coding\md5\md5_loc.h" />
-    <ClInclude Include="..\Coding\md5\md5_native.h" />
-    <ClInclude Include="..\Coding\SHA1.h" />
-    <ClInclude Include="..\Compression\Compression.h" />
-    <ClInclude Include="..\Cryption\AES.h" />
-    <ClInclude Include="..\Cryption\PointerCryption.h" />
-    <ClInclude Include="..\Cryption\RSA.h" />
-    <ClInclude Include="..\Cryption\XOR.h" />
-    <ClInclude Include="..\Database\MYSQL.h" />
-    <ClInclude Include="..\ICMP\icmp.h" />
-    <ClInclude Include="..\Net\Net.h" />
-    <ClInclude Include="..\Net\NetCodes.hpp" />
-    <ClInclude Include="..\Net\NetString.h" />
-    <ClInclude Include="..\Net\Package.h" />
     <ClInclude Include="WebServer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\crc32.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\deflate.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzlib.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzread.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzwrite.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inffast.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inflate.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inftrees.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\trees.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\uncompr.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\zutil.c" />
-    <ClCompile Include="..\assets\assets.cpp" />
-    <ClCompile Include="..\assets\benchmark.cpp" />
-    <ClCompile Include="..\assets\manager\dirmanager.cpp" />
-    <ClCompile Include="..\assets\manager\filemanager.cpp" />
-    <ClCompile Include="..\assets\manager\logmanager.cpp" />
-    <ClCompile Include="..\assets\timer.cpp" />
-    <ClCompile Include="..\assets\web\http.cpp" />
-    <ClCompile Include="..\Coding\BASE64.cpp" />
-    <ClCompile Include="..\Coding\Hex.cpp" />
-    <ClCompile Include="..\Coding\MD5.cpp" />
-    <ClCompile Include="..\Coding\SHA1.cpp" />
-    <ClCompile Include="..\Compression\Compression.cpp" />
-    <ClCompile Include="..\Cryption\AES.cpp" />
-    <ClCompile Include="..\Cryption\BCrypt\bcrypt.c" />
-    <ClCompile Include="..\Cryption\BCrypt\crypt_blowfish.c" />
-    <ClCompile Include="..\Cryption\BCrypt\crypt_gensalt.c" />
-    <ClCompile Include="..\Cryption\BCrypt\main.cpp" />
-    <ClCompile Include="..\Cryption\BCrypt\wrapper.c" />
-    <ClCompile Include="..\Cryption\RSA.cpp" />
-    <ClCompile Include="..\Cryption\XOR.cpp" />
-    <ClCompile Include="..\Database\MYSQL.cpp" />
-    <ClCompile Include="..\ICMP\icmp.cpp" />
-    <ClCompile Include="..\Net\NetString.cpp" />
-    <ClCompile Include="..\Net\Package.cpp" />
     <ClCompile Include="WebServer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Cryption\BCrypt\x86.S" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

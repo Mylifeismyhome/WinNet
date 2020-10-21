@@ -2,101 +2,86 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
-void ZLib::Compress(BYTE*& bytes, size_t& size, const int level) const
+int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level) const
 {
-	std::vector<uint8_t> buffer;
-	auto compressed = ALLOC<BYTE>(size + 1);
+	z_stream stream;
+	const auto max = (uInt)-1;
 
-	z_stream strm;
-	strm.zalloc = nullptr;
-	strm.zfree = nullptr;
-	strm.next_in = bytes;
-	strm.avail_in = static_cast<uInt>(size);
-	strm.next_out = compressed;
-	strm.avail_out = static_cast<uInt>(size);
+	stream.zalloc = (alloc_func)nullptr;
+	stream.zfree = (free_func)nullptr;
+	stream.opaque = (voidpf)nullptr;
 
-	deflateInit(&strm, level);
+	auto err = deflateInit(&stream, (int)level);
+	if (err != Z_OK) return err;
 
-	while (strm.avail_in != 0)
-	{
-		if (deflate(&strm, Z_NO_FLUSH) != Z_OK)
-		{
-			FREE(compressed);
-			return;
-		}
+	stream.next_out = data;
+	stream.avail_out = max;
+	stream.next_in = (z_const Bytef*)data;
+	stream.avail_in = size;
 
-		if (strm.avail_out == 0)
-		{
-			buffer.insert(buffer.end(), compressed, compressed + size);
-			strm.next_out = compressed;
-			strm.avail_out = static_cast<uInt>(size);
-		}
-	}
+	do {
+		stream.avail_out = max;
+		stream.avail_in = size;
+		err = deflate(&stream, Z_FINISH);
+	} while (err == Z_OK);
 
-	auto result = Z_OK;
-	do
-	{
-		if (strm.avail_out == 0)
-		{
-			buffer.insert(buffer.end(), compressed, compressed + size);
-			strm.next_out = compressed;
-			strm.avail_out = static_cast<uInt>(size);
-		}
-	} while ((result = deflate(&strm, Z_FINISH)) == Z_OK);
+	size = stream.total_out;
+	deflateEnd(&stream);
 
-	if (result != Z_STREAM_END)
-	{
-		FREE(compressed);
-		return;
-	}
-
-	buffer.insert(buffer.end(), compressed, compressed + size - strm.avail_out);
-	deflateEnd(&strm);
-
-	FREE(bytes);
-
-	size = buffer.size();
-	bytes = compressed; // pointer swap
-	bytes[size] = '\0';
+	return err == Z_STREAM_END ? Z_OK : err;
 }
 
-void ZLib::Decompress(BYTE*& bytes, size_t& size, const size_t maxAvailOut) const
+const size_t chunk = 1024;
+
+struct ChunkVector
 {
-	auto decompressed = ALLOC<BYTE>(maxAvailOut + 1);
+	byte data[chunk];
 
-	z_stream strm = { nullptr };
-	strm.total_in = strm.avail_in = static_cast<uInt>(size);
-	strm.total_out = strm.avail_out = static_cast<uInt>(maxAvailOut);
-	strm.next_in = bytes;
-	strm.next_out = decompressed;
-	strm.zalloc = nullptr;
-	strm.zfree = nullptr;
-	strm.opaque = nullptr;
-
-	/* 15 window bits, and the +32 tells zlib to to detect if using gzip or zlib */
-	if (inflateInit2(&strm, (MAX_WBITS + 32)) == Z_OK)
+	explicit ChunkVector(byte* data)
 	{
-		if (inflate(&strm, Z_FINISH) != Z_STREAM_END)
-		{
-			inflateEnd(&strm);
-			FREE(decompressed);
-			return;
-		}
+		memcpy(this->data, data, chunk);
 	}
-	else
+};
+
+int ZLib::Decompress(BYTE*& data, size_t& size) const
+{
+	z_stream stream;
+	stream.zalloc = (alloc_func)nullptr;
+	stream.zfree = (free_func)nullptr;
+	stream.opaque = (voidpf)nullptr;
+
+	auto err = inflateInit(&stream);
+	if (err != Z_OK) return err;
+
+	byte out[chunk];
+	std::vector<ChunkVector> chunkList;
+
+	stream.next_in = (z_const Bytef*)data;
+	stream.avail_in = size;
+
+	do {
+		stream.next_out = out;
+		stream.avail_out = chunk;
+		err = inflate(&stream, Z_FINISH);
+		if (err != Z_STREAM_END)
+			chunkList.emplace_back(ChunkVector(out));
+	} while (err != Z_STREAM_END);
+
+	FREE(data);
+	size = stream.total_out;
+	data = ALLOC<BYTE>(size + 1);
+
+	size_t curPart = NULL;
+	for (const auto& entry : chunkList)
 	{
-		inflateEnd(&strm);
-		FREE(decompressed);
-		return;
+
+		memcpy(&data[curPart], entry.data, chunk);
+		curPart += chunk;
 	}
 
-	inflateEnd(&strm);
+	inflateEnd(&stream);
 
-	FREE(bytes);
-
-	size = strm.total_out;
-	bytes = decompressed;
-	bytes[size] = '\0'; // pointer swap
+	return Z_OK;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
