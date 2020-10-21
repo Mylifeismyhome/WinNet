@@ -81,7 +81,7 @@ FILE* file;
 uint8_t Mode;
 errno_t err;
 
-bool getFileBuffer(BYTE*&, size_t&);
+bool getFileBuffer(BYTE*&, size_t&) const;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(FileManagerW, const wchar_t*, uint8_t = NET_FILE_READWRITE_APPEND)
 NET_CLASS_DESTRUCTUR(FileManagerW)
@@ -105,7 +105,7 @@ FILE* file;
 uint8_t Mode;
 errno_t err;
 
-bool getFileBuffer(BYTE*&, size_t&);
+bool getFileBuffer(BYTE*&, size_t&) const;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(FileManagerA, const char*, uint8_t = NET_FILE_READWRITE_APPEND)
 NET_CLASS_DESTRUCTUR(FileManagerA)

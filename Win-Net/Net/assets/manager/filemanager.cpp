@@ -50,6 +50,11 @@ static const wchar_t* GetModeW(const uint8_t Mode)
 	return L"rb";
 }
 
+static Net::manager::FileManagerErrorRef GetErrorDescription(const Net::manager::ErrorCodes code)
+{
+	return Net::manager::FileManagerErrorRef(code);
+}
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(manager)
 FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
@@ -119,7 +124,7 @@ bool FileManagerW::CanOpenFile()
 	return status;
 }
 
-bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size)
+bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size) const
 {
 	fseek(file, 0, SEEK_END);
 	const auto size = static_cast<size_t>(ftell(file));
@@ -130,14 +135,12 @@ bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size)
 	if (read != size)
 	{
 		FREE(buffer);
-		closeFile();
 		return false;
 	}
 
 	buffer[read] = '\0';
 	out_data = buffer;
 	out_size = read;
-	closeFile();
 
 	return true;
 }
@@ -151,8 +154,12 @@ bool FileManagerW::read(BYTE*& out_data, size_t& out_size)
 {
 	if (file_exists())
 	{
-		openFile();
-		return getFileBuffer(out_data, out_size);
+		if (!openFile())
+			return false;
+		
+		const auto ret =  getFileBuffer(out_data, out_size);
+		close();
+		return ret;
 	}
 
 	return false;
@@ -162,12 +169,14 @@ bool FileManagerW::read(char*& out_data)
 {
 	if (file_exists())
 	{
-		openFile();
+		if (!openFile())
+			return false;
 
 		BYTE* out_byte = nullptr;
 		size_t out_size = NULL;
 		const auto res = getFileBuffer(out_byte, out_size);
 		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
+		close();
 		return res;
 	}
 
@@ -221,7 +230,7 @@ ErrorCodes FileManagerW::getLastError() const
 
 FileManagerErrorRef FileManagerW::ErrorDescription(const ErrorCodes code) const
 {
-	return FileManagerErrorRef(code);
+	return GetErrorDescription(code);
 }
 
 FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
@@ -266,7 +275,7 @@ bool FileManagerA::CanOpenFile()
 	return status;
 }
 
-bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size)
+bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size) const
 {
 	fseek(file, 0, SEEK_END);
 	const auto size = static_cast<size_t>(ftell(file));
@@ -277,14 +286,12 @@ bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size)
 	if (read != size)
 	{
 		FREE(buffer);
-		closeFile();
 		return false;
 	}
 
 	buffer[read] = '\0';
 	out_data = buffer;
 	out_size = read;
-	closeFile();
 
 	return true;
 }
@@ -298,8 +305,12 @@ bool FileManagerA::read(BYTE*& out_data, size_t& out_size)
 {
 	if (file_exists())
 	{
-		openFile();
-		return getFileBuffer(out_data, out_size);
+		if (!openFile())
+			return false;
+		
+		const auto ret = getFileBuffer(out_data, out_size);
+		close();
+		return ret;
 	}
 
 	return false;
@@ -309,12 +320,14 @@ bool FileManagerA::read(char*& out_data)
 {
 	if (file_exists())
 	{
-		openFile();
+		if (!openFile())
+			return false;
 
 		BYTE* out_byte = nullptr;
 		size_t out_size = NULL;
 		const auto res = getFileBuffer(out_byte, out_size);
 		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
+		close();
 		return res;
 	}
 
@@ -368,7 +381,7 @@ ErrorCodes FileManagerA::getLastError() const
 
 FileManagerErrorRef FileManagerA::ErrorDescription(const ErrorCodes code) const
 {
-	return FileManagerErrorRef(code);
+	return GetErrorDescription(code);
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
