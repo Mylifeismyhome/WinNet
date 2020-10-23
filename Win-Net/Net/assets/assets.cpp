@@ -1,14 +1,28 @@
 #include "assets.h"
 
 NET_NAMESPACE_BEGIN(Net)
-void ShowMessageBox(const char* title, const char* msg)
+void ShowMessageBox(const char* title, const char* msg, ...)
 {
-	MessageBoxA(nullptr, msg, title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
+	va_list vaArgs;
+	va_start(vaArgs, msg);
+	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+	
+	MessageBoxA(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
 
-void ShowMessageBox(const wchar_t* title, const wchar_t* msg)
+void ShowMessageBox(const wchar_t* title, const wchar_t* msg, ...)
 {
-	MessageBoxW(nullptr, msg, title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
+	va_list vaArgs;
+	va_start(vaArgs, msg);
+	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+	std::vector<wchar_t> str(size + 1);
+	std::vswprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+	
+	MessageBoxW(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
 
 NET_NAMESPACE_BEGIN(Clock)

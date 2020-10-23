@@ -15,7 +15,7 @@ void SetFname(const char* name)
 		}
 		else
 		{
-			strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
+			strcpy_s(fname, Net::manager::dirmanager::homeDir().data());
 			strcpy_s(fname, name);
 			strcat_s(fname, CSTRING(".log"));
 			NET_DIRMANAGER::createDir(fname);
@@ -23,7 +23,7 @@ void SetFname(const char* name)
 	}
 	else
 	{
-		strcpy_s(fname, Net::manager::dirmanager::currentDir().data());
+		strcpy_s(fname, Net::manager::dirmanager::homeDir().data());
 		strcat_s(fname, name);
 		strcat_s(fname, CSTRING(".log"));
 	}

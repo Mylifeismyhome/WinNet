@@ -1,0 +1,1 @@
+D:\Projects\WinNet\Win-Net\Net\NetCore\bin\x64\NetCore.vcxprojAssemblyReference.cache

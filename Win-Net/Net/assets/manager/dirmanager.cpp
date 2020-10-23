@@ -33,18 +33,18 @@ bool dirmanager::folderExists(const char* folderName)
 	return true;
 }
 
-static dirmanager::createDirRes ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
+static dirmanager::createDirResW ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
 {
 	const auto len = wcslen(path);
 
 	// recrusive entries
 	for (auto it = offset; it < len; ++it)
 	{
-		if (!wmemcmp(&path[it], CWSTRING("/"), 1))
+		if (!memcmp(&path[it], CSTRING("\\"), 1))
 		{
 			wchar_t directory[MAX_PATH];
-			wcscpy_s(directory, MAX_PATH, &path[offset]);
-			directory[it - offset] = '\0';
+			wcscpy_s(directory, MAX_PATH, &path[0]);
+			directory[it] = '\0';
 
 			if (directory[0] != '\0')
 				directories.emplace_back(directory);
@@ -56,13 +56,13 @@ static dirmanager::createDirRes ProcessCreateDirectory(wchar_t* path, std::vecto
 
 	// last entry
 	wchar_t directory[MAX_PATH];
-	wcscpy_s(directory, MAX_PATH, &path[offset]);
+	wcscpy_s(directory, MAX_PATH, &path[0]);
 	directory[len] = '\0';
 
 	auto bDirectory = true;
 	for (size_t it = 0; it < len; ++it)
 	{
-		if (!memcmp(&directory[it], ".", 1))
+		if (!memcmp(&directory[it], CSTRING("."), 1))
 		{
 			bDirectory = false;
 			break;
@@ -72,36 +72,42 @@ static dirmanager::createDirRes ProcessCreateDirectory(wchar_t* path, std::vecto
 	if (bDirectory)
 		directories.emplace_back(directory);
 
+	std::vector<dirmanager::createDirResW_t> failures;
+	auto bError = false;
+
 	for (auto entry : directories)
 	{
-		if (!CreateDirectoryW(entry, nullptr))
-			return dirmanager::createDirRes::ERR;
+		struct _stat st = { 0 };
+		if (_wstat(entry, &st) != -1)
+		{
+			failures.emplace_back(entry, dirmanager::createDirCodes::ERR_EXISTS);
+			bError = true;
+			continue;
+		}
 
-		if (_wchdir(entry) != 0)
-			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
+		const auto ret = _wmkdir(entry);
+		if (ret)
+		{
+			failures.emplace_back(entry, dirmanager::createDirCodes::ERR);
+			bError = true;
+		}
 	}
 
-	for (size_t it = 0; it < directories.size(); ++it)
-	{
-		if (_chdir(CSTRING("..")) != 0)
-			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
-	}
-
-	return dirmanager::createDirRes::SUCCESS;
+	return dirmanager::createDirResW(bError, failures);
 }
 
-static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
+static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
 {
 	const auto len = strlen(path);
 
 	// recrusive entries
 	for (auto it = offset; it < len; ++it)
 	{
-		if (!memcmp(&path[it], CSTRING("/"), 1))
+		if (!memcmp(&path[it], CSTRING("\\"), 1))
 		{
 			char directory[MAX_PATH];
-			strcpy_s(directory, MAX_PATH, &path[offset]);
-			directory[it - offset] = '\0';
+			strcpy_s(directory, MAX_PATH, &path[0]);
+			directory[it] = '\0';
 
 			if (directory[0] != '\0')
 				directories.emplace_back(directory);
@@ -113,13 +119,13 @@ static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<c
 
 	// last entry
 	char directory[MAX_PATH];
-	strcpy_s(directory, MAX_PATH, &path[offset]);
+	strcpy_s(directory, MAX_PATH, &path[0]);
 	directory[len] = '\0';
 
 	auto bDirectory = true;
 	for (size_t it = 0; it < len; ++it)
 	{
-		if (!memcmp(&directory[it], ".", 1))
+		if (!memcmp(&directory[it], CSTRING("."), 1))
 		{
 			bDirectory = false;
 			break;
@@ -129,25 +135,31 @@ static dirmanager::createDirRes ProcessCreateDirectory(char* path, std::vector<c
 	if (bDirectory)
 		directories.emplace_back(directory);
 
+	std::vector<dirmanager::createDirResA_t> failures;
+	auto bError = false;
+
 	for (auto entry : directories)
 	{
-		if (!CreateDirectoryA(entry, nullptr))
-			return dirmanager::createDirRes::ERR;
+		struct stat st = { 0 };
+		if (stat(entry, &st) != -1)
+		{
+			failures.emplace_back(entry, dirmanager::createDirCodes::ERR_EXISTS);
+			bError = true;
+			continue;
+		}
 
-		if (_chdir(entry) != 0)
-			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
+		const auto ret = _mkdir(entry);
+		if (ret)
+		{
+			failures.emplace_back(entry, dirmanager::createDirCodes::ERR);
+			bError = true;
+		}
 	}
 
-	for (size_t it = 0; it < directories.size(); ++it)
-	{
-		if (_chdir(CSTRING("..")) != 0)
-			return dirmanager::createDirRes::CAN_NOT_CHANGE_DIR;
-	}
-
-	return dirmanager::createDirRes::SUCCESS;
+	return dirmanager::createDirResA(bError, failures);
 }
 
-dirmanager::createDirRes dirmanager::createDir(wchar_t* path)
+dirmanager::createDirResW dirmanager::createDir(wchar_t* path)
 {
 	const auto len = wcslen(path);
 
@@ -164,14 +176,14 @@ dirmanager::createDirRes dirmanager::createDir(wchar_t* path)
 	}
 	for (size_t it = 0; it < flen; ++it)
 	{
-		if (fixed[it] == '\\')
-			fixed[it] = '/';
+		if (fixed[it] == '/')
+			fixed[it] = '\\';
 	}
 	fixed[flen] = '\0';
 	return ProcessCreateDirectory(fixed);
 }
 
-dirmanager::createDirRes dirmanager::createDir(char* path)
+dirmanager::createDirResA dirmanager::createDir(char* path)
 {
 	const auto len = strlen(path);
 
@@ -188,8 +200,8 @@ dirmanager::createDirRes dirmanager::createDir(char* path)
 	}
 	for (size_t it = 0; it < flen; ++it)
 	{
-		if (fixed[it] == '\\')
-			fixed[it] = '/';
+		if (fixed[it] == '/')
+			fixed[it] = '\\';
 	}
 	fixed[flen] = '\0';
 	return ProcessCreateDirectory(fixed);
@@ -409,7 +421,7 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 	memset(buf, NULL, MAX_PATH);
 }
 
-std::wstring dirmanager::currentDirW()
+std::wstring dirmanager::homeDirW()
 {
 	do
 	{
@@ -430,7 +442,7 @@ std::wstring dirmanager::currentDirW()
 	} while (true);
 }
 
-std::string dirmanager::currentDirA()
+std::string dirmanager::homeDirA()
 {
 	do
 	{
