@@ -14,9 +14,9 @@ constexpr auto BASE_DATE = 1900;
 
 // Messagebox
 #define SHOW_MESSAGEBOX(msg, ...) Net::ShowMessageBox("", msg, __VA_ARGS__);
-#define SHOW_MESSAGEBOX_ERROR(msg, ...) Net::ShowMessageBox("ERROR", msg, __VA_ARGS__);
-#define SHOW_MESSAGEBOX_SUCCESS(msg, ...) Net::ShowMessageBox("SUCCESS", msg, __VA_ARGS__);
-#define SHOW_MESSAGEBOX_DEBUG(msg, ...) Net::ShowMessageBox("DEBUG", msg, __VA_ARGS__);
+#define SHOW_MESSAGEBOX_ERROR(msg, ...) Net::ShowMessageBox(CSTRING("ERROR"), msg, __VA_ARGS__);
+#define SHOW_MESSAGEBOX_SUCCESS(msg, ...) Net::ShowMessageBox(CSTRING("SUCCESS"), msg, __VA_ARGS__);
+#define SHOW_MESSAGEBOX_DEBUG(msg, ...) Net::ShowMessageBox(CSTRING("DEBUG"), msg, __VA_ARGS__);
 
 // Clock
 #define CURRENTCLOCKTIME Net::Clock::GetClockTime()

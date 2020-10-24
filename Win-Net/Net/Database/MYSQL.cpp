@@ -247,6 +247,9 @@ char* MYSQL::GetLastError() const
 
 MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 {
+	if(retry)
+		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+	
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -301,12 +304,6 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 	}
 	catch (sql::SQLException& e)
 	{
-		if (!retry)
-		{
-			if (reconnect())
-				return this->query(query, true);
-		}
-
 		FREESTRING(query);
 		
 		SetLastError(e.what());
@@ -320,6 +317,9 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 
 MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 {
+	if (retry)
+		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+	
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -374,12 +374,6 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 	}
 	catch (sql::SQLException& e)
 	{
-		if (!retry)
-		{
-			if (reconnect())
-				return this->query(query, true);
-		}
-
 		query.Free();
 
 		SetLastError(e.what());
@@ -393,6 +387,9 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 
 MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 {
+	if (retry)
+		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+	
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -458,12 +455,6 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 	}
 	catch (sql::SQLException& e)
 	{
-		if (!retry)
-		{
-			if (reconnect())
-				return this->multiQuery(query, true);
-		}
-
 		for (auto& curquery : query.Get())
 			curquery.Free();
 
