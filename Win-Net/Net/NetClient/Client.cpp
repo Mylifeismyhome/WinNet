@@ -122,25 +122,6 @@ void Client::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
 }
 
-bool Client::SetSocketOption(const SOCKET socket, const DWORD opt, const int state)
-{
-	const auto result = setsockopt(socket,
-		IPPROTO_TCP,
-		opt,
-		(char*)&state,
-		sizeof(int));
-
-	return result == 1 ? true : false;
-}
-
-void Client::SetSocketOption(const DWORD opt, const bool state)
-{
-	SocketOption_t option;
-	option.opt = opt;
-	option.state = state;
-	socketoption.emplace_back(option);
-}
-
 long long Client::GetFrequenz() const
 {
 	return sfrequenz;
@@ -241,8 +222,9 @@ bool Client::Connect(const char* Address, const u_short Port)
 	// Set socket options
 	for (const auto& entry : socketoption)
 	{
-		if (!SetSocketOption(GetSocket(), entry.opt, entry.state ? 1 : 0))
-			LOG_ERROR(CSTRING("[Client] - failure on settings socket option { %ld : %s }"), entry.opt, entry.state ? CSTRING("true") : CSTRING("false"));
+		const auto res = _SetSocketOption(GetSocket(), entry);
+		if (res < 0)
+			LOG_ERROR(CSTRING("[Client] - Failure on settings socket option { 0x%ld : %i }"), entry.opt, GetLastError());
 	}
 
 	// successfully connected

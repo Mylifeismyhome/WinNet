@@ -97,9 +97,7 @@ size_t sAESKeySize;
 bool sCryptPackage;
 bool sCompressPackage;
 long sCalcLatencyInterval;
-
-std::vector<SocketOption_t> socketoption;
-bool SetSocketOption(SOCKET, DWORD, int);
+std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
 void SetAllToDefault();
@@ -112,6 +110,16 @@ void SetCryptPackage(bool);
 void SetCompressPackage(bool);
 void SetCalcLatencyInterval(long);
 void SetSocketOption(DWORD, bool);
+
+template <class T>
+void SetSocketOption(const SocketOption_t<T> opt)
+{
+	SocketOption_t<char*> option;
+	option.opt = opt.opt;
+	option.type = reinterpret_cast<char*>(opt.type);
+	option.len = opt.len;
+	socketoption.emplace_back(option);
+}
 
 long long GetFrequenz() const;
 bool GetBlockingMode() const;

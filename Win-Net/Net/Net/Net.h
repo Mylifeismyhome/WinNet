@@ -558,7 +558,32 @@ enum HandshakeRet_t
 };
 NET_NAMESPACE_END
 
+template <class T>
 NET_STRUCT_BEGIN(SocketOption_t)
 DWORD opt;
-bool state;
+T type;
+size_t len;
+
+SocketOption_t()
+{
+	this->opt = NULL;
+}
+
+SocketOption_t(const DWORD opt, const T type)
+{
+	this->opt = opt;
+	this->type = type;
+	this->len = sizeof(type);
+}
 NET_STRUCT_END
+
+static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
+{
+	const auto result = setsockopt(socket,
+		IPPROTO_TCP,
+		opt.opt,
+		(char*)&opt.type,
+		opt.len);
+
+	return result;
+}
