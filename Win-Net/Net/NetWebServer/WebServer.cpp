@@ -318,6 +318,25 @@ void Server::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	}
 }
 
+bool Server::SetSocketOption(const SOCKET socket, const DWORD opt, const int state)
+{
+	const auto result = setsockopt(socket,
+		IPPROTO_TCP,
+		opt,
+		(char*)&state,
+		sizeof(int));
+
+	return result == 1 ? true : false;
+}
+
+void Server::SetSocketOption(const DWORD opt, const bool state)
+{
+	SocketOption_t option;
+	option.opt = opt;
+	option.state = state;
+	socketoption.emplace_back(option);
+}
+
 const char* Server::GetServerName() const
 {
 	return sServerName;
@@ -1282,9 +1301,10 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		// disable nagle on the client's socket
-		char value = 1;
-		setsockopt(GetAcceptSocket(), IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
+		// Set socket options
+		for (const auto& entry : socketoption)
+			if (!SetSocketOption(GetAcceptSocket(), entry.opt, entry.state ? 1 : 0))
+				LOG_ERROR(CSTRING("[%s] - failure on settings socket option { %ld : %s }"), GetServerName(), entry.opt, entry.state ? CSTRING("true") : CSTRING("false"));
 
 		std::thread(&Server::ReceiveThread, this, client_addr, GetAcceptSocket()).detach();
 	}

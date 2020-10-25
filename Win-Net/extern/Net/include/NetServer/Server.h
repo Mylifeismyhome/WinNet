@@ -49,7 +49,7 @@ constexpr auto DEFAULT_SERVER_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
 constexpr auto DEFAULT_SERVER_CRYPT_PACKAGES = false;
 constexpr auto DEFAULT_SERVER_COMPRESS_PACKAGES = false;
 constexpr auto DEFAULT_SERVER_MAX_PACKET_SIZE = 65536;
-constexpr auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 10; // Seconds
+constexpr auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 1; // Seconds
 constexpr auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 constexpr auto SERVERNAME_LENGTH = 128;
@@ -192,6 +192,9 @@ bool sCompressPackage;
 long sTCPReadTimeout;
 long sCalcLatencyInterval;
 
+std::vector<SocketOption_t> socketoption;
+bool SetSocketOption(SOCKET, DWORD, int);
+
 NET_CLASS_PUBLIC
 void SetAllToDefault();
 void SetServerName(const char*);
@@ -205,6 +208,7 @@ void SetCryptPackage(bool);
 void SetCompressPackage(bool);
 void SetTCPReadTimeout(long);
 void SetCalcLatencyInterval(long);
+void SetSocketOption(DWORD, bool);
 
 const char* GetServerName() const;
 u_short GetServerPort() const;

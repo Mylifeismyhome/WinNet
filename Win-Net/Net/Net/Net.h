@@ -546,6 +546,7 @@ enum Server_HandshakeRet_t
 	would_block
 };
 NET_NAMESPACE_END
+
 NET_NAMESPACE_BEGIN(WebServerHandshake)
 enum HandshakeRet_t
 {
@@ -556,3 +557,8 @@ enum HandshakeRet_t
 	would_block
 };
 NET_NAMESPACE_END
+
+NET_STRUCT_BEGIN(SocketOption_t)
+DWORD opt;
+bool state;
+NET_STRUCT_END

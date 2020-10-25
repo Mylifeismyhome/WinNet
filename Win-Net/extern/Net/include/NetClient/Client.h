@@ -98,6 +98,9 @@ bool sCryptPackage;
 bool sCompressPackage;
 long sCalcLatencyInterval;
 
+std::vector<SocketOption_t> socketoption;
+bool SetSocketOption(SOCKET, DWORD, int);
+
 NET_CLASS_PUBLIC
 void SetAllToDefault();
 void SetFrequenz(long long);
@@ -108,6 +111,7 @@ void SetAESKeySize(size_t);
 void SetCryptPackage(bool);
 void SetCompressPackage(bool);
 void SetCalcLatencyInterval(long);
+void SetSocketOption(DWORD, bool);
 
 long long GetFrequenz() const;
 bool GetBlockingMode() const;

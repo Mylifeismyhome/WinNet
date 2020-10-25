@@ -122,6 +122,25 @@ void Client::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
 }
 
+bool Client::SetSocketOption(const SOCKET socket, const DWORD opt, const int state)
+{
+	const auto result = setsockopt(socket,
+		IPPROTO_TCP,
+		opt,
+		(char*)&state,
+		sizeof(int));
+
+	return result == 1 ? true : false;
+}
+
+void Client::SetSocketOption(const DWORD opt, const bool state)
+{
+	SocketOption_t option;
+	option.opt = opt;
+	option.state = state;
+	socketoption.emplace_back(option);
+}
+
 long long Client::GetFrequenz() const
 {
 	return sfrequenz;
@@ -217,6 +236,13 @@ bool Client::Connect(const char* Address, const u_short Port)
 	{
 		LOG_ERROR(CSTRING("[Client] - could not connect to host: %s:%d!"), GetServerAddress(), GetServerPort());
 		return false;
+	}
+
+	// Set socket options
+	for (const auto& entry : socketoption)
+	{
+		if (!SetSocketOption(GetSocket(), entry.opt, entry.state ? 1 : 0))
+			LOG_ERROR(CSTRING("[Client] - failure on settings socket option { %ld : %s }"), entry.opt, entry.state ? CSTRING("true") : CSTRING("false"));
 	}
 
 	// successfully connected
@@ -1094,7 +1120,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 		auto bPreviousSentFailed = false;
-		
+
 		/* Append Package Header */
 		SingleSend(NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1, bPreviousSentFailed);
 
@@ -1203,7 +1229,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 		auto bPreviousSentFailed = false;
-		
+
 		/* Append Package Header */
 		SingleSend(NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1, bPreviousSentFailed);
 

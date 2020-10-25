@@ -204,6 +204,9 @@ long sTCPReadTimeout;
 bool bWithoutHandshake;
 long sCalcLatencyInterval;
 
+std::vector<SocketOption_t> socketoption;
+bool SetSocketOption(SOCKET, DWORD, int);
+
 NET_CLASS_PUBLIC
 void SetAllToDefault();
 void SetServerName(const char*);
@@ -222,6 +225,7 @@ void SetCompressPackage(bool);
 void SetTCPReadTimeout(long);
 void SetWithoutHandshake(bool);
 void SetCalcLatencyInterval(long);
+void SetSocketOption(DWORD, bool);
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
