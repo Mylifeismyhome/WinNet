@@ -347,10 +347,6 @@ Package_RawData_t RawData(const char*);
 NET_CLASS_END
 NET_NAMESPACE_END
 
-typedef Net::Package JSON;
-typedef Net::Package Json;
-typedef Net::Package json;
-
 ///////////////////////////////////////////////////////////
 ///																	///
 ///		  FAST PACKAGE ID IMPLEMENTATION	    ///

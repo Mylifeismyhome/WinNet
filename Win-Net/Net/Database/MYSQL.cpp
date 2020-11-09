@@ -164,6 +164,12 @@ std::vector<MYSQL_RESULT> MYSQL_MULTIRESULT::Get() const
 
 MYSQL::~MYSQL()
 {
+	if(msqlcon)
+	{
+		disconnect();
+		delete msqlcon;
+	}
+	
 	FREE(lastError);
 }
 
@@ -185,6 +191,8 @@ bool MYSQL::connect()
 	{
 		char constr[128];
 		sprintf_s(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
+
+		delete msqlcon;
 		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
 		msqlcon->setSchema(conConfig.getDB());
 		return msqlcon->isValid();
@@ -203,12 +211,7 @@ bool MYSQL::disconnect()
 	try
 	{
 		msqlcon->close();
-
 		const auto closed = msqlcon->isClosed();
-
-		delete msqlcon;
-		msqlcon = nullptr;
-
 		return closed;
 	}
 	catch (sql::SQLException& e)

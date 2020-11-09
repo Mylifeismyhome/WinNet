@@ -440,11 +440,11 @@ bool KeyIsPressed(const int vKey)
 		return NULL;
 }
 
-bool KeyIsPressed2(const int vKey)
+bool KeyIsPressedNoSpam(const int vKey)
 {
 	static auto isPressed = false;
 	static auto FirstPressed = false;
-	TIMER SpamTimer = CURRENTCLOCKTIME;
+	static auto SpamTimer = CURRENTCLOCKTIME;
 
 	if (GetActiveWindow() == GetForegroundWindow())
 	{

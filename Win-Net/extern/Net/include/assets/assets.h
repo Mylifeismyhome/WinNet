@@ -30,8 +30,6 @@ constexpr auto BASE_DATE = 1900;
 #define CURRENTDATE Net::Clock::GetDateA
 #endif
 
-#define TIMER static double
-
 // Keyboard
 #define KEYWASPRESSED(x) Net::Keyboard::KeyWasPressed(x)
 #define KEYISPRESSED(x) Net::Keyboard::KeyIsPressed(x)
@@ -161,7 +159,7 @@ enum Key
 extern "C" NET_API const char* GetKeyName(int);
 extern "C" NET_API bool KeyWasPressed(int);
 extern "C" NET_API bool KeyIsPressed(int);
-extern "C" NET_API bool KeyIsPressed2(int);
+extern "C" NET_API bool KeyIsPressedNoSpam(int);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)

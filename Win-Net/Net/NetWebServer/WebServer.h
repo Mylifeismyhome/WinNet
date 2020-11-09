@@ -55,7 +55,7 @@ constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
 #define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
-	const char* NET_FUNCTIONNAME = CSTRING("On"#fnc);
+	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
