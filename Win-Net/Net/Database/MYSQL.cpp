@@ -192,8 +192,10 @@ bool MYSQL::connect()
 		char constr[128];
 		sprintf_s(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
 
-		delete msqlcon;
 		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
+		if (!msqlcon)
+			return false;
+		
 		msqlcon->setSchema(conConfig.getDB());
 		return msqlcon->isValid();
 	}
@@ -208,6 +210,9 @@ bool MYSQL::connect()
 
 bool MYSQL::disconnect()
 {
+	if (!msqlcon)
+		return false;
+	
 	try
 	{
 		msqlcon->close();
