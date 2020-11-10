@@ -41,33 +41,15 @@
 #define NetMajorVersion 3 // Re-Code - Library Changes
 #define NetMinorVersion 4 // Function extension
 #define NetRevision 4 // Issue fixing
-#define NetKey "1MFOm3a9as-xieg1iEMIf-pgKHPNlSMP-pgKHPNlSMP"
+#define NetKey CSTRING("1MFOm3a9as-xieg1iEMIf-pgKHPNlSMP-pgKHPNlSMP")
 
-static short NET_MAJOR_VERSION()
+namespace Net
 {
-	return NetMajorVersion;
-}
-
-static short NET_MINOR_VERSION()
-{
-	return NetMinorVersion;
-}
-
-static short NET_REVISION()
-{
-	return NetRevision;
-}
-
-static const char* NET_KEY()
-{
-	return NetKey;
-}
-
-static const char* NET_VERSION()
-{
-	static char version[MAX_PATH];
-	sprintf_s(version, "%i.%i.%i-%s", NET_MAJOR_VERSION(), NET_MINOR_VERSION(), NET_REVISION(), NET_KEY());
-	return version;
+	short MAJOR_VERSION();
+	short MINOR_VERSION();
+	short REVISION();
+	const char* KEY();
+	const char* VERSION();
 }
 
 ///////////////////////////////////
@@ -208,7 +190,7 @@ static std::vector<void*> NET_TEST_MEMORY_LEAKS_POINTER_LIST;
 __forceinline void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
 {
 	printf("----- POINTER INSTANCE(s) -----\n");
-	for(const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
+	for (const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
 		printf("Allocated Instance: %p\n", entry);
 	printf("----------------------------------------\n");
 }
@@ -255,7 +237,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 		}
 	}
 #endif
-	
+
 	free(pointer);
 	pointer = nullptr;
 }

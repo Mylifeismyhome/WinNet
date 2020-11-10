@@ -2719,10 +2719,10 @@ if (!majorVersion.valid()
 	return;
 }
 
-if ((majorVersion.value() == NET_MAJOR_VERSION())
-	&& (minorVersion.value() == NET_MINOR_VERSION())
-	&& (revision.value() == NET_REVISION())
-	&& strcmp(key.value(), NET_KEY()) == 0)
+if ((majorVersion.value() == MAJOR_VERSION())
+	&& (minorVersion.value() == MINOR_VERSION())
+	&& (revision.value() == REVISION())
+	&& strcmp(key.value(), KEY()) == 0)
 {
 	peer->NetVersionMatched = true;
 

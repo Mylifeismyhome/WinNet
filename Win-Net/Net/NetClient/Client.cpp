@@ -2129,10 +2129,10 @@ if (GetCryptPackage() && !network.RSAHandshake)
 
 NET_JOIN_PACKAGE(pkg, pkgRel);
 
-pkgRel.Append<int>(CSTRING("MajorVersion"), NET_MAJOR_VERSION());
-pkgRel.Append<int>(CSTRING("MinorVersion"), NET_MINOR_VERSION());
-pkgRel.Append<int>(CSTRING("Revision"), NET_REVISION());
-pkgRel.Append<const char*>(CSTRING("Key"), NET_KEY());
+pkgRel.Append<int>(CSTRING("MajorVersion"), MAJOR_VERSION());
+pkgRel.Append<int>(CSTRING("MinorVersion"), MINOR_VERSION());
+pkgRel.Append<int>(CSTRING("Revision"), REVISION());
+pkgRel.Append<const char*>(CSTRING("Key"), KEY());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
 NET_END_FNC_PKG
 

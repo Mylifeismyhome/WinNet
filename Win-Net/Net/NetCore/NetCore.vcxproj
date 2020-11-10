@@ -855,6 +855,7 @@
     <ClCompile Include="..\Cryption\XOR.cpp" />
     <ClCompile Include="..\Database\MYSQL.cpp" />
     <ClCompile Include="..\ICMP\icmp.cpp" />
+    <ClCompile Include="..\Net\Net.cpp" />
     <ClCompile Include="..\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Package.cpp" />
   </ItemGroup>
