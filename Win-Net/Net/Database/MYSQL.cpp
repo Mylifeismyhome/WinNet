@@ -192,7 +192,13 @@ bool MYSQL::connect()
 		char constr[128];
 		sprintf_s(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
 
+		const auto oldmsqlcon = msqlcon;
 		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
+
+		// if it is not the same mem addr
+		if (oldmsqlcon != msqlcon)
+			delete oldmsqlcon;
+		
 		if (!msqlcon)
 			return false;
 		
