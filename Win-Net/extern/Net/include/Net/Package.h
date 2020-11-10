@@ -314,12 +314,12 @@ size_t GetRawDataFullSize() const
 	size_t size = NULL;
 	for (auto& entry : rawData)
 	{
-		size += sizeof(NET_RAW_DATA_KEY) - 1;
+		size += strlen(NET_RAW_DATA_KEY);
 		size += 1;
 		const auto KeyLengthStr = std::to_string(strlen(entry.key()) + 1);
 		size += KeyLengthStr.size();
 		size += 1;
-		size += sizeof(NET_RAW_DATA) - 1;
+		size += strlen(NET_RAW_DATA);
 		size += 1;
 		const auto rawDataLengthStr = std::to_string(entry.size());
 		size += rawDataLengthStr.size();

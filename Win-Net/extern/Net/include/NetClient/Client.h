@@ -1,7 +1,7 @@
 #pragma once
 #include <Net/Net.h>
 #include <Net/Package.h>
-#include <Net/NetCodes.hpp>
+#include <Net/NetCodes.h>
 
 #define NET_CLIENT Net::Client::Client
 

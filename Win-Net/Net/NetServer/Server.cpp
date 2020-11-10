@@ -1329,7 +1329,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				aes.encrypt(data.value(), data.size());
 		}
 
-		combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + sizeof(NET_AES_KEY) - 1 + sizeof(NET_AES_IV) - 1 + KeySize + IVSize + 8;
+		combinedSize = dataBufferSize + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + strlen(NET_AES_KEY) + strlen(NET_AES_IV) + KeySize + IVSize + 8;
 
 		// Append Raw data package size
 		if (PKG.HasRawData())
@@ -1367,23 +1367,23 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER), bPreviousSentFailed);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, sizeof(NET_PACKAGE_SIZE) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
 		/* Append Package Key */
-		SingleSend(peer, NET_AES_KEY, sizeof(NET_AES_KEY) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_AES_KEY, strlen(NET_AES_KEY), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, Key, KeySize, bPreviousSentFailed);
 
 		/* Append Package IV */
-		SingleSend(peer, NET_AES_IV, sizeof(NET_AES_IV) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_AES_IV, strlen(NET_AES_IV), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
@@ -1396,7 +1396,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			for (auto data : rawData)
 			{
 				// Append Key
-				SingleSend(peer, NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 
 				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
@@ -1406,7 +1406,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed);
 
 				// Append Raw Data
-				SingleSend(peer, NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
@@ -1418,14 +1418,14 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		SingleSend(peer, NET_DATA, sizeof(NET_DATA) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_DATA, strlen(NET_DATA), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER), bPreviousSentFailed);
 	}
 	else
 	{
@@ -1441,10 +1441,10 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
-			combinedSize = dataBufferSize + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + 4;
+			combinedSize = dataBufferSize + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + 4;
 		}
 		else
-			combinedSize = buffer.GetSize() + sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1 + sizeof(NET_DATA) - 1 + sizeof(NET_PACKAGE_FOOTER) - 1 + 4;
+			combinedSize = buffer.GetSize() + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + 4;
 
 		// Append Raw data package size
 		if (PKG.HasRawData())
@@ -1476,10 +1476,10 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER), bPreviousSentFailed);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, sizeof(NET_PACKAGE_SIZE) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
@@ -1491,7 +1491,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			for (auto data : rawData)
 			{
 				// Append Key
-				SingleSend(peer, NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 
 				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
@@ -1501,7 +1501,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed);
 
 				// Append Raw Data
-				SingleSend(peer, NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
@@ -1513,8 +1513,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		SingleSend(peer, NET_DATA, sizeof(NET_DATA) - 1, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, sizeof(NET_PACKAGE_BRACKET_OPEN) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_DATA, strlen(NET_DATA), bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed);
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
@@ -1524,7 +1524,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			SingleSend(peer, buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER), bPreviousSentFailed);
 	}
 }
 
@@ -1990,7 +1990,7 @@ void Server::DoReceive(NET_PEER peer)
 			peer->network.reset();
 			return;
 		}
-		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
+		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
 			peer->network.reset();
@@ -2037,7 +2037,7 @@ void Server::DoReceive(NET_PEER peer)
 	{
 		if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 		{
-			if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
+			if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)))
 			{
 				ProcessPackages(peer);
 				peer->network.reset();
@@ -2068,9 +2068,9 @@ void Server::GetPackageDataSize(NET_PEER peer) const
 		if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 		{
 			// find data full size
-			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_SIZE, sizeof(NET_PACKAGE_SIZE) - 1))
+			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE)))
 			{
-				const auto startPos = it + sizeof(NET_PACKAGE_SIZE) - 1;
+				const auto startPos = it + strlen(NET_PACKAGE_SIZE);
 				size_t endPos = NULL;
 				for (auto z = startPos; z < peer->network.getDataSize(); ++z)
 				{
@@ -2122,18 +2122,18 @@ void Server::ProcessPackages(NET_PEER peer)
 		{
 			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
 			{
-				if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1))
+				if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)))
 				{
 					// check if we have a header
 					auto idx = NULL;
-					if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, sizeof(NET_PACKAGE_HEADER) - 1) != 0)
+					if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 					{
 						LOG_ERROR(CSTRING("Package has no header"));
 						peer->network.clear();
 						return;
 					}
 
-					idx += sizeof(NET_PACKAGE_HEADER) - 1 + sizeof(NET_PACKAGE_SIZE) - 1;
+					idx += strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE);
 
 					// read entire Package size
 					size_t entirePackageSize = NULL;
@@ -2192,7 +2192,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		return;
 	);
 
-	if (memcmp(&peer->network.getData()[size - sizeof(NET_PACKAGE_FOOTER) + 1], NET_PACKAGE_FOOTER, sizeof(NET_PACKAGE_FOOTER) - 1) != 0)
+	if (memcmp(&peer->network.getData()[size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 	{
 		LOG_ERROR(CSTRING("Package has no footer"));
 		peer->network.clear();
@@ -2211,9 +2211,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		size_t AESKeySize;
 
 		// look for key tag
-		if (!memcmp(&peer->network.getData()[offset], NET_AES_KEY, sizeof(NET_AES_KEY) - 1))
+		if (!memcmp(&peer->network.getData()[offset], NET_AES_KEY, strlen(NET_AES_KEY)))
 		{
-			offset += sizeof(NET_AES_KEY) - 1;
+			offset += strlen(NET_AES_KEY);
 
 			// read size
 			for (auto y = offset; y < peer->network.getDataSize(); ++y)
@@ -2244,9 +2244,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		size_t AESIVSize;
 
 		// look for iv tag
-		if (!memcmp(&peer->network.getData()[offset], NET_AES_IV, sizeof(NET_AES_IV) - 1))
+		if (!memcmp(&peer->network.getData()[offset], NET_AES_IV, strlen(NET_AES_IV)))
 		{
-			offset += sizeof(NET_AES_IV) - 1;
+			offset += strlen(NET_AES_IV);
 
 			// read size
 			for (auto y = offset; y < peer->network.getDataSize(); ++y)
@@ -2320,9 +2320,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		do
 		{
 			// look for raw data tag
-			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY)))
 			{
-				offset += sizeof(NET_RAW_DATA_KEY) - 1;
+				offset += strlen(NET_RAW_DATA_KEY);
 
 				// read size
 				CPOINTER<BYTE> key;
@@ -2352,9 +2352,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 					offset += KeySize;
 				}
 
-				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, strlen(NET_RAW_DATA)))
 				{
-					offset += sizeof(NET_RAW_DATA) - 1;
+					offset += strlen(NET_RAW_DATA);
 
 					// read size
 					size_t packageSize = NULL;
@@ -2396,9 +2396,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// look for data tag
-			if (!memcmp(&peer->network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_DATA, strlen(NET_DATA)))
 			{
-				offset += sizeof(NET_DATA) - 1;
+				offset += strlen(NET_DATA);
 
 				// read size
 				size_t packageSize = NULL;
@@ -2440,7 +2440,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// we have reached the end of reading
-			if (offset + sizeof(NET_PACKAGE_FOOTER) - 1 == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
 				break;
 
 		} while (true);
@@ -2452,9 +2452,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		do
 		{
 			// look for raw data tag
-			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, sizeof(NET_RAW_DATA_KEY) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY)))
 			{
-				offset += sizeof(NET_RAW_DATA_KEY) - 1;
+				offset += strlen(NET_RAW_DATA_KEY);
 
 				// read size
 				CPOINTER<BYTE> key;
@@ -2484,9 +2484,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 					offset += KeySize;
 				}
 
-				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, sizeof(NET_RAW_DATA) - 1))
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, strlen(NET_RAW_DATA)))
 				{
-					offset += sizeof(NET_RAW_DATA) - 1;
+					offset += strlen(NET_RAW_DATA);
 
 					// read size
 					size_t packageSize = NULL;
@@ -2521,9 +2521,9 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// look for data tag
-			if (!memcmp(&peer->network.getData()[offset], NET_DATA, sizeof(NET_DATA) - 1))
+			if (!memcmp(&peer->network.getData()[offset], NET_DATA, strlen(NET_DATA)))
 			{
-				offset += sizeof(NET_DATA) - 1;
+				offset += strlen(NET_DATA);
 
 				// read size
 				size_t packageSize = NULL;
@@ -2557,7 +2557,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// we have reached the end of reading
-			if (offset + sizeof(NET_PACKAGE_FOOTER) - 1 == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
 				break;
 
 		} while (true);

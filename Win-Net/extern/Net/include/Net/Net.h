@@ -259,24 +259,24 @@ static void Free(T*& data)
 ////////////////////////////////////////////////////
 //    SECTION - Package Prefix & Suffix     //
 //////////////////////////////////////////////////
-#define NET_PACKAGE_BRACKET_OPEN "{"
-#define NET_PACKAGE_BRACKET_CLOSE "}"
+#define NET_PACKAGE_BRACKET_OPEN CSTRING("{")
+#define NET_PACKAGE_BRACKET_CLOSE CSTRING("}")
 
-#define NET_RAW_DATA_KEY "{RAW DATA KEY}"
-#define NET_RAW_DATA "{RAW DATA}"
+#define NET_RAW_DATA_KEY CSTRING("{RAW DATA KEY}")
+#define NET_RAW_DATA CSTRING("{RAW DATA}")
 
-#define NET_DATA "{DATA}"
+#define NET_DATA CSTRING("{DATA}")
 
-#define NET_PACKAGE_HEADER "{BEGIN PACKAGE}"
-#define NET_PACKAGE_FOOTER "{END PACKAGE}"
+#define NET_PACKAGE_HEADER CSTRING("{BEGIN PACKAGE}")
+#define NET_PACKAGE_FOOTER CSTRING("{END PACKAGE}")
 
-#define NET_PACKAGE_SIZE "{PACKAGE SIZE}"
+#define NET_PACKAGE_SIZE CSTRING("{PACKAGE SIZE}")
 
 // Key is crypted using RSA
-#define NET_AES_KEY "{KEY}"
+#define NET_AES_KEY CSTRING("{KEY}")
 
 // IV is crypted using RSA
-#define NET_AES_IV "{IV}"
+#define NET_AES_IV CSTRING("{IV}")
 
 #define NET_UID size_t
 #define INVALID_UID  (size_t)(~0)
