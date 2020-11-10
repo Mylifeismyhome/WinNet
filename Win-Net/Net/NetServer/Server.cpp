@@ -2602,7 +2602,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	// set raw data
 	if (!rawData.empty())
 		Content.SetRawData(rawData);
-
+	
 	if (!CheckDataN(peer, id, Content))
 	{
 		if (!CheckData(peer, id, Content))
@@ -2722,7 +2722,7 @@ if (!majorVersion.valid()
 if ((majorVersion.value() == MAJOR_VERSION())
 	&& (minorVersion.value() == MINOR_VERSION())
 	&& (revision.value() == REVISION())
-	&& strcmp(key.value(), KEY()) == 0)
+	&& strcmp(key.value(), KEY().data()) == 0)
 {
 	peer->NetVersionMatched = true;
 

@@ -23,10 +23,7 @@ void Net::Codes::NetDefineErrorMessage(const int code, const char* message)
 	for (auto& val : NetErrorCode_L)
 	{
 		if (val.Code == code)
-		{
-			LOG_ERROR(CSTRING("Duplicated error coded: (%i, '%s')"), code, message);
 			return;
-		}
 	}
 
 	NetErrorCode_L.emplace_back(NetErrorCode_T(code, message));

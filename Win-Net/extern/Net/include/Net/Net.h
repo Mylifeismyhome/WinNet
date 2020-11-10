@@ -48,8 +48,8 @@ namespace Net
 	short MAJOR_VERSION();
 	short MINOR_VERSION();
 	short REVISION();
-	const char* KEY();
-	const char* VERSION();
+	std::string KEY();
+	std::string VERSION();
 }
 
 ///////////////////////////////////

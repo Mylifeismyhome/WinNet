@@ -2132,7 +2132,7 @@ NET_JOIN_PACKAGE(pkg, pkgRel);
 pkgRel.Append<int>(CSTRING("MajorVersion"), MAJOR_VERSION());
 pkgRel.Append<int>(CSTRING("MinorVersion"), MINOR_VERSION());
 pkgRel.Append<int>(CSTRING("Revision"), REVISION());
-pkgRel.Append<const char*>(CSTRING("Key"), KEY());
+pkgRel.Append<const char*>(CSTRING("Key"), KEY().data());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
 NET_END_FNC_PKG
 

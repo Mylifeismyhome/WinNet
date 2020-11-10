@@ -16,16 +16,16 @@ short Net::REVISION()
 	return NetRevision;
 }
 
-const char* Net::KEY()
+std::string Net::KEY()
 {
-	return NetKey;
+	return std::string(NetKey);
 }
 
-const char* Net::VERSION()
+std::string Net::VERSION()
 {
-	static char version[MAX_PATH];
-	sprintf_s(version, CSTRING("%i.%i.%i-%s"),		MAJOR_VERSION(), MINOR_VERSION(), REVISION(), KEY());
-	return version;
+	char version[MAX_PATH];
+	sprintf_s(version, CSTRING("%i.%i.%i-%s"),	 MAJOR_VERSION(), MINOR_VERSION(), REVISION(), KEY());
+	return std::string(version);
 }
 
 char* Net::ssl::GET_SSL_METHOD_NAME(const int method)
