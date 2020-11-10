@@ -295,218 +295,215 @@ static void Free(T*& data)
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
 ////////////////////////////////////////////////////
-struct NET_SSL_METHOD_T
+namespace Net
 {
-	int method;
-	char name[32];
-};
-
-enum NET_SSL_METHOD
-{
-	NET_SSL_METHOD_TLS,
-	NET_SSL_METHOD_TLS_SERVER,
-	NET_SSL_METHOD_TLS_CLIENT,
-	NET_SSL_METHOD_SSLv23,
-	NET_SSL_METHOD_SSLv23_SERVER,
-	NET_SSL_METHOD_SSLv23_CLIENT,
-#ifndef OPENSSL_NO_SSL3_METHOD
-	NET_SSL_METHOD_SSLv3,
-	NET_SSL_METHOD_SSLv3_SERVER,
-	NET_SSL_METHOD_SSLv3_CLIENT,
-#endif
-#ifndef OPENSSL_NO_TLS1_METHOD
-	NET_SSL_METHOD_TLSv1,
-	NET_SSL_METHOD_TLSv1_SERVER,
-	NET_SSL_METHOD_TLSv1_CLIENT,
-#endif
-#ifndef OPENSSL_NO_TLS1_1_METHOD
-	NET_SSL_METHOD_TLSv1_1,
-	NET_SSL_METHOD_TLSv1_1_SERVER,
-	NET_SSL_METHOD_TLSv1_1_CLIENT,
-#endif
-#ifndef OPENSSL_NO_TLS1_2_METHOD
-	NET_SSL_METHOD_TLSv1_2,
-	NET_SSL_METHOD_TLSv1_2_SERVER,
-	NET_SSL_METHOD_TLSv1_2_CLIENT,
-#endif
-	NET_SSL_METHOD_DTLS,
-	NET_SSL_METHOD_DTLS_SERVER,
-	NET_SSL_METHOD_DTLS_CLIENT,
-#ifndef OPENSSL_NO_DTLS1_METHOD
-	NET_SSL_METHOD_DTLSv1,
-	NET_SSL_METHOD_DTLSv1_SERVER,
-	NET_SSL_METHOD_DTLSv1_CLIENT,
-#endif
-#ifndef OPENSSL_NO_DTLS1_2_METHOD
-	NET_SSL_METHOD_DTLSv1_2,
-	NET_SSL_METHOD_DTLSv1_2_SERVER,
-	NET_SSL_METHOD_DTLSv1_2_CLIENT,
-#endif
-
-	NET_LAST_NET_SSL_METHOD
-};
-
-static NET_SSL_METHOD_T NET_SSL_METHOD_L[] =
-{
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLS, "TLS"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLS_SERVER, "TLS Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLS_CLIENT, "TLS Client"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23, "SSLv23"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_SERVER, "SSLv23 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_CLIENT, "SSLv23 Client"},
-#ifndef OPENSSL_NO_SSL3_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3, "SSLv3"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_SERVER, "SSLv3 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_CLIENT, "SSLv3 Client"},
-#endif
-#ifndef OPENSSL_NO_TLS1_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1, "TLSv1"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_SERVER, "TLSv1 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_CLIENT,"TLSv1 Client"},
-#endif
-#ifndef OPENSSL_NO_TLS1_1_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1,  "TLSv1_1"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_SERVER,  "TLSv1_1 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_CLIENT, "TLSv1_1 Client"},
-#endif
-#ifndef OPENSSL_NO_TLS1_2_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2, "TLSv1_2"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_SERVER,  "TLSv1_2 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT, "TLSv1_2 Client"},
-#endif
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLS,  "DTLS"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLS_SERVER, "DTLS Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT, "DTLS Client"},
-#ifndef OPENSSL_NO_DTLS1_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1,  "DTLSv1"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_SERVER, "DTLSv1 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_CLIENT, "DTLSv1 Client"},
-#endif
-#ifndef OPENSSL_NO_DTLS1_2_METHOD
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2, "DTLSv1_2"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_SERVER, "DTLSv1_2 Server"},
-	{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT, "DTLSv1_2 Client"}
-#endif
-};
-
-inline const SSL_METHOD* NET_CREATE_SSL_OBJECT(const int method)
-{
-	for (auto& val : NET_SSL_METHOD_L)
+	namespace ssl
 	{
-		if (val.method == method)
+		struct NET_SSL_METHOD_T
 		{
-			switch (val.method)
+			int method;
+			char name[32];
+		};
+
+		enum NET_SSL_METHOD
+		{
+			NET_SSL_METHOD_TLS,
+			NET_SSL_METHOD_TLS_SERVER,
+			NET_SSL_METHOD_TLS_CLIENT,
+			NET_SSL_METHOD_SSLv23,
+			NET_SSL_METHOD_SSLv23_SERVER,
+			NET_SSL_METHOD_SSLv23_CLIENT,
+#ifndef OPENSSL_NO_SSL3_METHOD
+			NET_SSL_METHOD_SSLv3,
+			NET_SSL_METHOD_SSLv3_SERVER,
+			NET_SSL_METHOD_SSLv3_CLIENT,
+#endif
+#ifndef OPENSSL_NO_TLS1_METHOD
+			NET_SSL_METHOD_TLSv1,
+			NET_SSL_METHOD_TLSv1_SERVER,
+			NET_SSL_METHOD_TLSv1_CLIENT,
+#endif
+#ifndef OPENSSL_NO_TLS1_1_METHOD
+			NET_SSL_METHOD_TLSv1_1,
+			NET_SSL_METHOD_TLSv1_1_SERVER,
+			NET_SSL_METHOD_TLSv1_1_CLIENT,
+#endif
+#ifndef OPENSSL_NO_TLS1_2_METHOD
+			NET_SSL_METHOD_TLSv1_2,
+			NET_SSL_METHOD_TLSv1_2_SERVER,
+			NET_SSL_METHOD_TLSv1_2_CLIENT,
+#endif
+			NET_SSL_METHOD_DTLS,
+			NET_SSL_METHOD_DTLS_SERVER,
+			NET_SSL_METHOD_DTLS_CLIENT,
+#ifndef OPENSSL_NO_DTLS1_METHOD
+			NET_SSL_METHOD_DTLSv1,
+			NET_SSL_METHOD_DTLSv1_SERVER,
+			NET_SSL_METHOD_DTLSv1_CLIENT,
+#endif
+#ifndef OPENSSL_NO_DTLS1_2_METHOD
+			NET_SSL_METHOD_DTLSv1_2,
+			NET_SSL_METHOD_DTLSv1_2_SERVER,
+			NET_SSL_METHOD_DTLSv1_2_CLIENT,
+#endif
+
+			NET_LAST_NET_SSL_METHOD
+		};
+
+		static NET_SSL_METHOD_T NET_SSL_METHOD_L[] =
+		{
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLS, "TLS"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLS_SERVER, "TLS Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLS_CLIENT, "TLS Client"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23, "SSLv23"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_SERVER, "SSLv23 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_CLIENT, "SSLv23 Client"},
+		#ifndef OPENSSL_NO_SSL3_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3, "SSLv3"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_SERVER, "SSLv3 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_CLIENT, "SSLv3 Client"},
+		#endif
+		#ifndef OPENSSL_NO_TLS1_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1, "TLSv1"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_SERVER, "TLSv1 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_CLIENT,"TLSv1 Client"},
+		#endif
+		#ifndef OPENSSL_NO_TLS1_1_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1,  "TLSv1_1"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_SERVER,  "TLSv1_1 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_CLIENT, "TLSv1_1 Client"},
+		#endif
+		#ifndef OPENSSL_NO_TLS1_2_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2, "TLSv1_2"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_SERVER,  "TLSv1_2 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT, "TLSv1_2 Client"},
+		#endif
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLS,  "DTLS"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLS_SERVER, "DTLS Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT, "DTLS Client"},
+		#ifndef OPENSSL_NO_DTLS1_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1,  "DTLSv1"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_SERVER, "DTLSv1 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_CLIENT, "DTLSv1 Client"},
+		#endif
+		#ifndef OPENSSL_NO_DTLS1_2_METHOD
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2, "DTLSv1_2"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_SERVER, "DTLSv1_2 Server"},
+			{NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT, "DTLSv1_2 Client"}
+		#endif
+		};
+
+		inline const SSL_METHOD* NET_CREATE_SSL_OBJECT(const int method)
+		{
+			for (auto& val : NET_SSL_METHOD_L)
 			{
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLS:
-				return TLS_method();
+				if (val.method == method)
+				{
+					switch (val.method)
+					{
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLS:
+						return TLS_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLS_SERVER:
-				return TLS_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLS_SERVER:
+						return TLS_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLS_CLIENT:
-				return TLS_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLS_CLIENT:
+						return TLS_client_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23:
-				return SSLv23_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23:
+						return SSLv23_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_SERVER:
-				return SSLv23_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_SERVER:
+						return SSLv23_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_CLIENT:
-				return SSLv23_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv23_CLIENT:
+						return SSLv23_client_method();
 
 #ifndef OPENSSL_NO_SSL3_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3:
-				return SSLv3_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3:
+						return SSLv3_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_SERVER:
-				return SSLv3_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_SERVER:
+						return SSLv3_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_CLIENT:
-				return SSLv3_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_SSLv3_CLIENT:
+						return SSLv3_client_method();
 #endif
 
 #ifndef OPENSSL_NO_TLS1_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1:
-				return TLSv1_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1:
+						return TLSv1_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_SERVER:
-				return TLSv1_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_SERVER:
+						return TLSv1_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_CLIENT:
-				return TLSv1_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_CLIENT:
+						return TLSv1_client_method();
 #endif
 
 #ifndef OPENSSL_NO_TLS1_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1:
-				return TLSv1_1_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1:
+						return TLSv1_1_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_SERVER:
-				return TLSv1_1_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_SERVER:
+						return TLSv1_1_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_CLIENT:
-				return TLSv1_1_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_1_CLIENT:
+						return TLSv1_1_client_method();
 #endif
 
 #ifndef OPENSSL_NO_TLS1_2_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2:
-				return TLSv1_2_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2:
+						return TLSv1_2_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_SERVER:
-				return TLSv1_2_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_SERVER:
+						return TLSv1_2_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT:
-				return TLSv1_2_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT:
+						return TLSv1_2_client_method();
 #endif
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLS:
-				return DTLS_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS:
+						return DTLS_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_SERVER:
-				return DTLS_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_SERVER:
+						return DTLS_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT:
-				return DTLS_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT:
+						return DTLS_client_method();
 
 #ifndef OPENSSL_NO_DTLS1_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1:
-				return DTLSv1_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1:
+						return DTLSv1_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_SERVER:
-				return DTLSv1_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_SERVER:
+						return DTLSv1_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_CLIENT:
-				return DTLSv1_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_CLIENT:
+						return DTLSv1_client_method();
 #endif
 
 #ifndef OPENSSL_NO_DTLS1_2_METHOD
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2:
-				return DTLSv1_2_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2:
+						return DTLSv1_2_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_SERVER:
-				return DTLSv1_2_server_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_SERVER:
+						return DTLSv1_2_server_method();
 
-			case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT:
-				return DTLSv1_2_client_method();
+					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT:
+						return DTLSv1_2_client_method();
 #endif
-			default:
-				break;
+					default:
+						break;
+					}
+				}
 			}
+
+			return nullptr;
 		}
+
+		char* GET_SSL_METHOD_NAME(const int method);
 	}
-
-	return nullptr;
-}
-
-static char* NET_GET_SSL_METHOD_NAME(const int method)
-{
-	for (auto& val : NET_SSL_METHOD_L)
-	{
-		if (val.method == method)
-			return val.name;
-	}
-
-	return (char*)"UNKNOWN";
 }
 
 ////////////////////////////////////

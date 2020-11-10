@@ -153,6 +153,9 @@
     <ClCompile Include="..\Net\Net.cpp">
       <Filter>Net</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\NetCodes.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\assets\manager\filemanager.h">
@@ -206,9 +209,6 @@
     <ClInclude Include="..\Net\Net.h">
       <Filter>Net</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\NetCodes.hpp">
-      <Filter>Net</Filter>
-    </ClInclude>
     <ClInclude Include="..\Net\Package.h">
       <Filter>Net</Filter>
     </ClInclude>
@@ -229,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="..\Cryption\PointerCryption.h">
       <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\NetCodes.h">
+      <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

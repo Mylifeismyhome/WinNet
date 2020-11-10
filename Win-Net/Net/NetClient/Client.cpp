@@ -4,7 +4,7 @@ NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 Client::Client()
 {
-	NetLoadErrorCodes();
+	Net::Codes::NetLoadErrorCodes();
 	SetAllToDefault();
 	NeedExit = FALSE;
 

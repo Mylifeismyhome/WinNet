@@ -34,7 +34,7 @@ PCSTR IPRef::get() const
 
 Server::Server()
 {
-	NetLoadErrorCodes();
+	Net::Codes::NetLoadErrorCodes();
 	SetAllToDefault();
 }
 
@@ -690,7 +690,7 @@ bool Server::IsRunning() const
 	return bRunning;
 }
 
-bool Server::Start(const char* serverName, const u_short serverPort, const NET_SSL_METHOD Method)
+bool Server::Start(const char* serverName, const u_short serverPort, const ssl::NET_SSL_METHOD Method)
 {
 	if (IsRunning())
 		return false;

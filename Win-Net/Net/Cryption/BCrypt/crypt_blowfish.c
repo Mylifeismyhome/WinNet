@@ -365,8 +365,7 @@ static BF_ctx BF_init_state = {
 	}
 };
 
-static unsigned char BF_itoa64[64 + 1] =
-	"./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+static unsigned char BF_itoa64[64 + 1] = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 static unsigned char BF_atoi64[0x60] = {
 	64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 0, 1,

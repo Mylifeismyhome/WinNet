@@ -856,6 +856,7 @@
     <ClCompile Include="..\Database\MYSQL.cpp" />
     <ClCompile Include="..\ICMP\icmp.cpp" />
     <ClCompile Include="..\Net\Net.cpp" />
+    <ClCompile Include="..\Net\NetCodes.cpp" />
     <ClCompile Include="..\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Package.cpp" />
   </ItemGroup>
@@ -882,7 +883,7 @@
     <ClInclude Include="..\ICMP\icmp.h" />
     <ClInclude Include="..\Net\NativePackages.h" />
     <ClInclude Include="..\Net\Net.h" />
-    <ClInclude Include="..\Net\NetCodes.hpp" />
+    <ClInclude Include="..\Net\NetCodes.h" />
     <ClInclude Include="..\Net\NetString.h" />
     <ClInclude Include="..\Net\Package.h" />
   </ItemGroup>

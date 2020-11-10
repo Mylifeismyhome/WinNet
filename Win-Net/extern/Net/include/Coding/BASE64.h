@@ -14,7 +14,7 @@
 NET_DSA_BEGIN
 
 /* Base64 by NibbleAndAHalf | https://github.com/superwills/NibbleAndAHalf/blob/master/NibbleAndAHalf/ */
-const static char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const static char* b64 = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
 // maps A=>0,B=>1..
 const static unsigned char unb64[] = {

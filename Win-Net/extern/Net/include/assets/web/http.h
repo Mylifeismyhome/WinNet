@@ -109,13 +109,13 @@ friend class HTTPHead;
 SSL_CTX* ctx;
 SSL* ssl;
 
-bool Init(std::string&, NET_SSL_METHOD);
+bool Init(std::string&, ssl::NET_SSL_METHOD);
 bool Inited;
 
 size_t DoSend(std::string&) const;
 size_t DoReceive(byte*&) const;
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(HTTPS, std::string, NET_SSL_METHOD = NET_SSL_METHOD::NET_SSL_METHOD_TLS)
+NET_CLASS_CONSTRUCTUR(HTTPS, std::string, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS)
 NET_CLASS_DESTRUCTUR(HTTPS)
 
 bool IsInited() const;

@@ -899,7 +899,7 @@ bool HTTP::Post()
 	return false;
 }
 
-HTTPS::HTTPS(std::string fullURL, const NET_SSL_METHOD METHOD)
+HTTPS::HTTPS(std::string fullURL, const  ssl::NET_SSL_METHOD METHOD)
 {
 	ctx = nullptr;
 	ssl = nullptr;
@@ -926,14 +926,14 @@ HTTPS::~HTTPS()
 	}
 }
 
-bool HTTPS::Init(std::string& fullURL, const NET_SSL_METHOD METHOD)
+bool HTTPS::Init(std::string& fullURL, const  ssl::NET_SSL_METHOD METHOD)
 {
 	/* Initialize SSL */
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
 
 	// create ctx
-	if ((ctx = SSL_CTX_new(NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
+	if ((ctx = SSL_CTX_new(ssl::NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failed on creating SSL_CTX Object!"));
 		return false;

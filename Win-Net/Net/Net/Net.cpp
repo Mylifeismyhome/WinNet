@@ -27,3 +27,14 @@ const char* Net::VERSION()
 	sprintf_s(version, CSTRING("%i.%i.%i-%s"),		MAJOR_VERSION(), MINOR_VERSION(), REVISION(), KEY());
 	return version;
 }
+
+char* Net::ssl::GET_SSL_METHOD_NAME(const int method)
+{
+	for (auto& val : NET_SSL_METHOD_L)
+	{
+		if (val.method == method)
+			return val.name;
+	}
+
+	return (char*)CSTRING("UNKNOWN");
+}

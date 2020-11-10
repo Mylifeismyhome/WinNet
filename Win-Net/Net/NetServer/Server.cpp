@@ -34,7 +34,7 @@ PCSTR IPRef::get() const
 
 Server::Server()
 {
-	NetLoadErrorCodes();
+	Net::Codes::NetLoadErrorCodes();
 	SetAllToDefault();
 }
 
