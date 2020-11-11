@@ -748,7 +748,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 					LOG(CSTRING("CALLBACK CTX SET INFO!"));
 			});*/
 
-		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), GetServerName(), NET_GET_SSL_METHOD_NAME(Method));
+		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), GetServerName(), NET_GET_SSL_METHOD_NAME(Method).data());
 	}
 
 	// create WSADATA object

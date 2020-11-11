@@ -223,7 +223,7 @@ void AppendRawData(const char* Key, BYTE* data, const size_t size)
 	{
 		if (!strcmp(entry.key(), Key))
 		{
-			LOG_ERROR("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks");
+			LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
 			FREE(data);
 			return;
 		}

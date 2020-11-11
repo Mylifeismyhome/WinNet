@@ -567,6 +567,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -612,6 +613,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -657,6 +659,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -702,6 +705,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -747,6 +751,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib</AdditionalDependencies>
@@ -793,6 +798,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib</AdditionalDependencies>

@@ -106,7 +106,7 @@ inline unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len
 	{
 		// 2 accesses below would be OOB.
 		// catch empty string, return NULL as result.
-		puts("ERROR: You passed an invalid base64 string (too short). You get NULL back.");
+		puts(CSTRING("ERROR: You passed an invalid base64 string (too short). You get NULL back."));
 		*flen = 0;
 		return nullptr;
 	}
@@ -117,8 +117,8 @@ inline unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len
 	const auto bin = new unsigned char[*flen + 1];
 	if (!bin)
 	{
-		puts("ERROR: unbase64 could not allocate enough memory.");
-		puts("I must stop because I could not get enough");
+		puts(CSTRING("ERROR: unbase64 could not allocate enough memory."));
+		puts(CSTRING("I must stop because I could not get enough"));
 		return nullptr;
 	}
 

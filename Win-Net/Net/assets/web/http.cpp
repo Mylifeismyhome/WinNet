@@ -939,7 +939,7 @@ bool HTTPS::Init(std::string& fullURL, const  ssl::NET_SSL_METHOD METHOD)
 		return false;
 	}
 
-	LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), NET_GET_SSL_METHOD_NAME(METHOD));
+	LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), NET_GET_SSL_METHOD_NAME(METHOD).data());
 
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
 
