@@ -496,17 +496,16 @@ extern "C" NET_API inline void md5_sig_from_string(void* signature, const char* 
 {
 	unsigned char* sig_p = nullptr;
 	const char* str_p = nullptr;
-	char* hex = (char*)HEX_STRING;
 	unsigned int high = 0, low = 0, val = 0;
 
 	sig_p = (unsigned char*)signature;
 
 	for (str_p = str; str_p < str + MD5_SIZE * 2; str_p += 2)
 	{
-		high = (unsigned int)(strchr(hex, *str_p) - hex);
-		low = (unsigned int)(strchr(hex, *(str_p + 1)) - hex);
+		high = (unsigned int)(strchr(HEX_STRING, *str_p) - HEX_STRING);
+		low = (unsigned int)(strchr(HEX_STRING, *(str_p + 1)) - HEX_STRING);
 		val = high * 16 + low;
-		*sig_p++ = val;
+		*sig_p++ = static_cast<unsigned char>(val);
 	}
 }
 

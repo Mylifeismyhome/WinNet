@@ -1551,7 +1551,7 @@ void Client::ProcessPackages()
 						return;
 					}
 
-					idx += strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE);
+					idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
 
 					// read entire Package size
 					size_t entirePackageSize = NULL;

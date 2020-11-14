@@ -1,9 +1,10 @@
 #pragma once
 #include <Windows.h>
+#include <Cryption/XOR.h>
 
 NET_DSA_BEGIN
 
-#define HEX_STRING	"0123456789abcdef"	/* to convert to hex */
+#define HEX_STRING	CSTRING("0123456789abcdef")	/* to convert to hex */
 #define BLOCK_SIZE_MASK	(MD5_BLOCK_SIZE - 1)
 
 #if MD5_BIG_ENDIAN

@@ -1268,7 +1268,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(GetAESKeySize() + 1));
 		Random::GetRandStringNew(Key.reference().get(), GetAESKeySize());
 		Key.get()[GetAESKeySize()] = '\0';
-
+		
 		CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
@@ -2133,7 +2133,7 @@ void Server::ProcessPackages(NET_PEER peer)
 						return;
 					}
 
-					idx += strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE);
+					idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
 
 					// read entire Package size
 					size_t entirePackageSize = NULL;

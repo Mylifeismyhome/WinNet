@@ -545,7 +545,7 @@ static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt
 		IPPROTO_TCP,
 		opt.opt,
 		(char*)&opt.type,
-		opt.len);
+		static_cast<int>(opt.len));
 
 	return result;
 }

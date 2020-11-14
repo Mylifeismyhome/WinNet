@@ -14,7 +14,6 @@
 NET_DSA_BEGIN
 
 /* Base64 by NibbleAndAHalf | https://github.com/superwills/NibbleAndAHalf/blob/master/NibbleAndAHalf/ */
-const static char* b64 = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
 // maps A=>0,B=>1..
 const static unsigned char unb64[] = {
@@ -51,7 +50,7 @@ const static unsigned char unb64[] = {
 // (you must pass pointer flen).
 inline unsigned char* Base64_Encode(const unsigned char* data, const size_t len, size_t* flen, const bool preventDelete = false)
 {
-	auto rc = 0;
+	size_t rc = 0;
 	size_t byteNo = 0;
 
 	const auto modulusLen = len % 3;
@@ -65,24 +64,24 @@ inline unsigned char* Base64_Encode(const unsigned char* data, const size_t len,
 		const auto BYTE0 = data[byteNo];
 		const auto BYTE1 = data[byteNo + 1];
 		const auto BYTE2 = data[byteNo + 2];
-		res[rc++] = b64[BYTE0 >> 2];
-		res[rc++] = b64[((0x3 & BYTE0) << 4) + (BYTE1 >> 4)];
-		res[rc++] = b64[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
-		res[rc++] = b64[0x3f & BYTE2];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[BYTE0 >> 2];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x3 & BYTE0) << 4) + (BYTE1 >> 4)];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[0x3f & BYTE2];
 	}
 
 	if (pad == 2)
 	{
-		res[rc++] = b64[data[byteNo] >> 2];
-		res[rc++] = b64[(0x3 & data[byteNo]) << 4];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[data[byteNo] >> 2];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[(0x3 & data[byteNo]) << 4];
 		res[rc++] = '=';
 		res[rc++] = '=';
 	}
 	else if (pad == 1)
 	{
-		res[rc++] = b64[data[byteNo] >> 2];
-		res[rc++] = b64[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
-		res[rc++] = b64[(0x0f & data[byteNo + 1]) << 2];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[data[byteNo] >> 2];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
+		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[(0x0f & data[byteNo + 1]) << 2];
 		res[rc++] = '=';
 	}
 
@@ -98,7 +97,7 @@ inline unsigned char* Base64_Encode(const unsigned char* data, const size_t len,
 
 inline unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len, size_t* flen, const bool preventDelete = false)
 {
-	auto cb = 0;
+	size_t cb = 0;
 	size_t charNo;
 	auto pad = 0;
 

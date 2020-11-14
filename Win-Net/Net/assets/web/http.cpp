@@ -623,7 +623,7 @@ size_t HTTP::DoReceive(byte*& buffer) const
 	do
 	{
 		auto tmpReceive = ALLOC<byte>(GetBufferSize() + 1);
-		result = recv(GetSocket(), reinterpret_cast<char*>(tmpReceive), GetBufferSize(), 0);
+		result = recv(GetSocket(), reinterpret_cast<char*>(tmpReceive), static_cast<int>(GetBufferSize()), 0);
 		if (result == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() == WSANOTINITIALISED)
@@ -1083,7 +1083,7 @@ size_t HTTPS::DoReceive(byte*& buffer) const
 	for (;;)
 	{
 		auto tmpReceive = ALLOC<byte>(GetBufferSize() + 1);
-		const auto result = static_cast<size_t>(SSL_read(ssl, tmpReceive, GetBufferSize()));
+		const auto result = static_cast<size_t>(SSL_read(ssl, tmpReceive, static_cast<int>(GetBufferSize())));
 		if (result <= 0)
 		{
 			const auto err = SSL_get_error(ssl, result);
