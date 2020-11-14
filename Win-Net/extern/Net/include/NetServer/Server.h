@@ -8,6 +8,7 @@ Legend of Variable Names:
 #include <Net/Net.h>
 #include <Net/Package.h>
 #include <Net/NetCodes.h>
+#include <Net/NetVersion.h>
 
 NET_DSA_BEGIN
 

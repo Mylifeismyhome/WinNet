@@ -34,24 +34,6 @@
 
 #include <OpenSSL/ssl.h>
 
-///////////////////////////////////////////////////////////
-//    SECTION - Library Version & Version Key     //
-//////////////////////////////////////////////////////////
-/* Net Key to compare on which version we are running */
-#define NetMajorVersion 3 // Re-Code - Library Changes
-#define NetMinorVersion 4 // Function extension
-#define NetRevision 4 // Issue fixing
-#define NetKey CSTRING("1MFOm3a9as-xieg1iEMIf-pgKHPNlSMP-pgKHPNlSMP")
-
-namespace Net
-{
-	short MAJOR_VERSION();
-	short MINOR_VERSION();
-	short REVISION();
-	std::string KEY();
-	std::string VERSION();
-}
-
 ///////////////////////////////////
 //    SECTION - DEFINES     //
 //////////////////////////////////

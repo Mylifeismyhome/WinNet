@@ -625,7 +625,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 		return;
 	);
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), NetGetErrorMessage(code));
+	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 
 	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
@@ -748,7 +748,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 					LOG(CSTRING("CALLBACK CTX SET INFO!"));
 			});*/
 
-		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), GetServerName(), NET_GET_SSL_METHOD_NAME(Method).data());
+		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), GetServerName(), Net::ssl::GET_SSL_METHOD_NAME(Method).data());
 	}
 
 	// create WSADATA object

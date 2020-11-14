@@ -546,7 +546,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), NetGetErrorMessage(code));
+	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 
 	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
@@ -2719,10 +2719,10 @@ if (!majorVersion.valid()
 	return;
 }
 
-if ((majorVersion.value() == MAJOR_VERSION())
-	&& (minorVersion.value() == MINOR_VERSION())
-	&& (revision.value() == REVISION())
-	&& strcmp(key.value(), KEY().data()) == 0)
+if ((majorVersion.value() == Version::Major())
+	&& (minorVersion.value() == Version::Minor())
+	&& (revision.value() == Version::Revision())
+	&& strcmp(key.value(), Version::Key().data().data()) == 0)
 {
 	peer->NetVersionMatched = true;
 
