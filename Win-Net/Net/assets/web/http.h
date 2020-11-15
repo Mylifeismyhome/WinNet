@@ -10,7 +10,15 @@
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Web)
 NET_DSA_BEGIN
-NET_STRUCT_BEGIN(RequestData_t)
+NET_STRUCT_BEGIN(HeaderData_t)
+char* key;
+char* value;
+
+explicit HeaderData_t(const char*, char*, size_t = INVALID_SIZE);
+explicit HeaderData_t(const char*, const char*, size_t = INVALID_SIZE);
+explicit HeaderData_t(const char*, unsigned char*, size_t = INVALID_SIZE);
+
+void free();
 NET_STRUCT_END
 
 NET_CLASS_BEGIN(Head)
@@ -19,10 +27,8 @@ std::string protocol;
 std::string url;
 std::string path;
 short port;
-
 int BufferSize;
-
-std::string contentType;
+std::vector<HeaderData_t> headerData;
 
 SOCKET connectSocket;
 struct sockaddr_in connectSocketAddr;
@@ -44,9 +50,9 @@ int resultCode;
 
 void ShutdownSocket() const;
 
-void SetRawData(std::string&);
-void SetHeaderContent(std::string&);
-void SetBodyContent(std::string&);
+void SetRawData(std::string);
+void SetHeaderContent(std::string);
+void SetBodyContent(std::string);
 void SetResultCode(int);
 
 SOCKET GetSocket() const;
@@ -79,6 +85,10 @@ void AddParam(const char*, long long);
 void AddParam(const char*, float);
 void AddParam(const char*, const char*);
 void AddJSON(const char*);
+
+void AddHeader(const char*, char*, size_t = INVALID_SIZE);
+void AddHeader(const char*, const char*, size_t = INVALID_SIZE);
+void AddHeader(const char*, unsigned char*, size_t = INVALID_SIZE);
 
 void SetContentType(const char*);
 void SetContentType(std::string&);

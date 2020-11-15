@@ -1,5 +1,68 @@
 #include "http.h"
 
+Net::Web::HeaderData_t::HeaderData_t(const char* key, char* value, const size_t size)
+{
+	this->key = nullptr;
+	this->value = nullptr;
+	
+	const auto keyLen = strlen(key);
+	this->key = ALLOC<char>(keyLen + 1);
+	memcpy(this->key, key, keyLen);
+	this->key[keyLen] = '\0';
+
+	if (!value)
+		return;
+
+	const auto dataSize = size == INVALID_SIZE ? strlen(value) : size;
+	this->value = ALLOC<char>(dataSize + 1);
+	memcpy(this->value, value, dataSize);
+	this->value[dataSize] = '\0';
+}
+
+Net::Web::HeaderData_t::HeaderData_t(const char* key, const char* value, const size_t size)
+{
+	this->key = nullptr;
+	this->value = nullptr;
+	
+	const auto keyLen = strlen(key);
+	this->key = ALLOC<char>(keyLen + 1);
+	memcpy(this->key, key, keyLen);
+	this->key[keyLen] = '\0';
+
+	if (!value)
+		return;
+
+	const auto dataSize = size == INVALID_SIZE ? strlen(value) : size;
+	this->value = ALLOC<char>(dataSize + 1);
+	memcpy(this->value, value, dataSize);
+	this->value[dataSize] = '\0';
+}
+
+Net::Web::HeaderData_t::HeaderData_t(const char* key, unsigned char* value, const size_t size)
+{
+	this->key = nullptr;
+	this->value = nullptr;
+	
+	const auto keyLen = strlen(key);
+	this->key = ALLOC<char>(keyLen + 1);
+	memcpy(this->key, key, keyLen);
+	this->key[keyLen] = '\0';
+
+	if (!value)
+		return;
+
+	const auto dataSize = size == INVALID_SIZE ? strlen(reinterpret_cast<char*>(value)) : size;
+	this->value = ALLOC<char>(dataSize + 1);
+	memcpy(this->value, value, dataSize);
+	this->value[dataSize] = '\0';
+}
+
+void Net::Web::HeaderData_t::free()
+{
+	FREE(this->key);
+	FREE(this->value);
+}
+
 Net::Web::Head::Head()
 {
 	BufferSize = 512; // default
@@ -17,7 +80,9 @@ Net::Web::Head::Head()
 	connectSocket = SOCKET();
 	connectSocketAddr = sockaddr_in();
 
-	contentType = CSTRING("text/html; charset=UTF-8");
+	// Default Header
+	AddHeader(CSTRING("Content-Type"), CSTRING("text/html; charset=UTF-8"));
+	AddHeader(CSTRING("User-Agent"), NET_USER_AGENT);
 }
 
 Net::Web::Head::~Head()
@@ -29,6 +94,12 @@ Net::Web::Head::~Head()
 	LONGLONG_Parameters.clear();
 	FLOAT_Parameters.clear();
 	STRING_Parameters.clear();
+
+	// append header data
+	for (auto& entry : headerData)
+		entry.free();
+
+	headerData.clear();
 }
 
 SOCKET Net::Web::Head::GetSocket() const
@@ -76,17 +147,7 @@ int Net::Web::Head::GetResultCode() const
 	return resultCode;
 }
 
-void Net::Web::Head::SetContentType(const char* type)
-{
-	contentType = type;
-}
-
-void Net::Web::Head::SetContentType(std::string& type)
-{
-	contentType = type;
-}
-
-void Net::Web::Head::SetRawData(std::string& raw)
+void Net::Web::Head::SetRawData(std::string raw)
 {
 	rawData = raw;
 }
@@ -96,7 +157,7 @@ std::string& Net::Web::Head::GetRawData()
 	return rawData;
 }
 
-void Net::Web::Head::SetHeaderContent(std::string& head)
+void Net::Web::Head::SetHeaderContent(std::string head)
 {
 	headContent = head;
 }
@@ -106,7 +167,7 @@ std::string& Net::Web::Head::GetHeaderContent()
 	return headContent;
 }
 
-void Net::Web::Head::SetBodyContent(std::string& body)
+void Net::Web::Head::SetBodyContent(std::string body)
 {
 	bodyContent = body;
 }
@@ -261,6 +322,21 @@ void Net::Web::Head::URL_Decode(std::string& buffer) const
 		}
 	}
 	buffer = ascii;
+}
+
+void Net::Web::Head::AddHeader(const char* key, char* value, const size_t size)
+{
+	headerData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddHeader(const char* key, const char* value, const size_t size)
+{
+	headerData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddHeader(const char* key, unsigned char* value, const size_t size)
+{
+	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
 void Net::Web::Head::AddParam(const char* tag, int value)
@@ -815,8 +891,6 @@ bool Net::Web::HTTP::Get()
 	req.append(CSTRING(" HTTP/1.1"));
 	req.append(CSTRING("\nHost: "));
 	req.append(GetURL());
-	req.append(CSTRING("\nUser-Agent: "));
-	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\n\n"));
 
 	// Params
@@ -869,15 +943,21 @@ bool Net::Web::HTTP::Post()
 	req.append(CSTRING(" HTTP/1.1"));
 	req.append(CSTRING("\nHost: "));
 	req.append(GetURL());
-	req.append(CSTRING("\nUser-Agent: "));
-	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\nContent-Length: "));
 	std::stringstream param_length;
 	param_length << params.length();
 	req.append(param_length.str());
 	param_length.clear();
-	req.append(CSTRING("\nContent-Type: "));
-	req.append(contentType);
+
+	// append header data
+	for (const auto& entry : headerData)
+	{
+		req.append(CSTRING("\n"));
+		req.append(entry.key);
+		req.append(CSTRING(": "));
+		req.append(entry.value);
+	}
+
 	req.append(CSTRING("\n\n"));
 
 	// Params
@@ -1213,8 +1293,6 @@ bool Net::Web::HTTPS::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\nUser-Agent: "));
-	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
@@ -1297,8 +1375,6 @@ bool Net::Web::HTTPS::Post()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\nUser-Agent: "));
-	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Content-Length: "));
 	std::stringstream param_length;
@@ -1306,8 +1382,16 @@ bool Net::Web::HTTPS::Post()
 	req.append(param_length.str());
 	param_length.clear();
 	req.append(CSTRING("\r\n"));
-	req.append(CSTRING("Content-Type: "));
-	req.append(contentType);
+
+	// append header data
+	for (const auto& entry : headerData)
+	{
+		req.append(CSTRING("\n"));
+		req.append(entry.key);
+		req.append(CSTRING(": "));
+		req.append(entry.value);
+	}
+	
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
