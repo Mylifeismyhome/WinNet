@@ -940,12 +940,11 @@ bool Net::Web::HTTP::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\r\n"));
 
 	// append header data
 	for (const auto& entry : headerData)
 	{
-		req.append(CSTRING("\n"));
+		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
 		req.append(CSTRING(": "));
 		req.append(entry.value);
@@ -1021,9 +1020,9 @@ bool Net::Web::HTTP::Post()
 	req.append(CSTRING("POST "));
 	req.append(GetPath());
 	req.append(CSTRING(" HTTP/1.1"));
-	req.append(CSTRING("\nHost: "));
+	req.append(CSTRING("\r\nHost: "));
 	req.append(GetURL());
-	req.append(CSTRING("\nContent-Length: "));
+	req.append(CSTRING("\r\nContent-Length: "));
 	std::stringstream param_length;
 	param_length << params.length();
 	req.append(param_length.str());
@@ -1032,7 +1031,7 @@ bool Net::Web::HTTP::Post()
 	// append header data
 	for (const auto& entry : headerData)
 	{
-		req.append(CSTRING("\n"));
+		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
 		req.append(CSTRING(": "));
 		req.append(entry.value);
@@ -1408,12 +1407,11 @@ bool Net::Web::HTTPS::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\r\n"));
 
 	// append header data
 	for (const auto& entry : headerData)
 	{
-		req.append(CSTRING("\n"));
+		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
 		req.append(CSTRING(": "));
 		req.append(entry.value);
@@ -1542,12 +1540,11 @@ bool Net::Web::HTTPS::Post()
 	param_length << params.length();
 	req.append(param_length.str());
 	param_length.clear();
-	req.append(CSTRING("\r\n"));
 
 	// append header data
 	for (const auto& entry : headerData)
 	{
-		req.append(CSTRING("\n"));
+		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
 		req.append(CSTRING(": "));
 		req.append(entry.value);

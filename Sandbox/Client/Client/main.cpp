@@ -7,7 +7,7 @@
 int main()
 {
 	// test http parsing
-	Net::Web::HTTPS https("https://www.twitch.tv/");
+	Net::Web::HTTPS https("https://bs.to/");
 	if(https.Get())
 	{
 		
