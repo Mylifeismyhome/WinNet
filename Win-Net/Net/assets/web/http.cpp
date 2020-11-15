@@ -1320,6 +1320,7 @@ bool Net::Web::HTTPS::Get()
 	if (!IsInited())
 		return false;
 	
+	auto sslRet = 0;
 	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
 	{
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
@@ -1336,28 +1337,45 @@ bool Net::Web::HTTPS::Get()
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
 		}
+
+		if (connectSocket == INVALID_SOCKET)
+			continue;
+
+		/* Create a SSL object */
+		if ((ssl = SSL_new(ctx)) == nullptr)
+		{
+			LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
+			return false;
+		}
+		
+		/* Attach SSL to the socket */
+		SSL_set_fd(ssl, static_cast<int>(connectSocket));
+
+		/* Connect to SSL on the server side */
+		sslRet = SSL_connect(ssl);
+		if (sslRet <= 0)
+		{
+			if (ssl)
+			{
+				SSL_shutdown(ssl);
+				SSL_free(ssl);
+				ssl = nullptr;
+			}
+			
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
 	}
 
-	if(connectSocket == INVALID_SOCKET)
+	if (sslRet <= 0)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 	
-	/* Create a SSL object */
-	if ((ssl = SSL_new(ctx)) == nullptr)
+	if(connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
-		return false;
-	}
-
-	/* Attach SSL to the socket */
-	SSL_set_fd(ssl, static_cast<int>(connectSocket));
-
-	/* Connect to SSL on the server side */
-	if (SSL_connect(ssl) <= 0)
-	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1419,6 +1437,7 @@ bool Net::Web::HTTPS::Post()
 	if (!IsInited())
 		return false;
 
+	auto sslRet = 0;
 	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
 	{
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
@@ -1435,28 +1454,45 @@ bool Net::Web::HTTPS::Post()
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
 		}
+
+		if (connectSocket == INVALID_SOCKET)
+			continue;
+
+		/* Create a SSL object */
+		if ((ssl = SSL_new(ctx)) == nullptr)
+		{
+			LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
+			return false;
+		}
+
+		/* Attach SSL to the socket */
+		SSL_set_fd(ssl, static_cast<int>(connectSocket));
+
+		/* Connect to SSL on the server side */
+		sslRet = SSL_connect(ssl);
+		if (sslRet <= 0)
+		{
+			if (ssl)
+			{
+				SSL_shutdown(ssl);
+				SSL_free(ssl);
+				ssl = nullptr;
+			}
+
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
+	}
+
+	if(sslRet <= 0)
+	{
+		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		return false;
 	}
 
 	if (connectSocket == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
-		return false;
-	}
-
-	/* Create a SSL object */
-	if ((ssl = SSL_new(ctx)) == nullptr)
-	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
-		return false;
-	}
-
-	/* Attach SSL to the socket */
-	SSL_set_fd(ssl, static_cast<int>(connectSocket));
-
-	/* Connect to SSL on the server side */
-	if (SSL_connect(ssl) <= 0)
-	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 

@@ -18,7 +18,6 @@ int main()
 		LOG_ERROR("%s", https.GetRawData().data());
 	
 	system("pause");
-	return 0;
 
 	Client client;
 	client.SetCryptPackage(true);
