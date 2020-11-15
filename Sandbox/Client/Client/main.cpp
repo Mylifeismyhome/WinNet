@@ -7,7 +7,7 @@
 int main()
 {
 	// test http parsing
-	Net::Web::HTTPS https("https://bs.to/");
+	Net::Web::HTTPS https("https://google.com", Net::ssl::NET_SSL_METHOD_TLSv1_2_CLIENT);
 	if(https.Get())
 	{
 		

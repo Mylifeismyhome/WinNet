@@ -1103,17 +1103,18 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	const auto fullURL = std::string(curl);
 	
 	/* Initialize SSL */
+	SSL_library_init();
+	SSLeay_add_ssl_algorithms();
 	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
 
 	// create ctx
-	if ((ctx = SSL_CTX_new(ssl::NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
+	if ((ctx = SSL_CTX_new(NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failed on creating SSL_CTX Object!"));
 		return false;
 	}
 
-	LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), Net::ssl::GET_SSL_METHOD_NAME(METHOD).data());
+	LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), GET_SSL_METHOD_NAME(METHOD).data());
 
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
 
