@@ -1,8 +1,6 @@
 #include "http.h"
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(web)
-HTTPHead::HTTPHead()
+Net::Web::Head::Head()
 {
 	BufferSize = 512; // default
 
@@ -19,10 +17,10 @@ HTTPHead::HTTPHead()
 	connectSocket = SOCKET();
 	connectSocketAddr = sockaddr_in();
 
-	contentType = CSTRING("application/x-www-form-urlencoded");
+	contentType = CSTRING("text/html; charset=UTF-8");
 }
 
-HTTPHead::~HTTPHead()
+Net::Web::Head::~Head()
 {
 	closesocket(connectSocket);
 
@@ -33,87 +31,87 @@ HTTPHead::~HTTPHead()
 	STRING_Parameters.clear();
 }
 
-SOCKET HTTPHead::GetSocket() const
+SOCKET Net::Web::Head::GetSocket() const
 {
 	return connectSocket;
 }
 
-void HTTPHead::SetBufferSize(const size_t size)
+void Net::Web::Head::SetBufferSize(const int size)
 {
 	BufferSize = size;
 }
 
-size_t HTTPHead::GetBufferSize() const
+int Net::Web::Head::GetBufferSize() const
 {
 	return BufferSize;
 }
 
-std::string& HTTPHead::GetProtocol()
+std::string& Net::Web::Head::GetProtocol()
 {
 	return protocol;
 }
 
-std::string& HTTPHead::GetURL()
+std::string& Net::Web::Head::GetURL()
 {
 	return url;
 }
 
-std::string& HTTPHead::GetPath()
+std::string& Net::Web::Head::GetPath()
 {
 	return path;
 }
 
-short HTTPHead::GetPort() const
+short Net::Web::Head::GetPort() const
 {
 	return port;
 }
 
-void HTTPHead::SetResultCode(const int code)
+void Net::Web::Head::SetResultCode(const int code)
 {
 	resultCode = code;
 }
 
-int HTTPHead::GetResultCode() const
+int Net::Web::Head::GetResultCode() const
 {
 	return resultCode;
 }
 
-void HTTPHead::SetContentType(const char* type)
+void Net::Web::Head::SetContentType(const char* type)
 {
 	contentType = type;
 }
 
-void HTTPHead::SetContentType(std::string& type)
+void Net::Web::Head::SetContentType(std::string& type)
 {
 	contentType = type;
 }
 
-void HTTPHead::SetRawData(std::string& raw)
+void Net::Web::Head::SetRawData(std::string& raw)
 {
 	rawData = raw;
 }
 
-std::string& HTTPHead::GetRawData()
+std::string& Net::Web::Head::GetRawData()
 {
 	return rawData;
 }
 
-void HTTPHead::SetHeaderContent(std::string& head)
+void Net::Web::Head::SetHeaderContent(std::string& head)
 {
 	headContent = head;
 }
 
-std::string& HTTPHead::GetHeaderContent()
+std::string& Net::Web::Head::GetHeaderContent()
 {
 	return headContent;
 }
 
-void HTTPHead::SetBodyContent(std::string& body)
+void Net::Web::Head::SetBodyContent(std::string& body)
 {
 	bodyContent = body;
 }
 
-std::string& HTTPHead::GetBodyContent()
+std::string& Net::Web::Head::GetBodyContent()
 {
 	return bodyContent;
 }
@@ -123,7 +121,7 @@ static bool IsSpecial(const char c)
 	return (c == ' ' || c == '\\' || c == '<' || c == '>' || c == '{' || c == '}' || c == '?' || c == '/' || c == '#' || c == ':');
 }
 
-void HTTPHead::URL_Encode(char*& buffer) const
+void Net::Web::Head::URL_Encode(char*& buffer) const
 {
 	// Convert to Hex
 	static const auto lut = CSTRING("0123456789ABCDEF");
@@ -150,7 +148,7 @@ void HTTPHead::URL_Encode(char*& buffer) const
 	memcpy(buffer, hex.data(), hex.size());
 }
 
-void HTTPHead::URL_Encode(std::string& buffer)
+void Net::Web::Head::URL_Encode(std::string& buffer) const
 {
 	// Convert to Hex
 	static const auto lut = CSTRING("0123456789ABCDEF");
@@ -174,7 +172,7 @@ void HTTPHead::URL_Encode(std::string& buffer)
 	buffer = hex;
 }
 
-void HTTPHead::URL_Decode(char*& buffer) const
+void Net::Web::Head::URL_Decode(char*& buffer) const
 {
 	// Convert to ASCII
 	static const auto lut = CSTRING("0123456789ABCDEF");
@@ -221,7 +219,7 @@ void HTTPHead::URL_Decode(char*& buffer) const
 	memcpy(buffer, ascii.data(), ascii.size());
 }
 
-void HTTPHead::URL_Decode(std::string& buffer) const
+void Net::Web::Head::URL_Decode(std::string& buffer) const
 {
 	// Convert to ASCII
 	static const auto lut = CSTRING("0123456789ABCDEF");
@@ -265,37 +263,37 @@ void HTTPHead::URL_Decode(std::string& buffer) const
 	buffer = ascii;
 }
 
-void HTTPHead::AddParam(const char* tag, int value)
+void Net::Web::Head::AddParam(const char* tag, int value)
 {
 	INT_Parameters.insert(std::make_pair(tag, value));
 }
 
-void HTTPHead::AddParam(const char* tag, long value)
+void Net::Web::Head::AddParam(const char* tag, long value)
 {
 	LONG_Parameters.insert(std::make_pair(tag, value));
 }
 
-void HTTPHead::AddParam(const char* tag, long long value)
+void Net::Web::Head::AddParam(const char* tag, long long value)
 {
 	LONGLONG_Parameters.insert(std::make_pair(tag, value));
 }
 
-void HTTPHead::AddParam(const char* tag, float value)
+void Net::Web::Head::AddParam(const char* tag, float value)
 {
 	FLOAT_Parameters.insert(std::make_pair(tag, value));
 }
 
-void HTTPHead::AddParam(const char* tag, const char* value)
+void Net::Web::Head::AddParam(const char* tag, const char* value)
 {
 	STRING_Parameters.insert(std::make_pair(tag, value));
 }
 
-void HTTPHead::AddJSON(const char* json)
+void Net::Web::Head::AddJSON(const char* json)
 {
 	JSON_Parameters.emplace_back(json);
 }
 
-std::string HTTPHead::GetParameters() const
+std::string Net::Web::Head::GetParameters() const
 {
 	// Add all parameters
 	std::string params;
@@ -305,7 +303,7 @@ std::string HTTPHead::GetParameters() const
 		params.append(CSTRING("="));
 		std::stringstream value;
 		value << it->second;
-		params.append(value.str().c_str());
+		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
 
@@ -315,7 +313,7 @@ std::string HTTPHead::GetParameters() const
 		params.append(CSTRING("="));
 		std::stringstream value;
 		value << it->second;
-		params.append(value.str().c_str());
+		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
 
@@ -325,7 +323,7 @@ std::string HTTPHead::GetParameters() const
 		params.append(CSTRING("="));
 		std::stringstream value;
 		value << it->second;
-		params.append(value.str().c_str());
+		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
 
@@ -335,7 +333,7 @@ std::string HTTPHead::GetParameters() const
 		params.append(CSTRING("="));
 		std::stringstream value;
 		value << it->second;
-		params.append(value.str().c_str());
+		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
 
@@ -345,23 +343,23 @@ std::string HTTPHead::GetParameters() const
 		params.append(CSTRING("="));
 		std::stringstream value;
 		value << it->second;
-		params.append(value.str().c_str());
+		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
 
 	for(auto& entry : JSON_Parameters)
-		params.append(entry.data());
+		params.append(entry);
 
 	const auto deleteLastSplitPos = params.find_last_of(CSTRING("&"));
 	const auto fixedparams = params.substr(0, deleteLastSplitPos);
 	return fixedparams;
 }
 
-bool HTTPHead::ParseResult(byte*& buffer)
+bool Net::Web::Head::ParseResult(byte*& buffer)
 {
 	if (!buffer)
 	{
-		LOG_ERROR(CSTRING("[HTTPHead] - Failure on parsing result, buffer is nullptr"));
+		LOG_ERROR(CSTRING("[Head] - Failure on parsing result, buffer is nullptr"));
 		return false;
 	}
 
@@ -385,7 +383,7 @@ bool HTTPHead::ParseResult(byte*& buffer)
 		const auto resultCode = result.substr(resultCodePos + 9, 3);
 		if (!NET_STRING_IS_NUMBER(resultCode))
 		{
-			LOG_ERROR(CSTRING("[HTTPHead] - Result code is not a number!"));
+			LOG_ERROR(CSTRING("[Head] - Result code is not a number!"));
 			return false;
 		}
 
@@ -395,30 +393,32 @@ bool HTTPHead::ParseResult(byte*& buffer)
 	return GetResultCode() == 200;
 }
 
-void HTTPHead::ShutdownSocket() const
+void Net::Web::Head::ShutdownSocket() const
 {
 	const auto res = shutdown(GetSocket(), SD_SEND);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[HTTPHead] - Failed to shutdown connection: %d"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), WSAGetLastError());
 		closesocket(GetSocket());
 		WSACleanup();
 	}
 }
 
-HTTP::HTTP(std::string fullURL)
+Net::Web::HTTP::HTTP(const char* url)
 {
 	// prepare request
-	Inited = Init(fullURL);
+	Inited = Init(url);
 }
 
-HTTP::~HTTP()
+Net::Web::HTTP::~HTTP()
 {
 	WSACleanup();
 }
 
-bool HTTP::Init(std::string& fullURL)
+bool Net::Web::HTTP::Init(const char* curl)
 {
+	const auto fullURL = std::string(curl);
+	
 	const auto protoclPos = fullURL.find(CSTRING("://"));
 	if (protoclPos == std::string::npos)
 	{
@@ -426,11 +426,6 @@ bool HTTP::Init(std::string& fullURL)
 		return false;
 	}
 	protocol = fullURL.substr(0, protoclPos);
-	/*if (protocol != CSTRING("http"))
-	{
-		LOG_ERROR(CSTRING("[HTTP] - Invalid Protocol, please use NET_HTTPS"));
-		return false;
-	}*/
 
 	const auto pathPos = fullURL.find('/', protoclPos + 3);
 	if (pathPos == std::string::npos)
@@ -461,7 +456,7 @@ bool HTTP::Init(std::string& fullURL)
 			return false;
 		}
 
-		port = std::stoi(tmpport);
+		port = static_cast<short>(std::stoi(tmpport));
 	}
 
 	WSADATA wsaData;
@@ -491,21 +486,21 @@ bool HTTP::Init(std::string& fullURL)
 
 	// set SocketAddr
 	auto addr = in_addr();
-	memcpy(&addr, host->h_addr_list[0], sizeof(in_addr));
+	memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
 	memset(&connectSocketAddr, 0, sizeof(connectSocketAddr));
 	connectSocketAddr.sin_family = AF_INET;
 	connectSocketAddr.sin_addr.s_addr = inet_addr(inet_ntoa(addr));
-	connectSocketAddr.sin_port = htons(port);
+	connectSocketAddr.sin_port = htons(GetPort());
 
 	return true;
 }
 
-bool HTTP::IsInited() const
+bool Net::Web::HTTP::IsInited() const
 {
 	return Inited;
 }
 
-size_t HTTP::DoSend(std::string& buffer) const
+size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 {
 	auto size = buffer.length();
 	do
@@ -616,14 +611,14 @@ size_t HTTP::DoSend(std::string& buffer) const
 	return buffer.length();
 }
 
-size_t HTTP::DoReceive(byte*& buffer) const
+size_t Net::Web::HTTP::DoReceive(byte*& buffer) const
 {
 	size_t data_size = 0;
 	auto result = 0;
 	do
 	{
-		auto tmpReceive = ALLOC<byte>(GetBufferSize() + 1);
-		result = recv(GetSocket(), reinterpret_cast<char*>(tmpReceive), static_cast<int>(GetBufferSize()), 0);
+		auto tmpReceive = ALLOC<byte>(static_cast<size_t>(GetBufferSize()) + 1);
+		result = recv(GetSocket(), reinterpret_cast<char*>(tmpReceive), GetBufferSize(), 0);
 		if (result == SOCKET_ERROR)
 		{
 			if (WSAGetLastError() == WSANOTINITIALISED)
@@ -720,7 +715,7 @@ size_t HTTP::DoReceive(byte*& buffer) const
 				}
 
 				const auto contentLength = std::stoi(cLength);
-				if (data_size >= contentLength)
+				if (static_cast<int>(data_size) >= contentLength)
 					break;
 
 				result = 1;
@@ -764,23 +759,31 @@ size_t HTTP::DoReceive(byte*& buffer) const
 
 		if (!buffer)
 		{
-			buffer = ALLOC<byte>(result + 1);
+			buffer = ALLOC<byte>(static_cast<size_t>(result) + 1);
+			if (!buffer)
+				return 0;
+			
 			memcpy_s(buffer, result, tmpReceive, result);
 			buffer[result] = '\0';
 			data_size = result;
 		}
 		else
 		{
-			auto store = ALLOC<byte>(data_size + 1);
-			memcpy_s(store, data_size, buffer, data_size);
-			store[data_size] = '\0';
-			FREE(buffer);
-			buffer = ALLOC<byte>(data_size + result + 1);
-			memcpy_s(buffer, (data_size + result), store, data_size);
-			memcpy_s(&buffer[data_size], (data_size + result), tmpReceive, result);
-			buffer[(data_size + result)] = '\0';
-			FREE(store);
+			/* store incomming */
+			const auto newBuffer = ALLOC<BYTE>(data_size + result + 1);
+			if (!newBuffer)
+			{
+				FREE(buffer);
+				return 0;
+			}
+			
+			memcpy(newBuffer, buffer, data_size);
+			memcpy(&newBuffer[data_size], tmpReceive, result);
 			data_size += result;
+			newBuffer[data_size] = '\0';
+
+			FREE(buffer);
+			buffer = newBuffer;
 		}
 
 		FREE(tmpReceive);
@@ -788,7 +791,7 @@ size_t HTTP::DoReceive(byte*& buffer) const
 	return data_size;
 }
 
-bool HTTP::Get()
+bool Net::Web::HTTP::Get()
 {
 	if (!IsInited())
 		return false;
@@ -812,6 +815,8 @@ bool HTTP::Get()
 	req.append(CSTRING(" HTTP/1.1"));
 	req.append(CSTRING("\nHost: "));
 	req.append(GetURL());
+	req.append(CSTRING("\nUser-Agent: "));
+	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\n\n"));
 
 	// Params
@@ -840,7 +845,7 @@ bool HTTP::Get()
 	return false;
 }
 
-bool HTTP::Post()
+bool Net::Web::HTTP::Post()
 {
 	if (!IsInited())
 		return false;
@@ -864,13 +869,15 @@ bool HTTP::Post()
 	req.append(CSTRING(" HTTP/1.1"));
 	req.append(CSTRING("\nHost: "));
 	req.append(GetURL());
+	req.append(CSTRING("\nUser-Agent: "));
+	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\nContent-Length: "));
 	std::stringstream param_length;
 	param_length << params.length();
 	req.append(param_length.str());
 	param_length.clear();
 	req.append(CSTRING("\nContent-Type: "));
-	req.append(contentType.data());
+	req.append(contentType);
 	req.append(CSTRING("\n\n"));
 
 	// Params
@@ -899,16 +906,16 @@ bool HTTP::Post()
 	return false;
 }
 
-HTTPS::HTTPS(std::string fullURL, const  ssl::NET_SSL_METHOD METHOD)
+Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
 {
 	ctx = nullptr;
 	ssl = nullptr;
 
 	// prepare request
-	Inited = Init(fullURL, METHOD);
+	Inited = Init(url, METHOD);
 }
 
-HTTPS::~HTTPS()
+Net::Web::HTTPS::~HTTPS()
 {
 	WSACleanup();
 
@@ -926,8 +933,10 @@ HTTPS::~HTTPS()
 	}
 }
 
-bool HTTPS::Init(std::string& fullURL, const  ssl::NET_SSL_METHOD METHOD)
+bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 {
+	const auto fullURL = std::string(curl);
+	
 	/* Initialize SSL */
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
@@ -950,11 +959,6 @@ bool HTTPS::Init(std::string& fullURL, const  ssl::NET_SSL_METHOD METHOD)
 		return false;
 	}
 	protocol = fullURL.substr(0, protoclPos);
-	/*if (protocol != CSTRING("https"))
-	{
-		LOG_ERROR(CSTRING("[HTTPS] - Invalid Protocol, please use NET_HTTP"));
-		return false;
-	}*/
 
 	const auto pathPos = fullURL.find('/', protoclPos + 3);
 	if (pathPos == std::string::npos)
@@ -1015,21 +1019,21 @@ bool HTTPS::Init(std::string& fullURL, const  ssl::NET_SSL_METHOD METHOD)
 
 	// set SocketAddr
 	auto addr = in_addr();
-	memcpy(&addr, host->h_addr_list[0], sizeof(in_addr));
+	memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
 	memset(&connectSocketAddr, 0, sizeof(connectSocketAddr));
 	connectSocketAddr.sin_family = AF_INET;
 	connectSocketAddr.sin_addr.s_addr = inet_addr(inet_ntoa(addr));
-	connectSocketAddr.sin_port = htons(port);
+	connectSocketAddr.sin_port = htons(GetPort());
 
 	return true;
 }
 
-bool HTTPS::IsInited() const
+bool Net::Web::HTTPS::IsInited() const
 {
 	return Inited;
 }
 
-size_t HTTPS::DoSend(std::string& buffer) const
+size_t Net::Web::HTTPS::DoSend(std::string& buffer) const
 {
 	auto res = 0;
 	do
@@ -1077,13 +1081,13 @@ size_t HTTPS::DoSend(std::string& buffer) const
 	return buffer.length();
 }
 
-size_t HTTPS::DoReceive(byte*& buffer) const
+size_t Net::Web::HTTPS::DoReceive(byte*& buffer) const
 {
 	size_t data_size = 0;
 	for (;;)
 	{
-		auto tmpReceive = ALLOC<byte>(GetBufferSize() + 1);
-		const auto result = static_cast<size_t>(SSL_read(ssl, tmpReceive, static_cast<int>(GetBufferSize())));
+		auto tmpReceive = ALLOC<byte>(static_cast<size_t>(GetBufferSize()) + 1);
+		const auto result = SSL_read(ssl, tmpReceive, GetBufferSize());
 		if (result <= 0)
 		{
 			const auto err = SSL_get_error(ssl, result);
@@ -1115,8 +1119,6 @@ size_t HTTPS::DoReceive(byte*& buffer) const
 			{
 				/* Some servers did not close the connection properly */
 				FREE(tmpReceive);
-				//LOG_PEER(CSTRING("[HTTPS] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called"));
-				//return 0;
 				break;
 			}
 			if (err == SSL_ERROR_WANT_READ)
@@ -1134,23 +1136,31 @@ size_t HTTPS::DoReceive(byte*& buffer) const
 
 		if (!buffer)
 		{
-			buffer = ALLOC<byte>(result + 1);
+			buffer = ALLOC<byte>(static_cast<size_t>(result) + 1);
+			if (!buffer)
+				return 0;
+
 			memcpy_s(buffer, result, tmpReceive, result);
 			buffer[result] = '\0';
 			data_size = result;
 		}
 		else
 		{
-			auto store = ALLOC<byte>(data_size + 1);
-			memcpy_s(store, data_size, buffer, data_size);
-			store[data_size] = '\0';
-			FREE(buffer);
-			buffer = ALLOC<byte>(data_size + result + 1);
-			memcpy_s(buffer, (data_size + result), store, data_size);
-			memcpy_s(&buffer[data_size], (data_size + result), tmpReceive, result);
-			buffer[(data_size + result)] = '\0';
-			FREE(store);
+			/* store incomming */
+			const auto newBuffer = ALLOC<BYTE>(data_size + result + 1);
+			if (!newBuffer)
+			{
+				FREE(buffer);
+				return 0;
+			}
+
+			memcpy(newBuffer, buffer, data_size);
+			memcpy(&newBuffer[data_size], tmpReceive, result);
 			data_size += result;
+			newBuffer[data_size] = '\0';
+
+			FREE(buffer);
+			buffer = newBuffer;
 		}
 
 		FREE(tmpReceive);
@@ -1159,7 +1169,7 @@ size_t HTTPS::DoReceive(byte*& buffer) const
 	return data_size;
 }
 
-bool HTTPS::Get()
+bool Net::Web::HTTPS::Get()
 {
 	if (!IsInited())
 		return false;
@@ -1203,6 +1213,8 @@ bool HTTPS::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
+	req.append(CSTRING("\nUser-Agent: "));
+	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
@@ -1241,7 +1253,7 @@ bool HTTPS::Get()
 	return false;
 }
 
-bool HTTPS::Post()
+bool Net::Web::HTTPS::Post()
 {
 	if (!IsInited())
 		return false;
@@ -1285,6 +1297,8 @@ bool HTTPS::Post()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
+	req.append(CSTRING("\nUser-Agent: "));
+	req.append(NET_USER_AGENT);
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Content-Length: "));
 	std::stringstream param_length;
@@ -1293,7 +1307,7 @@ bool HTTPS::Post()
 	param_length.clear();
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Content-Type: "));
-	req.append(contentType.data());
+	req.append(contentType);
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
@@ -1331,5 +1345,3 @@ bool HTTPS::Post()
 
 	return false;
 }
-NET_NAMESPACE_END
-NET_NAMESPACE_END

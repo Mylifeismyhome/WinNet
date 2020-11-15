@@ -1,10 +1,25 @@
 #include "config.h"
 #include "Client/Client.h"
+#include <assets/web/http.h>
 
 #pragma comment(lib, "NetClient.lib")
 
 int main()
 {
+	// test http parsing
+	Net::Web::HTTPS https("https://www.twitch.tv/");
+	if(https.Get())
+	{
+		
+		LOG_ERROR("%s", https.GetHeaderContent().data());
+		LOG("%s", https.GetBodyContent().data());
+	}
+	else
+		LOG_ERROR("%s", https.GetRawData().data());
+	
+	system("pause");
+	return 0;
+
 	Client client;
 	client.SetCryptPackage(true);
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))

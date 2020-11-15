@@ -1,15 +1,11 @@
 #pragma once
-#include <Net/Net.h>
-
+#define NET_BASE64_PATTERN CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
 #define NET_BASE64 const Net::Coding::Base64
 
+#include <Net/Net.h>
 #include <crypto++/includes/base64.h>
-
 #include <Cryption/XOR.h>
-#include <assets/assets.h>
-
 #include <cstdio>
-#include <cstdlib>
 
 NET_DSA_BEGIN
 
@@ -64,24 +60,24 @@ inline unsigned char* Base64_Encode(const unsigned char* data, const size_t len,
 		const auto BYTE0 = data[byteNo];
 		const auto BYTE1 = data[byteNo + 1];
 		const auto BYTE2 = data[byteNo + 2];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[BYTE0 >> 2];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x3 & BYTE0) << 4) + (BYTE1 >> 4)];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[0x3f & BYTE2];
+		res[rc++] = NET_BASE64_PATTERN[BYTE0 >> 2];
+		res[rc++] = NET_BASE64_PATTERN[((0x3 & BYTE0) << 4) + (BYTE1 >> 4)];
+		res[rc++] = NET_BASE64_PATTERN[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
+		res[rc++] = NET_BASE64_PATTERN[0x3f & BYTE2];
 	}
 
 	if (pad == 2)
 	{
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[data[byteNo] >> 2];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[(0x3 & data[byteNo]) << 4];
+		res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
+		res[rc++] = NET_BASE64_PATTERN[(0x3 & data[byteNo]) << 4];
 		res[rc++] = '=';
 		res[rc++] = '=';
 	}
 	else if (pad == 1)
 	{
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[data[byteNo] >> 2];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
-		res[rc++] = CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")[(0x0f & data[byteNo + 1]) << 2];
+		res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
+		res[rc++] = NET_BASE64_PATTERN[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
+		res[rc++] = NET_BASE64_PATTERN[(0x0f & data[byteNo + 1]) << 2];
 		res[rc++] = '=';
 	}
 

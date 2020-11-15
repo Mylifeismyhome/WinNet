@@ -1,27 +1,23 @@
 #pragma once
+#define NET_HTTP Net::Web::HTTP
+#define NET_HTTPS Net::Web::HTTPS
+#define NET_USER_AGENT CSTRING("Net.Net/100")
+
 #include <Net/Net.h>
-#include <Net/NetString.h>
-
-#define NET_HTTP Net::web::HTTP
-#define NET_HTTPS Net::web::HTTPS
-
 #include <assets/assets.h>
-
-#include <OpenSSL/ssl.h>
 #include <OpenSSL/err.h>
 
-NET_DSA_BEGIN
-
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(web)
-NET_CLASS_BEGIN(HTTPHead)
+NET_NAMESPACE_BEGIN(Web)
+NET_DSA_BEGIN
+NET_CLASS_BEGIN(Head)
 NET_CLASS_PROTECTED
 std::string protocol;
 std::string url;
 std::string path;
 short port;
 
-size_t BufferSize;
+int BufferSize;
 
 std::string contentType;
 
@@ -53,11 +49,11 @@ void SetResultCode(int);
 SOCKET GetSocket() const;
 
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(HTTPHead)
-NET_CLASS_DESTRUCTUR(HTTPHead)
+NET_CLASS_CONSTRUCTUR(Head)
+NET_CLASS_DESTRUCTUR(Head)
 
-void SetBufferSize(size_t);
-size_t GetBufferSize() const;
+void SetBufferSize(int);
+int GetBufferSize() const;
 
 std::string& GetProtocol();
 std::string& GetURL();
@@ -70,7 +66,7 @@ std::string& GetRawData();
 int GetResultCode() const;
 
 void URL_Encode(char*&) const;
-void URL_Encode(std::string&);
+void URL_Encode(std::string&) const;
 void URL_Decode(char*&) const;
 void URL_Decode(std::string&) const;
 
@@ -85,16 +81,16 @@ void SetContentType(const char*);
 void SetContentType(std::string&);
 NET_CLASS_END
 
-NET_ABSTRAC_CLASS_BEGIN(HTTP, HTTPHead)
-friend class HTTPHead;
+NET_ABSTRAC_CLASS_BEGIN(HTTP, Head)
+friend class Head;
 
-bool Init(std::string&);
+bool Init(const char*);
 bool Inited;
 
 size_t DoSend(std::string&) const;
 size_t DoReceive(byte*&) const;
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(HTTP, std::string)
+explicit NET_CLASS_CONSTRUCTUR(HTTP, const char*)
 NET_CLASS_DESTRUCTUR(HTTP)
 
 bool IsInited() const;
@@ -104,18 +100,18 @@ bool Get();
 bool Post();
 NET_CLASS_END
 
-NET_ABSTRAC_CLASS_BEGIN(HTTPS, HTTPHead)
-friend class HTTPHead;
+NET_ABSTRAC_CLASS_BEGIN(HTTPS, Head)
+friend class Head;
 SSL_CTX* ctx;
 SSL* ssl;
 
-bool Init(std::string&, ssl::NET_SSL_METHOD);
+bool Init(const char*, ssl::NET_SSL_METHOD);
 bool Inited;
 
 size_t DoSend(std::string&) const;
 size_t DoReceive(byte*&) const;
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(HTTPS, std::string, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS)
+explicit NET_CLASS_CONSTRUCTUR(HTTPS, const char*, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS)
 NET_CLASS_DESTRUCTUR(HTTPS)
 
 bool IsInited() const;
@@ -124,7 +120,6 @@ bool IsInited() const;
 bool Get();
 bool Post();
 NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END
+NET_NAMESPACE_END
