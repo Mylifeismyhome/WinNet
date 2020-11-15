@@ -132,8 +132,8 @@ long GetCalcLatencyInterval() const;
 
 NET_CLASS_PRIVATE
 bool NeedExit;
-SOCKET csocket;
-struct sockaddr_in csocketAddr;
+SOCKET connectSocket;
+struct addrinfo* connectSocketAddr;
 CPOINTER<char> ServerAddress;
 u_short ServerPort;
 bool connected;

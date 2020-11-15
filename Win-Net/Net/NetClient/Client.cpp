@@ -187,35 +187,44 @@ bool Client::Connect(const char* Address, const u_short Port)
 		return false;
 	}
 
-	SetSocket(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
-	if (GetSocket() == INVALID_SOCKET) {
-		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), WSAGetLastError());
-		WSACleanup();
-		return false;
-	}
-
-	const auto host = gethostbyname(Address);
-	if (!host)
-	{
-		LOG_ERROR(CSTRING("[Client] - Could not look up host!:%d!"), Port);
-		return false;
-	}
-
-	// set SocketAddr
-	auto addr = in_addr();
-	memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
-	memset(&csocketAddr, 0, sizeof(csocketAddr));
-	csocketAddr.sin_family = AF_INET;
-	csocketAddr.sin_addr.s_addr = inet_addr(inet_ntoa(addr));
-	csocketAddr.sin_port = htons(Port);
-
 	SetServerAddress(Address);
 	SetServerPort(Port);
 
-	// Connect to Host
-	if (connect(GetSocket(), (sockaddr*)&csocketAddr, sizeof(csocketAddr)) < 0)
+	struct addrinfo hints = {};
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	char port_str[16] = {};
+	sprintf_s(port_str, CSTRING("%hu"), Port);
+	const auto host = getaddrinfo(Address, port_str, &hints, &connectSocketAddr);
+	if (host != 0)
 	{
-		LOG_ERROR(CSTRING("[Client] - could not connect to host: %s:%d!"), GetServerAddress(), GetServerPort());
+		LOG_ERROR(CSTRING("[Client] - Could not look up host: %s:%d!"), GetServerAddress(), GetServerPort());
+		return false;
+	}
+
+	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
+	{
+		SetSocket(socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol));
+		if (GetSocket() == INVALID_SOCKET)
+		{
+			LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), WSAGetLastError());
+			WSACleanup();
+			return false;
+		}
+
+		/* Connect to the server */
+		if (connect(GetSocket(), addr->ai_addr, addr->ai_addrlen) == -1)
+		{
+			closesocket(GetSocket());
+			SetSocket(INVALID_SOCKET);
+		}
+	}
+
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%s"), GetServerAddress(), GetServerPort());
 		return false;
 	}
 
@@ -232,7 +241,6 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	// Set non-blocking mode
 	ChangeMode(GetBlockingMode());
-
 
 	if (GetCryptPackage())
 	{
@@ -328,14 +336,14 @@ bool Client::DoNeedExit() const
 	return NeedExit;
 }
 
-void Client::SetSocket(const SOCKET csocket)
+void Client::SetSocket(const SOCKET connectSocket)
 {
-	this->csocket = csocket;
+	this->connectSocket = connectSocket;
 }
 
 SOCKET Client::GetSocket() const
 {
-	return csocket;
+	return connectSocket;
 }
 
 void Client::SetServerAddress(const char* ServerAddress)
