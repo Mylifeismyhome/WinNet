@@ -326,16 +326,49 @@ void Net::Web::Head::URL_Decode(std::string& buffer) const
 
 void Net::Web::Head::AddHeader(const char* key, char* value, const size_t size)
 {
+	// rewrite existening data
+	for(auto& entry : headerData)
+	{
+		if(!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+	
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
 void Net::Web::Head::AddHeader(const char* key, const char* value, const size_t size)
 {
+	// rewrite existening data
+	for (auto& entry : headerData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+	
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
 void Net::Web::Head::AddHeader(const char* key, unsigned char* value, const size_t size)
 {
+	// rewrite existening data
+	for (auto& entry : headerData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+	
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
