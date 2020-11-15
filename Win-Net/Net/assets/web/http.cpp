@@ -78,7 +78,7 @@ Net::Web::Head::Head()
 	resultCode = -1;
 
 	connectSocket = SOCKET();
-	connectSocketAddr = sockaddr_in();
+	connectSocketAddr = nullptr;
 
 	// Default Header
 	AddHeader(CSTRING("Content-Type"), CSTRING("text/html; charset=UTF-8"));
@@ -522,6 +522,12 @@ Net::Web::HTTP::HTTP(const char* url)
 Net::Web::HTTP::~HTTP()
 {
 	WSACleanup();
+
+	if (connectSocketAddr)
+	{
+		freeaddrinfo(connectSocketAddr);
+		connectSocketAddr = nullptr;
+	}
 }
 
 bool Net::Web::HTTP::Init(const char* curl)
@@ -578,28 +584,19 @@ bool Net::Web::HTTP::Init(const char* curl)
 		return false;
 	}
 
-	connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (connectSocket == INVALID_SOCKET)
-	{
-		LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
-		WSACleanup();
-		return false;
-	}
+	struct addrinfo hints = {};
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	const auto host = gethostbyname(url.data());
-	if (!host)
+	char port_str[16] = {};
+	sprintf_s(port_str, CSTRING("%hu"), GetPort());
+	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
+	if (host != 0)
 	{
 		LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
 		return false;
 	}
-
-	// set SocketAddr
-	auto addr = in_addr();
-	memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
-	memset(&connectSocketAddr, 0, sizeof(connectSocketAddr));
-	connectSocketAddr.sin_family = AF_INET;
-	connectSocketAddr.sin_addr.s_addr = inet_addr(inet_ntoa(addr));
-	connectSocketAddr.sin_port = htons(GetPort());
 
 	return true;
 }
@@ -905,9 +902,27 @@ bool Net::Web::HTTP::Get()
 	if (!IsInited())
 		return false;
 
-	if (connect(GetSocket(), (sockaddr*)&connectSocketAddr, sizeof(connectSocketAddr)) < 0)
+	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - failed to connect to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET)
+		{
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			WSACleanup();
+			return false;
+		}
+
+		/* Connect to the server */
+		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		{
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
+	}
+
+	if (connectSocket == INVALID_SOCKET)
+	{
+		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -957,9 +972,27 @@ bool Net::Web::HTTP::Post()
 	if (!IsInited())
 		return false;
 
-	if (connect(GetSocket(), (sockaddr*)&connectSocketAddr, sizeof(connectSocketAddr)) < 0)
+	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - failed to connect to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET)
+		{
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			WSACleanup();
+			return false;
+		}
+
+		/* Connect to the server */
+		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		{
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
+	}
+
+	if (connectSocket == INVALID_SOCKET)
+	{
+		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1044,6 +1077,12 @@ Net::Web::HTTPS::~HTTPS()
 		SSL_CTX_free(ctx);
 		ctx = nullptr;
 	}
+
+	if(connectSocketAddr)
+	{
+		freeaddrinfo(connectSocketAddr);
+		connectSocketAddr = nullptr;
+	}
 }
 
 bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
@@ -1123,20 +1162,19 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 		return false;
 	}
 
-	const auto host = gethostbyname(url.data());
-	if (!host)
+	struct addrinfo hints = {};
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	char port_str[16] = {};
+	sprintf_s(port_str, CSTRING("%hu"), GetPort());
+	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
+	if (host != 0)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
+		LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
 		return false;
 	}
-
-	// set SocketAddr
-	auto addr = in_addr();
-	memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
-	memset(&connectSocketAddr, 0, sizeof(connectSocketAddr));
-	connectSocketAddr.sin_family = AF_INET;
-	connectSocketAddr.sin_addr.s_addr = inet_addr(inet_ntoa(addr));
-	connectSocketAddr.sin_port = htons(GetPort());
 
 	return true;
 }
@@ -1176,12 +1214,7 @@ size_t Net::Web::HTTPS::DoSend(std::string& buffer) const
 				return 0;
 			}
 			if (err == SSL_ERROR_SSL)
-			{
-				/* Some servers did not close the connection properly */
-				//LOG_PEER(CSTRING("[HTTPS] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called"));
-				//return 0;
 				break;
-			}
 
 			if (err == SSL_ERROR_WANT_WRITE)
 				continue;
@@ -1286,14 +1319,31 @@ bool Net::Web::HTTPS::Get()
 {
 	if (!IsInited())
 		return false;
+	
+	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
+	{
+		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET)
+		{
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			WSACleanup();
+			return false;
+		}
+		
+		/* Connect to the server */
+		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		{
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
+	}
 
-	/* Connect to the server */
-	if (connect(connectSocket, (sockaddr*)&connectSocketAddr, sizeof(connectSocketAddr)) == -1)
+	if(connectSocket == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
-
+	
 	/* Create a SSL object */
 	if ((ssl = SSL_new(ctx)) == nullptr)
 	{
@@ -1369,8 +1419,25 @@ bool Net::Web::HTTPS::Post()
 	if (!IsInited())
 		return false;
 
-	/* Connect to the server */
-	if (connect(connectSocket, (sockaddr*)&connectSocketAddr, sizeof(connectSocketAddr)) == -1)
+	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
+	{
+		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET)
+		{
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			WSACleanup();
+			return false;
+		}
+
+		/* Connect to the server */
+		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		{
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+		}
+	}
+
+	if (connectSocket == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;

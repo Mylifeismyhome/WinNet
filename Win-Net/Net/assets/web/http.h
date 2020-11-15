@@ -31,7 +31,7 @@ int BufferSize;
 std::vector<HeaderData_t> headerData;
 
 SOCKET connectSocket;
-struct sockaddr_in connectSocketAddr;
+struct addrinfo *connectSocketAddr;
 
 std::map<std::string, int>INT_Parameters;
 std::map<std::string, long>LONG_Parameters;
