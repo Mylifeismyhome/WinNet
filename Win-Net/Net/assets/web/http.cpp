@@ -937,9 +937,23 @@ bool Net::Web::HTTP::Get()
 	req.append(CSTRING("GET "));
 	req.append(GetPath());
 	req.append(CSTRING(" HTTP/1.1"));
-	req.append(CSTRING("\nHost: "));
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\n\n"));
+	req.append(CSTRING("\r\n"));
+
+	// append header data
+	for (const auto& entry : headerData)
+	{
+		req.append(CSTRING("\n"));
+		req.append(entry.key);
+		req.append(CSTRING(": "));
+		req.append(entry.value);
+	}
+
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Connection: close"));
+	req.append(CSTRING("\r\n\r\n"));
 
 	// Params
 	req.append(params);
@@ -1385,7 +1399,7 @@ bool Net::Web::HTTPS::Get()
 
 	// Get Parameters
 	auto params = GetParameters();
-
+	
 	// build request
 	std::string req;
 	req.append(CSTRING("GET "));
@@ -1394,6 +1408,17 @@ bool Net::Web::HTTPS::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
+	req.append(CSTRING("\r\n"));
+
+	// append header data
+	for (const auto& entry : headerData)
+	{
+		req.append(CSTRING("\n"));
+		req.append(entry.key);
+		req.append(CSTRING(": "));
+		req.append(entry.value);
+	}
+
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
