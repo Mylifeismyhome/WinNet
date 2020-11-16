@@ -10,8 +10,8 @@
 #include <crypto++/includes/hex.h>
 
 #include <Net/Cryption/XOR.h>
-#include <Coding/HEX.h>
-#include <Coding/BASE64.h>
+#include <Net/Coding/HEX.h>
+#include <Net/Coding/BASE64.h>
 #include <assets/assets.h>
 
 NET_DSA_BEGIN

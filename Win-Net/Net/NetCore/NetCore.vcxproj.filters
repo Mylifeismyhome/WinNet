@@ -60,21 +60,6 @@
     <ClCompile Include="..\assets\assets.cpp">
       <Filter>Assets</Filter>
     </ClCompile>
-    <ClCompile Include="..\Coding\MD5.cpp">
-      <Filter>Coding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Coding\SHA1.cpp">
-      <Filter>Coding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Coding\BASE64.cpp">
-      <Filter>Coding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Coding\Hex.cpp">
-      <Filter>Coding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Compression\Compression.cpp">
-      <Filter>Compression</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
       <Filter>Compression\ZLib</Filter>
     </ClCompile>
@@ -159,6 +144,21 @@
     <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c">
       <Filter>Cryption\BCrypt</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Compression\Compression.cpp">
+      <Filter>Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Coding\MD5.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Coding\SHA1.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Coding\BASE64.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Coding\Hex.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\assets\manager\filemanager.h">
@@ -181,27 +181,6 @@
     </ClInclude>
     <ClInclude Include="..\assets\assets.h">
       <Filter>Assets</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\md5\md5_loc.h">
-      <Filter>Coding\md5</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\MD5.h">
-      <Filter>Coding</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\SHA1.h">
-      <Filter>Coding</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\BASE64.h">
-      <Filter>Coding</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\Hex.h">
-      <Filter>Coding</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Compression\Compression.h">
-      <Filter>Compression</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coding\md5\md5_native.h">
-      <Filter>Coding\md5</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetString.h">
       <Filter>Net</Filter>
@@ -238,6 +217,27 @@
     </ClInclude>
     <ClInclude Include="..\Net\Cryption\XOR.h">
       <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Compression\Compression.h">
+      <Filter>Compression</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\Hex.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\MD5.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\SHA1.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\BASE64.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\md5\md5_native.h">
+      <Filter>Coding\md5</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\md5\md5_loc.h">
+      <Filter>Coding\md5</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

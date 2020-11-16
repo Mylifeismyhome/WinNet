@@ -16,8 +16,8 @@
 #include <Net/Cryption/XOR.h>
 #include <assets/assets.h>
 
-#include <Coding/BASE64.h>
-#include <Coding/Hex.h>
+#include <Net/Coding/BASE64.h>
+#include <Net/Coding/Hex.h>
 
 NET_DSA_BEGIN
 

@@ -20,7 +20,7 @@
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
-#include <Compression/Compression.h>
+#include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
 
 #include <Net/ICMP/icmp.h>

@@ -59,10 +59,10 @@ constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
-#include <Coding/MD5.h>
-#include <Coding/BASE64.h>
-#include <Coding/SHA1.h>
-#include <Compression/Compression.h>
+#include <Net/Coding/MD5.h>
+#include <Net/Coding/BASE64.h>
+#include <Net/Coding/SHA1.h>
+#include <Net/Compression/Compression.h>
 
 #include <OpenSSL/ssl.h>
 #include <OpenSSL/err.h>
