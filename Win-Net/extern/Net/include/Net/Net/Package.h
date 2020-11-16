@@ -22,7 +22,7 @@ NET_NAMESPACE_END
 #include <Net/Net/NetString.h>
 #include <Net/Net/NativePackages.h>
 
-#include <assets/assets.h>
+#include <Net/assets/assets.h>
 
 #include <JSON/document.h>
 #include <JSON/stringbuffer.h>

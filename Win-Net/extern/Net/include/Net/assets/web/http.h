@@ -4,7 +4,7 @@
 #define NET_USER_AGENT CSTRING("Net.Net/100")
 
 #include <Net/Net/Net.h>
-#include <assets/assets.h>
+#include <Net/assets/assets.h>
 #include <OpenSSL/err.h>
 
 NET_NAMESPACE_BEGIN(Net)

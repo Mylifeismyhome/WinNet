@@ -1,5 +1,5 @@
 #include <Net/Net/NetCodes.h>
-#include <assets/manager/logmanager.h>
+#include <Net/assets/manager/logmanager.h>
 
 NET_ERROR_LIST_BEGIN
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_CryptKeyBase64, "Failed to crypt AES Key or encode to Base64");

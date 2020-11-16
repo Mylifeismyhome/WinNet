@@ -839,13 +839,13 @@
     <ClCompile Include="..\..\..\extern\ZLib\trees.c" />
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c" />
     <ClCompile Include="..\..\..\extern\ZLib\zutil.c" />
-    <ClCompile Include="..\assets\assets.cpp" />
-    <ClCompile Include="..\assets\benchmark.cpp" />
-    <ClCompile Include="..\assets\manager\dirmanager.cpp" />
-    <ClCompile Include="..\assets\manager\filemanager.cpp" />
-    <ClCompile Include="..\assets\manager\logmanager.cpp" />
-    <ClCompile Include="..\assets\timer.cpp" />
-    <ClCompile Include="..\assets\web\http.cpp" />
+    <ClCompile Include="..\Net\assets\assets.cpp" />
+    <ClCompile Include="..\Net\assets\benchmark.cpp" />
+    <ClCompile Include="..\Net\assets\manager\dirmanager.cpp" />
+    <ClCompile Include="..\Net\assets\manager\filemanager.cpp" />
+    <ClCompile Include="..\Net\assets\manager\logmanager.cpp" />
+    <ClCompile Include="..\Net\assets\timer.cpp" />
+    <ClCompile Include="..\Net\assets\web\http.cpp" />
     <ClCompile Include="..\Net\Coding\BASE64.cpp" />
     <ClCompile Include="..\Net\Coding\Hex.cpp" />
     <ClCompile Include="..\Net\Coding\MD5.cpp" />
@@ -868,13 +868,13 @@
     <ClCompile Include="..\Net\Net\Package.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\assets\assets.h" />
-    <ClInclude Include="..\assets\benchmark.h" />
-    <ClInclude Include="..\assets\manager\dirmanager.h" />
-    <ClInclude Include="..\assets\manager\filemanager.h" />
-    <ClInclude Include="..\assets\manager\logmanager.h" />
-    <ClInclude Include="..\assets\timer.h" />
-    <ClInclude Include="..\assets\web\http.h" />
+    <ClInclude Include="..\Net\assets\assets.h" />
+    <ClInclude Include="..\Net\assets\benchmark.h" />
+    <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
+    <ClInclude Include="..\Net\assets\manager\filemanager.h" />
+    <ClInclude Include="..\Net\assets\manager\logmanager.h" />
+    <ClInclude Include="..\Net\assets\timer.h" />
+    <ClInclude Include="..\Net\assets\web\http.h" />
     <ClInclude Include="..\Net\Coding\BASE64.h" />
     <ClInclude Include="..\Net\Coding\Hex.h" />
     <ClInclude Include="..\Net\Coding\MD5.h" />

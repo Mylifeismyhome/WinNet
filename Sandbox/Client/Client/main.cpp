@@ -1,6 +1,6 @@
 #include "config.h"
 #include "Client/Client.h"
-#include <assets/web/http.h>
+#include <Net/assets/web/http.h>
 
 #pragma comment(lib, "NetClient.lib")
 

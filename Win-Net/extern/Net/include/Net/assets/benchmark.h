@@ -5,8 +5,8 @@
 #define END_BENCHMARK benchmark.Stop();
 
 #include <Net/Net/Net.h>
-#include <assets/timer.h>
-#include <assets/assets.h>
+#include <Net/assets/timer.h>
+#include <Net/assets/assets.h>
 #include <Net/Net/NetString.h>
 
 NET_NAMESPACE_BEGIN(Net)

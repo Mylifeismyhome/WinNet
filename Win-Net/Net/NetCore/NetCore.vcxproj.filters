@@ -39,27 +39,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\assets\manager\filemanager.cpp">
-      <Filter>Assets\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\manager\logmanager.cpp">
-      <Filter>Assets\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\manager\dirmanager.cpp">
-      <Filter>Assets\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\web\http.cpp">
-      <Filter>Assets\web</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\benchmark.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\timer.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
-    <ClCompile Include="..\assets\assets.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
       <Filter>Compression\ZLib</Filter>
     </ClCompile>
@@ -159,29 +138,29 @@
     <ClCompile Include="..\Net\Coding\Hex.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\assets\benchmark.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\timer.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\assets.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\web\http.cpp">
+      <Filter>Assets\web</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\manager\filemanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\manager\logmanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\assets\manager\dirmanager.cpp">
+      <Filter>Assets\manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\assets\manager\filemanager.h">
-      <Filter>Assets\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\manager\logmanager.h">
-      <Filter>Assets\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\manager\dirmanager.h">
-      <Filter>Assets\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\web\http.h">
-      <Filter>Assets\web</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\benchmark.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\timer.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
-    <ClInclude Include="..\assets\assets.h">
-      <Filter>Assets</Filter>
-    </ClInclude>
     <ClInclude Include="..\Net\Net\NetString.h">
       <Filter>Net</Filter>
     </ClInclude>
@@ -238,6 +217,27 @@
     </ClInclude>
     <ClInclude Include="..\Net\Coding\md5\md5_loc.h">
       <Filter>Coding\md5</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\benchmark.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\timer.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\assets.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\web\http.h">
+      <Filter>Assets\web</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\manager\dirmanager.h">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\manager\filemanager.h">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\manager\logmanager.h">
+      <Filter>Assets\manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

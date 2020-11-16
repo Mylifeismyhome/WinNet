@@ -14,7 +14,7 @@
 #include <crypto++/includes/pem.h>
 
 #include <Net/Cryption/XOR.h>
-#include <assets/assets.h>
+#include <Net/assets/assets.h>
 
 #include <Net/Coding/BASE64.h>
 #include <Net/Coding/Hex.h>

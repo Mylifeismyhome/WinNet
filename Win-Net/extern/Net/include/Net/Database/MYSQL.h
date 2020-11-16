@@ -1,7 +1,7 @@
 #pragma once
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
-#include <assets/manager/logmanager.h>
+#include <Net/assets/manager/logmanager.h>
 
 NET_DSA_BEGIN
 

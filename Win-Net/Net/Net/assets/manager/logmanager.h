@@ -1,8 +1,8 @@
 #pragma once
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
-#include <assets/assets.h>
-#include <assets/manager/filemanager.h>
+#include <Net/assets/assets.h>
+#include <Net/assets/manager/filemanager.h>
 
 NET_DSA_BEGIN
 
