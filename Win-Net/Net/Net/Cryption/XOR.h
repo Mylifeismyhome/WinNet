@@ -1,6 +1,6 @@
 #pragma once
 #include <Net/Net/Net.h>
-#include <Cryption/PointerCryption.h>
+#include <Net/Cryption/PointerCryption.h>
 
 NET_DSA_BEGIN
 

@@ -3,7 +3,7 @@
 
 #include <Net/Net/Net.h>
 #include <crypto++/includes/hex.h>
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 #include <assets/assets.h>
 
 NET_NAMESPACE_BEGIN(Net)

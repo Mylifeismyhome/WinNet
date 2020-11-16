@@ -18,12 +18,12 @@
 #include <Net/Net/NetCodes.h>
 #include <Net/Net/NetVersion.h>
 
-#include <Cryption/AES.h>
-#include <Cryption/RSA.h>
+#include <Net/Cryption/AES.h>
+#include <Net/Cryption/RSA.h>
 #include <Compression/Compression.h>
-#include <Cryption/PointerCryption.h>
+#include <Net/Cryption/PointerCryption.h>
 
-#include <ICMP/icmp.h>
+#include <Net/ICMP/icmp.h>
 
 constexpr auto DEFAULT_MAX_THREADS = 2;
 constexpr auto DEFAULT_RSA_KEY_SIZE = 1024;

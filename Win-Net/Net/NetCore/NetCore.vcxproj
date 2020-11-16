@@ -851,16 +851,16 @@
     <ClCompile Include="..\Coding\MD5.cpp" />
     <ClCompile Include="..\Coding\SHA1.cpp" />
     <ClCompile Include="..\Compression\Compression.cpp" />
-    <ClCompile Include="..\Cryption\AES.cpp" />
-    <ClCompile Include="..\Cryption\BCrypt\bcrypt.c" />
-    <ClCompile Include="..\Cryption\BCrypt\crypt_blowfish.c" />
-    <ClCompile Include="..\Cryption\BCrypt\crypt_gensalt.c" />
-    <ClCompile Include="..\Cryption\BCrypt\main.cpp" />
-    <ClCompile Include="..\Cryption\BCrypt\wrapper.c" />
-    <ClCompile Include="..\Cryption\RSA.cpp" />
-    <ClCompile Include="..\Cryption\XOR.cpp" />
-    <ClCompile Include="..\Database\MYSQL.cpp" />
-    <ClCompile Include="..\ICMP\icmp.cpp" />
+    <ClCompile Include="..\Net\Cryption\AES.cpp" />
+    <ClCompile Include="..\Net\Cryption\BCrypt\bcrypt.c" />
+    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_blowfish.c" />
+    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c" />
+    <ClCompile Include="..\Net\Cryption\BCrypt\main.cpp" />
+    <ClCompile Include="..\Net\Cryption\BCrypt\wrapper.c" />
+    <ClCompile Include="..\Net\Cryption\RSA.cpp" />
+    <ClCompile Include="..\Net\Cryption\XOR.cpp" />
+    <ClCompile Include="..\Net\Database\MYSQL.cpp" />
+    <ClCompile Include="..\Net\ICMP\icmp.cpp" />
     <ClCompile Include="..\Net\Net\Net.cpp" />
     <ClCompile Include="..\Net\Net\NetCodes.cpp" />
     <ClCompile Include="..\Net\Net\NetString.cpp" />
@@ -882,12 +882,12 @@
     <ClInclude Include="..\Coding\md5\md5_native.h" />
     <ClInclude Include="..\Coding\SHA1.h" />
     <ClInclude Include="..\Compression\Compression.h" />
-    <ClInclude Include="..\Cryption\AES.h" />
-    <ClInclude Include="..\Cryption\PointerCryption.h" />
-    <ClInclude Include="..\Cryption\RSA.h" />
-    <ClInclude Include="..\Cryption\XOR.h" />
-    <ClInclude Include="..\Database\MYSQL.h" />
-    <ClInclude Include="..\ICMP\icmp.h" />
+    <ClInclude Include="..\Net\Cryption\AES.h" />
+    <ClInclude Include="..\Net\Cryption\PointerCryption.h" />
+    <ClInclude Include="..\Net\Cryption\RSA.h" />
+    <ClInclude Include="..\Net\Cryption\XOR.h" />
+    <ClInclude Include="..\Net\Database\MYSQL.h" />
+    <ClInclude Include="..\Net\ICMP\icmp.h" />
     <ClInclude Include="..\Net\Net\NativePackages.h" />
     <ClInclude Include="..\Net\Net\Net.h" />
     <ClInclude Include="..\Net\Net\NetCodes.h" />
@@ -896,7 +896,7 @@
     <ClInclude Include="..\Net\Net\Package.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Cryption\BCrypt\x86.S" />
+    <None Include="..\Net\Cryption\BCrypt\x86.S" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

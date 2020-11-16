@@ -57,8 +57,8 @@ constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
 constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
-#include <Cryption/AES.h>
-#include <Cryption/RSA.h>
+#include <Net/Cryption/AES.h>
+#include <Net/Cryption/RSA.h>
 #include <Coding/MD5.h>
 #include <Coding/BASE64.h>
 #include <Coding/SHA1.h>
@@ -67,7 +67,7 @@ constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 #include <OpenSSL/ssl.h>
 #include <OpenSSL/err.h>
 
-#include <ICMP/icmp.h>
+#include <Net/ICMP/icmp.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)

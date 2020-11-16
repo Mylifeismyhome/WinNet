@@ -23,14 +23,14 @@
 #include <Net/Net/NetCodes.h>
 #include <Net/Net/NetVersion.h>
 
-#include <Cryption/AES.h>
-#include <Cryption/RSA.h>
+#include <Net/Cryption/AES.h>
+#include <Net/Cryption/RSA.h>
 #include <Coding/MD5.h>
 #include <Coding/BASE64.h>
 #include <Coding/SHA1.h>
 #include <Compression/Compression.h>
 
-#include <ICMP/icmp.h>
+#include <Net/ICMP/icmp.h>
 
 /* DEFAULT SETTINGS AS MACRO */
 constexpr auto DEFAULT_SERVER_SERVERNAME = "UNKNOWN";

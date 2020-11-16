@@ -13,7 +13,7 @@
 #include <crypto++/includes/base64.h>
 #include <crypto++/includes/pem.h>
 
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 #include <assets/assets.h>
 
 #include <Coding/BASE64.h>

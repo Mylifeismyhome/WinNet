@@ -4,7 +4,7 @@
 
 #include <Net/Net/Net.h>
 #include <crypto++/includes/base64.h>
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 #include <cstdio>
 
 NET_DSA_BEGIN

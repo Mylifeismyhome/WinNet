@@ -1,7 +1,7 @@
 #pragma once
 #include <Net/Net/Net.h>
 #include <assets/manager/dirmanager.h>
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 
 NET_DSA_BEGIN
 

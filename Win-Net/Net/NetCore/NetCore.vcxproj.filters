@@ -114,36 +114,6 @@
     <ClCompile Include="..\..\..\extern\ZLib\trees.c">
       <Filter>Compression\ZLib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Cryption\RSA.cpp">
-      <Filter>Cryption</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\XOR.cpp">
-      <Filter>Cryption</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\AES.cpp">
-      <Filter>Cryption</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ICMP\icmp.cpp">
-      <Filter>ICMP</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Database\MYSQL.cpp">
-      <Filter>Database</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\BCrypt\main.cpp">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\BCrypt\wrapper.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\BCrypt\bcrypt.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\BCrypt\crypt_blowfish.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Cryption\BCrypt\crypt_gensalt.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
     <ClCompile Include="..\Net\Net\NetString.cpp">
       <Filter>Net</Filter>
     </ClCompile>
@@ -158,6 +128,36 @@
     </ClCompile>
     <ClCompile Include="..\Net\Net\NetCodes.cpp">
       <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\ICMP\icmp.cpp">
+      <Filter>ICMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Database\MYSQL.cpp">
+      <Filter>Database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\RSA.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\XOR.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\AES.cpp">
+      <Filter>Cryption</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\BCrypt\main.cpp">
+      <Filter>Cryption\BCrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\BCrypt\wrapper.c">
+      <Filter>Cryption\BCrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\BCrypt\bcrypt.c">
+      <Filter>Cryption\BCrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_blowfish.c">
+      <Filter>Cryption\BCrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c">
+      <Filter>Cryption\BCrypt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -200,26 +200,8 @@
     <ClInclude Include="..\Compression\Compression.h">
       <Filter>Compression</Filter>
     </ClInclude>
-    <ClInclude Include="..\Cryption\RSA.h">
-      <Filter>Cryption</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Cryption\XOR.h">
-      <Filter>Cryption</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Cryption\AES.h">
-      <Filter>Cryption</Filter>
-    </ClInclude>
     <ClInclude Include="..\Coding\md5\md5_native.h">
       <Filter>Coding\md5</Filter>
-    </ClInclude>
-    <ClInclude Include="..\ICMP\icmp.h">
-      <Filter>ICMP</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Database\MYSQL.h">
-      <Filter>Database</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Cryption\PointerCryption.h">
-      <Filter>Cryption</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetString.h">
       <Filter>Net</Filter>
@@ -239,9 +221,27 @@
     <ClInclude Include="..\Net\Net\NetCodes.h">
       <Filter>Net</Filter>
     </ClInclude>
+    <ClInclude Include="..\Net\ICMP\icmp.h">
+      <Filter>ICMP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Database\MYSQL.h">
+      <Filter>Database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Cryption\AES.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Cryption\PointerCryption.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Cryption\RSA.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Cryption\XOR.h">
+      <Filter>Cryption</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Cryption\BCrypt\x86.S">
+    <None Include="..\Net\Cryption\BCrypt\x86.S">
       <Filter>Cryption\BCrypt</Filter>
     </None>
   </ItemGroup>

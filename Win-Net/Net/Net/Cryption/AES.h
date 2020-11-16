@@ -9,7 +9,7 @@
 #include <crypto++/includes/base64.h>
 #include <crypto++/includes/hex.h>
 
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 #include <Coding/HEX.h>
 #include <Coding/BASE64.h>
 #include <assets/assets.h>

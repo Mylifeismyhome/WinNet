@@ -1,6 +1,6 @@
 #pragma once
 #include <Windows.h>
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 
 NET_DSA_BEGIN
 

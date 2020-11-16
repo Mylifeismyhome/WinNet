@@ -2,7 +2,7 @@
 #define NET_STRING_NOT_FOUND (size_t)(~0)
 
 #include <Net/Net/Net.h>
-#include <Cryption/XOR.h>
+#include <Net/Cryption/XOR.h>
 
 NET_DSA_BEGIN
 
