@@ -913,7 +913,7 @@ bool Net::Web::HTTP::Get()
 		}
 
 		/* Connect to the server */
-		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		if (connect(connectSocket, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
@@ -996,7 +996,7 @@ bool Net::Web::HTTP::Post()
 		}
 
 		/* Connect to the server */
-		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		if (connect(connectSocket, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
@@ -1346,7 +1346,7 @@ bool Net::Web::HTTPS::Get()
 		}
 		
 		/* Connect to the server */
-		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		if (connect(connectSocket, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
@@ -1473,7 +1473,7 @@ bool Net::Web::HTTPS::Post()
 		}
 
 		/* Connect to the server */
-		if (connect(connectSocket, addr->ai_addr, addr->ai_addrlen) == -1)
+		if (connect(connectSocket, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;

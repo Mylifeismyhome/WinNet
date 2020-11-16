@@ -1,10 +1,22 @@
 #pragma once
-#include <Net/Net.h>
-#include <Net/Package.h>
-#include <Net/NetCodes.h>
-#include <Net/NetVersion.h>
-
 #define NET_CLIENT Net::Client::Client
+
+#define PKG pkg
+#define FUNCTION_NAME CASTRING("On" __FUNCTION__)
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) {
+
+#define NET_END_FUNC_PACKAGE }
+#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
+#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKAGE)
+#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+
+#define NET_SEND DoSend
+
+#include <Net/Net/Net.h>
+#include <Net/Net/Package.h>
+#include <Net/Net/NetCodes.h>
+#include <Net/Net/NetVersion.h>
 
 #include <Cryption/AES.h>
 #include <Cryption/RSA.h>
@@ -23,22 +35,9 @@ constexpr auto DEFAULT_FREQUENZ = 66;
 constexpr auto DEFAULT_MAX_PACKET_SIZE = 65536;
 constexpr auto DEFAULT_CALC_LATENCY_INTERVAL = 10; // Seconds
 
-NET_DSA_BEGIN
-
-#define PKG pkg
-#define FUNCTION_NAME CASTRING("On" __FUNCTION__)
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) {
-
-#define NET_END_FUNC_PACKAGE }
-#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
-#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKAGE)
-#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
-
-#define NET_SEND DoSend
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
+NET_DSA_BEGIN
 NET_STRUCT_BEGIN(rawData_t)
 BYTE* data;
 size_t size;
@@ -218,7 +217,6 @@ NET_DEFINE_CALLBACK(void, OnKeysFailed) {}
 NET_DEFINE_CALLBACK(void, OnConnectionEstabilished) {}
 NET_DEFINE_CALLBACK(void, OnVersionMismatch) {}
 NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END
+NET_NAMESPACE_END

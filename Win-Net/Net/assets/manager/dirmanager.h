@@ -1,5 +1,5 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <assets/manager/logmanager.h>
 #include <list>
 #include <corecrt_io.h>

@@ -1,15 +1,26 @@
 #pragma once
-/*
-Legend of Variable Names:
- s => Settings
- h => Handshake
-*/
+#define NET_WEB_SERVER Net::WebServer::Server
 
-#include <Net/Net.h>
-#include <Net/Package.h>
-#include <Net/NetCodes.h>
+#define NET_IPEER peerInfo
+#define NET_PEER peerInfo*
 
-NET_DSA_BEGIN
+#define PEER peer
+#define PKG pkg
+#define FUNCTION_NAME NET_FUNCTIONNAME
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
+	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
+
+#define NET_END_FUNC_PACKAGE }
+#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
+#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKAGE)
+#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+
+#define NET_SEND DoSend
+
+#include <Net/Net/Net.h>
+#include <Net/Net/Package.h>
+#include <Net/Net/NetCodes.h>
 
 /* Websocket frame protocol operationcodes */
 constexpr auto OPCODE_CONTINUE = 0x0;
@@ -46,25 +57,6 @@ constexpr auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
 constexpr auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
 constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
-#define NET_WEB_SERVER Net::WebServer::Server
-
-#define NET_IPEER peerInfo
-#define NET_PEER peerInfo*
-
-#define PEER peer
-#define PKG pkg
-#define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
-	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
-
-#define NET_END_FUNC_PACKAGE }
-#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
-#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKAGE)
-#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
-
-#define NET_SEND DoSend
-
 #include <Cryption/AES.h>
 #include <Cryption/RSA.h>
 #include <Coding/MD5.h>
@@ -79,6 +71,7 @@ constexpr auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
+NET_DSA_BEGIN
 NET_CLASS_BEGIN(IPRef)
 char* pointer;
 
@@ -310,7 +303,6 @@ NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END
+NET_NAMESPACE_END

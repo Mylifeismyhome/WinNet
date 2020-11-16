@@ -1,7 +1,7 @@
 #pragma once
 #define NET_RSA Net::Cryption::NETRSA
 
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 
 #include <OpenSSL/rsa.h>
 #include <OpenSSL/pem.h>

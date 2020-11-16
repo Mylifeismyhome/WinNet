@@ -3,7 +3,7 @@
 #define NET_HTTPS Net::Web::HTTPS
 #define NET_USER_AGENT CSTRING("Net.Net/100")
 
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <assets/assets.h>
 #include <OpenSSL/err.h>
 

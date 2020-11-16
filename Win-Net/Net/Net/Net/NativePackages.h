@@ -1,14 +1,13 @@
 #pragma once
-#include <Net/Net.h>
-#include <Net/Package.h>
-
 #define NET_NATIVE_PACKAGE_ID Net::NativePackages::PacketTypes
 #define NET_LAST_PACKAGE_ID Net::NativePackages::PacketTypes::PKG_LAST_PACKAGE
 
-NET_DSA_BEGIN
+#include <Net/Net/Net.h>
+#include <Net/Net/Package.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(NativePackages)
+NET_DSA_BEGIN
 enum PacketTypes
 {
 	PKG_RSAHandshake = 0,
@@ -18,7 +17,6 @@ enum PacketTypes
 
 	PKG_LAST_PACKAGE
 };
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END
+NET_NAMESPACE_END

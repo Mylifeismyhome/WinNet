@@ -1,4 +1,4 @@
-#include <Net/NetVersion.h>
+#include <Net/Net/NetVersion.h>
 
 short Net::Version::Major()
 {

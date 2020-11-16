@@ -1,4 +1,4 @@
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include "Cryption/XOR.h"
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)

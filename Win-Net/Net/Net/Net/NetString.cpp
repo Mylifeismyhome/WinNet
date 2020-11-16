@@ -1,4 +1,4 @@
-#include <Net/NetString.h>
+#include <Net/Net/NetString.h>
 
 NetUniquePointer::NetUniquePointer(void* in)
 {

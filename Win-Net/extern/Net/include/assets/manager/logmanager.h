@@ -1,6 +1,6 @@
 #pragma once
-#include <Net/Net.h>
-#include <Net/NetString.h>
+#include <Net/Net/Net.h>
+#include <Net/Net/NetString.h>
 #include <assets/assets.h>
 #include <assets/manager/filemanager.h>
 

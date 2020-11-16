@@ -2,7 +2,7 @@
 #define NET_BASE64_PATTERN CSTRING("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
 #define NET_BASE64 const Net::Coding::Base64
 
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <crypto++/includes/base64.h>
 #include <Cryption/XOR.h>
 #include <cstdio>

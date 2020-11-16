@@ -1,11 +1,10 @@
 #pragma once
-#include <Net/Net.h>
-
-NET_DSA_BEGIN
-
 #define NET_TIMER Net::Timer
 
+#include <Net/Net/Net.h>
+
 NET_NAMESPACE_BEGIN(Net)
+NET_DSA_BEGIN
 NET_CLASS_BEGIN(Timer)
 std::chrono::time_point<std::chrono::high_resolution_clock> start;
 std::chrono::time_point<std::chrono::high_resolution_clock> end;
@@ -30,6 +29,5 @@ long long GetStartTime() const;
 long long GetEndTime() const;
 double GetTimePassed() const;
 NET_CLASS_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END

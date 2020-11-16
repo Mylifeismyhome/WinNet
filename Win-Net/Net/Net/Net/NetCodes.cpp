@@ -1,4 +1,4 @@
-#include <Net/NetCodes.h>
+#include <Net/Net/NetCodes.h>
 #include <assets/manager/logmanager.h>
 
 NET_ERROR_LIST_BEGIN

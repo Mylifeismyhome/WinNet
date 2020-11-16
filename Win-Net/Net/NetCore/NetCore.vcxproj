@@ -861,11 +861,11 @@
     <ClCompile Include="..\Cryption\XOR.cpp" />
     <ClCompile Include="..\Database\MYSQL.cpp" />
     <ClCompile Include="..\ICMP\icmp.cpp" />
-    <ClCompile Include="..\Net\Net.cpp" />
-    <ClCompile Include="..\Net\NetCodes.cpp" />
-    <ClCompile Include="..\Net\NetString.cpp" />
-    <ClCompile Include="..\Net\NetVersion.cpp" />
-    <ClCompile Include="..\Net\Package.cpp" />
+    <ClCompile Include="..\Net\Net\Net.cpp" />
+    <ClCompile Include="..\Net\Net\NetCodes.cpp" />
+    <ClCompile Include="..\Net\Net\NetString.cpp" />
+    <ClCompile Include="..\Net\Net\NetVersion.cpp" />
+    <ClCompile Include="..\Net\Net\Package.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\assets\assets.h" />
@@ -888,12 +888,12 @@
     <ClInclude Include="..\Cryption\XOR.h" />
     <ClInclude Include="..\Database\MYSQL.h" />
     <ClInclude Include="..\ICMP\icmp.h" />
-    <ClInclude Include="..\Net\NativePackages.h" />
-    <ClInclude Include="..\Net\Net.h" />
-    <ClInclude Include="..\Net\NetCodes.h" />
-    <ClInclude Include="..\Net\NetString.h" />
-    <ClInclude Include="..\Net\NetVersion.h" />
-    <ClInclude Include="..\Net\Package.h" />
+    <ClInclude Include="..\Net\Net\NativePackages.h" />
+    <ClInclude Include="..\Net\Net\Net.h" />
+    <ClInclude Include="..\Net\Net\NetCodes.h" />
+    <ClInclude Include="..\Net\Net\NetString.h" />
+    <ClInclude Include="..\Net\Net\NetVersion.h" />
+    <ClInclude Include="..\Net\Net\Package.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Cryption\BCrypt\x86.S" />

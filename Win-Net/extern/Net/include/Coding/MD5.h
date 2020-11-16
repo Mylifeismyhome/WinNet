@@ -1,5 +1,5 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <Coding/md5/md5_native.h>
 
 NET_DSA_BEGIN

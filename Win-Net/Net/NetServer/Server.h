@@ -1,17 +1,4 @@
 #pragma once
-
-/*
-Legend of Variable Names:
- s => Settings
-*/
-
-#include <Net/Net.h>
-#include <Net/Package.h>
-#include <Net/NetCodes.h>
-#include <Net/NetVersion.h>
-
-NET_DSA_BEGIN
-
 #define NET_SERVER Net::Server::Server
 
 #define NET_IPEER peerInfo
@@ -30,6 +17,11 @@ NET_DSA_BEGIN
 #define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
 
 #define NET_SEND DoSend
+
+#include <Net/Net/Net.h>
+#include <Net/Net/Package.h>
+#include <Net/Net/NetCodes.h>
+#include <Net/Net/NetVersion.h>
 
 #include <Cryption/AES.h>
 #include <Cryption/RSA.h>
@@ -57,6 +49,7 @@ constexpr auto SERVERNAME_LENGTH = 128;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
+NET_DSA_BEGIN
 NET_CLASS_BEGIN(IPRef)
 char* pointer;
 
@@ -291,7 +284,6 @@ NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
 NET_DSA_END
+NET_NAMESPACE_END
+NET_NAMESPACE_END

@@ -5,9 +5,22 @@
 	Package PKGNEW; \
 	PKGNEW.SetPackage(PKGOLD.GetPackage());
 
-#include <Net/Net.h>
-#include <Net/NetString.h>
-#include <Net/NativePackages.h>
+///////////////////////////////////////////////////////////
+///																	///
+///		  FAST PACKAGE ID IMPLEMENTATION	    ///
+///																	///
+//////////////////////////////////////////////////////////
+#define NET_DEFINE_PACKAGE_ID(name, ...) \
+NET_NAMESPACE_BEGIN(name) \
+enum T##name \
+{ \
+__VA_ARGS__ \
+}; \
+NET_NAMESPACE_END
+
+#include <Net/Net/Net.h>
+#include <Net/Net/NetString.h>
+#include <Net/Net/NativePackages.h>
 
 #include <assets/assets.h>
 
@@ -346,18 +359,4 @@ Package_t_Array Array(const char*);
 Package_RawData_t RawData(const char*);
 NET_CLASS_END
 NET_NAMESPACE_END
-
-///////////////////////////////////////////////////////////
-///																	///
-///		  FAST PACKAGE ID IMPLEMENTATION	    ///
-///																	///
-//////////////////////////////////////////////////////////
-#define NET_DEFINE_PACKAGE_ID(name, ...) \
-NET_NAMESPACE_BEGIN(name) \
-enum T##name \
-{ \
-__VA_ARGS__ \
-}; \
-NET_NAMESPACE_END
-
 NET_DSA_END

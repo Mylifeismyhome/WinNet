@@ -1,5 +1,5 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 
 #define NET_ZLIB Net::Compression::ZLib
 

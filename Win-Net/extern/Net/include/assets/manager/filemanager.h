@@ -1,5 +1,5 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include "Cryption/XOR.h"
 
 NET_DSA_BEGIN

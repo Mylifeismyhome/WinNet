@@ -215,7 +215,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 		}
 
 		/* Connect to the server */
-		if (connect(GetSocket(), addr->ai_addr, addr->ai_addrlen) == -1)
+		if (connect(GetSocket(), addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
 			closesocket(GetSocket());
 			SetSocket(INVALID_SOCKET);
