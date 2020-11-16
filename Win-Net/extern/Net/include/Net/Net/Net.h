@@ -1,4 +1,5 @@
 #pragma once
+#ifndef _NET
 #pragma warning(disable: 4996)
 #pragma warning(disable: 4006)
 #pragma warning(disable: 4081)
@@ -6,7 +7,7 @@
 
 #undef NET_TEST_MEMORY_LEAKS
 
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -19,8 +20,8 @@
 #include <memory>
 #include <chrono>
 #include <intrin.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <sys/types.h>
 
 #include <WS2tcpip.h>
@@ -29,7 +30,7 @@
 #pragma comment (lib, "Mswsock.lib")
 #pragma comment (lib, "AdvApi32.lib")
 
-#include <windows.h>
+#include <Windows.h>
 #include <wincrypt.h>
 
 #include <OpenSSL/ssl.h>
@@ -141,7 +142,7 @@ switch (id) \
 return true; \
 }
 
-#define NET_ASSOCIATION(NAME, CLASS) class NAME final : public CLASS
+#define NET_INHERITANCE(NAME, CLASS) class NAME final : public CLASS
 
 /* DATA STRUCTURE ALIGNEMNT */
 #define NET_DSA_BEGIN __pragma("pack(push)") \
@@ -529,6 +530,7 @@ size_t len;
 SocketOption_t()
 {
 	this->opt = NULL;
+	this->len = INVALID_SIZE;
 }
 
 SocketOption_t(const DWORD opt, const T type)
@@ -549,3 +551,5 @@ static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt
 
 	return result;
 }
+#define _NET
+#endif

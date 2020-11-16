@@ -4,8 +4,8 @@
 #define NET_ERROR_OBJ static std::vector<NetErrorCode_T> NetErrorCode_L
 #define NET_DEFINE_ERROR(code, message) Net::Codes::NetDefineErrorMessage(code, CSTRING(message))
 
-#define NET_ERROR_CODE NET_ERROR_CODE_T
-#define NET_ERROR_LAST_CODE NET_ERROR_CODE_T::LAST_NET_ERROR_CODE
+#define NET_ERROR_CODE Net::Codes::NET_ERROR_CODE_T
+#define NET_ERROR_LAST_CODE Net::Codes::NET_ERROR_CODE_T::LAST_NET_ERROR_CODE
 
 #define NET_DEFINE_ERROR_CODE(name, ...) \
 NET_NAMESPACE_BEGIN(name) \

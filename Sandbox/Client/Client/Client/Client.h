@@ -1,9 +1,9 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <NetClient/Client.h>
 #include "..//..//..//Packages.hpp"
 
-NET_ASSOCIATION(Client, NET_CLIENT)
+NET_INHERITANCE(Client, NET_CLIENT)
 {
 	NET_CALLBACK(void, Tick);
 	NET_CALLBACK(void, OnConnected);

@@ -1,9 +1,9 @@
 #pragma once
-#include <Net/Net.h>
+#include <Net/Net/Net.h>
 #include <NetServer/Server.h>
 #include "..//..//..//Packages.hpp"
 
-NET_ASSOCIATION(Server, NET_SERVER)
+NET_INHERITANCE(Server, NET_SERVER)
 {
 	NET_CALLBACK(void, Tick);
 	NET_CALLBACK(void, OnPeerConnect, NET_PEER);

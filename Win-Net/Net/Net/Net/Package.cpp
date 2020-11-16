@@ -1,4 +1,4 @@
-#include <Net/Package.h>
+#include <Net/Net/Package.h>
 
 NET_NAMESPACE_BEGIN(Net)
 Package::Package()
