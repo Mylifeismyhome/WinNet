@@ -355,3 +355,5 @@ MigrationBackup/
 *.exe
 *.idb
 *.dll
+
+Win-Net/extern/*
