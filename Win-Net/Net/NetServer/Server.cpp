@@ -415,6 +415,9 @@ bool Server::ErasePeer(NET_PEER peer)
 		return false;
 	);
 
+	NET_PEER_WAIT_LOCK(peer);
+	peer->lock();
+
 	if (peer->bHasBeenErased)
 		return false;
 
@@ -437,6 +440,8 @@ bool Server::ErasePeer(NET_PEER peer)
 		DecreasePeersCounter();
 
 		peer->bHasBeenErased = true;
+
+		peer->unlock();
 		return true;
 	}
 
@@ -447,6 +452,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->pSocket = INVALID_SOCKET;
 	}
 
+	peer->unlock();
 	return true;
 }
 
@@ -536,6 +542,16 @@ IPRef Server::NET_IPEER::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
+}
+
+void Server::NET_IPEER::lock()
+{
+	bQueueLock = true;
+}
+
+void Server::NET_IPEER::unlock()
+{
+	bQueueLock = false;
 }
 
 void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)

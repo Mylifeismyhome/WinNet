@@ -18,6 +18,8 @@
 
 #define NET_SEND DoSend
 
+#define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
+
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
@@ -138,6 +140,7 @@ bool bLatency;
 double lastCalcLatency;
 
 bool bHasBeenErased;
+bool bQueueLock;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
@@ -150,12 +153,16 @@ latency = -1;
 bLatency = false;
 lastCalcLatency = 0;
 bHasBeenErased = false;
+bQueueLock = false;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
 void setAsync(bool);
 typeLatency getLatency() const;
 IPRef IPAddr() const;
+
+void lock();
+void unlock();
 NET_STRUCT_END
 
 NET_CLASS_PRIVATE
