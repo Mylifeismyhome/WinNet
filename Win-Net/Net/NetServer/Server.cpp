@@ -415,6 +415,9 @@ bool Server::ErasePeer(NET_PEER peer)
 		return false;
 	);
 
+	if (peer->bHasBeenErased)
+		return false;
+
 	if (!peer->isAsync)
 	{
 		// close endpoint
@@ -432,6 +435,8 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->clear();
 
 		DecreasePeersCounter();
+
+		peer->bHasBeenErased = true;
 		return true;
 	}
 

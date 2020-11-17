@@ -137,6 +137,8 @@ typeLatency latency;
 bool bLatency;
 double lastCalcLatency;
 
+bool bHasBeenErased;
+
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
@@ -147,6 +149,7 @@ NetVersionMatched = false;
 latency = -1;
 bLatency = false;
 lastCalcLatency = 0;
+bHasBeenErased = false;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
