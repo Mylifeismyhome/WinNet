@@ -1153,7 +1153,10 @@ short Server::Handshake(NET_PEER peer)
 
 		// Encode Base64
 		size_t outlen = 0;
-		auto enc_Sec_Key = Base64_Encode(reinterpret_cast<BYTE*>(message_digest), 20, &outlen, true);
+		byte* enc_Sec_Key = ALLOC<BYTE>(20 + 1);
+		memcpy(enc_Sec_Key, message_digest, 20);
+		enc_Sec_Key[20] = '\0';
+		NET_BASE64::encode(enc_Sec_Key, outlen);
 
 		char host[15];
 		if (GetCustomHandshakeMethode())

@@ -193,8 +193,7 @@ bool NETRSA::encryptBase64(CryptoPP::byte*& data, size_t& size)
 {
 	if (encrypt(data, size))
 	{
-		NET_BASE64 base64;
-		base64.encode(data, size);
+		NET_BASE64::encode(data, size);
 		return true;
 	}
 
@@ -260,8 +259,7 @@ bool NETRSA::decryptHex(CryptoPP::byte*& data, size_t& size)
 
 bool NETRSA::decryptBase64(CryptoPP::byte*& data, size_t& size)
 {
-	NET_BASE64 base64;
-	base64.decode(data, size);
+	NET_BASE64::decode(data, size);
 
 	if (decrypt(data, size))
 		return true;

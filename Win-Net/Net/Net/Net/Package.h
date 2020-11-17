@@ -10,7 +10,7 @@
 ///		  FAST PACKAGE ID IMPLEMENTATION	    ///
 ///																	///
 //////////////////////////////////////////////////////////
-#define NET_DEFINE_PACKAGE_ID(name, ...) \
+#define NET_DEFINE_PACKAGES(name, ...) \
 NET_NAMESPACE_BEGIN(name) \
 enum T##name \
 { \

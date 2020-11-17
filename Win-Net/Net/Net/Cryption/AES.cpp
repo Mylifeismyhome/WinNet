@@ -72,8 +72,7 @@ bool AES::encryptBase64(CryptoPP::byte*& data, size_t& size)
 {
 	if (encrypt(data, size))
 	{
-		NET_BASE64 base64;
-		base64.encode(data, size);
+		NET_BASE64::encode(data, size);
 		return true;
 	}
 
@@ -84,8 +83,7 @@ bool AES::encryptBase64(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size
 {
 	if (encrypt(data, size))
 	{
-		NET_BASE64 base64;
-		base64.encode(data, out, size);
+		NET_BASE64::encode(data, out, size);
 		FREE(data);
 		return true;
 	}
@@ -139,8 +137,7 @@ bool AES::decryptHex(CryptoPP::byte*& data, size_t& size)
 
 bool AES::decryptBase64(CryptoPP::byte*& data, size_t& size)
 {
-	NET_BASE64 base64;
-	base64.decode(data, size);
+	NET_BASE64::decode(data, size);
 	if (decrypt(data, size))
 		return true;
 
@@ -149,8 +146,7 @@ bool AES::decryptBase64(CryptoPP::byte*& data, size_t& size)
 
 bool AES::decryptBase64(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
-	NET_BASE64 base64;
-	base64.decode(data, out, size);
+	NET_BASE64::decode(data, out, size);
 	if (decrypt(out, size))
 	{
 		FREE(data);

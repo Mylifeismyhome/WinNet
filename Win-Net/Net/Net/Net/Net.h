@@ -143,6 +143,8 @@ return true; \
 }
 
 #define NET_INHERITANCE(NAME, CLASS) class NAME final : public CLASS
+#define NET_CLIENT_CLASS(NAME) NET_INHERITANCE(##NAME, NET_CLIENT)
+#define NET_SERVER_CLASS(NAME) NET_INHERITANCE(##NAME, NET_SERVER)
 
 /* DATA STRUCTURE ALIGNEMNT */
 #define NET_DSA_BEGIN __pragma("pack(push)") \
