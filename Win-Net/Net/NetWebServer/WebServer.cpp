@@ -557,6 +557,10 @@ bool Server::ErasePeer(NET_PEER peer)
 
 		peer->clear();
 
+		// invalidate peer
+		delete peer;
+		peer = nullptr;
+
 		DecreasePeersCounter();
 		return true;
 	}
@@ -1679,9 +1683,6 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 	// erase him
 	peer->setAsync(false);
 	ErasePeer(peer);
-
-	delete peer;
-	peer = nullptr;
 }
 
 void Server::DoReceive(NET_PEER peer)
