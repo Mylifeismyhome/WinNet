@@ -106,7 +106,6 @@ char* MYSQL_QUERY::getName()
 	return name;
 }
 
-
 void MYSQL_QUERY::Free()
 {
 	FREESTRING(query);
@@ -169,19 +168,20 @@ MYSQL::~MYSQL()
 		disconnect();
 		delete msqlcon;
 	}
-	
+
+	msqldriver = nullptr;
 	FREE(lastError);
 }
 
 bool MYSQL::setup()
 {
-	if (msqldriver)
+	msqldriver = get_driver_instance();
+	if (!msqldriver)
 	{
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on setup, mysql driver instance exists"));
+		LOG_ERROR(CSTRING("[MYSQL] - Mysql driver instance does not exists"));
 		return false;
 	}
 
-	msqldriver = get_driver_instance();
 	return true;
 }
 
@@ -192,13 +192,7 @@ bool MYSQL::connect()
 		char constr[128];
 		sprintf_s(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
 
-		const auto oldmsqlcon = msqlcon;
 		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
-
-		// if it is not the same mem addr
-		if (oldmsqlcon != msqlcon)
-			delete oldmsqlcon;
-		
 		if (!msqlcon)
 			return false;
 		
@@ -247,11 +241,13 @@ bool MYSQL::reconnect()
 void MYSQL::lock()
 {
 	this->bGuardLock = true;
+	msqldriver->threadInit();
 }
 
 void MYSQL::unlock()
 {
 	this->bGuardLock = false;
+	msqldriver->threadEnd();
 }
 
 void MYSQL::SetLastError(const char* in)
