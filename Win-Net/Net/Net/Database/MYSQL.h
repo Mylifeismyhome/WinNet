@@ -42,6 +42,8 @@ NET_DSA_BEGIN
 
 #define FREESTRING(sql) delete[] sql; sql = nullptr;
 
+#define MYSQL_GUARD_LOCK while(bGuardLock) {}
+
 #include <MYSQL/include/jdbc/cppconn/driver.h>
 #include <MYSQL/include/jdbc/cppconn/exception.h>
 #include <MYSQL/include/jdbc/cppconn/resultset.h>
@@ -143,6 +145,7 @@ NET_CLASS_BEGIN(MYSQL)
 sql::Driver* msqldriver = nullptr;
 sql::Connection* msqlcon = nullptr;
 MYSQL_CON conConfig;
+bool bGuardLock;
 
 bool setup();
 
@@ -162,6 +165,9 @@ bool connect();
 bool disconnect();
 bool reconnect();
 
+void lock();
+void unlock();
+
 void SetLastError(const char*);
 char* GetLastError() const;
 
@@ -170,13 +176,13 @@ MYSQL_RESULT query(MYSQL_QUERY, bool = false);
 MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY, bool = false);
 NET_CLASS_END;
 
-static char* SQLString(sql::SQLString string, ...)
+static char* SQLString(const char* string, ...)
 {
 	va_list vaArgs;
 	va_start(vaArgs, string);
-	const size_t size = std::vsnprintf(nullptr, 0, string.c_str(), vaArgs);
+	const size_t size = std::vsnprintf(nullptr, 0, string, vaArgs);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), string.c_str(), vaArgs);
+	std::vsnprintf(str.data(), str.size(), string, vaArgs);
 	va_end(vaArgs);
 
 	auto* res = new char[str.size() + 1];

@@ -244,6 +244,16 @@ bool MYSQL::reconnect()
 	return res;
 }
 
+void MYSQL::lock()
+{
+	this->bGuardLock = true;
+}
+
+void MYSQL::unlock()
+{
+	this->bGuardLock = false;
+}
+
 void MYSQL::SetLastError(const char* in)
 {
 	FREE(lastError);
@@ -261,6 +271,9 @@ char* MYSQL::GetLastError() const
 
 MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 {
+	MYSQL_GUARD_LOCK;
+	lock();
+
 	if(retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
 	
@@ -269,11 +282,15 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -282,11 +299,15 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -295,11 +316,15 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		FREESTRING(query);
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		unlock();
 		return {};
 	}
 
@@ -314,7 +339,10 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		MYSQL_FREE(stmt);
 		FREESTRING(query);
 		if (res)
+		{
+			unlock();
 			return MYSQL_RESULT(CSTRING(""), res);
+		}
 	}
 	catch (sql::SQLException& e)
 	{
@@ -326,11 +354,15 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
+	unlock();
 	return {};
 }
 
 MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 {
+	MYSQL_GUARD_LOCK;
+	lock();
+
 	if (retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
 	
@@ -339,11 +371,15 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -352,11 +388,15 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -365,11 +405,15 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->query(query, true);
+			}
 		}
 
 		query.Free();
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		unlock();
 		return {};
 	}
 
@@ -384,7 +428,10 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		MYSQL_FREE(stmt);
 		query.Free();
 		if (res)
+		{
+			unlock();
 			return MYSQL_RESULT(CSTRING(""), res);
+		}
 	}
 	catch (sql::SQLException& e)
 	{
@@ -396,11 +443,15 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
+	unlock();
 	return {};
 }
 
 MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 {
+	MYSQL_GUARD_LOCK;
+	lock();
+
 	if (retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
 	
@@ -409,13 +460,17 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->multiQuery(query, true);
+			}
 		}
 
 		for (auto& curquery : query.Get())
 			curquery.Free();
 		
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -424,13 +479,17 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->multiQuery(query, true);
+			}
 		}
 
 		for (auto& curquery : query.Get())
 			curquery.Free();
 		
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		unlock();
 		return {};
 	}
 
@@ -439,13 +498,17 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		if (!retry)
 		{
 			if (reconnect())
+			{
+				unlock();
 				return this->multiQuery(query, true);
+			}
 		}
 
 		for (auto& curquery : query.Get())
 			curquery.Free();
 
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		unlock();
 		return {};
 	}
 
@@ -465,6 +528,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		}
 		MYSQL_FREE(stmt);
 
+		unlock();
 		return results;
 	}
 	catch (sql::SQLException& e)
@@ -478,5 +542,6 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
+	unlock();
 	return {};
 }
