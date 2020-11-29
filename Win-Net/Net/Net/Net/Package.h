@@ -354,7 +354,7 @@ Package_t<__int64> Int64(const char*) const;
 Package_t<UINT> UINT(const char*) const;
 Package_t<UINT64> UINT64(const char*) const;
 Package_t<bool> Boolean(const char*) const;
-Package_t_Object Object(const char* Key);
+Package_t_Object Object(const char*);
 Package_t_Array Array(const char*);
 Package_RawData_t RawData(const char*);
 NET_CLASS_END

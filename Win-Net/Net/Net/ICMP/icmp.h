@@ -273,7 +273,7 @@ extern "C" {
 #ifdef _WIN64
 typedef DWORD64 lt;
 #else
-typedef DWORD lt; #
+typedef DWORD lt;
 #endif
 
 #define DEFAULT_DATA_SIZE      32               // default data size
