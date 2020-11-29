@@ -499,7 +499,9 @@ namespace Net
 #ifdef VS13
 static bool NET_STRING_IS_NUMBER(const std::string& s)
 {
-	return false;
+	for (size_t it = 0; it < s.length(); ++it)
+		if (s[it] < '0' || s[it] > '9') return false;
+	return true;
 }
 #else
 static bool NET_STRING_IS_NUMBER(const std::string& s)
