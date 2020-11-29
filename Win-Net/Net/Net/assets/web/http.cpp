@@ -81,7 +81,7 @@ Net::Web::Head::Head()
 	connectSocketAddr = nullptr;
 
 	// Default Header
-	AddHeader(CSTRING("Content-Type"), CSTRING("text/html; charset=UTF-8"));
+	AddHeader(CSTRING("Content-Type"), CSTRING("application/x-www-form-urlencoded"));
 	AddHeader(CSTRING("User-Agent"), NET_USER_AGENT);
 }
 
@@ -929,9 +929,6 @@ bool Net::Web::HTTP::Get()
 	unsigned long mode = 1;
 	ioctlsocket(GetSocket(), FIONBIO, &mode);
 
-	// Get Parameters
-	auto params = GetParameters();
-
 	// build request
 	std::string req;
 	req.append(CSTRING("GET "));
@@ -940,7 +937,6 @@ bool Net::Web::HTTP::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-
 	// append header data
 	for (const auto& entry : headerData)
 	{
@@ -949,14 +945,9 @@ bool Net::Web::HTTP::Get()
 		req.append(CSTRING(": "));
 		req.append(entry.value);
 	}
-
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
-
-	// Params
-	req.append(params);
-	params.clear();
 
 	// Send Post Request
 	if (DoSend(req))
@@ -1023,13 +1014,6 @@ bool Net::Web::HTTP::Post()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\r\n"));
-	req.append(CSTRING("Content-Length: "));
-	std::stringstream param_length;
-	param_length << params.length();
-	req.append(param_length.str());
-	param_length.clear();
-
 	// append header data
 	for (const auto& entry : headerData)
 	{
@@ -1038,7 +1022,15 @@ bool Net::Web::HTTP::Post()
 		req.append(CSTRING(": "));
 		req.append(entry.value);
 	}
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Content-Length: "));
+	std::stringstream param_length;
+	param_length << params.length();
+	req.append(param_length.str());
+	param_length.clear();
 
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
 
 	// Params
@@ -1400,9 +1392,6 @@ bool Net::Web::HTTPS::Get()
 	unsigned long mode = 1;
 	ioctlsocket(GetSocket(), FIONBIO, &mode);
 
-	// Get Parameters
-	auto params = GetParameters();
-	
 	// build request
 	std::string req;
 	req.append(CSTRING("GET "));
@@ -1411,7 +1400,6 @@ bool Net::Web::HTTPS::Get()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-
 	// append header data
 	for (const auto& entry : headerData)
 	{
@@ -1420,14 +1408,9 @@ bool Net::Web::HTTPS::Get()
 		req.append(CSTRING(": "));
 		req.append(entry.value);
 	}
-
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
-
-	// Params
-	req.append(params);
-	params.clear();
 
 	// Send Get Request
 	if (DoSend(req))
@@ -1538,13 +1521,6 @@ bool Net::Web::HTTPS::Post()
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\r\n"));
-	req.append(CSTRING("Content-Length: "));
-	std::stringstream param_length;
-	param_length << params.length();
-	req.append(param_length.str());
-	param_length.clear();
-
 	// append header data
 	for (const auto& entry : headerData)
 	{
@@ -1553,11 +1529,17 @@ bool Net::Web::HTTPS::Post()
 		req.append(CSTRING(": "));
 		req.append(entry.value);
 	}
-	
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Content-Length: "));
+	std::stringstream param_length;
+	param_length << params.length();
+	req.append(param_length.str());
+	param_length.clear();
+
 	req.append(CSTRING("\r\n"));
 	req.append(CSTRING("Connection: close"));
 	req.append(CSTRING("\r\n\r\n"));
-	
+
 	// Params
 	req.append(params);
 	params.clear();

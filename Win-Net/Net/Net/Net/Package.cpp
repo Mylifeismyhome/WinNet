@@ -18,7 +18,7 @@ Package::~Package()
 
 bool Package::Parse(const char* data)
 {
-	return this->pkg.Parse(data).HasParseError();
+	return !this->pkg.Parse(data).HasParseError();
 }
 
 rapidjson::Document& Package::GetPackage()
