@@ -1020,9 +1020,11 @@ bool Net::Web::HTTP::Post()
 	req.append(CSTRING("POST "));
 	req.append(GetPath());
 	req.append(CSTRING(" HTTP/1.1"));
-	req.append(CSTRING("\r\nHost: "));
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Host: "));
 	req.append(GetURL());
-	req.append(CSTRING("\r\nContent-Length: "));
+	req.append(CSTRING("\r\n"));
+	req.append(CSTRING("Content-Length: "));
 	std::stringstream param_length;
 	param_length << params.length();
 	req.append(param_length.str());
@@ -1037,7 +1039,7 @@ bool Net::Web::HTTP::Post()
 		req.append(entry.value);
 	}
 
-	req.append(CSTRING("\n\n"));
+	req.append(CSTRING("\r\n\r\n"));
 
 	// Params
 	req.append(params);
