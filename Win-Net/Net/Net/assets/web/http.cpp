@@ -922,7 +922,7 @@ bool Net::Web::HTTP::Get()
 
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1005,7 +1005,7 @@ bool Net::Web::HTTP::Post()
 
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1065,6 +1065,7 @@ bool Net::Web::HTTP::Post()
 	return false;
 }
 
+#ifndef VS13
 Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
 {
 	ctx = nullptr;
@@ -1588,3 +1589,4 @@ bool Net::Web::HTTPS::Post()
 
 	return false;
 }
+#endif

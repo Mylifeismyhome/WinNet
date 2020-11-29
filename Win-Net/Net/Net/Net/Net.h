@@ -51,7 +51,7 @@
 #define NET_ABSTRAC_CLASS_BEGIN(c, d) class NET_API c : public d {
 #define NET_CLASS_END };
 #define NET_CLASS_CONSTRUCTUR(a, ...) a(__VA_ARGS__);
-#define NET_CLASS_CONSTRUCTUR_NOEXCEPT(a, ...) a(__VA_ARGS__) noexcept;
+#define NET_CLASS_CONSTRUCTUR_NOEXCEPT(a, ...) a(__VA_ARGS__) NOEXPECT;
 #define NET_CLASS_VCONSTRUCTUR(a, ...) virtual a(__VA_ARGS__);
 #define NET_CLASS_DESTRUCTUR(d) ~d();
 #define NET_CLASS_VDESTRUCTUR(d) virtual ~d();
@@ -496,11 +496,18 @@ namespace Net
 ////////////////////////////////////
 //    USEFULL FUNCTIONS    //
 ///////////////////////////////////
+#ifdef VS13
+static bool NET_STRING_IS_NUMBER(const std::string& s)
+{
+	return false;
+}
+#else
 static bool NET_STRING_IS_NUMBER(const std::string& s)
 {
 	return !s.empty() && std::find_if(s.begin(),
 		s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
+#endif
 
 NET_NAMESPACE_BEGIN(ServerHandshake)
 enum Server_HandshakeRet_t
@@ -555,4 +562,14 @@ static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt
 	return result;
 }
 #define _NET
+#endif
+
+#ifndef VS13
+#define NOEXPECT noexcept
+#define CONSTEXPR constexpr
+#define FUNCNAME __func__
+#else
+#define NOEXPECT
+#define CONSTEXPR const
+#define FUNCNAME __FUNCTION__
 #endif

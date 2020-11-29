@@ -5,7 +5,7 @@
 
 NET_DSA_BEGIN
 
-constexpr auto BASE_DATE = 1900;
+CONSTEXPR auto BASE_DATE = 1900;
 
 #define TIME_LENGTH 6
 #define TIME_LEN TIME_LENGTH

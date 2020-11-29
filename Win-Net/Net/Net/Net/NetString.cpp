@@ -44,7 +44,7 @@ NetString::NetString(NetString& in)
 	copy(in);
 }
 
-NetString::NetString(NetString&& in) noexcept
+NetString::NetString(NetString&& in) NOEXPECT
 {
 	move((NetString&&)in);
 }

@@ -220,36 +220,35 @@ void Benchmark::writeResult()
 		fmanager.write(New);
 		FREE(New);
 
-		entry = CSTRING(R"(,{")RowNameCSTRING(":"))");
+		entry = CSTRING(",{\")RowNameCSTRING(\":\")");
 	}
 	else
 	{
 		fmanager.write(CSTRING("["));
-		entry = CSTRING(R"({")RowNameCSTRING(":"))");
+		entry = CSTRING("{\")RowNameCSTRING(\":\")");
 	}
 
 	FREE(old);
 
 	entry += GetBenchmarkName();
-	entry += CSTRING(R"("),CSTRING("CellName"):CSTRING(")");
+	entry += CSTRING("CellName\n");
 	entry += func_name;
-	entry += CSTRING(R"("),CSTRING("timeStart"):{CSTRING("hour"):)");
+	entry += CSTRING("timeStart:\n");
 	entry += std::to_string(startClock.tm_hour);
-	entry += CSTRING(R"(,")minCSTRING(":)");
+	entry += CSTRING("min\n");
 	entry += std::to_string(startClock.tm_min);
-	entry += CSTRING(R"(,")secCSTRING(":)");
+	entry += CSTRING("sec\n");
 	entry += std::to_string(startClock.tm_sec);
-	entry += CSTRING(R"(,")msCSTRING(":)");
+	entry += CSTRING("ms\n");
 	entry += std::to_string(startMillis);
-	entry += CSTRING(R"(},")timeEndCSTRING(":{")hourCSTRING(":)");
+	entry += CSTRING("timeEnd:\n");
 	entry += std::to_string(endClock.tm_hour);
-	entry += CSTRING(R"(,")minCSTRING(":)");
+	entry += CSTRING("min:\n");
 	entry += std::to_string(endClock.tm_min);
-	entry += CSTRING(R"(,")secCSTRING(":)");
+	entry += CSTRING("sec:\n");
 	entry += std::to_string(endClock.tm_sec);
-	entry += CSTRING(R"(,")msCSTRING(":)");
+	entry += CSTRING("ms:\n");
 	entry += std::to_string(endMillis);
-	entry += CSTRING(R"(}})");
 	fmanager.write(entry.c_str());
 	fmanager.write(CSTRING("]"));
 	entry.clear();

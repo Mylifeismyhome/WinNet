@@ -2,7 +2,10 @@
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
 #include <list>
+#ifndef VS13
 #include <corecrt_io.h>
+#endif
+
 #include <direct.h>
 
 NET_DSA_BEGIN

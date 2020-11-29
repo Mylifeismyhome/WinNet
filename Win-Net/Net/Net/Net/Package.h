@@ -33,7 +33,7 @@ NET_NAMESPACE_END
 
 NET_DSA_BEGIN
 
-constexpr auto RawDataKeySize_t = 32;
+CONSTEXPR auto RawDataKeySize_t = 32;
 NET_CLASS_BEGIN(Package_RawData_t)
 char _key[RawDataKeySize_t];
 size_t _keyLength;

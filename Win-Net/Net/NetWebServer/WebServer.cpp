@@ -627,7 +627,11 @@ void Server::NET_IPEER::setAsync(const bool status)
 IPRef Server::NET_IPEER::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
+#ifdef VS13
+	return IPRef(inet_ntop(AF_INET, (PVOID)&client_addr.sin_addr, buf, INET_ADDRSTRLEN));
+#else
 	return IPRef(inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
+#endif
 }
 
 

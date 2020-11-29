@@ -1,4 +1,5 @@
 #pragma once
+#ifndef VS13
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
 #include <Net/assets/manager/logmanager.h>
@@ -192,3 +193,4 @@ static char* SQLString(const char* string, ...)
 }
 
 NET_DSA_END
+#endif

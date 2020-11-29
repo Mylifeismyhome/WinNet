@@ -88,6 +88,13 @@ void GetDateA(char* date)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)
+#ifdef VS13
+template <typename TYPE>
+TYPE GetRandNumber(TYPE min, TYPE max)
+{
+	return NULL;
+}
+#else
 template <typename TYPE>
 TYPE GetRandNumber(TYPE min, TYPE max)
 {
@@ -95,6 +102,7 @@ TYPE GetRandNumber(TYPE min, TYPE max)
 	thread_local static std::uniform_int_distribution<TYPE> pick;
 	return pick(mt, decltype(pick)::param_type{ min, max });
 }
+#endif
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)

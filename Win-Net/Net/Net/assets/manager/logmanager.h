@@ -7,45 +7,45 @@
 NET_DSA_BEGIN
 
 // Color codes
-constexpr auto BLACK = 0;
-constexpr auto BLUE = 1;
-constexpr auto GREEN = 2;
-constexpr auto CYAN = 3;
-constexpr auto RED = 4;
-constexpr auto MAGENTA = 5;
-constexpr auto BROWN = 6;
-constexpr auto LIGHTGRAY = 7;
-constexpr auto DARKGRAY = 8;
-constexpr auto LIGHTBLUE = 9;
-constexpr auto LIGHTGREEN = 10;
-constexpr auto LIGHTCYAN = 11;
-constexpr auto LIGHTRED = 12;
-constexpr auto LIGHTMAGENTA = 13;
-constexpr auto YELLOW = 14;
-constexpr auto WHITE = 15;
+CONSTEXPR auto BLACK = 0;
+CONSTEXPR auto BLUE = 1;
+CONSTEXPR auto GREEN = 2;
+CONSTEXPR auto CYAN = 3;
+CONSTEXPR auto RED = 4;
+CONSTEXPR auto MAGENTA = 5;
+CONSTEXPR auto BROWN = 6;
+CONSTEXPR auto LIGHTGRAY = 7;
+CONSTEXPR auto DARKGRAY = 8;
+CONSTEXPR auto LIGHTBLUE = 9;
+CONSTEXPR auto LIGHTGREEN = 10;
+CONSTEXPR auto LIGHTCYAN = 11;
+CONSTEXPR auto LIGHTRED = 12;
+CONSTEXPR auto LIGHTMAGENTA = 13;
+CONSTEXPR auto YELLOW = 14;
+CONSTEXPR auto WHITE = 15;
 
 //// CONSOLE LOG ONLY
 #define CLOG(...) \
-Net::Console::Log(Net::Console::LogStates::normal, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__);
 
 #define CLOG_ERROR(...) \
-Net::Console::Log(Net::Console::LogStates::error, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__);
 
 #define CLOG_WARNING(...) \
-Net::Console::Log(Net::Console::LogStates::warning, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__);
 
 #define CLOG_SUCCESS(...) \
-Net::Console::Log(Net::Console::LogStates::success, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__);
 
 #ifdef DEBUG
 #define CLOG_DEBUG(...) \
-Net::Console::Log(Net::Console::LogStates::debug, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__);
 #else
 #define CLOG_DEBUG(...)
 #endif
 
 #define CLOG_PEER(...) \
-Net::Console::Log(Net::Console::LogStates::peer, __func__, __VA_ARGS__);
+Net::Console::Log(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__);
 
 //////////////////// CLOG No function name
 #define NCLOG(...) \
@@ -75,44 +75,44 @@ Net::Console::Log(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::normal, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::normal, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__); \
 }
 
 #define LOG_ERROR(...) \
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::error, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::error, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__); \
 }
 
 #define LOG_WARNING(...) \
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::warning, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::warning, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__); \
 }
 
 #define LOG_SUCCESS(...) \
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::success, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::success, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__); \
 }
 
 #ifdef DEBUG
@@ -120,11 +120,11 @@ else \
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::debug, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::debug, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__); \
 }
 #else
 #define LOG_DEBUG(...)
@@ -134,11 +134,11 @@ else \
 if(IsAreaInUse()) \
 { \
 	Net::manager::Log l; \
-	l.doLog(Net::Console::LogStates::peer, __func__, __VA_ARGS__); \
+	l.doLog(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__); \
 } \
 else \
 { \
-	Net::Console::Log(Net::Console::LogStates::peer, __func__, __VA_ARGS__); \
+	Net::Console::Log(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__); \
 }
 
 ////////////// LOG NO FUNCTION NAME

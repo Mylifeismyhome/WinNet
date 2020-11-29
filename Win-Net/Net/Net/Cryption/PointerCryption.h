@@ -6,6 +6,7 @@
 
 NET_DSA_BEGIN
 
+#ifndef VS13
 template <typename TYPE>
 TYPE GetRandNumber()
 {
@@ -18,6 +19,13 @@ static uintptr_t GetRandSeed()
 {
 	return GetRandNumber<uintptr_t>();
 }
+#endif
+
+#ifdef VS13
+#define RAND_NUMBER NULL
+#else
+#define RAND_NUMBER GetRandSeed()
+#endif
 
 template <typename T>
 class PointerCryptionUniquePointer
@@ -59,7 +67,7 @@ class PointerCryption
 	T* _pointer;
 	uintptr_t _key;
 
-	T* encode(T* pointer) noexcept
+	T* encode(T* pointer) NOEXPECT
 	{
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
@@ -68,7 +76,7 @@ class PointerCryption
 		return pointer;
 	}
 
-	T* encode(const T*& pointer) noexcept
+	T* encode(const T*& pointer) NOEXPECT
 	{
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
@@ -89,45 +97,45 @@ class PointerCryption
 public:
 	PointerCryption()
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = nullptr;
 	}
 	
 	explicit PointerCryption(const T*& pointer)
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 	}
 
-	explicit PointerCryption(T*&& pointer) noexcept
+	explicit PointerCryption(T*&& pointer) NOEXPECT
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 	}
 
 	PointerCryption& operator=(T* pointer)
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 		return *this;
 	}
 
 	PointerCryption& operator=(const T*& pointer)
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 		return *this;
 	}
 
 	void Set(T* pointer)
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 	}
 
 	void Set(const T*& pointer)
 	{
-		_key = GetRandSeed();
+		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
 	}
 

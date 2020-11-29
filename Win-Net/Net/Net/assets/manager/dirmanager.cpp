@@ -20,10 +20,12 @@ bool dirmanager::folderExists(const wchar_t* folderName)
 
 bool dirmanager::folderExists(const char* folderName)
 {
+#ifndef VS13
 	if (_access(folderName, 0) == -1) {
 		//File not found
 		return false;
 	}
+#endif
 
 	if (!(GetFileAttributesA(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
@@ -140,6 +142,7 @@ static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<
 
 	for (auto entry : directories)
 	{
+#ifndef VS13
 		struct stat st = { 0 };
 		if (stat(entry, &st) != -1)
 		{
@@ -147,6 +150,7 @@ static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<
 			bError = true;
 			continue;
 		}
+#endif
 
 		const auto ret = _mkdir(entry);
 		if (ret)

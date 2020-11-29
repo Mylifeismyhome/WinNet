@@ -89,9 +89,6 @@ void AddJSON(const char*);
 void AddHeader(const char*, char*, size_t = INVALID_SIZE);
 void AddHeader(const char*, const char*, size_t = INVALID_SIZE);
 void AddHeader(const char*, unsigned char*, size_t = INVALID_SIZE);
-
-void SetContentType(const char*);
-void SetContentType(std::string&);
 NET_CLASS_END
 
 NET_ABSTRAC_CLASS_BEGIN(HTTP, Head)
@@ -113,6 +110,7 @@ bool Get();
 bool Post();
 NET_CLASS_END
 
+#ifndef VS13
 NET_ABSTRAC_CLASS_BEGIN(HTTPS, Head)
 friend class Head;
 SSL_CTX* ctx;
@@ -133,6 +131,7 @@ bool IsInited() const;
 bool Get();
 bool Post();
 NET_CLASS_END
+#endif
 NET_DSA_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
