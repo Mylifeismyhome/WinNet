@@ -3,6 +3,7 @@
 #define CPOINTER PointerCryption
 
 #include <random>
+#include <Net/Security/NET_Kernel32.h>
 
 NET_DSA_BEGIN
 
@@ -37,7 +38,9 @@ class PointerCryptionUniquePointer
 	{
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		pointer = (T*)EncodePointer(pointer);
+#ifndef DISABLE_MS_POINTERCRYPTION
+		pointer = (T*)NET_Kernel32::EncodePointer(pointer);
+#endif
 #endif
 		return pointer;
 	}
@@ -71,7 +74,9 @@ class PointerCryption
 	{
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		pointer = (T*)EncodePointer(pointer);
+#ifndef DISABLE_MS_POINTERCRYPTION
+		pointer = (T*)NET_Kernel32::EncodePointer(pointer);
+#endif
 #endif
 		return pointer;
 	}
@@ -80,7 +85,9 @@ class PointerCryption
 	{
 #ifndef DISABLE_POINTERCRYPTION
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		pointer = (T*)EncodePointer(pointer);
+#ifndef DISABLE_MS_POINTERCRYPTION
+		pointer = (T*)NET_Kernel32::EncodePointer(pointer);
+#endif
 #endif
 		return pointer;
 	}
@@ -88,7 +95,9 @@ class PointerCryption
 	T* decode(T* pointer) const
 	{
 #ifndef DISABLE_POINTERCRYPTION
-		pointer = (T*)DecodePointer(pointer);
+#ifndef DISABLE_MS_POINTERCRYPTION
+		pointer = (T*)NET_Kernel32::DecodePointer(pointer);
+#endif
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 #endif
 		return pointer;
@@ -167,5 +176,4 @@ public:
 		FREE(_pointer);
 	}
 };
-
 NET_DSA_END

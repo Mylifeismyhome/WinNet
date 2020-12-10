@@ -1,5 +1,6 @@
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
+#include <Net/Security/NET_Kernel32.h>
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
 {
@@ -84,3 +85,14 @@ std::string Net::ssl::NET_SSL_METHOD_T::Name() const
 	return std::string(CASTRING("UNKNOWN"));
 }
 
+bool Net::NET_LOAD()
+{
+	NET_Kernel32::Initialize();
+	return true;
+}
+
+bool Net::NET_UNLOAD()
+{
+	NET_Kernel32::Uninitialize();
+	return true;
+}
