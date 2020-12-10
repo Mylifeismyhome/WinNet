@@ -491,9 +491,6 @@ namespace Net
 
 		std::string GET_SSL_METHOD_NAME(const int method);
 	}
-
-	bool NET_LOAD();
-	bool NET_UNLOAD();
 }
 
 ////////////////////////////////////

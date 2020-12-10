@@ -37,9 +37,6 @@
     <Filter Include="Cryption\BCrypt">
       <UniqueIdentifier>{d84f6382-ee02-4f16-96a8-e37048f82143}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Security">
-      <UniqueIdentifier>{42462c37-6578-474c-8e13-52de39be30a8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
@@ -162,12 +159,6 @@
     <ClCompile Include="..\Net\assets\manager\dirmanager.cpp">
       <Filter>Assets\manager</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Security\NET_Kernel32.cpp">
-      <Filter>Security</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Security\NET_MemoryModule.c">
-      <Filter>Security</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -247,12 +238,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\assets\manager\logmanager.h">
       <Filter>Assets\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Security\NET_Kernel32.h">
-      <Filter>Security</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Security\NET_MemoryModule.h">
-      <Filter>Security</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

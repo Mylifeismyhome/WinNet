@@ -998,8 +998,6 @@
     <ClCompile Include="..\Net\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Net\NetVersion.cpp" />
     <ClCompile Include="..\Net\Net\Package.cpp" />
-    <ClCompile Include="..\Net\Security\NET_Kernel32.cpp" />
-    <ClCompile Include="..\Net\Security\NET_MemoryModule.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\assets\assets.h" />
@@ -1028,8 +1026,6 @@
     <ClInclude Include="..\Net\Net\NetString.h" />
     <ClInclude Include="..\Net\Net\NetVersion.h" />
     <ClInclude Include="..\Net\Net\Package.h" />
-    <ClInclude Include="..\Net\Security\NET_Kernel32.h" />
-    <ClInclude Include="..\Net\Security\NET_MemoryModule.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S" />
