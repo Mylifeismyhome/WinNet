@@ -62,7 +62,7 @@ THREAD(Receive)
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 	while (client->IsConnected())
-		client->DoReceive();
+		Kernel32::Sleep(client->DoReceive());
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
@@ -1290,10 +1290,10 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 *	{END PACKAGE}									*		{END PACKAGE}
 *
  */
-void Client::DoReceive()
+DWORD Client::DoReceive()
 {
 	if (!IsConnected())
-		return;
+		return GetFrequenz();
 
 	const auto data_size = recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
@@ -1304,102 +1304,102 @@ void Client::DoReceive()
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAENETDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The network subsystem has failed"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEFAULT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAENOTCONN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket is not connected"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEINTR:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The (blocking) call was canceled through WSACancelBlockingCall()"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEINPROGRESS:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAENETRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAENOTSOCK:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The descriptor is not a socket"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEOPNOTSUPP:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAESHUTDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEWOULDBLOCK:
 			ProcessPackages();
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			return;
+			return GetFrequenz();
 
 		case WSAEMSGSIZE:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The message was too large to fit into the specified buffer and was truncated"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAEINVAL:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 			Disconnect();
-			return;
+			return GetFrequenz();
 
 		case WSAECONNABORTED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 			Timeout();
-			return;
+			return GetFrequenz();
 
 		case WSAETIMEDOUT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The connection has been dropped because of a network failure or because the peer system failed to respond"));
 			Timeout();
-			return;
+			return GetFrequenz();
 
 		case WSAECONNRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 			Timeout();
-			return;
+			return GetFrequenz();
 
 		default:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("Something bad happen..."));
 			Disconnect();
-			return;
+			return GetFrequenz();
 		}
 	}
 	if (data_size == 0)
@@ -1407,7 +1407,7 @@ void Client::DoReceive()
 		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 		LOG_PEER(CSTRING("Connection has been gracefully closed"));
 		Disconnect();
-		return;
+		return GetFrequenz();
 	}
 
 	if (!network.data.valid())
@@ -1449,24 +1449,9 @@ void Client::DoReceive()
 		}
 	}
 
-	// check if incomming is even valid
-	/*if (memcmp(&network.data.get()[0], NET_PACKAGE_BRACKET_OPEN, 1) != 0)
-	{
-		LOG_ERROR(CSTRING("Incomming data does not match with the net protocol - 0x1"));
-		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-		return;
-	}
-	if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
-	{
-		LOG_ERROR(CSTRING("Incomming data does not match with the net protocol - 0x2"));
-		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-		return;
-	}*/
-
 	memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-
-	//GetPackageDataSize();
 	ProcessPackages();
+	return NULL;
 }
 
 void Client::GetPackageDataSize()

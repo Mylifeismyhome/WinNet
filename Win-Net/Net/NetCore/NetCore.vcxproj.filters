@@ -171,6 +171,9 @@
     <ClCompile Include="..\Net\Import\MemoryModule.c">
       <Filter>Import</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Import\Kernel32.cpp">
+      <Filter>Import</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -258,6 +261,9 @@
       <Filter>Import</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Import\MemoryModule.h">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Kernel32.h">
       <Filter>Import</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,16 +2,19 @@
 #include <Net/Cryption/XOR.h>
 
 // Imports
+#include <Net/Import/Kernel32.h>
 #include <Net/Import/Ntdll.h>
 
 void Net::load()
 {
+	Kernel32::Initialize();
 	Ntdll::Initialize();
 }
 
 void Net::unload()
 {
 	Ntdll::Uninitialize();
+	Kernel32::Uninitialize();
 }
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)

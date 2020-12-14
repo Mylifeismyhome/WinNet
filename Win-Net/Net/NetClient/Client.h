@@ -187,7 +187,7 @@ float GetReceivedPackageSizeAsPerc() const;
 void BaseTick();
 void LatencyTick();
 NET_DEFINE_CALLBACK(void, Tick) {}
-void DoReceive();
+DWORD DoReceive();
 bool CheckDataN(int id, NET_PACKAGE pkg);
 NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return false; }
 
