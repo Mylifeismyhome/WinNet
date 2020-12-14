@@ -10,7 +10,7 @@
 #define STOP_TIMER return false
 typedef BOOL TimerRet;
 #define TIMER(fnc) TimerRet fnc(void* param)
-#define HANDLE_TIMER Net::Timer::Timer_t*
+#define NET_HANDLE_TIMER Net::Timer::Timer_t*
 #define UNUSED_PARAM(param) delete param
 
 namespace Net
@@ -27,9 +27,9 @@ namespace Net
 			bool finished;
 		};
 
-		HANDLE_TIMER Create(TimerRet(*)(void*), double, void* = nullptr);
-		void Clear(HANDLE_TIMER);
-		void WaitSingleObjectStopped(HANDLE_TIMER);
-		void SetTime(HANDLE_TIMER, double);
+		NET_HANDLE_TIMER Create(TimerRet(*)(void*), double, void* = nullptr);
+		void Clear(NET_HANDLE_TIMER);
+		void WaitSingleObjectStopped(NET_HANDLE_TIMER);
+		void SetTime(NET_HANDLE_TIMER, double);
 	}
 }

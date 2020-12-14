@@ -64,7 +64,7 @@ bool RSAHandshake; // set to true as soon as we have the public key from the Ser
 bool estabilished;
 
 typeLatency latency;
-HANDLE_TIMER hCalcLatency;
+NET_HANDLE_TIMER hCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);

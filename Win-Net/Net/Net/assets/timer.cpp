@@ -46,7 +46,7 @@ THREAD(TimerThread)
 	}
 }
 
-HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, void* param)
+NET_HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, void* param)
 {
 	const auto timer_t = new Timer_t();
 	timer_t->param = param;
@@ -64,7 +64,7 @@ HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, void
 	return timer_t;
 }
 
-void Net::Timer::Clear(HANDLE_TIMER handle)
+void Net::Timer::Clear(NET_HANDLE_TIMER handle)
 {
 	if (!handle)
 		return;
@@ -73,7 +73,7 @@ void Net::Timer::Clear(HANDLE_TIMER handle)
 	handle = nullptr;
 }
 
-void Net::Timer::WaitSingleObjectStopped(HANDLE_TIMER handle)
+void Net::Timer::WaitSingleObjectStopped(NET_HANDLE_TIMER handle)
 {
 	if (!handle)
 		return;
@@ -83,7 +83,7 @@ void Net::Timer::WaitSingleObjectStopped(HANDLE_TIMER handle)
 	handle = nullptr;
 }
 
-void Net::Timer::SetTime(HANDLE_TIMER handle, const double timer)
+void Net::Timer::SetTime(NET_HANDLE_TIMER handle, const double timer)
 {
 	if (!handle)
 		return;
