@@ -27,7 +27,6 @@
 
 #include <Net/assets/thread.h>
 
-CONSTEXPR auto DEFAULT_MAX_THREADS = 2;
 CONSTEXPR auto DEFAULT_RSA_KEY_SIZE = 1024;
 CONSTEXPR auto DEFAULT_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
 CONSTEXPR auto DEFAULT_CRYPT_PACKAGES = false;
@@ -90,9 +89,8 @@ NET_CLASS_PUBLIC
 Network network;
 
 NET_CLASS_PRIVATE
-long long sfrequenz;
+DWORD sfrequenz;
 bool sBlockingMode;
-u_short sMaxThreads;
 size_t sRSAKeySize;
 size_t sAESKeySize;
 bool sCryptPackage;
@@ -102,9 +100,8 @@ std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
 void SetAllToDefault();
-void SetFrequenz(long long);
+void SetFrequenz(DWORD);
 void SetBlockingMode(bool);
-void SetMaxThreads(u_short);
 void SetRSAKeySize(size_t);
 void SetAESKeySize(size_t);
 void SetCryptPackage(bool);
@@ -122,9 +119,8 @@ void SetSocketOption(const SocketOption_t<T> opt)
 	socketoption.emplace_back(option);
 }
 
-long long GetFrequenz() const;
+DWORD GetFrequenz() const;
 bool GetBlockingMode() const;
-u_short GetMaxThreads() const;
 size_t GetRSAKeySize() const;
 size_t GetAESKeySize() const;
 bool GetCryptPackage() const;

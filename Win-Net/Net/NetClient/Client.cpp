@@ -2,14 +2,28 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
+THREAD(ThreadBaseTick)
+{
+	const auto client = (Client*)parameter;
+	if (!client) return NULL;
+
+	LOG_DEBUG(CSTRING("[NET] - BaseTick thread has been started"));
+	while (!client->DoNeedExit())
+	{
+		client->BaseTick();
+		Kernel32::Sleep(client->GetFrequenz());
+	}
+	LOG_DEBUG(CSTRING("[NET] - BaseTick thread has been end"));
+	return NULL;
+}
+
 Client::Client()
 {
 	Net::Codes::NetLoadErrorCodes();
 	SetAllToDefault();
 	NeedExit = FALSE;
 
-	std::thread BaseTickThread(&Client::BaseTickThread, this);
-	BaseTickThread.detach();
+	Thread::Create(ThreadBaseTick, this);
 }
 
 Client::~Client()
@@ -25,7 +39,6 @@ void Client::SetAllToDefault()
 	SetKeysSet(NULL);
 	sfrequenz = DEFAULT_FREQUENZ;
 	sBlockingMode = DEFAULT_BLOCKING_MODE;
-	sMaxThreads = DEFAULT_MAX_THREADS;
 	sRSAKeySize = DEFAULT_RSA_KEY_SIZE;
 	sAESKeySize = DEFAULT_AES_KEY_SIZE;
 	sCryptPackage = DEFAULT_CRYPT_PACKAGES;
@@ -33,26 +46,12 @@ void Client::SetAllToDefault()
 	sCalcLatencyInterval = DEFAULT_CALC_LATENCY_INTERVAL;
 
 	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
-	LOG_DEBUG(CSTRING("Max Threads has been set to default value of %i"), sMaxThreads);
 	LOG_DEBUG(CSTRING("RSA Key size has been set to default value of %llu"), sRSAKeySize);
 	LOG_DEBUG(CSTRING("AES Key size has been set to default value of %llu"), sAESKeySize);
 	LOG_DEBUG(CSTRING("Crypt Packages has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("Compress Packages has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("Blocking Mode has been set to default value of %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
-}
-
-/* Thread functions */
-void Client::BaseTickThread()
-{
-	LOG_DEBUG(CSTRING("BaseTickThread() has been started!"));
-	while (!DoNeedExit())
-	{
-		BaseTick();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	}
-	LOG_DEBUG(CSTRING("BaseTickThread() has been closed!"));
 }
 
 THREAD(Receive)
@@ -66,24 +65,19 @@ THREAD(Receive)
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
+	return NULL;
 }
 
-void Client::SetFrequenz(const long long sfrequenz)
+void Client::SetFrequenz(const DWORD sfrequenz)
 {
 	this->sfrequenz = sfrequenz;
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been changed to %lld"), sfrequenz);
+	LOG_DEBUG(CSTRING("Refresh-Frequenz has been changed to %lu"), sfrequenz);
 }
 
 void Client::SetBlockingMode(const bool sBlockingMode)
 {
 	this->sBlockingMode = sBlockingMode;
 	LOG_DEBUG(CSTRING("Blocking Mode has been %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
-}
-
-void Client::SetMaxThreads(const u_short sMaxThreads)
-{
-	this->sMaxThreads = sMaxThreads;
-	LOG_DEBUG(CSTRING("Max Threads has been changed to %i"), sMaxThreads);
 }
 
 void Client::SetRSAKeySize(const size_t sRSAKeySize)
@@ -122,7 +116,7 @@ void Client::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
 }
 
-long long Client::GetFrequenz() const
+DWORD Client::GetFrequenz() const
 {
 	return sfrequenz;
 }
@@ -130,11 +124,6 @@ long long Client::GetFrequenz() const
 bool Client::GetBlockingMode() const
 {
 	return sBlockingMode;
-}
-
-u_short Client::GetMaxThreads() const
-{
-	return sMaxThreads;
 }
 
 size_t Client::GetRSAKeySize() const
