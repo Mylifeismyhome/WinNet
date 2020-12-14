@@ -1454,55 +1454,6 @@ DWORD Client::DoReceive()
 	return NULL;
 }
 
-void Client::GetPackageDataSize()
-{
-	if (!network.data_size
-		|| network.data_size == INVALID_SIZE)
-		return;
-
-	if (network.data_full_size > 0)
-		return;
-
-	for (size_t it = 0; it < network.data_size; ++it)
-	{
-		if (!memcmp(&network.data.get()[it], NET_PACKAGE_BRACKET_OPEN, 1))
-		{
-			// find data full size
-			if (!memcmp(&network.data.get()[it], NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE)))
-			{
-				const auto startPos = it + strlen(NET_PACKAGE_SIZE);
-				size_t endPos = NULL;
-				for (auto z = startPos; z < network.data_size; ++z)
-				{
-					if (!memcmp(&network.data.get()[z], NET_PACKAGE_BRACKET_CLOSE, 1))
-					{
-						endPos = z;
-						break;
-					}
-				}
-
-				if (!endPos)
-					return;
-
-				const auto size = endPos - startPos - 1;
-				CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-				memcpy(dataSizeStr.get(), &network.data.get()[startPos + 1], size);
-				dataSizeStr.get()[size] = '\0';
-				const auto dataSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-				network.data_full_size = dataSize;
-				dataSizeStr.free();
-
-				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-				memcpy(newBuffer, network.data.get(), network.data_size);
-				newBuffer[network.data_full_size] = '\0';
-				network.data = newBuffer; // pointer swap
-
-				break;
-			}
-		}
-	}
-}
-
 void Client::ProcessPackages()
 {
 	if (!network.data_size

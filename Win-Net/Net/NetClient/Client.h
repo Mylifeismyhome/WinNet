@@ -197,7 +197,6 @@ void SingleSend(CPOINTER<BYTE>&, size_t, bool&);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE
-void GetPackageDataSize();
 void ProcessPackages();
 bool ExecutePackage(size_t, size_t);
 
