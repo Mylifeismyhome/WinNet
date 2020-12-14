@@ -1,33 +1,35 @@
 #pragma once
-#define NET_TIMER Net::Timer
-
 #include <Net/Net/Net.h>
+#include <Net/assets/timer.h>
+#include <ctime>
 
-NET_NAMESPACE_BEGIN(Net)
-NET_DSA_BEGIN
-NET_CLASS_BEGIN(Timer)
-std::chrono::time_point<std::chrono::high_resolution_clock> start;
-std::chrono::time_point<std::chrono::high_resolution_clock> end;
-double duration;
-bool Active;
+#include <Net/Import/Kernel32.h>
+#include <Net/assets/thread.h>
 
-long long startTime;
-long long endTime;
-long long timepassed;
-NET_CLASS_PUBLIC
+#define CONTINUE_TIMER return true
+#define STOP_TIMER return false
+typedef BOOL TimerRet;
+#define TIMER(fnc) TimerRet fnc(void* param)
+#define HANDLE_TIMER Net::Timer::Timer_t*
+#define UNUSED_PARAM(param) delete param
 
-NET_CLASS_CONSTRUCTUR(Timer)
-NET_CLASS_DESTRUCTUR(Timer)
+namespace Net
+{
+	namespace Timer
+	{
+		struct Timer_t
+		{
+			TimerRet(*func)(void*);
+			void* param;
+			double timer;
+			double last;
+			bool clear;
+			bool finished;
+		};
 
-void Start();
-void Restart();
-void Stop();
-double GetElapse() const;
-void SetActive(bool);
-bool IsActive() const;
-long long GetStartTime() const;
-long long GetEndTime() const;
-double GetTimePassed() const;
-NET_CLASS_END
-NET_DSA_END
-NET_NAMESPACE_END
+		HANDLE_TIMER Create(TimerRet(*)(void*), double, void* = nullptr);
+		void Clear(HANDLE_TIMER);
+		void WaitSingleObjectStopped(HANDLE_TIMER);
+		void SetTime(HANDLE_TIMER, double);
+	}
+}

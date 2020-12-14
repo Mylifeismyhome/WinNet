@@ -141,9 +141,6 @@
     <ClCompile Include="..\Net\Coding\Hex.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\assets\benchmark.cpp">
-      <Filter>Assets</Filter>
-    </ClCompile>
     <ClCompile Include="..\Net\assets\timer.cpp">
       <Filter>Assets</Filter>
     </ClCompile>
@@ -232,9 +229,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\Coding\md5\md5_loc.h">
       <Filter>Coding\md5</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\assets\benchmark.h">
-      <Filter>Assets</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\assets\timer.h">
       <Filter>Assets</Filter>

@@ -2,19 +2,44 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
-THREAD(ThreadBaseTick)
+THREAD(ThreadTick)
 {
 	const auto client = (Client*)parameter;
 	if (!client) return NULL;
 
-	LOG_DEBUG(CSTRING("[NET] - BaseTick thread has been started"));
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
 	while (!client->DoNeedExit())
 	{
-		client->BaseTick();
+		client->Tick();
 		Kernel32::Sleep(client->GetFrequenz());
 	}
-	LOG_DEBUG(CSTRING("[NET] - BaseTick thread has been end"));
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
 	return NULL;
+}
+
+THREAD(LatencyTick)
+{
+	const auto client = (Client*)parameter;
+	if (!client) return NULL;
+
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
+	ICMP _icmp(client->GetServerAddress());
+	_icmp.execute();
+
+	client->network.latency = _icmp.getLatency();
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
+	return NULL;
+}
+
+TIMER(DoCalcLatency)
+{
+	const auto client = (Client*)param;
+	if (!client) STOP_TIMER;
+
+	if(!client->IsConnected()) CONTINUE_TIMER;
+	Thread::Create(LatencyTick, client);
+	Timer::SetTime(client->network.hCalcLatency, client->GetCalcLatencyInterval());
+	CONTINUE_TIMER;
 }
 
 Client::Client()
@@ -23,7 +48,8 @@ Client::Client()
 	SetAllToDefault();
 	NeedExit = FALSE;
 
-	Thread::Create(ThreadBaseTick, this);
+	Thread::Create(ThreadTick, this);
+	network.hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), this);
 }
 
 Client::~Client()
@@ -290,6 +316,8 @@ void Client::ConnectionClosed()
 	}
 
 	network.latency = -1;
+	Timer::Clear(network.hCalcLatency);
+	network.hCalcLatency = nullptr;
 
 	SetConnected(false);
 }
@@ -451,30 +479,6 @@ void Client::Network::deleteRSAKeys()
 typeLatency Client::Network::getLatency() const
 {
 	return latency;
-}
-
-void Client::BaseTick()
-{
-	/* This function is used as an update function */
-	if (IsConnected())
-	{
-		// Calculate latency interval
-		if (network.lastCalcLatency < CURRENTCLOCKTIME)
-		{
-			std::thread(&Client::LatencyTick, this).detach();
-			network.lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
-		}
-	}
-
-	Tick();
-}
-
-void Client::LatencyTick()
-{
-	ICMP _icmp(GetServerAddress());
-	_icmp.execute();
-
-	network.latency = _icmp.getLatency();
 }
 
 void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed)

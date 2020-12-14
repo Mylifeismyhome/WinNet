@@ -1,81 +1,93 @@
-#include "timer.h"
+#include <Net/assets/timer.h>
 
-NET_NAMESPACE_BEGIN(Net)
-Timer::Timer()
+THREAD(TimerThread)
 {
-	duration = -1;
-	startTime = -1;
-	endTime = -1;
-	timepassed = 0;
-	Active = false;
+	if (!parameter)
+		return NULL;
+
+	auto timer = (Net::Timer::Timer_t*)parameter;
+	if (!timer->func)
+	{
+		timer->finished = true;
+		UNUSED_PARAM(timer->param);
+		delete timer;
+		timer = nullptr;
+		return NULL;
+	}
+
+	timer->last = clock();
+
+	while (TRUE)
+	{
+		if (timer->clear)
+		{
+			timer->finished = true;
+			UNUSED_PARAM(timer->param);
+			delete timer;
+			timer = nullptr;
+			return NULL;
+		}
+		
+		if ((clock() - timer->last) > timer->timer)
+		{
+			if (!(*timer->func)(timer->param))
+			{
+				timer->finished = true;
+				UNUSED_PARAM(timer->param);
+				delete timer;
+				timer = nullptr;
+				return NULL;
+			}
+
+			timer->last += timer->timer;
+		}
+
+		Net::Kernel32::Sleep(1);
+	}
 }
 
-Timer::~Timer()
+HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, void* param)
 {
-	Stop();
+	const auto timer_t = new Timer_t();
+	timer_t->param = param;
+	timer_t->func = func;
+	timer_t->timer = timer;
+	timer_t->clear = false;
+	timer_t->finished = false;
+
+#ifdef SERVER
+	CreateThread(nullptr, NULL, TimerThread, timer_t, NULL, nullptr);
+#else
+	Thread::Create(TimerThread, timer_t);
+#endif
+
+	return timer_t;
 }
 
-void Timer::Start()
+void Net::Timer::Clear(HANDLE_TIMER handle)
 {
-	SetActive(true);
-	start = std::chrono::high_resolution_clock::now();
+	if (!handle)
+		return;
+
+	handle->clear = true;
+	handle = nullptr;
 }
 
-void Timer::Restart()
+void Net::Timer::WaitSingleObjectStopped(HANDLE_TIMER handle)
 {
-	SetActive(true);
-	start = std::chrono::high_resolution_clock::now();
+	if (!handle)
+		return;
+
+	handle->clear = true;
+	while (!handle->finished) {};
+	handle = nullptr;
 }
 
-void Timer::Stop()
+void Net::Timer::SetTime(HANDLE_TIMER handle, const double timer)
 {
-	end = std::chrono::high_resolution_clock::now();
+	if (!handle)
+		return;
 
-	const auto start_elapse = std::chrono::time_point_cast<std::chrono::microseconds>(start).time_since_epoch().count();
-	const auto end_elapse = std::chrono::time_point_cast<std::chrono::microseconds>(end).time_since_epoch().count();
-	startTime = static_cast<long long>(start_elapse * 0.001);
-	endTime = static_cast<long long>(end_elapse * 0.001);
-
-	const auto elapse = end_elapse - start_elapse;
-	duration = elapse * 0.001;
-	SetActive(false);
+	handle->timer = timer;
+	handle = nullptr;
 }
-
-double Timer::GetElapse() const
-{
-	return duration;
-}
-
-void Timer::SetActive(const bool active)
-{
-	Active = active;
-}
-
-bool Timer::IsActive() const
-{
-	return Active;
-}
-
-long long Timer::GetStartTime() const
-{
-	return startTime;
-}
-
-long long Timer::GetEndTime() const
-{
-	return endTime;
-}
-
-double Timer::GetTimePassed() const
-{
-	const auto end = std::chrono::high_resolution_clock::now();
-
-	const auto start_elapse = std::chrono::time_point_cast<std::chrono::microseconds>(start).time_since_epoch().count();
-	const auto end_elapse = std::chrono::time_point_cast<std::chrono::microseconds>(end).time_since_epoch().count();
-
-	const auto elapse = end_elapse - start_elapse;
-	const auto duration = elapse * 0.001;
-	
-	return duration;
-}
-NET_NAMESPACE_END

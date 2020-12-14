@@ -972,7 +972,6 @@
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c" />
     <ClCompile Include="..\..\..\extern\ZLib\zutil.c" />
     <ClCompile Include="..\Net\assets\assets.cpp" />
-    <ClCompile Include="..\Net\assets\benchmark.cpp" />
     <ClCompile Include="..\Net\assets\manager\dirmanager.cpp" />
     <ClCompile Include="..\Net\assets\manager\filemanager.cpp" />
     <ClCompile Include="..\Net\assets\manager\logmanager.cpp" />
@@ -1005,7 +1004,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\assets\assets.h" />
-    <ClInclude Include="..\Net\assets\benchmark.h" />
     <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
     <ClInclude Include="..\Net\assets\manager\filemanager.h" />
     <ClInclude Include="..\Net\assets\manager\logmanager.h" />

@@ -26,6 +26,7 @@
 #include <Net/ICMP/icmp.h>
 
 #include <Net/assets/thread.h>
+#include <Net/assets/timer.h>
 
 CONSTEXPR auto DEFAULT_RSA_KEY_SIZE = 1024;
 CONSTEXPR auto DEFAULT_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
@@ -63,7 +64,7 @@ bool RSAHandshake; // set to true as soon as we have the public key from the Ser
 bool estabilished;
 
 typeLatency latency;
-double lastCalcLatency;
+HANDLE_TIMER hCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
@@ -75,7 +76,7 @@ RSA = nullptr;
 RSAHandshake = false;
 estabilished = false;
 latency = -1;
-lastCalcLatency = 0;
+hCalcLatency = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
@@ -143,9 +144,6 @@ void Timeout();
 /* clear all stored data */
 void ConnectionClosed();
 
-void ReceiveThread();
-void BaseTickThread();
-
 void CompressData(BYTE*&, size_t&) const;
 void DecompressData(BYTE*&, size_t&) const;
 
@@ -180,8 +178,6 @@ size_t GetNextPackageSize() const;
 size_t GetReceivedPackageSize() const;
 float GetReceivedPackageSizeAsPerc() const;
 
-void BaseTick();
-void LatencyTick();
 NET_DEFINE_CALLBACK(void, Tick) {}
 DWORD DoReceive();
 bool CheckDataN(int id, NET_PACKAGE pkg);
