@@ -37,6 +37,9 @@
     <Filter Include="Cryption\BCrypt">
       <UniqueIdentifier>{d84f6382-ee02-4f16-96a8-e37048f82143}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Import">
+      <UniqueIdentifier>{d3668493-a839-44a7-9586-d7720675e3c6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
@@ -159,6 +162,15 @@
     <ClCompile Include="..\Net\assets\manager\dirmanager.cpp">
       <Filter>Assets\manager</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\assets\thread.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Import\Ntdll.cpp">
+      <Filter>Import</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Import\MemoryModule.c">
+      <Filter>Import</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -238,6 +250,15 @@
     </ClInclude>
     <ClInclude Include="..\Net\assets\manager\logmanager.h">
       <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\assets\thread.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Ntdll.h">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\MemoryModule.h">
+      <Filter>Import</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

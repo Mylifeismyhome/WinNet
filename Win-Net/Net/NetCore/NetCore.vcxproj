@@ -976,6 +976,7 @@
     <ClCompile Include="..\Net\assets\manager\dirmanager.cpp" />
     <ClCompile Include="..\Net\assets\manager\filemanager.cpp" />
     <ClCompile Include="..\Net\assets\manager\logmanager.cpp" />
+    <ClCompile Include="..\Net\assets\thread.cpp" />
     <ClCompile Include="..\Net\assets\timer.cpp" />
     <ClCompile Include="..\Net\assets\web\http.cpp" />
     <ClCompile Include="..\Net\Coding\BASE64.cpp" />
@@ -993,6 +994,8 @@
     <ClCompile Include="..\Net\Cryption\XOR.cpp" />
     <ClCompile Include="..\Net\Database\MYSQL.cpp" />
     <ClCompile Include="..\Net\ICMP\icmp.cpp" />
+    <ClCompile Include="..\Net\Import\MemoryModule.c" />
+    <ClCompile Include="..\Net\Import\Ntdll.cpp" />
     <ClCompile Include="..\Net\Net\Net.cpp" />
     <ClCompile Include="..\Net\Net\NetCodes.cpp" />
     <ClCompile Include="..\Net\Net\NetString.cpp" />
@@ -1005,6 +1008,7 @@
     <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
     <ClInclude Include="..\Net\assets\manager\filemanager.h" />
     <ClInclude Include="..\Net\assets\manager\logmanager.h" />
+    <ClInclude Include="..\Net\assets\thread.h" />
     <ClInclude Include="..\Net\assets\timer.h" />
     <ClInclude Include="..\Net\assets\web\http.h" />
     <ClInclude Include="..\Net\Coding\BASE64.h" />
@@ -1020,6 +1024,8 @@
     <ClInclude Include="..\Net\Cryption\XOR.h" />
     <ClInclude Include="..\Net\Database\MYSQL.h" />
     <ClInclude Include="..\Net\ICMP\icmp.h" />
+    <ClInclude Include="..\Net\Import\MemoryModule.h" />
+    <ClInclude Include="..\Net\Import\Ntdll.h" />
     <ClInclude Include="..\Net\Net\NativePackages.h" />
     <ClInclude Include="..\Net\Net\Net.h" />
     <ClInclude Include="..\Net\Net\NetCodes.h" />

@@ -283,6 +283,9 @@ static void Free(T*& data)
 ////////////////////////////////////////////////////
 namespace Net
 {
+	void load();
+	void unload();
+
 	namespace ssl
 	{
 		struct NET_SSL_METHOD_T

@@ -25,6 +25,8 @@
 
 #include <Net/ICMP/icmp.h>
 
+#include <Net/assets/thread.h>
+
 CONSTEXPR auto DEFAULT_MAX_THREADS = 2;
 CONSTEXPR auto DEFAULT_RSA_KEY_SIZE = 1024;
 CONSTEXPR auto DEFAULT_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
@@ -185,7 +187,7 @@ float GetReceivedPackageSizeAsPerc() const;
 void BaseTick();
 void LatencyTick();
 NET_DEFINE_CALLBACK(void, Tick) {}
-void Packager();
+void DoReceive();
 bool CheckDataN(int id, NET_PACKAGE pkg);
 NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return false; }
 
@@ -195,7 +197,6 @@ void SingleSend(CPOINTER<BYTE>&, size_t, bool&);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE
-void DoReceive();
 void GetPackageDataSize();
 void ProcessPackages();
 bool ExecutePackage(size_t, size_t);

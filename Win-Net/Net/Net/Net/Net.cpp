@@ -1,6 +1,19 @@
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
 
+// Imports
+#include <Net/Import/Ntdll.h>
+
+void Net::load()
+{
+	Ntdll::Initialize();
+}
+
+void Net::unload()
+{
+	Ntdll::Uninitialize();
+}
+
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
 {
 	for (auto& val : NET_SSL_METHOD_L)

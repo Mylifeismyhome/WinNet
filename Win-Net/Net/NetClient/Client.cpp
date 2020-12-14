@@ -55,17 +55,17 @@ void Client::BaseTickThread()
 	LOG_DEBUG(CSTRING("BaseTickThread() has been closed!"));
 }
 
-void Client::ReceiveThread()
+THREAD(Receive)
 {
-	LOG_DEBUG(CSTRING("ReceiveThread() has been started!"));
-	while (IsConnected())
-	{
-		Packager();
+	const auto client = (Client*)parameter;
+	if(!client) return NULL;
 
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	}
-	Clear();
-	LOG_DEBUG(CSTRING("ReceiveThread() has been closed!"));
+	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
+	while (client->IsConnected())
+		client->DoReceive();
+
+	client->Clear();
+	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
 }
 
 void Client::SetFrequenz(const long long sfrequenz)
@@ -248,8 +248,8 @@ bool Client::Connect(const char* Address, const u_short Port)
 		network.createNewRSAKeys(GetRSAKeySize());
 	}
 
-	// Create Receive Package Thread
-	std::thread(&Client::ReceiveThread, this).detach();
+	// Create Loop-Receive Thread
+	Thread::Create(Receive, this);
 
 	// callback
 	OnConnected();
@@ -2059,12 +2059,6 @@ void Client::DecompressData(BYTE*& data, size_t& size) const
 		LOG_DEBUG(CSTRING("Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
-}
-
-void Client::Packager()
-{
-	/* This function manages all the incomming packages */
-	DoReceive();
 }
 
 NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(Client)
