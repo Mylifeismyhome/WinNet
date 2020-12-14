@@ -1293,7 +1293,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(GetAESKeySize() + 1));
 		Random::GetRandStringNew(Key.reference().get(), GetAESKeySize());
 		Key.get()[GetAESKeySize()] = '\0';
-		
+
 		CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
@@ -1754,7 +1754,7 @@ void Server::Acceptor()
 		for (const auto& entry : socketoption)
 		{
 			const auto res = _SetSocketOption(GetAcceptSocket(), entry);
-			if(res < 0)
+			if (res < 0)
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), GetServerName(), entry.opt, GetLastError());
 		}
 
@@ -2011,13 +2011,13 @@ void Server::DoReceive(NET_PEER peer)
 		// check if incomming is even valid
 		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_BRACKET_OPEN, 1) != 0)
 		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
+			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent invalid data"), GetServerName(), peer->IPAddr().get());
 			peer->network.reset();
 			return;
 		}
 		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
+			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent invalid data"), GetServerName(), peer->IPAddr().get());
 			peer->network.reset();
 			return;
 		}
@@ -2054,20 +2054,6 @@ void Server::DoReceive(NET_PEER peer)
 			memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
 			peer->network.setDataSize(peer->network.getDataSize() + data_size);
 			peer->network.setData(newBuffer); // pointer swap
-		}
-	}
-
-	// check if we have something to process already - since we have a fixed data receive size, should this be fine to process in everytick
-	for (size_t it = DEFAULT_SERVER_MAX_PACKET_SIZE - 1; it > 0; --it)
-	{
-		if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_BRACKET_OPEN, 1))
-		{
-			if (!memcmp(&peer->network.getDataReceive()[it], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)))
-			{
-				ProcessPackages(peer);
-				peer->network.reset();
-				return;
-			}
 		}
 	}
 
@@ -2142,68 +2128,56 @@ void Server::ProcessPackages(NET_PEER peer)
 	{
 		auto continuePackage = false;
 
-		// search for footer
-		for (auto it = peer->network.getDataSize() - 1; it > 0; --it)
+		// check if we have a header
+		auto idx = NULL;
+		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
-			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
+			LOG_ERROR(CSTRING("Package has no header"));
+			peer->network.clear();
+			return;
+		}
+
+		idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
+
+		// read entire Package size
+		size_t entirePackageSize = NULL;
+		size_t offsetBegin = NULL;
+		{
+			for (size_t y = idx; y < peer->network.getDataSize(); ++y)
 			{
-				if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)))
+				if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 				{
-					// check if we have a header
-					auto idx = NULL;
-					if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
-					{
-						LOG_ERROR(CSTRING("Package has no header"));
-						peer->network.clear();
-						return;
-					}
-
-					idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
-
-					// read entire Package size
-					size_t entirePackageSize = NULL;
-					size_t offsetBegin = NULL;
-					{
-						for (size_t y = idx; y < peer->network.getDataSize(); ++y)
-						{
-							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
-							{
-								offsetBegin = y;
-								const auto size = y - idx - 1;
-								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-								memcpy(dataSizeStr.get(), &peer->network.getData()[idx + 1], size);
-								dataSizeStr.get()[size] = '\0';
-								entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-								dataSizeStr.free();
-								break;
-							}
-						}
-					}
-
-					// Execute the package
-					ExecutePackage(peer, entirePackageSize, offsetBegin);
-
-					// re-alloc buffer
-					const auto leftSize = static_cast<int>(peer->network.getDataSize() - entirePackageSize) > 0 ? peer->network.getDataSize() - entirePackageSize : INVALID_SIZE;
-					if (leftSize != INVALID_SIZE
-						&& leftSize > 0)
-					{
-						const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
-						memcpy(leftBuffer, &peer->network.getData()[entirePackageSize], leftSize);
-						leftBuffer[leftSize] = '\0';
-						peer->network.setData(leftBuffer); // swap pointer
-						peer->network.setDataSize(leftSize);
-						peer->network.setDataFullSize(NULL);
-
-						continuePackage = true;
-					}
-					else
-						peer->network.clear();
-
+					offsetBegin = y;
+					const auto size = y - idx - 1;
+					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
+					memcpy(dataSizeStr.get(), &peer->network.getData()[idx + 1], size);
+					dataSizeStr.get()[size] = '\0';
+					entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+					dataSizeStr.free();
 					break;
 				}
 			}
 		}
+
+		// Execute the package
+		ExecutePackage(peer, entirePackageSize, offsetBegin);
+
+		// re-alloc buffer
+		const auto leftSize = static_cast<int>(peer->network.getDataSize() - entirePackageSize) > 0 ? peer->network.getDataSize() - entirePackageSize : INVALID_SIZE;
+		if (leftSize != INVALID_SIZE
+			&& leftSize > 0)
+		{
+			const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
+			memcpy(leftBuffer, &peer->network.getData()[entirePackageSize], leftSize);
+			leftBuffer[leftSize] = '\0';
+			peer->network.setData(leftBuffer); // swap pointer
+			peer->network.setDataSize(leftSize);
+			peer->network.setDataFullSize(NULL);
+
+			continuePackage = true;
+		}
+		else
+			peer->network.clear();
 
 		if (!continuePackage)
 			break;
@@ -2627,7 +2601,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	// set raw data
 	if (!rawData.empty())
 		Content.SetRawData(rawData);
-	
+
 	if (!CheckDataN(peer, id, Content))
 	{
 		if (!CheckData(peer, id, Content))
@@ -2651,8 +2625,8 @@ void Server::CompressData(BYTE*& data, size_t& size) const
 #ifdef DEBUG
 		LOG_DEBUG(CSTRING("Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
-}
-}
+	}
+	}
 
 void Server::DecompressData(BYTE*& data, size_t& size) const
 {
@@ -2675,7 +2649,7 @@ void Server::DecompressData(BYTE*& data, size_t& size) const
 		LOG_DEBUG(CSTRING("Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
-}
+	}
 
 NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Server)
 NET_SERVER_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)

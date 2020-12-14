@@ -198,7 +198,7 @@ NET_CLASS_PRIVATE
 void DoReceive();
 void GetPackageDataSize();
 void ProcessPackages();
-void ExecutePackage(size_t, size_t);
+bool ExecutePackage(size_t, size_t);
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);
