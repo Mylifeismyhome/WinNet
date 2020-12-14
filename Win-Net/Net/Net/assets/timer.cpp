@@ -1,6 +1,6 @@
 #include <Net/assets/timer.h>
 
-THREAD(TimerThread)
+THREAD(NetTimerThread)
 {
 	if (!parameter)
 		return NULL;
@@ -54,13 +54,7 @@ NET_HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, 
 	timer_t->timer = timer;
 	timer_t->clear = false;
 	timer_t->finished = false;
-
-#ifdef SERVER
-	CreateThread(nullptr, NULL, TimerThread, timer_t, NULL, nullptr);
-#else
-	Thread::Create(TimerThread, timer_t);
-#endif
-
+	Thread::Create(NetTimerThread, timer_t);
 	return timer_t;
 }
 
