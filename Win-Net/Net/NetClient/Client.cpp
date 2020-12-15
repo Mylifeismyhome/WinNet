@@ -21,7 +21,7 @@ TIMER(DoCalcLatency)
 	const auto client = (Client*)param;
 	if (!client) STOP_TIMER;
 
-	if(!client->IsConnected()) CONTINUE_TIMER;
+	if (!client->IsConnected()) CONTINUE_TIMER;
 	Thread::Create(LatencyTick, client);
 	Timer::SetTime(client->network.hCalcLatency, client->GetCalcLatencyInterval());
 	CONTINUE_TIMER;
@@ -67,7 +67,7 @@ void Client::SetAllToDefault()
 THREAD(Receive)
 {
 	const auto client = (Client*)parameter;
-	if(!client) return NULL;
+	if (!client) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 	while (client->IsConnected())
@@ -1409,6 +1409,7 @@ DWORD Client::DoReceive()
 				memcpy(newBuffer, network.data.get(), network.data_size);
 				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
 				network.data_size += data_size;
+				network.data.free();
 				network.data = newBuffer; // pointer swap
 			}
 			else
@@ -1424,6 +1425,7 @@ DWORD Client::DoReceive()
 			memcpy(newBuffer, network.data.get(), network.data_size);
 			memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
 			network.data_size += data_size;
+			network.data.free();
 			network.data = newBuffer; // pointer swap
 		}
 	}
@@ -1443,85 +1445,67 @@ void Client::ProcessPackages()
 	if (network.data_full_size > 0)
 		if (network.data_size != network.data_full_size) return;
 
-	do
+	if (network.data_full_size == 0)
 	{
-		auto continuePackage = false;
-
-		// check if we have a header
-		auto idx = NULL;
-		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		// read entire Package size
+		size_t entirePackageSize = NULL;
+		size_t offsetBegin = NULL;
+		const auto idx = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
 		{
-			LOG_ERROR(CSTRING("Package has no header"));
-			network.clearData();
-			return;
-		}
-
-		idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
-
-		if (network.data_full_size == 0)
-		{
-			// read entire Package size
-			size_t entirePackageSize = NULL;
-			size_t offsetBegin = NULL;
+			for (size_t y = idx; y < network.data_size; ++y)
 			{
-				for (size_t y = idx; y < network.data_size; ++y)
+				if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 				{
-					if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
-					{
-						offsetBegin = y;
-						const auto size = y - idx - 1;
-						CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-						memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
-						dataSizeStr.get()[size] = '\0';
-						entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-						dataSizeStr.free();
-						break;
-					}
+					offsetBegin = y;
+					const auto size = y - idx - 1;
+					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
+					memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
+					dataSizeStr.get()[size] = '\0';
+					entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+					dataSizeStr.free();
+					break;
 				}
 			}
-
-			// pre-allocate enough space
-			network.data_offset = offsetBegin;
-			network.data_full_size = entirePackageSize;
-			const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-			memcpy(newBuffer, network.data.get(), network.data_size);
-			newBuffer[network.data_full_size] = '\0';
-			network.data = newBuffer; // pointer swap
-			return;
 		}
 
-		// Execute the package
-		if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
+		// pre-allocate enough space
+		network.data_offset = offsetBegin;
+		network.data_full_size = entirePackageSize;
+		const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+		memcpy(newBuffer, network.data.get(), network.data_size);
+		newBuffer[network.data_full_size] = '\0';
+		network.data.free();
+		network.data = newBuffer; // pointer swap
+		return;
+	}
 
-		// re-alloc buffer
-		const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
-		if (leftSize != INVALID_SIZE
-			&& leftSize > 0)
-		{
-			const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
-			memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
-			leftBuffer[leftSize] = '\0';
-			network.data = leftBuffer; // swap pointer
-			network.data_size = leftSize;
-			network.data_full_size = NULL;
+	// Execute the package
+	if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
 
-			continuePackage = true;
-		}
-		else
-		{
-			network.data.free();
-			network.data_size = NULL;
-			network.data_full_size = NULL;
-		}
-
-		if (!continuePackage)
-			break;
-
-	} while (true);
+	// re-alloc buffer
+	const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
+	if (leftSize != INVALID_SIZE
+		&& leftSize > 0)
+	{
+		const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
+		memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
+		leftBuffer[leftSize] = '\0';
+		network.data.free();
+		network.data = leftBuffer; // swap pointer
+		network.data_size = leftSize;
+		network.data_full_size = NULL;
+	}
+	else
+	{
+		network.data.free();
+		network.data_size = NULL;
+		network.data_full_size = NULL;
+	}
 }
 
 bool Client::ExecutePackage(const size_t size, const size_t begin)
 {
+	// check if we execute a frame
 	if (memcmp(&network.data.get()[size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 		return false;
 
@@ -1604,7 +1588,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			LOG_ERROR(CSTRING("[NET] - Failure on initializing RSA"));
 			return false;
 		}
 
@@ -1613,7 +1597,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed Key to decrypt and decode the base64"));
+			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
 			return false;
 		}
 
@@ -1622,7 +1606,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed IV to decrypt and decode the base64"));
+			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
 			return false;
 		}
 
@@ -1632,7 +1616,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed to Init AES [1]"));
+			LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
 			return false;
 		}
 
@@ -1706,7 +1690,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
-						LOG_PEER(CSTRING("Failure on decrypting buffer"));
+						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 						return false;
 					}
 
@@ -1755,7 +1739,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), packageSize))
 				{
-					LOG_PEER(CSTRING("Failure on decrypting buffer"));
+					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					data.free();
 					return false;
 				}
@@ -1887,7 +1871,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 
 	if (!data.valid())
 	{
-		LOG_PEER(CSTRING("Data is nullptr"));
+		LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
 		return false;
 	}
 
@@ -1895,7 +1879,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 	PKG.Parse(reinterpret_cast<char*>(data.get()));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
-		LOG_PEER(CSTRING("Package ID is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
 		return false;
 	}
@@ -1903,14 +1887,14 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		LOG_PEER(CSTRING("Package ID is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
 		return false;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		LOG_PEER(CSTRING("Package Content is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		data.free();
 		return false;
 	}
@@ -1926,12 +1910,8 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 		Content.SetRawData(rawData);
 
 	if (!CheckDataN(id, Content))
-	{
 		if (!CheckData(id, Content))
-		{
-			LOG_PEER(CSTRING("Package is not defined!"));
-		}
-	}
+			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 
 	data.free();
 	return true;
