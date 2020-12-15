@@ -57,6 +57,7 @@ byte dataReceive[DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> data;
 size_t data_size;
 size_t data_full_size;
+size_t data_offset;
 bool recordingData;
 NET_RSA* RSA;
 bool RSAHandshake; // set to true as soon as we have the public key from the Server
@@ -71,6 +72,7 @@ memset(dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 data = nullptr;
 data_size = 0;
 data_full_size = 0;
+data_offset = 0;
 recordingData = false;
 RSA = nullptr;
 RSAHandshake = false;

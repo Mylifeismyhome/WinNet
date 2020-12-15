@@ -433,6 +433,7 @@ void Client::Network::AllocData(const size_t size)
 	memset(data.get(), NULL, size);
 	data_size = 0;
 	data_full_size = 0;
+	data_offset = 0;
 }
 
 void Client::Network::clearData()
@@ -440,6 +441,7 @@ void Client::Network::clearData()
 	data.free();
 	data_size = 0;
 	data_full_size = 0;
+	data_offset = 0;
 }
 
 void Client::SetRecordingData(const bool status)
@@ -1456,51 +1458,48 @@ void Client::ProcessPackages()
 
 		idx += static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
 
-		// read entire Package size
-		size_t entirePackageSize = NULL;
-		size_t offsetBegin = NULL;
+		if (network.data_full_size == 0)
 		{
-			for (size_t y = idx; y < network.data_size; ++y)
+			// read entire Package size
+			size_t entirePackageSize = NULL;
+			size_t offsetBegin = NULL;
 			{
-				if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+				for (size_t y = idx; y < network.data_size; ++y)
 				{
-					offsetBegin = y;
-					const auto size = y - idx - 1;
-					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-					memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
-					dataSizeStr.get()[size] = '\0';
-					entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-					dataSizeStr.free();
-					break;
+					if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+					{
+						offsetBegin = y;
+						const auto size = y - idx - 1;
+						CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
+						memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
+						dataSizeStr.get()[size] = '\0';
+						entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+						dataSizeStr.free();
+						break;
+					}
 				}
 			}
-		}
 
-		// pre-allocate enough space
-		if (network.data_size != entirePackageSize)
-		{
-			if (network.data_full_size != entirePackageSize)
-			{
-				network.data_full_size = entirePackageSize;
-				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-				memcpy(newBuffer, network.data.get(), network.data_size);
-				newBuffer[network.data_full_size] = '\0';
-				network.data = newBuffer; // pointer swap
-			}
-
+			// pre-allocate enough space
+			network.data_offset = offsetBegin;
+			network.data_full_size = entirePackageSize;
+			const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+			memcpy(newBuffer, network.data.get(), network.data_size);
+			newBuffer[network.data_full_size] = '\0';
+			network.data = newBuffer; // pointer swap
 			return;
 		}
 
 		// Execute the package
-		if (!ExecutePackage(entirePackageSize, offsetBegin)) return;
+		if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
 
 		// re-alloc buffer
-		const auto leftSize = static_cast<int>(network.data_size - entirePackageSize) > 0 ? network.data_size - entirePackageSize : INVALID_SIZE;
+		const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
 		if (leftSize != INVALID_SIZE
 			&& leftSize > 0)
 		{
 			const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
-			memcpy(leftBuffer, &network.data.get()[entirePackageSize], leftSize);
+			memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
 			leftBuffer[leftSize] = '\0';
 			network.data = leftBuffer; // swap pointer
 			network.data_size = leftSize;
