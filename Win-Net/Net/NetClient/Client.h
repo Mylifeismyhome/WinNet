@@ -178,7 +178,6 @@ size_t GetNextPackageSize() const;
 size_t GetReceivedPackageSize() const;
 float GetReceivedPackageSizeAsPerc() const;
 
-NET_DEFINE_CALLBACK(void, Tick) {}
 DWORD DoReceive();
 bool CheckDataN(int id, NET_PACKAGE pkg);
 NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return false; }

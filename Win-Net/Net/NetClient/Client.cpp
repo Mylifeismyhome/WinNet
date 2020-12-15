@@ -2,21 +2,6 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
-THREAD(ThreadTick)
-{
-	const auto client = (Client*)parameter;
-	if (!client) return NULL;
-
-	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
-	while (!client->DoNeedExit())
-	{
-		client->Tick();
-		Kernel32::Sleep(client->GetFrequenz());
-	}
-	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
-	return NULL;
-}
-
 THREAD(LatencyTick)
 {
 	const auto client = (Client*)parameter;
@@ -48,7 +33,6 @@ Client::Client()
 	SetAllToDefault();
 	NeedExit = FALSE;
 
-	Thread::Create(ThreadTick, this);
 	network.hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), this);
 }
 
