@@ -34,6 +34,9 @@
 
 #include <Net/ICMP/icmp.h>
 
+#include <Net/assets/thread.h>
+#include <Net/assets/timer.h>
+
 /* DEFAULT SETTINGS AS MACRO */
 CONSTEXPR auto DEFAULT_SERVER_SERVERNAME = "UNKNOWN";
 CONSTEXPR auto DEFAULT_SERVER_SERVERPORT = 50000;
@@ -173,13 +176,14 @@ NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);
 #pragma endregion
 
+bool ErasePeer(NET_PEER);
+void UpdatePeer(NET_PEER);
+
 NET_CLASS_PRIVATE
 size_t _CounterPeersTable;
 void IncreasePeersCounter();
 void DecreasePeersCounter();
 NET_PEER CreatePeer(sockaddr_in, SOCKET);
-bool ErasePeer(NET_PEER);
-void UpdatePeer(NET_PEER);
 
 size_t GetNextPackageSize(NET_PEER) const;
 size_t GetReceivedPackageSize(NET_PEER) const;
@@ -187,7 +191,7 @@ float GetReceivedPackageSizeAsPerc(NET_PEER) const;
 
 char sServerName[SERVERNAME_LENGTH];
 u_short sServerPort;
-long long sfrequenz;
+DWORD sfrequenz;
 u_short sMaxThreads;
 size_t sRSAKeySize;
 size_t sAESKeySize;
@@ -201,7 +205,7 @@ NET_CLASS_PUBLIC
 void SetAllToDefault();
 void SetServerName(const char*);
 void SetServerPort(u_short);
-void SetFrequenz(long long);
+void SetFrequenz(DWORD);
 void SetMaxThreads(u_short);
 void SetTimeSpamProtection(float);
 void SetRSAKeySize(size_t);
@@ -224,7 +228,7 @@ void SetSocketOption(const SocketOption_t<T> opt)
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
-long long GetFrequenz() const;
+DWORD GetFrequenz() const;
 u_short GetMaxThreads() const;
 size_t GetRSAKeySize() const;
 size_t GetAESKeySize() const;
@@ -233,11 +237,12 @@ bool GetCompressPackage() const;
 long GetTCPReadTimeout() const;
 long GetCalcLatencyInterval() const;
 
+bool DoExit;
+
 NET_CLASS_PRIVATE
 SOCKET ListenSocket;
 SOCKET AcceptSocket;
 
-bool DoExit;
 bool bRunning;
 
 NET_CLASS_PUBLIC
@@ -255,9 +260,6 @@ bool Start(const char*, u_short);
 bool Close();
 void Terminate();
 
-NET_CLASS_PRIVATE
-void Acceptor();
-
 short Handshake(NET_PEER);
 
 NET_CLASS_PUBLIC
@@ -272,14 +274,14 @@ void DoSend(NET_PEER, int, NET_PACKAGE);
 
 size_t getCountPeers() const;
 
+void Acceptor();
+DWORD DoReceive(NET_PEER);
+
+NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
+
 NET_CLASS_PRIVATE
-void ReceiveThread(sockaddr_in, SOCKET);
-void TickThread();
-void AcceptorThread();
-void DoReceive(NET_PEER);
-void GetPackageDataSize(NET_PEER) const;
 void ProcessPackages(NET_PEER);
-void ExecutePackage(NET_PEER, size_t, size_t);
+bool ExecutePackage(NET_PEER, size_t, size_t);
 
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 
@@ -292,7 +294,6 @@ NET_CLASS_PROTECTED
 NET_DEFINE_CALLBACK(void, OnPeerConnect, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
 NET_DSA_END
 NET_NAMESPACE_END

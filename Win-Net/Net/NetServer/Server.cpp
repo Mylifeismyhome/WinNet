@@ -102,17 +102,17 @@ void Server::SetServerPort(const u_short sServerPort)
 	}
 }
 
-void Server::SetFrequenz(const long long sfrequenz)
+void Server::SetFrequenz(const DWORD sfrequenz)
 {
 	this->sfrequenz = sfrequenz;
 
 	if (strcmp(GetServerName(), DEFAULT_SERVER_SERVERNAME) == 0)
 	{
-		LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to %lld"), sfrequenz);
+		LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to %lu"), sfrequenz);
 	}
 	else
 	{
-		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lld"), GetServerName(), sfrequenz);
+		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lu"), GetServerName(), sfrequenz);
 	}
 }
 
@@ -243,7 +243,7 @@ u_short Server::GetMaxThreads() const
 	return sMaxThreads;
 }
 
-long long Server::GetFrequenz() const
+DWORD Server::GetFrequenz() const
 {
 	return sfrequenz;
 }
@@ -577,35 +577,6 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 	ErasePeer(peer);
 }
 
-/* Thread functions */
-void Server::TickThread()
-{
-	LOG_DEBUG(CSTRING("TickThread() has been started!"));
-
-	while (IsRunning() && !NeedExit())
-	{
-		Tick();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	}
-
-	LOG_DEBUG(CSTRING("TickThread() has been closed!"));
-}
-
-void Server::AcceptorThread()
-{
-	LOG_DEBUG(CSTRING("AcceptorThread() has been started!"));
-
-	while (IsRunning() && !NeedExit())
-	{
-		Acceptor();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz() * 2));
-	}
-
-	LOG_DEBUG(CSTRING("AcceptorThread() has been closed!"));
-}
-
 void Server::SetListenSocket(const SOCKET ListenSocket)
 {
 	this->ListenSocket = ListenSocket;
@@ -634,6 +605,36 @@ SOCKET Server::GetAcceptSocket() const
 bool Server::IsRunning() const
 {
 	return bRunning;
+}
+
+THREAD(TickThread)
+{
+	const auto server = (Server*)parameter;
+	if (!server) return NULL;
+
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
+	while (server->IsRunning() && !server->NeedExit())
+	{
+		server->Tick();
+		Kernel32::Sleep(server->GetFrequenz());
+	}
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
+	return NULL;
+}
+
+THREAD(AcceptorThread)
+{
+	const auto server = (Server*)parameter;
+	if (!server) return NULL;
+
+	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
+	while (server->IsRunning() && !server->NeedExit())
+	{
+		server->Acceptor();
+		Kernel32::Sleep(server->GetFrequenz());
+	}
+	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
+	return NULL;
 }
 
 bool Server::Start(const char* serverName, const u_short serverPort)
@@ -727,8 +728,8 @@ bool Server::Start(const char* serverName, const u_short serverPort)
 	}
 
 	// Create all needed Threads
-	std::thread(&Server::TickThread, this).detach();
-	std::thread(&Server::AcceptorThread, this).detach();
+	Thread::Create(TickThread, this);
+	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
 	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), GetServerName(), GetServerPort());
@@ -1739,6 +1740,117 @@ short Server::Handshake(NET_PEER peer)
 	return ServerHandshake::error;
 }
 
+
+struct Receive_t
+{
+	Server* server;
+	Server::NET_PEER peer;
+};
+
+THREAD(Receive)
+{
+	const auto param = (Receive_t*)parameter;
+	if (!param) return NULL;
+
+	auto peer = param->peer;
+	const auto server = param->server;
+
+	do
+	{
+		peer->setAsync(true);
+		const auto res = server->Handshake(peer);
+		if (res == ServerHandshake::peer_not_valid)
+		{
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), server->GetServerName(), peer->IPAddr().get());
+
+			// erase him
+			peer->setAsync(false);
+			server->ErasePeer(peer);
+			return NULL;
+		}
+		if (res == ServerHandshake::would_block)
+		{
+			peer->setAsync(false);
+			break;
+		}
+		if (res == ServerHandshake::is_websocket)
+		{
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to websocket!"), server->GetServerName(), peer->IPAddr().get());
+
+			// erase him
+			peer->setAsync(false);
+			server->ErasePeer(peer);
+			return NULL;
+		}
+		if (res == ServerHandshake::error)
+		{
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), server->GetServerName(), peer->IPAddr().get());
+
+			peer->setAsync(false);
+			server->ErasePeer(peer);
+			return NULL;
+		}
+		if (res == ServerHandshake::is_not_websocket)
+		{
+			peer->setAsync(false);
+			break;
+		}
+		peer->setAsync(false);
+	} while (!server->DoExit);
+
+	if (server->GetCryptPackage())
+	{
+		/* Create new RSA Key Pair */
+		peer->cryption.createKeyPair(server->GetRSAKeySize());
+
+		const auto PublicKey = peer->cryption.RSA->PublicKey();
+
+		Package PKG;
+		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
+		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+	}
+	else
+	{
+		// keep it empty, we get it filled back
+		Package PKG;
+		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
+	}
+
+	while (peer)
+	{
+		if (!server->IsRunning() || server->NeedExit())
+			break;
+
+		server->UpdatePeer(peer);
+		server->OnPeerUpdate(peer);
+
+		DWORD restTime = NULL;
+		SOCKET_VALID(peer->pSocket)
+		{
+			peer->setAsync(true);
+			restTime = server->DoReceive(peer);
+			peer->setAsync(false);
+		}
+		else
+		{
+			peer->setAsync(false);
+			break;
+		}
+
+		Kernel32::Sleep(restTime);
+	}
+
+	// wait until thread has finished
+	while (peer && peer->bLatency) Kernel32::Sleep(server->GetFrequenz());
+
+	// erase him
+	peer->setAsync(false);
+	server->ErasePeer(peer);
+
+	delete peer;
+	peer = nullptr;
+}
+
 void Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
@@ -1758,110 +1870,12 @@ void Server::Acceptor()
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), GetServerName(), entry.opt, GetLastError());
 		}
 
-		std::thread(&Server::ReceiveThread, this, client_addr, GetAcceptSocket()).detach();
+		auto peer = CreatePeer(client_addr, GetAcceptSocket());
+		const auto param = new Receive_t();
+		param->server = this;
+		param->peer = peer;
+		Thread::Create(Receive, param);
 	}
-}
-
-void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
-{
-	auto peer = CreatePeer(client_addr, socket);
-
-	do
-	{
-		peer->setAsync(true);
-		const auto res = Handshake(peer);
-		if (res == ServerHandshake::peer_not_valid)
-		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), GetServerName(), peer->IPAddr().get());
-
-			// erase him
-			peer->setAsync(false);
-			ErasePeer(peer);
-			return;
-		}
-		if (res == ServerHandshake::would_block)
-		{
-			peer->setAsync(false);
-			break;
-		}
-		if (res == ServerHandshake::is_websocket)
-		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to websocket!"), GetServerName(), peer->IPAddr().get());
-
-			// erase him
-			peer->setAsync(false);
-			ErasePeer(peer);
-			return;
-		}
-		if (res == ServerHandshake::error)
-		{
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), GetServerName(), peer->IPAddr().get());
-
-			peer->setAsync(false);
-			ErasePeer(peer);
-			return;
-		}
-		if (res == ServerHandshake::is_not_websocket)
-		{
-			peer->setAsync(false);
-			break;
-		}
-		peer->setAsync(false);
-	} while (!DoExit);
-
-	if (GetCryptPackage())
-	{
-		/* Create new RSA Key Pair */
-		peer->cryption.createKeyPair(GetRSAKeySize());
-
-		const auto PublicKey = peer->cryption.RSA->PublicKey();
-
-		Package PKG;
-		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
-		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
-	}
-	else
-	{
-		// keep it empty, we get it filled back
-		Package PKG;
-		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
-	}
-
-	while (peer)
-	{
-		if (!IsRunning() || NeedExit())
-			break;
-
-		UpdatePeer(peer);
-		OnPeerUpdate(peer);
-
-		SOCKET_VALID(peer->pSocket)
-		{
-			peer->setAsync(true);
-			DoReceive(peer);
-			peer->setAsync(false);
-		}
-		else
-		{
-			peer->setAsync(false);
-			break;
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	}
-
-	// wait until thread has finished
-	while (peer && peer->bLatency)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	};
-
-	// erase him
-	peer->setAsync(false);
-	ErasePeer(peer);
-
-	delete peer;
-	peer = nullptr;
 }
 
 /*
@@ -1881,14 +1895,14 @@ void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
 *	{END PACKAGE}									*		{END PACKAGE}
 *
  */
-void Server::DoReceive(NET_PEER peer)
+DWORD Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return;
+		return GetFrequenz();
 	);
 
 	SOCKET_NOT_VALID(peer->pSocket)
-		return;
+		return GetFrequenz();
 
 	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_SERVER_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
@@ -1899,103 +1913,102 @@ void Server::DoReceive(NET_PEER peer)
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAENETDOWN:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEFAULT:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAENOTCONN:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEINTR:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEINPROGRESS:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAENETRESET:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAENOTSOCK:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEOPNOTSUPP:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAESHUTDOWN:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEWOULDBLOCK:
 			ProcessPackages(peer);
 			peer->network.reset();
-			return;
+			return GetFrequenz();
 
 		case WSAEMSGSIZE:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAEINVAL:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
-
+			return GetFrequenz();
 
 		case WSAECONNABORTED:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAETIMEDOUT:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		case WSAECONNRESET:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 
 		default:
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 		}
 	}
 	if (data_size == 0)
@@ -2003,7 +2016,7 @@ void Server::DoReceive(NET_PEER peer)
 		peer->network.reset();
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
 		ErasePeer(peer);
-		return;
+		return GetFrequenz();
 	}
 
 	if (!peer->network.dataValid())
@@ -2013,13 +2026,13 @@ void Server::DoReceive(NET_PEER peer)
 		{
 			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent invalid data"), GetServerName(), peer->IPAddr().get());
 			peer->network.reset();
-			return;
+			return GetFrequenz();
 		}
 		if (memcmp(&peer->network.getDataReceive()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent invalid data"), GetServerName(), peer->IPAddr().get());
 			peer->network.reset();
-			return;
+			return GetFrequenz();
 		}
 
 		peer->network.allocData(data_size);
@@ -2058,60 +2071,8 @@ void Server::DoReceive(NET_PEER peer)
 	}
 
 	peer->network.reset();
-	GetPackageDataSize(peer);
-}
-
-void Server::GetPackageDataSize(NET_PEER peer) const
-{
-	PEER_NOT_VALID(peer,
-		return;
-	);
-
-	if (!peer->network.getDataSize()
-		|| peer->network.getDataSize() == INVALID_SIZE)
-		return;
-
-	if (peer->network.getDataFullSize() > 0)
-		return;
-
-	for (size_t it = 0; it < peer->network.getDataSize(); ++it)
-	{
-		if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_BRACKET_OPEN, 1))
-		{
-			// find data full size
-			if (!memcmp(&peer->network.getData()[it], NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE)))
-			{
-				const auto startPos = it + strlen(NET_PACKAGE_SIZE);
-				size_t endPos = NULL;
-				for (auto z = startPos; z < peer->network.getDataSize(); ++z)
-				{
-					if (!memcmp(&peer->network.getData()[z], NET_PACKAGE_BRACKET_CLOSE, 1))
-					{
-						endPos = z;
-						break;
-					}
-				}
-
-				if (!endPos)
-					return;
-
-				const auto size = endPos - startPos - 1;
-				CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-				memcpy(dataSizeStr.get(), &peer->network.getData()[startPos + 1], size);
-				dataSizeStr.get()[size] = '\0';
-				const auto dataSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-				peer->network.setDataFullSize(dataSize);
-				dataSizeStr.free();
-
-				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
-				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
-				newBuffer[peer->network.getDataFullSize()] = '\0';
-				peer->network.setData(newBuffer); // pointer swap
-
-				break;
-			}
-		}
-	}
+	ProcessPackages(peer);
+	return NULL;
 }
 
 void Server::ProcessPackages(NET_PEER peer)
@@ -2123,6 +2084,10 @@ void Server::ProcessPackages(NET_PEER peer)
 	if (!peer->network.getDataSize()
 		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
+
+	// keep going until we have received the entire package
+	if (peer->network.getDataFullSize() > 0)
+		if (peer->network.getDataSize() != peer->network.getDataFullSize()) return;
 
 	do
 	{
@@ -2159,8 +2124,23 @@ void Server::ProcessPackages(NET_PEER peer)
 			}
 		}
 
+		// pre-allocate enough space
+		if (peer->network.getDataSize() != entirePackageSize)
+		{
+			if (peer->network.getDataFullSize() != entirePackageSize)
+			{
+				peer->network.setDataFullSize(entirePackageSize);
+				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
+				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+				newBuffer[peer->network.getDataFullSize()] = '\0';
+				peer->network.setData(newBuffer); // pointer swap
+			}
+
+			return;
+		}
+
 		// Execute the package
-		ExecutePackage(peer, entirePackageSize, offsetBegin);
+		if (!ExecutePackage(peer, entirePackageSize, offsetBegin)) return;
 
 		// re-alloc buffer
 		const auto leftSize = static_cast<int>(peer->network.getDataSize() - entirePackageSize) > 0 ? peer->network.getDataSize() - entirePackageSize : INVALID_SIZE;
@@ -2185,18 +2165,14 @@ void Server::ProcessPackages(NET_PEER peer)
 	} while (true);
 }
 
-void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin)
+bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin)
 {
 	PEER_NOT_VALID(peer,
-		return;
+		return false;
 	);
 
 	if (memcmp(&peer->network.getData()[size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
-	{
-		LOG_ERROR(CSTRING("Package has no footer"));
-		peer->network.clear();
-		return;
-	}
+		return false;
 
 	CPOINTER<BYTE> data;
 	std::vector<Package_RawData_t> rawData;
@@ -2278,8 +2254,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("RSA Object has no instance"));
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
-			return;
+			return false;
 		}
 
 		if (!peer->cryption.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
@@ -2288,8 +2263,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("Failed Key to decrypt and decode the base64"));
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptKeyBase64);
-			return;
+			return false;
 		}
 
 		if (!peer->cryption.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
@@ -2298,8 +2272,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("Failed IV to decrypt and decode the base64"));
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptIVBase64);
-			return;
+			return false;
 		}
 
 		NET_AES aes;
@@ -2309,8 +2282,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("Failed to Init AES [1]"));
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
-			return;
+			return false;
 		}
 
 		AESKey.free();
@@ -2384,7 +2356,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						LOG_PEER(CSTRING("Failure on decrypting buffer"));
-						return;
+						return false;
 					}
 
 					rawData.emplace_back(entry);
@@ -2434,7 +2406,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 				{
 					LOG_PEER(CSTRING("Failure on decrypting buffer"));
 					data.free();
-					return;
+					return false;
 				}
 			}
 
@@ -2565,7 +2537,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	if (!data.valid())
 	{
 		LOG_PEER(CSTRING("Data is nullptr"));
-		return;
+		return false;
 	}
 
 	Package PKG;
@@ -2574,7 +2546,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
 		data.free();
-		return;
+		return false;
 	}
 
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
@@ -2582,14 +2554,14 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	{
 		LOG_PEER(CSTRING("Package ID is invalid!"));
 		data.free();
-		return;
+		return false;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("Package Content is invalid!"));
 		data.free();
-		return;
+		return false;
 	}
 
 	Package Content;
@@ -2611,6 +2583,7 @@ void Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	}
 
 	data.free();
+	return true;
 }
 
 void Server::CompressData(BYTE*& data, size_t& size) const
