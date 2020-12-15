@@ -41,14 +41,13 @@
 CONSTEXPR auto DEFAULT_SERVER_SERVERNAME = "UNKNOWN";
 CONSTEXPR auto DEFAULT_SERVER_SERVERPORT = 50000;
 CONSTEXPR auto DEFAULT_SERVER_FREQUENZ = 30;
-CONSTEXPR auto DEFAULT_SERVER_MAX_THREADS = 3;
 CONSTEXPR auto DEFAULT_SERVER_RSA_KEY_SIZE = 1024;
 CONSTEXPR auto DEFAULT_SERVER_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
 CONSTEXPR auto DEFAULT_SERVER_CRYPT_PACKAGES = false;
 CONSTEXPR auto DEFAULT_SERVER_COMPRESS_PACKAGES = false;
 CONSTEXPR auto DEFAULT_SERVER_MAX_PACKET_SIZE = 4096;
-CONSTEXPR auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 1; // Seconds
-CONSTEXPR auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
+CONSTEXPR auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 1;
+CONSTEXPR auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 1000;
 
 CONSTEXPR auto SERVERNAME_LENGTH = 128;
 
@@ -191,7 +190,6 @@ float GetReceivedPackageSizeAsPerc(NET_PEER) const;
 char sServerName[SERVERNAME_LENGTH];
 u_short sServerPort;
 DWORD sfrequenz;
-u_short sMaxThreads;
 size_t sRSAKeySize;
 size_t sAESKeySize;
 bool sCryptPackage;
@@ -205,7 +203,6 @@ void SetAllToDefault();
 void SetServerName(const char*);
 void SetServerPort(u_short);
 void SetFrequenz(DWORD);
-void SetMaxThreads(u_short);
 void SetTimeSpamProtection(float);
 void SetRSAKeySize(size_t);
 void SetAESKeySize(size_t);
@@ -228,7 +225,6 @@ void SetSocketOption(const SocketOption_t<T> opt)
 const char* GetServerName() const;
 u_short GetServerPort() const;
 DWORD GetFrequenz() const;
-u_short GetMaxThreads() const;
 size_t GetRSAKeySize() const;
 size_t GetAESKeySize() const;
 bool GetCryptPackage() const;

@@ -51,7 +51,6 @@ void Server::SetAllToDefault()
 	sfrequenz = DEFAULT_SERVER_FREQUENZ;
 	DoExit = NULL;
 
-	sMaxThreads = DEFAULT_SERVER_MAX_THREADS;
 	sRSAKeySize = DEFAULT_SERVER_RSA_KEY_SIZE;
 	sAESKeySize = DEFAULT_SERVER_AES_KEY_SIZE;
 	sCryptPackage = DEFAULT_SERVER_CRYPT_PACKAGES;
@@ -63,7 +62,6 @@ void Server::SetAllToDefault()
 
 	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
 	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
-	LOG_DEBUG(CSTRING("Max Threads has been set to default value of %i"), sMaxThreads);
 	LOG_DEBUG(CSTRING("RSA Key size has been set to default value of %llu"), sRSAKeySize);
 	LOG_DEBUG(CSTRING("AES Key size has been set to default value of %llu"), sAESKeySize);
 	LOG_DEBUG(CSTRING("Crypt Package has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
@@ -113,20 +111,6 @@ void Server::SetFrequenz(const DWORD sfrequenz)
 	else
 	{
 		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lu"), GetServerName(), sfrequenz);
-	}
-}
-
-void Server::SetMaxThreads(const u_short sMaxThreads)
-{
-	this->sMaxThreads = sMaxThreads;
-
-	if (strcmp(GetServerName(), DEFAULT_SERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Max Threads has been set to %i"), sMaxThreads);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Max Threads has been set to %i"), GetServerName(), sMaxThreads);
 	}
 }
 
@@ -236,11 +220,6 @@ const char* Server::GetServerName() const
 u_short Server::GetServerPort() const
 {
 	return sServerPort;
-}
-
-u_short Server::GetMaxThreads() const
-{
-	return sMaxThreads;
 }
 
 DWORD Server::GetFrequenz() const
