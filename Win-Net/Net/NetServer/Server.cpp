@@ -386,6 +386,39 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
+THREAD(LatencyTick)
+{
+	const auto peer = (Server::NET_PEER)parameter;
+	if (!peer) STOP_TIMER;
+
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
+	ICMP _icmp(peer->IPAddr().get());
+	_icmp.execute();
+
+	peer->latency = _icmp.getLatency();
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
+	return NULL;
+}
+
+struct DoCalcLatency_t
+{
+	Server* server;
+	Server::NET_PEER peer;
+};
+
+TIMER(DoCalcLatency)
+{
+	const auto info = (DoCalcLatency_t*)param;
+	if (!info) STOP_TIMER;
+
+	const auto server = info->server;
+	const auto peer = info->peer;
+
+	Thread::Create(LatencyTick, peer);
+	Timer::SetTime(peer->hCalcLatency, server->GetCalcLatencyInterval());
+	CONTINUE_TIMER;
+}
+
 Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
@@ -399,6 +432,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+	const auto _DoCalcLatency = new DoCalcLatency_t();
+	_DoCalcLatency->server = this;
+	_DoCalcLatency->peer = peer;
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), _DoCalcLatency);
 
 	IncreasePeersCounter();
 
@@ -452,22 +490,12 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->pSocket = INVALID_SOCKET;
 	}
 
+	// stop latency interval
+	Timer::Clear(peer->hCalcLatency);
+	peer->hCalcLatency = nullptr;
+
 	peer->unlock();
 	return true;
-}
-
-void Server::UpdatePeer(NET_PEER peer)
-{
-	PEER_NOT_VALID(peer,
-		return;
-	);
-
-	// Calculate latency interval
-	if (peer->lastCalcLatency < CURRENTCLOCKTIME)
-	{
-		std::thread(LatencyThread, peer).detach();
-		peer->lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
-	}
 }
 
 size_t Server::GetNextPackageSize(NET_PEER peer) const
@@ -520,7 +548,7 @@ void Server::NET_IPEER::clear()
 	NetVersionMatched = false;
 	bLatency = false;
 	latency = -1;
-	lastCalcLatency = 0;
+	hCalcLatency = nullptr;
 
 	network.clear();
 	network.reset();
@@ -1821,7 +1849,6 @@ THREAD(Receive)
 		if (!server->IsRunning() || server->NeedExit())
 			break;
 
-		server->UpdatePeer(peer);
 		server->OnPeerUpdate(peer);
 
 		DWORD restTime = NULL;

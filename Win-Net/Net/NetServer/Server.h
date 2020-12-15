@@ -140,7 +140,7 @@ bool NetVersionMatched;
 
 typeLatency latency;
 bool bLatency;
-double lastCalcLatency;
+NET_HANDLE_TIMER hCalcLatency;
 
 bool bHasBeenErased;
 bool bQueueLock;
@@ -154,7 +154,7 @@ isAsync = false;
 NetVersionMatched = false;
 latency = -1;
 bLatency = false;
-lastCalcLatency = 0;
+hCalcLatency = nullptr;
 bHasBeenErased = false;
 bQueueLock = false;
 NET_STRUCT_END_CONTRUCTION
@@ -177,7 +177,6 @@ void DisconnectPeer(NET_PEER, int, bool = false);
 #pragma endregion
 
 bool ErasePeer(NET_PEER);
-void UpdatePeer(NET_PEER);
 
 NET_CLASS_PRIVATE
 size_t _CounterPeersTable;
