@@ -1484,16 +1484,13 @@ void Client::ProcessPackages()
 		const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
 		memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
 		leftBuffer[leftSize] = '\0';
+		network.clearData();
 		network.data = leftBuffer; // swap pointer
 		network.data_size = leftSize;
-		network.data_full_size = NULL;
+		return;
 	}
-	else
-	{
-		network.data.free();
-		network.data_size = NULL;
-		network.data_full_size = NULL;
-	}
+
+	network.clearData();
 }
 
 bool Client::ExecutePackage(const size_t size, const size_t begin)
