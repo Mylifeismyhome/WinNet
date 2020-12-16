@@ -1,10 +1,6 @@
 #pragma once
 #include <Net/Net/Net.h>
-#include <Net/assets/timer.h>
 #include <ctime>
-
-#include <Net/Import/Kernel32.h>
-#include <Net/assets/thread.h>
 
 #define NET_CONTINUE_TIMER return true
 #define NET_STOP_TIMER return false

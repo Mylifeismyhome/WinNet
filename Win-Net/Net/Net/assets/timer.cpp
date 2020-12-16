@@ -1,4 +1,6 @@
 #include <Net/assets/timer.h>
+#include <Net/Import/Kernel32.h>
+#include <Net/assets/thread.h>
 
 NET_THREAD(NetTimerThread)
 {

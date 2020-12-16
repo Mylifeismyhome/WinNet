@@ -6,8 +6,6 @@
 
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
-#include <Net/Import/Kernel32.h>
-#include <Net/Import/Ntdll.h>
 #include <thread>
 
 #ifdef _WIN64

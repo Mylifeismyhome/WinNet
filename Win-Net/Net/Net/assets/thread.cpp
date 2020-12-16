@@ -1,4 +1,6 @@
 #include <Net/assets/thread.h>
+#include <Net/Import/Kernel32.h>
+#include <Net/Import/Ntdll.h>
 
 bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
