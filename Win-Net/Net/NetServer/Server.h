@@ -45,7 +45,7 @@ CONSTEXPR auto DEFAULT_SERVER_RSA_KEY_SIZE = 1024;
 CONSTEXPR auto DEFAULT_SERVER_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
 CONSTEXPR auto DEFAULT_SERVER_CRYPT_PACKAGES = false;
 CONSTEXPR auto DEFAULT_SERVER_COMPRESS_PACKAGES = false;
-CONSTEXPR auto DEFAULT_SERVER_MAX_PACKET_SIZE = 4096;
+CONSTEXPR auto DEFAULT_SERVER_MAX_PACKET_SIZE = 512;
 CONSTEXPR auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 1;
 CONSTEXPR auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 1000;
 
@@ -74,6 +74,7 @@ byte _dataReceive[DEFAULT_SERVER_MAX_PACKET_SIZE];
 CPOINTER<byte> _data;
 size_t _data_size;
 size_t _data_full_size;
+size_t _data_offset;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(network_t)
 reset();
@@ -95,6 +96,9 @@ size_t getDataSize() const;
 
 void setDataFullSize(size_t);
 size_t getDataFullSize() const;
+
+void SetDataOffset(size_t);
+size_t getDataOffset() const;
 
 bool dataValid() const;
 
