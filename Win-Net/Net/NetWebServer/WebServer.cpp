@@ -2208,14 +2208,14 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 	if (id < 0)
 	{
 		LOG_PEER(CSTRING("Member 'ID' is smaller than zero and gets blocked"));
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 		return false;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("Missing member 'CONTENT' in the package"));
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 		return false;
 	}
 
@@ -2228,7 +2228,7 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 	{
 		if (!CheckData(peer, id, Content))
 		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedPackage);
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 			return false;
 		}
 	}
