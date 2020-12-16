@@ -1434,6 +1434,7 @@ void Client::ProcessPackages()
 		{
 			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping the frame"));
 			network.clearData();
+			Disconnect();
 			return;
 		}
 
@@ -1470,6 +1471,7 @@ void Client::ProcessPackages()
 	{
 		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping the frame"));
 		network.clearData();
+		Disconnect();
 		return;
 	}
 

@@ -50,7 +50,9 @@ namespace Net
 			NET_ERR_EmptyRSAPublicKey,
 			NET_ERR_Versionmismatch,
 			NET_ERR_Handshake,
-			NET_ERR_UndefinedPackage,
+			NET_ERR_UndefinedFrame,
+			NET_ERR_InvalidFrameHeader,
+			NET_ERR_InvalidFrameFooter,
 
 			LAST_NET_ERROR_CODE
 		};

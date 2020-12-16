@@ -15,7 +15,9 @@ NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_DecryptIVBase64, "Failed to decrypt AES
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_EmptyRSAPublicKey, "Received RSA Publickey size is equal to NULL");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_Versionmismatch, "Application version mismatch");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_Handshake, "Failed to perform TLS Handshake");
-NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_UndefinedPackage, "Received Package is undefined");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_UndefinedFrame, "Frame is undefined and can not be processed");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameHeader, "Frame header is not valid");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameFooter, "Frame footer is not valid");
 NET_ERROR_LIST_END
 
 void Net::Codes::NetDefineErrorMessage(const int code, const char* message)

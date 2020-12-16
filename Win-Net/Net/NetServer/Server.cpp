@@ -2082,6 +2082,7 @@ void Server::ProcessPackages(NET_PEER peer)
 		{
 			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping the frame"));
 			peer->network.clear();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
 			return;
 		}
 
@@ -2118,6 +2119,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	{
 		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping the frame"));
 		peer->network.clear();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);
 		return;
 	}
 
