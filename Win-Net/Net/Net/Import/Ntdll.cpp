@@ -10,7 +10,8 @@
 
 #define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
 
-#include "Ntdll.h"
+#include <Net/Import/Ntdll.h>
+#include <Net/Import/MemoryModule.h>
 
 namespace Net
 {

@@ -11,6 +11,7 @@
 #define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
 
 #include <Net/Import/Kernel32.h>
+#include <Net/Import/MemoryModule.h>
 
 namespace Net
 {
