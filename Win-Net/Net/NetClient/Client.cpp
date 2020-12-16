@@ -1899,7 +1899,10 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))
+		{
 			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
+			Disconnect();
+		}
 
 	data.free();
 	return true;

@@ -2228,7 +2228,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			LOG_ERROR(CSTRING("[NET] - Failure on initializing RSA"));
 			return false;
 		}
 
@@ -2237,7 +2237,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed Key to decrypt and decode the base64"));
+			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
 			return false;
 		}
 
@@ -2246,7 +2246,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed IV to decrypt and decode the base64"));
+			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
 			return false;
 		}
 
@@ -2256,7 +2256,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			AESKey.free();
 			AESIV.free();
 
-			LOG_ERROR(CSTRING("Failed to Init AES [1]"));
+			LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
 			return false;
 		}
 
@@ -2330,7 +2330,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
-						LOG_PEER(CSTRING("Failure on decrypting buffer"));
+						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 						return false;
 					}
 
@@ -2379,7 +2379,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), packageSize))
 				{
-					LOG_PEER(CSTRING("Failure on decrypting buffer"));
+					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					data.free();
 					return false;
 				}
@@ -2511,7 +2511,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 
 	if (!data.valid())
 	{
-		LOG_PEER(CSTRING("Data is nullptr"));
+		LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
 		return false;
 	}
 
@@ -2519,7 +2519,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	PKG.Parse(reinterpret_cast<char*>(data.get()));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
-		LOG_PEER(CSTRING("Package ID is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
 		return false;
 	}
@@ -2527,14 +2527,14 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		LOG_PEER(CSTRING("Package ID is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
 		return false;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		LOG_PEER(CSTRING("Package Content is invalid!"));
+		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		data.free();
 		return false;
 	}
@@ -2550,12 +2550,11 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 		Content.SetRawData(rawData);
 
 	if (!CheckDataN(peer, id, Content))
-	{
 		if (!CheckData(peer, id, Content))
 		{
-			LOG_PEER(CSTRING("Package is not defined!"));
+			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 		}
-	}
 
 	data.free();
 	return true;
