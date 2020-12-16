@@ -1,14 +1,14 @@
-#define MODULE_NAME CSTRING("Kernel32")
+#define NET_MODULE_NAME CSTRING("Kernel32")
 
-#define IMPORT(name, strname, type) name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
+#define NET_IMPORT(name, strname, type) name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
 	if(!##name.valid()) \
 	{ \
 		Uninitialize(); \
-		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), MODULE_NAME, CSTRING(strname)); \
+		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), NET_MODULE_NAME, CSTRING(strname)); \
 		return false; \
 	}
 
-#define DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
+#define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
 
 #include <Net/Import/Kernel32.h>
 
@@ -18,16 +18,16 @@ namespace Net
 	{
 		CPOINTER<HMEMORYMODULE> handle;
 
-		CPOINTER <DEF_FindResourceA> _FindResourceA;
-		CPOINTER <DEF_FindResourceW> _FindResourceW;
-		CPOINTER <DEF_LoadResource> _LoadResource;
-		CPOINTER <DEF_SizeofResource> _SizeofResource;
-		CPOINTER <DEF_LockResource> _LockResource;
-		CPOINTER <DEF_LoadLibraryA> _LoadLibraryA;
-		CPOINTER <DEF_LoadLibraryW> _LoadLibraryW;
-		CPOINTER <DEF_GetProcAddress> _GetProcAddress;
-		CPOINTER <DEF_FreeLibrary> _FreeLibrary;
-		CPOINTER <DEF_Sleep> _Sleep;
+		CPOINTER<DEF_FindResourceA> _FindResourceA;
+		CPOINTER<DEF_FindResourceW> _FindResourceW;
+		CPOINTER<DEF_LoadResource> _LoadResource;
+		CPOINTER<DEF_SizeofResource> _SizeofResource;
+		CPOINTER<DEF_LockResource> _LockResource;
+		CPOINTER<DEF_LoadLibraryA> _LoadLibraryA;
+		CPOINTER<DEF_LoadLibraryW> _LoadLibraryW;
+		CPOINTER<DEF_GetProcAddress> _GetProcAddress;
+		CPOINTER<DEF_FreeLibrary> _FreeLibrary;
+		CPOINTER<DEF_Sleep> _Sleep;
 	}
 }
 
@@ -45,22 +45,22 @@ bool Net::Kernel32::Initialize()
 	handle.Set(new HMEMORYMODULE(MemoryLoadLibrary(module, size)));
 	if (!handle.valid())
 	{
-		LOG_ERROR(CSTRING("[%s] - LoadLibrary failed with error: %ld"), MODULE_NAME, GetLastError());
+		LOG_ERROR(CSTRING("[%s] - LoadLibrary failed with error: %ld"), NET_MODULE_NAME, GetLastError());
 		return false;
 	}
 
 	FREE(module);
 
-	IMPORT(_FindResourceA, "FindResourceA", DEF_FindResourceA);
-	IMPORT(_FindResourceW, "FindResourceW", DEF_FindResourceW);
-	IMPORT(_LoadResource, "LoadResource", DEF_LoadResource);
-	IMPORT(_SizeofResource, "SizeofResource", DEF_SizeofResource);
-	IMPORT(_LockResource, "LockResource", DEF_LockResource);
-	IMPORT(_LoadLibraryA, "LoadLibraryA", DEF_LoadLibraryA);
-	IMPORT(_LoadLibraryW, "LoadLibraryW", DEF_LoadLibraryW);
-	IMPORT(_GetProcAddress, "GetProcAddress", DEF_GetProcAddress);
-	IMPORT(_FreeLibrary, "FreeLibrary", DEF_FreeLibrary);
-	IMPORT(_Sleep, "Sleep", DEF_Sleep);
+	NET_IMPORT(_FindResourceA, "FindResourceA", DEF_FindResourceA);
+	NET_IMPORT(_FindResourceW, "FindResourceW", DEF_FindResourceW);
+	NET_IMPORT(_LoadResource, "LoadResource", DEF_LoadResource);
+	NET_IMPORT(_SizeofResource, "SizeofResource", DEF_SizeofResource);
+	NET_IMPORT(_LockResource, "LockResource", DEF_LockResource);
+	NET_IMPORT(_LoadLibraryA, "LoadLibraryA", DEF_LoadLibraryA);
+	NET_IMPORT(_LoadLibraryW, "LoadLibraryW", DEF_LoadLibraryW);
+	NET_IMPORT(_GetProcAddress, "GetProcAddress", DEF_GetProcAddress);
+	NET_IMPORT(_FreeLibrary, "FreeLibrary", DEF_FreeLibrary);
+	NET_IMPORT(_Sleep, "Sleep", DEF_Sleep);
 
 	return true;
 }
@@ -70,19 +70,19 @@ void Net::Kernel32::Uninitialize()
 	if (!handle.valid())
 		return;
 
-	DELETE_IMPORT(_FindResourceA);
-	DELETE_IMPORT(_FindResourceW);
-	DELETE_IMPORT(_LoadResource);
-	DELETE_IMPORT(_SizeofResource);
-	DELETE_IMPORT(_LockResource);
-	DELETE_IMPORT(_LoadLibraryA);
-	DELETE_IMPORT(_LoadLibraryW);
-	DELETE_IMPORT(_GetProcAddress);
-	DELETE_IMPORT(_FreeLibrary);
-	DELETE_IMPORT(_Sleep);
+	NET_DELETE_IMPORT(_FindResourceA);
+	NET_DELETE_IMPORT(_FindResourceW);
+	NET_DELETE_IMPORT(_LoadResource);
+	NET_DELETE_IMPORT(_SizeofResource);
+	NET_DELETE_IMPORT(_LockResource);
+	NET_DELETE_IMPORT(_LoadLibraryA);
+	NET_DELETE_IMPORT(_LoadLibraryW);
+	NET_DELETE_IMPORT(_GetProcAddress);
+	NET_DELETE_IMPORT(_FreeLibrary);
+	NET_DELETE_IMPORT(_Sleep);
 
 	MemoryFreeLibrary(*handle.get());
-	DELETE_IMPORT(handle);
+	NET_DELETE_IMPORT(handle);
 }
 
 HRSRC Net::Kernel32::FindResourceA(const HMODULE handle, const LPCSTR lpName, const LPCSTR lpType)

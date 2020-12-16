@@ -1,14 +1,14 @@
-#define MODULE_NAME CSTRING("Ntdll")
+#define NET_MODULE_NAME CSTRING("Ntdll")
 
-#define IMPORT(name, strname, type) 	name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
+#define NET_IMPORT(name, strname, type) 	name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
 	if(!##name.valid()) \
 	{ \
 		Uninitialize(); \
-		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), MODULE_NAME, CSTRING(strname)); \
+		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), NET_MODULE_NAME, CSTRING(strname)); \
 		return false; \
 	}
 
-#define DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
+#define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
 
 #include "Ntdll.h"
 
@@ -18,7 +18,7 @@ namespace Net
 	{
 		CPOINTER<HMEMORYMODULE> handle;
 
-		CPOINTER <DEF_lpNtCreateThreadEx> _NtCreateThreadEx;
+		CPOINTER<DEF_lpNtCreateThreadEx> _NtCreateThreadEx;
 	}
 }
 
@@ -42,7 +42,7 @@ bool Net::Ntdll::Initialize()
 
 	FREE(module);
 
-	IMPORT(_NtCreateThreadEx, "NtCreateThreadEx", DEF_lpNtCreateThreadEx);
+	NET_IMPORT(_NtCreateThreadEx, "NtCreateThreadEx", DEF_lpNtCreateThreadEx);
 	return true;
 }
 
@@ -51,10 +51,10 @@ void Net::Ntdll::Uninitialize()
 	if (!handle.valid())
 		return;
 
-	DELETE_IMPORT(_NtCreateThreadEx);
+	NET_DELETE_IMPORT(_NtCreateThreadEx);
 
 	MemoryFreeLibrary(*handle.get());
-	DELETE_IMPORT(handle);
+	NET_DELETE_IMPORT(handle);
 }
 
 NTSTATUS Net::Ntdll::NtCreateThreadEx(const PHANDLE hThread, const ACCESS_MASK DesiredAccess, const POBJECT_ATTRIBUTES ObjectAttributes, const HANDLE ProcessHandle, const LPTHREAD_START_ROUTINE lpStartAddress, const LPVOID lpParameter, const ULONG Flags, const ULONG_PTR StackZeroBits, const SIZE_T SizeOfStackCommit, const SIZE_T SizeOfStackReserve, const LPVOID lpBytesBuffer)
