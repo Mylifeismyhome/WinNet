@@ -1,4 +1,5 @@
-#include "Client.h"
+#include <NetClient/Client.h>
+#include <Net/Import/Kernel32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
