@@ -1,11 +1,11 @@
 #include <Net/assets/thread.h>
 
-bool Net::Thread::Create(THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
+bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
 	auto handle = INVALID_HANDLE_VALUE;
 
 	const auto status = (NTSTATUS)Ntdll::NtCreateThreadEx(&handle, THREAD_ALL_ACCESS, nullptr, GetCurrentProcess(), nullptr, parameter, THREAD_TERMINATE, NULL, NULL, NULL, nullptr);
-	if (status != STATUS_SUCCESS)
+	if (status != NET_STATUS_SUCCESS)
 	{
 		LOG_DEBUG(CSTRING("[Thread] - NtCreateThreadEx failed with: %lu"), GetLastError());
 		return false;

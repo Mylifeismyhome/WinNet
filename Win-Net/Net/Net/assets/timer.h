@@ -6,12 +6,12 @@
 #include <Net/Import/Kernel32.h>
 #include <Net/assets/thread.h>
 
-#define CONTINUE_TIMER return true
-#define STOP_TIMER return false
-typedef BOOL TimerRet;
-#define TIMER(fnc) TimerRet fnc(void* param)
+#define NET_CONTINUE_TIMER return true
+#define NET_STOP_TIMER return false
+typedef BOOL NET_TimerRet;
+#define NET_TIMER(fnc) NET_TimerRet fnc(void* param)
 #define NET_HANDLE_TIMER Net::Timer::Timer_t*
-#define UNUSED_PARAM(param) delete param
+#define NET_UNUSED_PARAM(param) delete param
 
 namespace Net
 {
@@ -19,7 +19,7 @@ namespace Net
 	{
 		struct Timer_t
 		{
-			TimerRet(*func)(void*);
+			NET_TimerRet(*func)(void*);
 			void* param;
 			double timer;
 			double last;
@@ -27,7 +27,7 @@ namespace Net
 			bool finished;
 		};
 
-		NET_HANDLE_TIMER Create(TimerRet(*)(void*), double, void* = nullptr);
+		NET_HANDLE_TIMER Create(NET_TimerRet(*)(void*), double, void* = nullptr);
 		void Clear(NET_HANDLE_TIMER);
 		void WaitSingleObjectStopped(NET_HANDLE_TIMER);
 		void SetTime(NET_HANDLE_TIMER, double);

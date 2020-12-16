@@ -376,10 +376,10 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
-THREAD(LatencyTick)
+NET_THREAD(LatencyTick)
 {
 	const auto peer = (Server::NET_PEER)parameter;
-	if (!peer) STOP_TIMER;
+	if (!peer) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
 	ICMP _icmp(peer->IPAddr().get());
@@ -396,17 +396,17 @@ struct DoCalcLatency_t
 	Server::NET_PEER peer;
 };
 
-TIMER(DoCalcLatency)
+NET_TIMER(DoCalcLatency)
 {
 	const auto info = (DoCalcLatency_t*)param;
-	if (!info) STOP_TIMER;
+	if (!info) NET_STOP_TIMER;
 
 	const auto server = info->server;
 	const auto peer = info->peer;
 
 	Thread::Create(LatencyTick, peer);
 	Timer::SetTime(peer->hCalcLatency, server->GetCalcLatencyInterval());
-	CONTINUE_TIMER;
+	NET_CONTINUE_TIMER;
 }
 
 Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
@@ -625,7 +625,7 @@ bool Server::IsRunning() const
 	return bRunning;
 }
 
-THREAD(TickThread)
+NET_THREAD(TickThread)
 {
 	const auto server = (Server*)parameter;
 	if (!server) return NULL;
@@ -640,7 +640,7 @@ THREAD(TickThread)
 	return NULL;
 }
 
-THREAD(AcceptorThread)
+NET_THREAD(AcceptorThread)
 {
 	const auto server = (Server*)parameter;
 	if (!server) return NULL;
@@ -1765,7 +1765,7 @@ struct Receive_t
 	Server::NET_PEER peer;
 };
 
-THREAD(Receive)
+NET_THREAD(Receive)
 {
 	const auto param = (Receive_t*)parameter;
 	if (!param) return NULL;

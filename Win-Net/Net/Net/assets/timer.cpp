@@ -1,6 +1,6 @@
 #include <Net/assets/timer.h>
 
-THREAD(NetTimerThread)
+NET_THREAD(NetTimerThread)
 {
 	if (!parameter)
 		return NULL;
@@ -9,7 +9,7 @@ THREAD(NetTimerThread)
 	if (!timer->func)
 	{
 		timer->finished = true;
-		UNUSED_PARAM(timer->param);
+		NET_UNUSED_PARAM(timer->param);
 		delete timer;
 		timer = nullptr;
 		return NULL;
@@ -22,7 +22,7 @@ THREAD(NetTimerThread)
 		if (timer->clear)
 		{
 			timer->finished = true;
-			UNUSED_PARAM(timer->param);
+			NET_UNUSED_PARAM(timer->param);
 			delete timer;
 			timer = nullptr;
 			return NULL;
@@ -33,7 +33,7 @@ THREAD(NetTimerThread)
 			if (!(*timer->func)(timer->param))
 			{
 				timer->finished = true;
-				UNUSED_PARAM(timer->param);
+				NET_UNUSED_PARAM(timer->param);
 				delete timer;
 				timer = nullptr;
 				return NULL;
@@ -46,7 +46,7 @@ THREAD(NetTimerThread)
 	}
 }
 
-NET_HANDLE_TIMER Net::Timer::Create(TimerRet(*func)(void*), const double timer, void* param)
+NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double timer, void* param)
 {
 	const auto timer_t = new Timer_t();
 	timer_t->param = param;

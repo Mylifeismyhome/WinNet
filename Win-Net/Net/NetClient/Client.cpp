@@ -2,7 +2,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
-THREAD(LatencyTick)
+NET_THREAD(LatencyTick)
 {
 	const auto client = (Client*)parameter;
 	if (!client) return NULL;
@@ -16,15 +16,15 @@ THREAD(LatencyTick)
 	return NULL;
 }
 
-TIMER(DoCalcLatency)
+NET_TIMER(DoCalcLatency)
 {
 	const auto client = (Client*)param;
-	if (!client) STOP_TIMER;
+	if (!client) NET_STOP_TIMER;
 
-	if (!client->IsConnected()) CONTINUE_TIMER;
+	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 	Thread::Create(LatencyTick, client);
 	Timer::SetTime(client->network.hCalcLatency, client->GetCalcLatencyInterval());
-	CONTINUE_TIMER;
+	NET_CONTINUE_TIMER;
 }
 
 Client::Client()
@@ -64,7 +64,7 @@ void Client::SetAllToDefault()
 	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
 }
 
-THREAD(Receive)
+NET_THREAD(Receive)
 {
 	const auto client = (Client*)parameter;
 	if (!client) return NULL;
