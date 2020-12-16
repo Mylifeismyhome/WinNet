@@ -1421,45 +1421,57 @@ DWORD Client::DoReceive()
 
 void Client::ProcessPackages()
 {
+	// check valid data size
 	if (!network.data_size
 		|| network.data_size == INVALID_SIZE)
 		return;
 
+	// [PROTOCOL] - obtain data full size from package header
 	if (network.data_full_size == 0)
 	{
-		// read entire Package size
-		size_t entirePackageSize = NULL;
-		size_t offsetBegin = NULL;
-		const auto idx = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE));
+		// [PROTOCOL] - check header is actually valid
+		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
-			for (size_t y = idx; y < network.data_size; ++y)
-			{
-				if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
-				{
-					offsetBegin = y;
-					const auto size = y - idx;
-					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
-					memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
-					dataSizeStr.get()[size] = '\0';
-					entirePackageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-					dataSizeStr.free();
-					break;
-				}
-			}
+			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping the frame"));
+			network.clearData();
+			return;
 		}
 
-		// pre-allocate enough space
-		network.data_offset = offsetBegin;
-		network.data_full_size = entirePackageSize;
-		const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-		memcpy(newBuffer, network.data.get(), network.data_size);
-		newBuffer[network.data_full_size] = '\0';
-		network.data = newBuffer; // pointer swap
-		return;
+		// [PROTOCOL] - read data full size from header
+		const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+		for (size_t i = offset; i < network.data_size; ++i)
+		{
+			// iterate until we have found the end tag
+			if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+			{
+				network.data_offset = i;
+				const auto size = i - offset - 1;
+				CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
+				memcpy(sizestr.get(), &network.data.get()[offset + 1], size);
+				sizestr.get()[size] = '\0';
+				network.data_full_size = strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10);
+				sizestr.free();
+
+				// pre-allocate enough space
+				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+				memcpy(newBuffer, network.data.get(), network.data_size);
+				newBuffer[network.data_full_size] = '\0';
+				network.data = newBuffer; // pointer swap
+				return;
+			}
+		}
 	}
 
 	// keep going until we have received the entire package
 	if (network.data_size != network.data_full_size) return;
+
+	// [PROTOCOL] - check footer is actually valid
+	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
+	{
+		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping the frame"));
+		network.clearData();
+		return;
+	}
 
 	// Execute the package
 	if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
@@ -1486,10 +1498,6 @@ void Client::ProcessPackages()
 
 bool Client::ExecutePackage(const size_t size, const size_t begin)
 {
-	// check if we execute a frame
-	if (memcmp(&network.data.get()[size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
-		return false;
-
 	CPOINTER<BYTE> data;
 	std::vector<Package_RawData_t> rawData;
 
