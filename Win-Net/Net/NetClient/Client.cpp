@@ -223,7 +223,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	if (GetSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%s"), GetServerAddress(), GetServerPort());
+		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
 		return false;
 	}
 
