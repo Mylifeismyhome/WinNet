@@ -1400,23 +1400,8 @@ DWORD Client::DoReceive()
 	{
 		if (network.data_full_size > 0)
 		{
-			if (network.data_size + data_size > network.data_full_size)
-			{
-				network.data_full_size += data_size;
-
-				/* store incomming */
-				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-				memcpy(newBuffer, network.data.get(), network.data_size);
-				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
-				network.data_size += data_size;
-				network.data.free();
-				network.data = newBuffer; // pointer swap
-			}
-			else
-			{
-				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
-				network.data_size += data_size;
-			}
+			memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+			network.data_size += data_size;
 		}
 		else
 		{
@@ -1425,7 +1410,6 @@ DWORD Client::DoReceive()
 			memcpy(newBuffer, network.data.get(), network.data_size);
 			memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
 			network.data_size += data_size;
-			network.data.free();
 			network.data = newBuffer; // pointer swap
 		}
 	}
@@ -1441,10 +1425,6 @@ void Client::ProcessPackages()
 		|| network.data_size == INVALID_SIZE)
 		return;
 
-	// keep going until we have received the entire package
-	if (network.data_full_size > 0)
-		if (network.data_size != network.data_full_size) return;
-
 	if (network.data_full_size == 0)
 	{
 		// read entire Package size
@@ -1457,7 +1437,7 @@ void Client::ProcessPackages()
 				if (!memcmp(&network.data.get()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
 				{
 					offsetBegin = y;
-					const auto size = y - idx - 1;
+					const auto size = y - idx;
 					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(size + 1));
 					memcpy(dataSizeStr.get(), &network.data.get()[idx + 1], size);
 					dataSizeStr.get()[size] = '\0';
@@ -1474,10 +1454,12 @@ void Client::ProcessPackages()
 		const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
 		memcpy(newBuffer, network.data.get(), network.data_size);
 		newBuffer[network.data_full_size] = '\0';
-		network.data.free();
 		network.data = newBuffer; // pointer swap
 		return;
 	}
+
+	// keep going until we have received the entire package
+	if (network.data_size != network.data_full_size) return;
 
 	// Execute the package
 	if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
@@ -1490,7 +1472,6 @@ void Client::ProcessPackages()
 		const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
 		memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
 		leftBuffer[leftSize] = '\0';
-		network.data.free();
 		network.data = leftBuffer; // swap pointer
 		network.data_size = leftSize;
 		network.data_full_size = NULL;
