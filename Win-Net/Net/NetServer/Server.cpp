@@ -2081,7 +2081,7 @@ void Server::ProcessPackages(NET_PEER peer)
 		// [PROTOCOL] - check header is actually valid
 		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping the frame"));
+			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 			peer->network.clear();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
 			return;
@@ -2118,7 +2118,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 	{
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping the frame"));
+		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping frame"));
 		peer->network.clear();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);
 		return;

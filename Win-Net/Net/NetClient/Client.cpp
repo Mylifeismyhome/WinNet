@@ -1433,7 +1433,7 @@ void Client::ProcessPackages()
 		// [PROTOCOL] - check header is actually valid
 		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping the frame"));
+			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 			network.clearData();
 			Disconnect();
 			return;
@@ -1470,7 +1470,7 @@ void Client::ProcessPackages()
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 	{
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping the frame"));
+		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping frame"));
 		network.clearData();
 		Disconnect();
 		return;
