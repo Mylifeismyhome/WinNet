@@ -1,5 +1,7 @@
 #define NET_MODULE_NAME CSTRING("Ntdll")
 
+#define DECLARE_IMPORT(type, name) static CPOINTER<##type> ##name
+
 #define NET_IMPORT(name, strname, type) 	name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
 	if(!##name.valid()) \
 	{ \
@@ -17,9 +19,9 @@ namespace Net
 {
 	namespace Ntdll
 	{
-		CPOINTER<HMEMORYMODULE> handle;
+		DECLARE_IMPORT(HMEMORYMODULE, handle);
 
-		CPOINTER<DEF_lpNtCreateThreadEx> _NtCreateThreadEx;
+		DECLARE_IMPORT(DEF_lpNtCreateThreadEx, _NtCreateThreadEx);
 	}
 }
 

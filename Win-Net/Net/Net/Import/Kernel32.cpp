@@ -1,5 +1,7 @@
 #define NET_MODULE_NAME CSTRING("Kernel32")
 
+#define DECLARE_IMPORT(type, name) static CPOINTER<##type> ##name
+
 #define NET_IMPORT(name, strname, type) name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
 	if(!##name.valid()) \
 	{ \
@@ -17,18 +19,18 @@ namespace Net
 {
 	namespace Kernel32
 	{
-		CPOINTER<HMEMORYMODULE> handle;
+		DECLARE_IMPORT(HMEMORYMODULE, handle);
 
-		CPOINTER<DEF_FindResourceA> _FindResourceA;
-		CPOINTER<DEF_FindResourceW> _FindResourceW;
-		CPOINTER<DEF_LoadResource> _LoadResource;
-		CPOINTER<DEF_SizeofResource> _SizeofResource;
-		CPOINTER<DEF_LockResource> _LockResource;
-		CPOINTER<DEF_LoadLibraryA> _LoadLibraryA;
-		CPOINTER<DEF_LoadLibraryW> _LoadLibraryW;
-		CPOINTER<DEF_GetProcAddress> _GetProcAddress;
-		CPOINTER<DEF_FreeLibrary> _FreeLibrary;
-		CPOINTER<DEF_Sleep> _Sleep;
+		DECLARE_IMPORT(DEF_FindResourceA, _FindResourceA);
+		DECLARE_IMPORT(DEF_FindResourceW, _FindResourceW);
+		DECLARE_IMPORT(DEF_LoadResource, _LoadResource);
+		DECLARE_IMPORT(DEF_SizeofResource, _SizeofResource);
+		DECLARE_IMPORT(DEF_LockResource, _LockResource);
+		DECLARE_IMPORT(DEF_LoadLibraryA, _LoadLibraryA);
+		DECLARE_IMPORT(DEF_LoadLibraryW, _LoadLibraryW);
+		DECLARE_IMPORT(DEF_GetProcAddress, _GetProcAddress);
+		DECLARE_IMPORT(DEF_FreeLibrary, _FreeLibrary);
+		DECLARE_IMPORT(DEF_Sleep, _Sleep);
 	}
 }
 
