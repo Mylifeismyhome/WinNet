@@ -1,7 +1,5 @@
 #pragma once
 #include <Net/Net/Net.h>
-#include <Net/Cryption/XOR.h>
-#include <Net/assets/manager/logmanager.h>
 
 typedef HRSRC(WINAPI* DEF_FindResourceA)(HMODULE, LPCSTR, LPCSTR);
 typedef HRSRC(WINAPI* DEF_FindResourceW)(HMODULE, const wchar_t*, const wchar_t*);

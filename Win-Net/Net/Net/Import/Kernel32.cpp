@@ -14,6 +14,8 @@
 
 #include <Net/Import/Kernel32.h>
 #include <Net/Import/MemoryModule.h>
+#include <Net/Cryption/PointerCryption.h>
+#include <Net/assets/manager/logmanager.h>
 
 namespace Net
 {
