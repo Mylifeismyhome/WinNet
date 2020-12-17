@@ -191,7 +191,7 @@ void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE
 void ProcessPackages();
-bool ExecutePackage(size_t, size_t);
+bool ExecutePackage();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);

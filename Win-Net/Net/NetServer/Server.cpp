@@ -2113,7 +2113,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// keep going until we have received the entire package
-	if (peer->network.getDataSize() != peer->network.getDataFullSize()) return;
+	if (peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
@@ -2125,7 +2125,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// Execute the package
-	if (!ExecutePackage(peer, peer->network.getDataFullSize(), peer->network.getDataOffset())) return;
+	if (!ExecutePackage(peer)) return;
 
 	// re-alloc buffer
 	const auto leftSize = static_cast<int>(peer->network.getDataSize() - peer->network.getDataFullSize()) > 0 ? peer->network.getDataSize() - peer->network.getDataFullSize() : INVALID_SIZE;
@@ -2144,7 +2144,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	peer->network.clear();
 }
 
-bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin)
+bool Server::ExecutePackage(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return false;
@@ -2156,7 +2156,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 	/* Crypt */
 	if (GetCryptPackage() && peer->cryption.getHandshakeStatus())
 	{
-		auto offset = begin + 1;
+		auto offset = peer->network.getDataOffset() + 1;
 
 		CPOINTER<BYTE> AESKey;
 		size_t AESKeySize;
@@ -2387,14 +2387,14 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == peer->network.getDataFullSize())
 				break;
 
 		} while (true);
 	}
 	else
 	{
-		auto offset = begin + 1;
+		auto offset = peer->network.getDataOffset() + 1;
 
 		do
 		{
@@ -2504,7 +2504,7 @@ bool Server::ExecutePackage(NET_PEER peer, const size_t size, const size_t begin
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == peer->network.getDataFullSize())
 				break;
 
 		} while (true);

@@ -280,7 +280,7 @@ NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 
 NET_CLASS_PRIVATE
 void ProcessPackages(NET_PEER);
-bool ExecutePackage(NET_PEER, size_t, size_t);
+bool ExecutePackage(NET_PEER);
 
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 

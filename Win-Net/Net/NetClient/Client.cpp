@@ -1465,7 +1465,7 @@ void Client::ProcessPackages()
 	}
 
 	// keep going until we have received the entire package
-	if (network.data_size != network.data_full_size) return;
+	if (network.data_size < network.data_full_size) return;
 
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
@@ -1477,7 +1477,7 @@ void Client::ProcessPackages()
 	}
 
 	// Execute the package
-	if (!ExecutePackage(network.data_full_size, network.data_offset)) return;
+	if (!ExecutePackage()) return;
 
 	// re-alloc buffer
 	const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
@@ -1496,7 +1496,7 @@ void Client::ProcessPackages()
 	network.clearData();
 }
 
-bool Client::ExecutePackage(const size_t size, const size_t begin)
+bool Client::ExecutePackage()
 {
 	CPOINTER<BYTE> data;
 	std::vector<Package_RawData_t> rawData;
@@ -1504,7 +1504,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 	/* Crypt */
 	if (GetCryptPackage() && network.RSAHandshake)
 	{
-		auto offset = begin + 1;
+		auto offset = network.data_offset + 1;
 
 		CPOINTER<BYTE> AESKey;
 		size_t AESKeySize;
@@ -1735,14 +1735,14 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == network.data_full_size)
 				break;
 
 		} while (true);
 	}
 	else
 	{
-		auto offset = begin + 1;
+		auto offset = network.data_offset + 1;
 
 		do
 		{
@@ -1852,7 +1852,7 @@ bool Client::ExecutePackage(const size_t size, const size_t begin)
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == size)
+			if (offset + strlen(NET_PACKAGE_FOOTER) == network.data_full_size)
 				break;
 
 		} while (true);
