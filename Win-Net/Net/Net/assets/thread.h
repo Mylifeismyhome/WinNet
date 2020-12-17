@@ -5,8 +5,6 @@
 #define NET_THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER 0x00000004
 
 #include <Net/Net/Net.h>
-#include <Net/assets/manager/logmanager.h>
-#include <thread>
 
 #ifdef _WIN64
 typedef DWORD64 NET_THREAD_DWORD;

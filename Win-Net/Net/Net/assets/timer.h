@@ -1,6 +1,5 @@
 #pragma once
 #include <Net/Net/Net.h>
-#include <ctime>
 
 #define NET_CONTINUE_TIMER return true
 #define NET_STOP_TIMER return false
