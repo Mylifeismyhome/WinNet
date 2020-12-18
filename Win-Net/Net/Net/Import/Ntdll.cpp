@@ -41,7 +41,7 @@ bool Net::Ntdll::Initialize()
 	handle.Set(new HMEMORYMODULE(MemoryLoadLibrary(module, size)));
 	if (!handle.valid())
 	{
-		LOG_DEBUG(CSTRING("[%s] - Unable to load ntdll"), MODULE_NAME);
+		LOG_DEBUG(CSTRING("[%s] - Unable to load ntdll"), NET_MODULE_NAME);
 		return false;
 	}
 
