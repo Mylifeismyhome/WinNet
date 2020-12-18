@@ -2046,8 +2046,22 @@ DWORD Server::DoReceive(NET_PEER peer)
 	{
 		if (peer->network.getDataFullSize() > 0)
 		{
-			memcpy(&peer->network.getData()[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
-			peer->network.setDataSize(peer->network.getDataSize() + data_size);
+			if (peer->network.getDataSize() + data_size > peer->network.getDataFullSize())
+			{
+				peer->network.setDataFullSize(peer->network.getDataFullSize() + data_size);
+
+				/* store incomming */
+				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
+				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+				memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+				peer->network.setDataSize(peer->network.getDataSize() + data_size);
+				peer->network.setData(newBuffer); // pointer swap
+			}
+			else
+			{
+				memcpy(&peer->network.getData()[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+				peer->network.setDataSize(peer->network.getDataSize() + data_size);
+			}
 		}
 		else
 		{

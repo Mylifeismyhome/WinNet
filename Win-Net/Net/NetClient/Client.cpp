@@ -1401,8 +1401,22 @@ DWORD Client::DoReceive()
 	{
 		if (network.data_full_size > 0)
 		{
-			memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
-			network.data_size += data_size;
+			if (network.data_size + data_size > network.data_full_size)
+			{
+				network.data_full_size = network.data_full_size + data_size;
+
+				/* store incomming */
+				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+				memcpy(newBuffer, network.data.get(), network.data_size);
+				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+				network.data_size += data_size;
+				network.data = newBuffer; // pointer swap
+			}
+			else
+			{
+				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+				network.data_size += data_size;
+			}
 		}
 		else
 		{
