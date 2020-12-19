@@ -57,13 +57,13 @@ void Client::SetAllToDefault()
 	sCompressPackage = DEFAULT_COMPRESS_PACKAGES;
 	sCalcLatencyInterval = DEFAULT_CALC_LATENCY_INTERVAL;
 
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
-	LOG_DEBUG(CSTRING("RSA Key size has been set to default value of %llu"), sRSAKeySize);
-	LOG_DEBUG(CSTRING("AES Key size has been set to default value of %llu"), sAESKeySize);
-	LOG_DEBUG(CSTRING("Crypt Packages has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Compress Packages has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Blocking Mode has been set to default value of %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
+	LOG_DEBUG(CSTRING("[NET] - Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
+	LOG_DEBUG(CSTRING("[NET] - RSA Key size has been set to default value of %llu"), sRSAKeySize);
+	LOG_DEBUG(CSTRING("[NET] - AES Key size has been set to default value of %llu"), sAESKeySize);
+	LOG_DEBUG(CSTRING("[NET] - Crypt Packages has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Compress Packages has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Blocking Mode has been set to default value of %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
 }
 
 NET_THREAD(Receive)
@@ -83,49 +83,49 @@ NET_THREAD(Receive)
 void Client::SetFrequenz(const DWORD sfrequenz)
 {
 	this->sfrequenz = sfrequenz;
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been changed to %lu"), sfrequenz);
+	LOG_DEBUG(CSTRING("[NET] - Refresh-Frequenz has been changed to %lu"), sfrequenz);
 }
 
 void Client::SetBlockingMode(const bool sBlockingMode)
 {
 	this->sBlockingMode = sBlockingMode;
-	LOG_DEBUG(CSTRING("Blocking Mode has been %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Blocking Mode has been %s"), sBlockingMode ? CSTRING("enabled") : CSTRING("disabled"));
 }
 
 void Client::SetRSAKeySize(const size_t sRSAKeySize)
 {
 	this->sRSAKeySize = sRSAKeySize;
-	LOG_DEBUG(CSTRING("RSA Key size has been set to %llu"), sRSAKeySize);
+	LOG_DEBUG(CSTRING("[NET] - RSA Key size has been set to %llu"), sRSAKeySize);
 }
 
 void Client::SetAESKeySize(const size_t sAESKeySize)
 {
 	if (sAESKeySize != CryptoPP::AES::MIN_KEYLENGTH && sAESKeySize != CryptoPP::AES::KEYLENGTH_MULTIPLE && sAESKeySize != CryptoPP::AES::MAX_KEYLENGTH)
 	{
-		LOG_ERROR(CSTRING("AES Key size of %llu is not valid!"), sAESKeySize);
+		LOG_ERROR(CSTRING("[NET] - AES Key size of %llu is not valid!"), sAESKeySize);
 		return;
 	}
 
 	this->sAESKeySize = sAESKeySize;
-	LOG_DEBUG(CSTRING("AES Key size has been set to %llu"), sAESKeySize);
+	LOG_DEBUG(CSTRING("[NET] - AES Key size has been set to %llu"), sAESKeySize);
 }
 
 void Client::SetCryptPackage(const bool sCryptPackage)
 {
 	this->sCryptPackage = sCryptPackage;
-	LOG_DEBUG(CSTRING("Crypt Package has been %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Crypt Package has been %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
 }
 
 void Client::SetCompressPackage(const bool sCompressPackage)
 {
 	this->sCompressPackage = sCompressPackage;
-	LOG_DEBUG(CSTRING("Compress Package has been %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
+	LOG_DEBUG(CSTRING("[NET] - Compress Package has been %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
 }
 
 void Client::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 {
 	this->sCalcLatencyInterval = sCalcLatencyInterval;
-	LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
+	LOG_DEBUG(CSTRING("[NET] - Calculate latency interval has been set to %i"), sCalcLatencyInterval);
 }
 
 DWORD Client::GetFrequenz() const
@@ -175,7 +175,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 {
 	if (IsConnected())
 	{
-		LOG_ERROR(CSTRING("Can't connect to server, reason: already connected!"));
+		LOG_ERROR(CSTRING("[NET] - Can't connect to server, reason: already connected!"));
 		return false;
 	}
 
@@ -262,7 +262,7 @@ bool Client::Disconnect()
 {
 	if (!IsConnected())
 	{
-		LOG_ERROR(CSTRING("Can't disconnect from server, reason: not connected!"));
+		LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
 		return false;
 	}
 
@@ -274,7 +274,7 @@ bool Client::Disconnect()
 
 	bAccomplished = TRUE;
 
-	LOG_SUCCESS(CSTRING("Disconnected from server"));
+	LOG_SUCCESS(CSTRING("[NET] - Disconnected from server"));
 	return true;
 }
 
@@ -282,7 +282,7 @@ void Client::Timeout()
 {
 	if (!IsConnected())
 	{
-		LOG_ERROR(CSTRING("Can't disconnect from server, reason: not connected!"));
+		LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
 		return;
 	}
 
@@ -294,7 +294,7 @@ void Client::Timeout()
 
 	bAccomplished = TRUE;
 
-	LOG_ERROR(CSTRING("Connection has been closed, server did not answer anymore (TIMEOUT)"));
+	LOG_ERROR(CSTRING("[NET] - Connection has been closed, server did not answer anymore (TIMEOUT)"));
 }
 
 void Client::ConnectionClosed()
@@ -316,7 +316,7 @@ void Client::Clear()
 {
 	if (IsConnected())
 	{
-		LOG_ERROR(CSTRING("Can not clear Client while being connected!"));
+		LOG_ERROR(CSTRING("[NET] - Can not clear Client while being connected!"));
 		return;
 	}
 
@@ -486,73 +486,73 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			{
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
+				LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
 
 			case WSAENETDOWN:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The network subsystem has failed"));
+				LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
 				Disconnect();
 				return;
 
 			case WSAEACCES:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
+				LOG_PEER(CSTRING("[NET] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
 
 			case WSAEINTR:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
 
 			case WSAEINPROGRESS:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
 
 			case WSAEFAULT:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
+				LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
 
 			case WSAENETRESET:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
+				LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
 
 			case WSAENOBUFS:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("No buffer space is available"));
+				LOG_PEER(CSTRING("[NET] - No buffer space is available"));
 				Disconnect();
 				return;
 
 			case WSAENOTCONN:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The socket is not connected"));
+				LOG_PEER(CSTRING("[NET] - The socket is not connected"));
 				Disconnect();
 				return;
 
 			case WSAENOTSOCK:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The descriptor is not a socket"));
+				LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
 				Disconnect();
 				return;
 
 			case WSAEOPNOTSUPP:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
+				LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
 
 			case WSAESHUTDOWN:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
+				LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
 
@@ -561,43 +561,43 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 
 			case WSAEMSGSIZE:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
+				LOG_PEER(CSTRING("[NET] - The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
 
 			case WSAEHOSTUNREACH:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
+				LOG_PEER(CSTRING("[NET] - The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
 
 			case WSAEINVAL:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
+				LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
 
 			case WSAECONNABORTED:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAECONNRESET:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAETIMEDOUT:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
+				LOG_PEER(CSTRING("[NET] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
 
 			default:
 				bPreviousSentFailed = true;
-				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				LOG_PEER(CSTRING("[NET] - Something bad happen... on Send"));
 				Disconnect();
 				return;
 			}
@@ -633,84 +633,84 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
+				LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
 
 			case WSAENETDOWN:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The network subsystem has failed"));
+				LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
 				Disconnect();
 				return;
 
 			case WSAEACCES:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
+				LOG_PEER(CSTRING("[NET] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
 
 			case WSAEINTR:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
 
 			case WSAEINPROGRESS:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
 
 			case WSAEFAULT:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
+				LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
 
 			case WSAENETRESET:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
+				LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
 
 			case WSAENOBUFS:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("No buffer space is available"));
+				LOG_PEER(CSTRING("[NET] - No buffer space is available"));
 				Disconnect();
 				return;
 
 			case WSAENOTCONN:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The socket is not connected"));
+				LOG_PEER(CSTRING("[NET] - The socket is not connected"));
 				Disconnect();
 				return;
 
 			case WSAENOTSOCK:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The descriptor is not a socket"));
+				LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
 				Disconnect();
 				return;
 
 			case WSAEOPNOTSUPP:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
+				LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
 
 			case WSAESHUTDOWN:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
+				LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
 
@@ -720,49 +720,49 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 			case WSAEMSGSIZE:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
+				LOG_PEER(CSTRING("[NET] - The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
 
 			case WSAEHOSTUNREACH:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
+				LOG_PEER(CSTRING("[NET] - The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
 
 			case WSAEINVAL:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
+				LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
 
 			case WSAECONNABORTED:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAECONNRESET:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAETIMEDOUT:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
+				LOG_PEER(CSTRING("[NET] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
 
 			default:
 				bPreviousSentFailed = true;
 				FREE(data);
-				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				LOG_PEER(CSTRING("[NET] - Something bad happen... on Send"));
 				Disconnect();
 				return;
 			}
@@ -800,84 +800,84 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
+				LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 				Disconnect();
 				return;
 
 			case WSAENETDOWN:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The network subsystem has failed"));
+				LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
 				Disconnect();
 				return;
 
 			case WSAEACCES:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
+				LOG_PEER(CSTRING("[NET] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				Disconnect();
 				return;
 
 			case WSAEINTR:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				Disconnect();
 				return;
 
 			case WSAEINPROGRESS:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
+				LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				Disconnect();
 				return;
 
 			case WSAEFAULT:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
+				LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
 				Disconnect();
 				return;
 
 			case WSAENETRESET:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
+				LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				Disconnect();
 				return;
 
 			case WSAENOBUFS:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("No buffer space is available"));
+				LOG_PEER(CSTRING("[NET] - No buffer space is available"));
 				Disconnect();
 				return;
 
 			case WSAENOTCONN:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The socket is not connected"));
+				LOG_PEER(CSTRING("[NET] - The socket is not connected"));
 				Disconnect();
 				return;
 
 			case WSAENOTSOCK:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The descriptor is not a socket"));
+				LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
 				Disconnect();
 				return;
 
 			case WSAEOPNOTSUPP:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
+				LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				Disconnect();
 				return;
 
 			case WSAESHUTDOWN:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
+				LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				Disconnect();
 				return;
 
@@ -887,49 +887,49 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 			case WSAEMSGSIZE:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
+				LOG_PEER(CSTRING("[NET] - The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				Disconnect();
 				return;
 
 			case WSAEHOSTUNREACH:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The remote host cannot be reached from this host at this time"));
+				LOG_PEER(CSTRING("[NET] - The remote host cannot be reached from this host at this time"));
 				Disconnect();
 				return;
 
 			case WSAEINVAL:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
+				LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				Disconnect();
 				return;
 
 			case WSAECONNABORTED:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAECONNRESET:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
+				LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				Timeout();
 				return;
 
 			case WSAETIMEDOUT:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
+				LOG_PEER(CSTRING("[NET] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				Timeout();
 				return;
 
 			default:
 				bPreviousSentFailed = true;
 				data.free();
-				LOG_PEER(CSTRING("Something bad happen... on Send"));
+				LOG_PEER(CSTRING("[NET] - Something bad happen... on Send"));
 				Disconnect();
 				return;
 			}
@@ -1001,7 +1001,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 
-			LOG_ERROR(CSTRING("Failed to Init AES [0]"));
+			LOG_ERROR(CSTRING("[NET] - Failed to Init AES [0]"));
 			Disconnect();
 			return;
 		}
@@ -1011,7 +1011,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 
-			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			LOG_ERROR(CSTRING("[NET] - RSA Object has no instance"));
 			Disconnect();
 			return;
 		}
@@ -1022,7 +1022,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		{
 			Key.free();
 			IV.free();
-			LOG_ERROR(CSTRING("Failed Key to encrypt and encode to base64"));
+			LOG_ERROR(CSTRING("[NET] - Failed Key to encrypt and encode to base64"));
 			Disconnect();
 			return;
 		}
@@ -1032,7 +1032,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		{
 			Key.free();
 			IV.free();
-			LOG_ERROR(CSTRING("Failed IV to encrypt and encode to base64"));
+			LOG_ERROR(CSTRING("[NET] - Failed IV to encrypt and encode to base64"));
 			Disconnect();
 			return;
 		}
@@ -1283,61 +1283,61 @@ DWORD Client::DoReceive()
 		{
 		case WSANOTINITIALISED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("A successful WSAStartup() call must occur before using this function"));
+			LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAENETDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The network subsystem has failed"));
+			LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAEFAULT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
+			LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAENOTCONN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The socket is not connected"));
+			LOG_PEER(CSTRING("[NET] - The socket is not connected"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAEINTR:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The (blocking) call was canceled through WSACancelBlockingCall()"));
+			LOG_PEER(CSTRING("[NET] - The (blocking) call was canceled through WSACancelBlockingCall()"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAEINPROGRESS:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
+			LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAENETRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
+			LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAENOTSOCK:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The descriptor is not a socket"));
+			LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAEOPNOTSUPP:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
+			LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAESHUTDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
+			LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 			Disconnect();
 			return GetFrequenz();
 
@@ -1348,37 +1348,37 @@ DWORD Client::DoReceive()
 
 		case WSAEMSGSIZE:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The message was too large to fit into the specified buffer and was truncated"));
+			LOG_PEER(CSTRING("[NET] - The message was too large to fit into the specified buffer and was truncated"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAEINVAL:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
+			LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 			Disconnect();
 			return GetFrequenz();
 
 		case WSAECONNABORTED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+			LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 			Timeout();
 			return GetFrequenz();
 
 		case WSAETIMEDOUT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The connection has been dropped because of a network failure or because the peer system failed to respond"));
+			LOG_PEER(CSTRING("[NET] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
 			Timeout();
 			return GetFrequenz();
 
 		case WSAECONNRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
+			LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 			Timeout();
 			return GetFrequenz();
 
 		default:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("Something bad happen..."));
+			LOG_PEER(CSTRING("[NET] - Something bad happen..."));
 			Disconnect();
 			return GetFrequenz();
 		}
@@ -1386,7 +1386,7 @@ DWORD Client::DoReceive()
 	if (data_size == 0)
 	{
 		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-		LOG_PEER(CSTRING("Connection has been gracefully closed"));
+		LOG_PEER(CSTRING("[NET] - Connection has been gracefully closed"));
 		Disconnect();
 		return GetFrequenz();
 	}
@@ -1926,7 +1926,7 @@ void Client::CompressData(BYTE*& data, size_t& size) const
 #endif
 		NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("Compressed data from size %llu to %llu"), PrevSize, size);
+		LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
 }
@@ -1947,7 +1947,7 @@ void Client::DecompressData(BYTE*& data, size_t& size) const
 
 		data = copy; // swap pointer;
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("Decompressed data from size %llu to %llu"), PrevSize, size);
+		LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
 }
@@ -1962,12 +1962,12 @@ NET_CLIENT_END_DATA_PACKAGE
 NET_BEGIN_FNC_PKG(Client, RSAHandshake)
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 if (network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has already done the RSA Handshake, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has already done the RSA Handshake, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 
@@ -1996,12 +1996,12 @@ NET_BEGIN_FNC_PKG(Client, VersionPackage)
 // should not happen
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 if (GetCryptPackage() && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 
@@ -2020,12 +2020,12 @@ NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
 // should not happen
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 if (GetCryptPackage() && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
 	return;
 }
 
@@ -2040,7 +2040,7 @@ NET_BEGIN_FNC_PKG(Client, ClosePackage)
 // connection has been closed
 ConnectionClosed();
 
-LOG_SUCCESS(CSTRING("Connection has been closed by Server"));
+LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by Server"));
 
 const auto code = PKG.Int(CSTRING("code"));
 if (!code.valid())
