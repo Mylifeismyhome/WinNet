@@ -310,16 +310,6 @@ void Client::ConnectionClosed()
 	SetConnected(false);
 }
 
-void Client::Terminate()
-{
-	if (IsConnected())
-		Disconnect();
-
-	NeedExit = TRUE;
-
-	delete this;
-}
-
 void Client::Clear()
 {
 	if (IsConnected())

@@ -777,15 +777,6 @@ bool Server::Close()
 	return true;
 }
 
-void Server::Terminate()
-{
-	if (IsRunning())
-		Close();
-
-	LOG_DEBUG(CSTRING("[%s] - Terminated!"), GetServerName());
-	delete this;
-}
-
 bool Server::NeedExit() const
 {
 	return DoExit;

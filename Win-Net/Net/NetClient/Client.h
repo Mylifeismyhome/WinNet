@@ -158,7 +158,6 @@ bool ChangeMode(const bool) const;
 
 bool Connect(const char*, u_short);
 bool Disconnect();
-void Terminate();
 void Clear();
 bool DoNeedExit() const;
 void WaitUntilAccomplished();

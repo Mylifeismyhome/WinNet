@@ -257,7 +257,6 @@ NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
 bool Start(const char*, u_short);
 bool Close();
-void Terminate();
 
 short Handshake(NET_PEER);
 

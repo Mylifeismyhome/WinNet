@@ -891,15 +891,6 @@ bool Server::Close()
 	return true;
 }
 
-void Server::Terminate()
-{
-	if (IsRunning())
-		Close();
-
-	LOG_DEBUG(CSTRING("[%s] - Terminated!"), GetServerName());
-	delete this;
-}
-
 short Server::Handshake(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,

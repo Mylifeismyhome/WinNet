@@ -275,7 +275,6 @@ NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
 bool Start(const char*, u_short, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS);
 bool Close();
-void Terminate();
 
 NET_CLASS_PRIVATE
 void Acceptor();
