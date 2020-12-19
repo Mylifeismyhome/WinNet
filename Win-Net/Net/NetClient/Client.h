@@ -132,6 +132,7 @@ long GetCalcLatencyInterval() const;
 
 NET_CLASS_PRIVATE
 bool NeedExit;
+bool bAccomplished;
 SOCKET connectSocket;
 struct addrinfo* connectSocketAddr;
 CPOINTER<char> ServerAddress;
@@ -160,6 +161,7 @@ bool Disconnect();
 void Terminate();
 void Clear();
 bool DoNeedExit() const;
+void WaitUntilAccomplished();
 
 void SetSocket(const SOCKET);
 SOCKET GetSocket() const;

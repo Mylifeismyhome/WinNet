@@ -33,6 +33,7 @@ Client::Client()
 	Net::Codes::NetLoadErrorCodes();
 	SetAllToDefault();
 	NeedExit = FALSE;
+	bAccomplished = FALSE;
 
 	network.hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), this);
 }
@@ -272,6 +273,8 @@ bool Client::Disconnect()
 
 	// callback
 	OnDisconnected();
+
+	bAccomplished = TRUE;
 	return true;
 }
 
@@ -336,6 +339,12 @@ void Client::Clear()
 bool Client::DoNeedExit() const
 {
 	return NeedExit;
+}
+
+void Client::WaitUntilAccomplished()
+{
+	while (!bAccomplished)
+		Kernel32::Sleep(GetFrequenz());
 }
 
 void Client::SetSocket(const SOCKET connectSocket)
