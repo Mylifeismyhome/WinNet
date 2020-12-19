@@ -299,6 +299,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	if (strcmp(func, CSTRING("")) != 0)
 		printf(CSTRING("[%s]"), func);
 
+	printf(CSTRING(" "));
 	printf(str.data());
 	printf(CSTRING("\n"));
 
@@ -396,6 +397,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 	if (wcscmp(func, CWSTRING("")) != 0)
 		wprintf(CWSTRING("[%s]"), func);
 
+	wprintf(CWSTRING(" "));
 	wprintf(str.data());
 	wprintf(CWSTRING("\n"));
 
