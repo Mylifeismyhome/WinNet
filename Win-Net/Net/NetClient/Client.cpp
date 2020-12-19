@@ -269,12 +269,12 @@ bool Client::Disconnect()
 	// connection has been closed
 	ConnectionClosed();
 
-	LOG_SUCCESS(CSTRING("Disconnected from server"));
-
 	// callback
 	OnDisconnected();
 
 	bAccomplished = TRUE;
+
+	LOG_SUCCESS(CSTRING("Disconnected from server"));
 	return true;
 }
 
@@ -289,10 +289,12 @@ void Client::Timeout()
 	// connection has been closed
 	ConnectionClosed();
 
-	LOG_ERROR(CSTRING("Connection has been closed, server did not answer anymore (TIMEOUT)"));
-
 	// callback
 	OnTimeout();
+
+	bAccomplished = TRUE;
+
+	LOG_ERROR(CSTRING("Connection has been closed, server did not answer anymore (TIMEOUT)"));
 }
 
 void Client::ConnectionClosed()
