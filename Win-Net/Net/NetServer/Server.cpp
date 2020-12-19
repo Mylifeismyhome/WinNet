@@ -371,9 +371,6 @@ NET_THREAD(LatencyTick)
 	ICMP _icmp(peer->IPAddr().get());
 	_icmp.execute();
 
-	// since the above action is taking a while and freezing during this action, we want to check against peer validation again
-	if (!peer) return NULL;
-
 	peer->latency = _icmp.getLatency();
 	peer->bLatency = false;
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
