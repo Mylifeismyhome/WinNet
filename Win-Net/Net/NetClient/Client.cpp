@@ -1399,22 +1399,11 @@ DWORD Client::DoReceive()
 	}
 	else
 	{
-		if (network.data_full_size > 0)
+		if (network.data_full_size > 0
+			&& network.data_size + data_size < network.data_full_size)
 		{
-			if (network.data_size + data_size > network.data_full_size)
-			{
-				/* store incomming */
-				const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
-				memcpy(newBuffer, network.data.get(), network.data_size);
-				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
-				network.data_size += data_size;
-				network.data = newBuffer; // pointer swap
-			}
-			else
-			{
-				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
-				network.data_size += data_size;
-			}
+			memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+			network.data_size += data_size;
 		}
 		else
 		{
@@ -1422,8 +1411,9 @@ DWORD Client::DoReceive()
 			const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
 			memcpy(newBuffer, network.data.get(), network.data_size);
 			memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
-			network.data_size += data_size;
+			newBuffer[network.data_size + data_size] = '\0';
 			network.data = newBuffer; // pointer swap
+			network.data_size += data_size;
 		}
 	}
 
@@ -1439,33 +1429,33 @@ void Client::ProcessPackages()
 		|| network.data_size == INVALID_SIZE)
 		return;
 
-	// [PROTOCOL] - obtain data full size from package header
-	if (network.data_full_size == 0)
+	// [PROTOCOL] - check header is actually valid
+	if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 	{
-		// [PROTOCOL] - check header is actually valid
-		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
-		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-			network.clearData();
-			Disconnect();
-			return;
-		}
+		LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+		network.clearData();
+		Disconnect();
+		return;
+	}
 
-		// [PROTOCOL] - read data full size from header
-		const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-		for (size_t i = offset; i < network.data_size; ++i)
+	// [PROTOCOL] - read data full size from header
+	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+	for (size_t i = offset; i < network.data_size; ++i)
+	{
+		// iterate until we have found the end tag
+		if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
-			// iterate until we have found the end tag
-			if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+			network.data_offset = i;
+			const auto size = i - offset - 1;
+			CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
+			memcpy(sizestr.get(), &network.data.get()[offset + 1], size);
+			sizestr.get()[size] = '\0';
+			network.data_full_size = strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10);
+			sizestr.free();
+
+			// awaiting more bytes
+			if (network.data_full_size > network.data_size)
 			{
-				network.data_offset = i;
-				const auto size = i - offset - 1;
-				CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
-				memcpy(sizestr.get(), &network.data.get()[offset + 1], size);
-				sizestr.get()[size] = '\0';
-				network.data_full_size = strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10);
-				sizestr.free();
-
 				// pre-allocate enough space
 				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
 				memcpy(newBuffer, network.data.get(), network.data_size);
@@ -1473,6 +1463,8 @@ void Client::ProcessPackages()
 				network.data = newBuffer; // pointer swap
 				return;
 			}
+
+			break;
 		}
 	}
 
@@ -1499,9 +1491,9 @@ void Client::ProcessPackages()
 		const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
 		memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
 		leftBuffer[leftSize] = '\0';
+		network.clearData();
 		network.data = leftBuffer; // swap pointer
 		network.data_size = leftSize;
-		network.data_full_size = 0;
 		return;
 	}
 
