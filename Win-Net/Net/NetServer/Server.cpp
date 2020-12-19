@@ -2044,22 +2044,11 @@ DWORD Server::DoReceive(NET_PEER peer)
 	}
 	else
 	{
-		if (peer->network.getDataFullSize() > 0)
+		if (peer->network.getDataFullSize() > 0
+			&& peer->network.getDataSize() + data_size < peer->network.getDataFullSize())
 		{
-			if (peer->network.getDataSize() + data_size > peer->network.getDataFullSize())
-			{
-				/* store incomming */
-				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataSize() + data_size + 1);
-				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
-				memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
-				peer->network.setDataSize(peer->network.getDataSize() + data_size);
-				peer->network.setData(newBuffer); // pointer swap
-			}
-			else
-			{
-				memcpy(&peer->network.getData()[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
-				peer->network.setDataSize(peer->network.getDataSize() + data_size);
-			}
+			memcpy(&peer->network.getData()[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+			peer->network.setDataSize(peer->network.getDataSize() + data_size);
 		}
 		else
 		{
@@ -2067,6 +2056,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 			const auto newBuffer = ALLOC<BYTE>(peer->network.getDataSize() + data_size + 1);
 			memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
 			memcpy(&newBuffer[peer->network.getDataSize()], peer->network.getDataReceive(), data_size);
+			newBuffer[peer->network.getDataSize() + data_size] = '\0';
 			peer->network.setDataSize(peer->network.getDataSize() + data_size);
 			peer->network.setData(newBuffer); // pointer swap
 		}
@@ -2087,33 +2077,35 @@ void Server::ProcessPackages(NET_PEER peer)
 		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
-	// [PROTOCOL] - obtain data full size from package header
-	if (peer->network.getDataFullSize() == 0)
+	// [PROTOCOL] - check header is actually valid
+	if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 	{
-		// [PROTOCOL] - check header is actually valid
-		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
-		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-			peer->network.clear();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
-			return;
-		}
+		LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+		peer->network.clear();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
+		return;
+	}
 
-		// [PROTOCOL] - read data full size from header
-		const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-		for (size_t i = offset; i < peer->network.getDataSize(); ++i)
+	// [PROTOCOL] - read data full size from header
+	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
+	{
+		// iterate until we have found the end tag
+		if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
-			// iterate until we have found the end tag
-			if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+			const auto bDoPreAlloc = peer->network.getDataFullSize() == 0 ? true : false;
+			peer->network.SetDataOffset(i);
+			const auto size = i - offset - 1;
+			CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
+			memcpy(sizestr.get(), &peer->network.getData()[offset + 1], size);
+			sizestr.get()[size] = '\0';
+			peer->network.setDataFullSize(strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10));
+			sizestr.free();
+
+			// awaiting more bytes
+			if (bDoPreAlloc &&
+				peer->network.getDataFullSize() > peer->network.getDataSize())
 			{
-				peer->network.SetDataOffset(i);
-				const auto size = i - offset - 1;
-				CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
-				memcpy(sizestr.get(), &peer->network.getData()[offset + 1], size);
-				sizestr.get()[size] = '\0';
-				peer->network.setDataFullSize(strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10));
-				sizestr.free();
-
 				// pre-allocate enough space
 				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
 				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
@@ -2121,6 +2113,8 @@ void Server::ProcessPackages(NET_PEER peer)
 				peer->network.setData(newBuffer); // pointer swap
 				return;
 			}
+
+			break;
 		}
 	}
 
@@ -2147,9 +2141,9 @@ void Server::ProcessPackages(NET_PEER peer)
 		const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
 		memcpy(leftBuffer, &peer->network.getData()[peer->network.getDataFullSize()], leftSize);
 		leftBuffer[leftSize] = '\0';
+		peer->network.clear();
 		peer->network.setData(leftBuffer); // swap pointer
 		peer->network.setDataSize(leftSize);
-		peer->network.setDataFullSize(NULL);
 		return;
 	}
 
@@ -2586,7 +2580,7 @@ void Server::CompressData(BYTE*& data, size_t& size) const
 		LOG_DEBUG(CSTRING("Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
-	}
+}
 
 void Server::DecompressData(BYTE*& data, size_t& size) const
 {
@@ -2609,7 +2603,7 @@ void Server::DecompressData(BYTE*& data, size_t& size) const
 		LOG_DEBUG(CSTRING("Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
 	}
-	}
+}
 
 NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Server)
 NET_SERVER_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)

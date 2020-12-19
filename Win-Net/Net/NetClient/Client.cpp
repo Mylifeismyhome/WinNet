@@ -1445,6 +1445,7 @@ void Client::ProcessPackages()
 		// iterate until we have found the end tag
 		if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
+			const auto bDoPreAlloc = network.data_full_size == 0 ? true : false;
 			network.data_offset = i;
 			const auto size = i - offset - 1;
 			CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
@@ -1454,7 +1455,8 @@ void Client::ProcessPackages()
 			sizestr.free();
 
 			// awaiting more bytes
-			if (network.data_full_size > network.data_size)
+			if (bDoPreAlloc &&
+				network.data_full_size > network.data_size)
 			{
 				// pre-allocate enough space
 				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
