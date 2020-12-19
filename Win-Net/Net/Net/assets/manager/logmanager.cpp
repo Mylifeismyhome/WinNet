@@ -273,63 +273,84 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	char date[DATE_LENGTH];
 	Clock::GetDateA(date);
 
-	if (strcmp(func, CSTRING("")) == 0)
+	// display date & time
+	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
+	sprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CSTRING("[%s][%s]"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	printf(buffer);
+	FREE(buffer);
+
+	// display prefix in it specific color
+	const auto prefix = Console::GetLogStatePrefix(state);
+	buffer = ALLOC<char>(prefix.size() + 4);
+	sprintf_s(buffer, prefix.size() + 3, CSTRING("[%s]"), prefix.data());
+	buffer[prefix.size() + 3] = '\0';
+
+	if (!Console::GetPrintFState())
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+
+	printf(buffer);
+	FREE(buffer);
+
+	if (!Console::GetPrintFState())
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+
+	// output functionname
+	if (strcmp(func, CSTRING("")) != 0)
+		printf(CSTRING("[%s]"), func);
+
+	printf(str.data());
+	printf(CSTRING("\n"));
+
+	// create an entire buffer to save to file
 	{
-		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 23;
-		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
-		buffer[bsize] = '\0';
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
-
-		printf(CSTRING("%s"), buffer);
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-
-		if (!WriteToFile(buffer))
+		if (strcmp(func, CSTRING("")) == 0)
 		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+			const auto prefix = Console::GetLogStatePrefix(state);
+			const auto bsize = str.size() + prefix.size() + 23;
+			buffer = ALLOC<char>(bsize + 1);
+			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+			buffer[bsize] = '\0';
+
+			if (!WriteToFile(buffer))
+			{
+				printf(CSTRING("[NET]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				printf(CSTRING("[ERROR]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
+			}
+
+			FREE(buffer);
 		}
-
-		FREE(buffer);
-	}
-	else
-	{
-		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
-		auto buffer = ALLOC<char>(bsize + 1);
-		sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
-		buffer[bsize] = '\0';
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
-
-		printf(CSTRING("%s"), buffer);
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-
-		if (!WriteToFile(buffer))
+		else
 		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+			const auto prefix = Console::GetLogStatePrefix(state);
+			const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
+			auto buffer = ALLOC<char>(bsize + 1);
+			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+			buffer[bsize] = '\0';
 
-		FREE(buffer);
+			if (!WriteToFile(buffer))
+			{
+				printf(CSTRING("[NET]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				printf(CSTRING("[ERROR]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
+			}
+
+			FREE(buffer);
+		}
 	}
 }
 
 void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...) const
 {
-	wchar_t func[2048];
-	swprintf(func, sizeof(func), CWSTRING("%s"), funcA);
-	
+	const auto lenfunc = strlen(funcA);
+	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
+	swprintf(func, lenfunc, CWSTRING("%s"), funcA);
+
 	va_list vaArgs;
 	va_start(vaArgs, msg);
 	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
@@ -338,7 +359,10 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 	va_end(vaArgs);
 
 	if (str.empty())
+	{
+		FREE(func);
 		return;
+	}
 
 	wchar_t time[TIME_LENGTH];
 	Clock::GetTimeW(time);
@@ -346,56 +370,78 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 	wchar_t date[DATE_LENGTH];
 	Clock::GetDateW(date);
 
-	if (wcscmp(func, CWSTRING("")) == 0)
+	// display date & time
+	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
+	swprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	wprintf(buffer);
+	FREE(buffer);
+
+	// display prefix in it specific color
+	const auto prefix = Console::GetLogStatePrefix(state);
+	buffer = ALLOC<wchar_t>(prefix.size() + 4);
+	swprintf_s(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
+	buffer[prefix.size() + 3] = '\0';
+
+	if (!Console::GetPrintFState())
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+
+	wprintf(buffer);
+	FREE(buffer);
+
+	if (!Console::GetPrintFState())
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+
+	// output functionname
+	if (wcscmp(func, CWSTRING("")) != 0)
+		wprintf(CWSTRING("[%s]"), func);
+
+	wprintf(str.data());
+	wprintf(CWSTRING("\n"));
+
+	// create an entire buffer to save to file
 	{
-		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + 23;
-		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
-		buffer[bsize] = '\0';
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
-
-		wprintf(CWSTRING("%s"), buffer);
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-
-		if (!WriteToFile(buffer))
+		if (wcscmp(func, CWSTRING("")) == 0)
 		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+			const auto prefix = Console::GetLogStatePrefix(state);
+			const auto bsize = str.size() + prefix.size() + 23;
+			auto buffer = ALLOC<wchar_t>(bsize + 1);
+			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+			buffer[bsize] = '\0';
+
+			if (!WriteToFile(buffer))
+			{
+				printf(CSTRING("[NET]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				printf(CSTRING("[ERROR]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
+			}
+
+			FREE(buffer);
 		}
-
-		FREE(buffer);
-	}
-	else
-	{
-		const auto prefix = Console::GetLogStatePrefix(state);
-		const auto bsize = str.size() + prefix.size() + wcslen(func) + 25;
-		auto buffer = ALLOC<wchar_t>(bsize + 1);
-		swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
-		buffer[bsize] = '\0';
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
-
-		wprintf(CWSTRING("%s"), buffer);
-
-		if (!Console::GetPrintFState())
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-
-		if (!WriteToFile(buffer))
+		else
 		{
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
-			printf(CSTRING("%s"), CSTRING("[FILE SYSTEM] Unable to write to file ('%s')\n"), GetFname());
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
-		}
+			const auto prefix = Console::GetLogStatePrefix(state);
+			const auto bsize = str.size() + prefix.size() + wcslen(func) + 25;
+			auto buffer = ALLOC<wchar_t>(bsize + 1);
+			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+			buffer[bsize] = '\0';
 
-		FREE(buffer);
+			if (!WriteToFile(buffer))
+			{
+				printf(CSTRING("[NET]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				printf(CSTRING("[ERROR]"));
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
+			}
+
+			FREE(buffer);
+		}
 	}
+
+	FREE(func);
 }
 
 bool Log::WriteToFile(const char* msg) const
