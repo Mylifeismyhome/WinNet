@@ -3,25 +3,6 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
-static void LatencyThread(Server::NET_PEER peer)
-{
-	if (!peer)
-		return;
-
-	peer->bLatency = true;
-
-	const auto ip = peer->IPAddr();
-	ICMP _icmp(ip.get());
-	_icmp.execute();
-
-	// since the above action is taking a while and freezing during this action, we want to check against peer validation again
-	if (!peer)
-		return;
-
-	peer->latency = _icmp.getLatency();
-	peer->bLatency = false;
-}
-
 IPRef::IPRef(PCSTR const pointer)
 {
 	this->pointer = (char*)pointer;
@@ -390,7 +371,11 @@ NET_THREAD(LatencyTick)
 	ICMP _icmp(peer->IPAddr().get());
 	_icmp.execute();
 
+	// since the above action is taking a while and freezing during this action, we want to check against peer validation again
+	if (!peer) return NULL;
+
 	peer->latency = _icmp.getLatency();
+	peer->bLatency = false;
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
 	return NULL;
 }
@@ -409,6 +394,7 @@ NET_TIMER(DoCalcLatency)
 	const auto server = info->server;
 	const auto peer = info->peer;
 
+	peer->bLatency = true;
 	Thread::Create(LatencyTick, peer);
 	Timer::SetTime(peer->hCalcLatency, server->GetCalcLatencyInterval());
 	NET_CONTINUE_TIMER;
