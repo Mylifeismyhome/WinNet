@@ -1169,7 +1169,7 @@ short Server::Handshake(NET_PEER peer)
 			entry = htonl(entry);
 
 		// Encode Base64
-		size_t outlen = 0;
+		size_t outlen = 20;
 		byte* enc_Sec_Key = ALLOC<BYTE>(20 + 1);
 		memcpy(enc_Sec_Key, message_digest, 20);
 		enc_Sec_Key[20] = '\0';
