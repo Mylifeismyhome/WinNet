@@ -260,6 +260,9 @@
     <ClInclude Include="..\Net\Import\Kernel32.h">
       <Filter>Import</Filter>
     </ClInclude>
+    <ClInclude Include="..\Net\Import\Definition.hpp">
+      <Filter>Import</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S">

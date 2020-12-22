@@ -1,44 +1,46 @@
-#define NET_MODULE_NAME CSTRING("Kernel32")
+#define MODULE_NAME CSTRING("Kernel32")
 
-#define DECLARE_IMPORT(type, name) static CPOINTER<##type> ##name
-
-#define NET_IMPORT(name, strname, type) name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
-	if(!##name.valid()) \
-	{ \
-		Uninitialize(); \
-		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), NET_MODULE_NAME, CSTRING(strname)); \
-		return false; \
-	}
-
-#define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
-
-#include <Net/Import/Kernel32.h>
-#include <Net/Import/MemoryModule.h>
+#include "Kernel32.h"
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
+#include <Net/Import/MemoryModule.h>
 
 namespace Net
 {
-	namespace Kernel32
-	{
-		DECLARE_IMPORT(HMEMORYMODULE, handle);
+	IMPORT_BEGIN(Kernel32)
+		IMPORT_HANDLE(HMEMORYMODULE, handle);
 
-		DECLARE_IMPORT(DEF_FindResourceA, _FindResourceA);
-		DECLARE_IMPORT(DEF_FindResourceW, _FindResourceW);
-		DECLARE_IMPORT(DEF_LoadResource, _LoadResource);
-		DECLARE_IMPORT(DEF_SizeofResource, _SizeofResource);
-		DECLARE_IMPORT(DEF_LockResource, _LockResource);
-		DECLARE_IMPORT(DEF_LoadLibraryA, _LoadLibraryA);
-		DECLARE_IMPORT(DEF_LoadLibraryW, _LoadLibraryW);
-		DECLARE_IMPORT(DEF_GetProcAddress, _GetProcAddress);
-		DECLARE_IMPORT(DEF_FreeLibrary, _FreeLibrary);
-		DECLARE_IMPORT(DEF_Sleep, _Sleep);
-	}
-}
+	IMPORT_DEFINE(FindResourceA);
+	IMPORT_DEFINE(FindResourceW);
+	IMPORT_DEFINE(LoadResource);
+	IMPORT_DEFINE(SizeofResource);
+	IMPORT_DEFINE(LockResource);
+	IMPORT_DEFINE(LoadLibraryA);
+	IMPORT_DEFINE(LoadLibraryW);
+	IMPORT_DEFINE(GetProcAddress);
+	IMPORT_DEFINE(FreeLibrary);
+	IMPORT_DEFINE(Sleep);
+	IMPORT_DEFINE(K32EnumProcesses);
+	IMPORT_DEFINE(OpenProcess);
+	IMPORT_DEFINE(K32EnumProcessModules);
+	IMPORT_DEFINE(K32GetModuleBaseNameA);
+	IMPORT_DEFINE(CheckRemoteDebuggerPresent);
+	IMPORT_DEFINE(IsDebuggerPresent);
+	IMPORT_DEFINE(GetVersionExA);
+	IMPORT_DEFINE(GetModuleHandleA);
+	IMPORT_DEFINE(GetModuleFileNameA);
+	IMPORT_DEFINE(MapViewOfFile);
+	IMPORT_DEFINE(CreateFileMappingA);
+	IMPORT_DEFINE(CreateFileA);
+	IMPORT_DEFINE(UnmapViewOfFile);
+	IMPORT_DEFINE(CloseHandle);
+	IMPORT_DEFINE(GetThreadContext);
+	IMPORT_DEFINE(SetThreadContext);
+	IMPORT_DEFINE(ResumeThread);
+	IMPORT_DEFINE(GetCurrentThread);
 
-bool Net::Kernel32::Initialize()
-{
-	NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\kernel32.dll"), NET_FILE_READ);
+	IMPORT_INIT
+		NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\kernel32.dll"), NET_FILE_READ);
 	if (!fmanager.file_exists())
 		return false;
 
@@ -46,96 +48,167 @@ bool Net::Kernel32::Initialize()
 	size_t size = NULL;
 	if (!fmanager.read(module, size))
 		return false;
-	
+
 	handle.Set(new HMEMORYMODULE(MemoryLoadLibrary(module, size)));
 	if (!handle.valid())
 	{
-		LOG_ERROR(CSTRING("[%s] - LoadLibrary failed with error: %ld"), NET_MODULE_NAME, GetLastError());
+		LOG_ERROR(CSTRING("[%s] - LoadLibrary failed with error: %ld"), MODULE_NAME, GetLastError());
 		return false;
 	}
 
 	FREE(module);
 
-	NET_IMPORT(_FindResourceA, "FindResourceA", DEF_FindResourceA);
-	NET_IMPORT(_FindResourceW, "FindResourceW", DEF_FindResourceW);
-	NET_IMPORT(_LoadResource, "LoadResource", DEF_LoadResource);
-	NET_IMPORT(_SizeofResource, "SizeofResource", DEF_SizeofResource);
-	NET_IMPORT(_LockResource, "LockResource", DEF_LockResource);
-	NET_IMPORT(_LoadLibraryA, "LoadLibraryA", DEF_LoadLibraryA);
-	NET_IMPORT(_LoadLibraryW, "LoadLibraryW", DEF_LoadLibraryW);
-	NET_IMPORT(_GetProcAddress, "GetProcAddress", DEF_GetProcAddress);
-	NET_IMPORT(_FreeLibrary, "FreeLibrary", DEF_FreeLibrary);
-	NET_IMPORT(_Sleep, "Sleep", DEF_Sleep);
+	IMPORT_MPROCADDR(FindResourceA);
+	IMPORT_MPROCADDR(FindResourceW);
+	IMPORT_MPROCADDR(LoadResource);
+	IMPORT_MPROCADDR(SizeofResource);
+	IMPORT_MPROCADDR(LockResource);
+	IMPORT_MPROCADDR(LoadLibraryA);
+	IMPORT_MPROCADDR(LoadLibraryW);
+	IMPORT_MPROCADDR(GetProcAddress);
+	IMPORT_MPROCADDR(FreeLibrary);
+	IMPORT_MPROCADDR(Sleep);
+	IMPORT_MPROCADDR(K32EnumProcesses);
+	IMPORT_MPROCADDR(OpenProcess);
+	IMPORT_MPROCADDR(K32EnumProcessModules);
+	IMPORT_MPROCADDR(K32GetModuleBaseNameA);
+	IMPORT_MPROCADDR(CheckRemoteDebuggerPresent);
+	IMPORT_MPROCADDR(IsDebuggerPresent);
+	IMPORT_MPROCADDR(GetVersionExA);
+	IMPORT_MPROCADDR(GetModuleHandleA);
+	IMPORT_MPROCADDR(GetModuleFileNameA);
+	IMPORT_MPROCADDR(MapViewOfFile);
+	IMPORT_MPROCADDR(CreateFileMappingA);
+	IMPORT_MPROCADDR(CreateFileA);
+	IMPORT_MPROCADDR(UnmapViewOfFile);
+	IMPORT_MPROCADDR(CloseHandle);
+	IMPORT_MPROCADDR(GetThreadContext);
+	IMPORT_MPROCADDR(SetThreadContext);
+	IMPORT_MPROCADDR(ResumeThread);
+	IMPORT_MPROCADDR(GetCurrentThread);
 
 	return true;
-}
+	IMPORT_END
 
-void Net::Kernel32::Uninitialize()
-{
-	if (!handle.valid())
-		return;
+		IMPORT_UNLOAD
+		if (!handle.valid())
+			return;
 
-	NET_DELETE_IMPORT(_FindResourceA);
-	NET_DELETE_IMPORT(_FindResourceW);
-	NET_DELETE_IMPORT(_LoadResource);
-	NET_DELETE_IMPORT(_SizeofResource);
-	NET_DELETE_IMPORT(_LockResource);
-	NET_DELETE_IMPORT(_LoadLibraryA);
-	NET_DELETE_IMPORT(_LoadLibraryW);
-	NET_DELETE_IMPORT(_GetProcAddress);
-	NET_DELETE_IMPORT(_FreeLibrary);
-	NET_DELETE_IMPORT(_Sleep);
+	DELETE_IMPORT(FindResourceA);
+	DELETE_IMPORT(FindResourceW);
+	DELETE_IMPORT(LoadResource);
+	DELETE_IMPORT(SizeofResource);
+	DELETE_IMPORT(LockResource);
+	DELETE_IMPORT(LoadLibraryA);
+	DELETE_IMPORT(LoadLibraryW);
+	DELETE_IMPORT(GetProcAddress);
+	DELETE_IMPORT(FreeLibrary);
+	DELETE_IMPORT(Sleep);
+	DELETE_IMPORT(K32EnumProcesses);
+	DELETE_IMPORT(OpenProcess);
+	DELETE_IMPORT(K32EnumProcessModules);
+	DELETE_IMPORT(K32GetModuleBaseNameA);
+	DELETE_IMPORT(CheckRemoteDebuggerPresent);
+	DELETE_IMPORT(IsDebuggerPresent);
+	DELETE_IMPORT(GetVersionExA);
+	DELETE_IMPORT(GetModuleHandleA);
+	DELETE_IMPORT(GetModuleFileNameA);
+	DELETE_IMPORT(MapViewOfFile);
+	DELETE_IMPORT(CreateFileMappingA);
+	DELETE_IMPORT(CreateFileA);
+	DELETE_IMPORT(UnmapViewOfFile);
+	DELETE_IMPORT(CloseHandle);
+	DELETE_IMPORT(GetThreadContext);
+	DELETE_IMPORT(SetThreadContext);
+	DELETE_IMPORT(ResumeThread);
+	DELETE_IMPORT(GetCurrentThread);
 
 	MemoryFreeLibrary(*handle.get());
-	NET_DELETE_IMPORT(handle);
-}
+	DELETE_IMPORT_HANDLE(handle);
+	IMPORT_END
 
-HRSRC Net::Kernel32::FindResourceA(const HMODULE handle, const LPCSTR lpName, const LPCSTR lpType)
-{
-	return (*_FindResourceA.get())(handle, lpName, lpType);
-}
+		MAKE_IMPORT(HRSRC, FindResourceA, const HMODULE handle, const LPCSTR lpName, const LPCSTR lpType)
+		PASS_PARAMETERS(handle, lpName, lpType);
 
-HRSRC Net::Kernel32::FindResourceW(const HMODULE handle, const wchar_t* lpName, const wchar_t* lpType)
-{
-	return (*_FindResourceW.get())(handle, lpName, lpType);
-}
+	MAKE_IMPORT(HRSRC, FindResourceW, const HMODULE handle, const wchar_t* lpName, const wchar_t* lpType)
+		PASS_PARAMETERS(handle, lpName, lpType);
 
-HGLOBAL Net::Kernel32::LoadResource(const HMODULE handle, HRSRC const hResInfo)
-{
-	return (*_LoadResource.get())(handle, hResInfo);
-}
+	MAKE_IMPORT(HGLOBAL, LoadResource, const HMODULE handle, HRSRC const hResInfo)
+		PASS_PARAMETERS(handle, hResInfo);
 
-DWORD Net::Kernel32::SizeofResource(const HMODULE handle, HRSRC const hResInfo)
-{
-	return (*_SizeofResource.get())(handle, hResInfo);
-}
+	MAKE_IMPORT(DWORD, SizeofResource, const HMODULE handle, HRSRC const hResInfo)
+		PASS_PARAMETERS(handle, hResInfo);
 
-LPVOID Net::Kernel32::LockResource(const HGLOBAL hResData)
-{
-	return (*_LockResource.get())(hResData);
-}
+	MAKE_IMPORT(LPVOID, LockResource, const HGLOBAL hResData)
+		PASS_PARAMETERS(hResData);
 
-HMODULE Net::Kernel32::LoadLibraryA(const LPCSTR lpLibFileName)
-{
-	return (*_LoadLibraryA.get())(lpLibFileName);
-}
+	MAKE_IMPORT(HMODULE, LoadLibraryA, const LPCSTR lpLibFileName)
+		PASS_PARAMETERS(lpLibFileName);
 
-HMODULE Net::Kernel32::LoadLibraryW(const wchar_t* lpLibFileName)
-{
-	return (*_LoadLibraryW.get())(lpLibFileName);
-}
+	MAKE_IMPORT(HMODULE, LoadLibraryW, const wchar_t* lpLibFileName)
+		PASS_PARAMETERS(lpLibFileName);
 
-FARPROC Net::Kernel32::GetProcAddress(const HMODULE hModule, const LPCSTR lpProcName)
-{
-	return (*_GetProcAddress.get())(hModule, lpProcName);
-}
+	MAKE_IMPORT(FARPROC, GetProcAddress, const HMODULE hModule, const LPCSTR lpProcName)
+		PASS_PARAMETERS(hModule, lpProcName);
 
-BOOL Net::Kernel32::FreeLibrary(const HMODULE hModule)
-{
-	return (*_FreeLibrary.get())(hModule);
-}
+	MAKE_IMPORT(BOOL, FreeLibrary, const HMODULE hModule)
+		PASS_PARAMETERS(hModule);
 
-void Net::Kernel32::Sleep(const DWORD dwMilliseconds)
-{
-	return (*_Sleep.get())(dwMilliseconds);
+	MAKE_IMPORT(void, Sleep, const DWORD dwMilliseconds)
+		PASS_PARAMETERS(dwMilliseconds);
+
+	MAKE_IMPORT(BOOL, K32EnumProcesses, DWORD* lpidProcess, DWORD cb, LPDWORD lpcbNeeded)
+		PASS_PARAMETERS(lpidProcess, cb, lpcbNeeded);
+
+	MAKE_IMPORT(HANDLE, OpenProcess, DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId)
+		PASS_PARAMETERS(dwDesiredAccess, bInheritHandle, dwProcessId);
+
+	MAKE_IMPORT(BOOL, K32EnumProcessModules, HANDLE hProcess, HMODULE* lphModule, DWORD cb, LPDWORD lpcbNeeded)
+		PASS_PARAMETERS(hProcess, lphModule, cb, lpcbNeeded);
+
+	MAKE_IMPORT(DWORD, K32GetModuleBaseNameA, HANDLE hProcess, HMODULE hModule, LPSTR lpBaseName, DWORD nSize)
+		PASS_PARAMETERS(hProcess, hModule, lpBaseName, nSize);
+
+	MAKE_IMPORT(BOOL, CheckRemoteDebuggerPresent, HANDLE hProcess, PBOOL pbDebuggerPresent)
+		PASS_PARAMETERS(hProcess, pbDebuggerPresent);
+
+	MAKE_IMPORT(BOOL, IsDebuggerPresent)
+		NO_PARAMETERS;
+
+	MAKE_IMPORT(BOOL, GetVersionExA, LPOSVERSIONINFOA lpVersionInformation)
+		PASS_PARAMETERS(lpVersionInformation);
+
+	MAKE_IMPORT(HMODULE, GetModuleHandleA, LPCSTR lpModuleName)
+		PASS_PARAMETERS(lpModuleName);
+
+	MAKE_IMPORT(DWORD, GetModuleFileNameA, HMODULE hModule, LPSTR lpFilename, DWORD nSize)
+		PASS_PARAMETERS(hModule, lpFilename, nSize);
+
+	MAKE_IMPORT(LPVOID, MapViewOfFile, HANDLE hFileMappingObject, DWORD dwDesiredAccess, DWORD dwFileOffsetHigh, DWORD dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap)
+		PASS_PARAMETERS(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh, dwFileOffsetLow, dwNumberOfBytesToMap);
+
+	MAKE_IMPORT(HANDLE, CreateFileMappingA, HANDLE hFile, LPSECURITY_ATTRIBUTES lpFileMappingAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCSTR lpName)
+		PASS_PARAMETERS(hFile, lpFileMappingAttributes, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+
+	MAKE_IMPORT(HANDLE, CreateFileA, LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+		PASS_PARAMETERS(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+
+	MAKE_IMPORT(BOOL, UnmapViewOfFile, LPCVOID lpBaseAddress)
+		PASS_PARAMETERS(lpBaseAddress);
+
+	MAKE_IMPORT(BOOL, CloseHandle, HANDLE hObject)
+		PASS_PARAMETERS(hObject);
+
+	MAKE_IMPORT(BOOL, GetThreadContext, HANDLE hThread, LPCONTEXT lpContext)
+		PASS_PARAMETERS(hThread, lpContext);
+
+	MAKE_IMPORT(BOOL, SetThreadContext, HANDLE hThread, const CONTEXT* lpContext)
+		PASS_PARAMETERS(hThread, lpContext);
+
+	MAKE_IMPORT(DWORD, ResumeThread, HANDLE hThread)
+		PASS_PARAMETERS(hThread);
+
+	MAKE_IMPORT(HANDLE, GetCurrentThread)
+		NO_PARAMETERS;
+	IMPORT_END
 }

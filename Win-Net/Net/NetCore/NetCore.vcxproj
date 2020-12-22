@@ -1023,6 +1023,7 @@
     <ClInclude Include="..\Net\Cryption\XOR.h" />
     <ClInclude Include="..\Net\Database\MYSQL.h" />
     <ClInclude Include="..\Net\ICMP\icmp.h" />
+    <ClInclude Include="..\Net\Import\Definition.hpp" />
     <ClInclude Include="..\Net\Import\Kernel32.h" />
     <ClInclude Include="..\Net\Import\MemoryModule.h" />
     <ClInclude Include="..\Net\Import\Ntdll.h" />

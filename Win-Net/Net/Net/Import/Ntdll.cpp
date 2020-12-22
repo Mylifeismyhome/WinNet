@@ -1,35 +1,20 @@
-#define NET_MODULE_NAME CSTRING("Ntdll")
+#define MODULE_NAME CSTRING("Ntdll")
 
-#define DECLARE_IMPORT(type, name) static CPOINTER<##type> ##name
-
-#define NET_IMPORT(name, strname, type) 	name.Set(new type((type)MemoryGetProcAddress(*handle.get(), CSTRING(strname)))); \
-	if(!##name.valid()) \
-	{ \
-		Uninitialize(); \
-		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), NET_MODULE_NAME, CSTRING(strname)); \
-		return false; \
-	}
-
-#define NET_DELETE_IMPORT(pointer) delete pointer.get(); pointer = nullptr;
-
-#include <Net/Import/Ntdll.h>
-#include <Net/Import/MemoryModule.h>
+#include "Ntdll.h"
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
+#include <Net/Import/MemoryModule.h>
 
 namespace Net
 {
-	namespace Ntdll
-	{
-		DECLARE_IMPORT(HMEMORYMODULE, handle);
+	IMPORT_BEGIN(Ntdll)
+		IMPORT_HANDLE(HMEMORYMODULE, handle);
 
-		DECLARE_IMPORT(DEF_lpNtCreateThreadEx, _NtCreateThreadEx);
-	}
-}
+	IMPORT_DEFINE(NtCreateThreadEx);
+	IMPORT_DEFINE(NtQueryInformationProcess);
 
-bool Net::Ntdll::Initialize()
-{
-	NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\ntdll.dll"), NET_FILE_READ);
+	IMPORT_INIT
+		NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\ntdll.dll"), NET_FILE_READ);
 	if (!fmanager.file_exists())
 		return false;
 
@@ -37,32 +22,36 @@ bool Net::Ntdll::Initialize()
 	size_t size = NULL;
 	if (!fmanager.read(module, size))
 		return false;
-	
+
 	handle.Set(new HMEMORYMODULE(MemoryLoadLibrary(module, size)));
 	if (!handle.valid())
 	{
-		LOG_DEBUG(CSTRING("[%s] - Unable to load ntdll"), NET_MODULE_NAME);
+		LOG_DEBUG(CSTRING("[%s] - Unable to load ntdll"), MODULE_NAME);
 		return false;
 	}
 
 	FREE(module);
 
-	NET_IMPORT(_NtCreateThreadEx, "NtCreateThreadEx", DEF_lpNtCreateThreadEx);
+	IMPORT_MPROCADDR(NtCreateThreadEx);
+	IMPORT_MPROCADDR(NtQueryInformationProcess);
 	return true;
-}
+	IMPORT_END
 
-void Net::Ntdll::Uninitialize()
-{
-	if (!handle.valid())
-		return;
+		IMPORT_UNLOAD
+		if (!handle.valid())
+			return;
 
-	NET_DELETE_IMPORT(_NtCreateThreadEx);
+	DELETE_IMPORT(NtCreateThreadEx);
+	DELETE_IMPORT(NtQueryInformationProcess);
 
 	MemoryFreeLibrary(*handle.get());
-	NET_DELETE_IMPORT(handle);
-}
+	DELETE_IMPORT_HANDLE(handle);
+	IMPORT_END
 
-NTSTATUS Net::Ntdll::NtCreateThreadEx(const PHANDLE hThread, const ACCESS_MASK DesiredAccess, const POBJECT_ATTRIBUTES ObjectAttributes, const HANDLE ProcessHandle, const LPTHREAD_START_ROUTINE lpStartAddress, const LPVOID lpParameter, const ULONG Flags, const ULONG_PTR StackZeroBits, const SIZE_T SizeOfStackCommit, const SIZE_T SizeOfStackReserve, const LPVOID lpBytesBuffer)
-{
-	return (*_NtCreateThreadEx.get())(hThread, DesiredAccess, ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter, Flags, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve, lpBytesBuffer);
+		MAKE_IMPORT(NTSTATUS, NtCreateThreadEx, const PHANDLE hThread, const ACCESS_MASK DesiredAccess, const POBJECT_ATTRIBUTES ObjectAttributes, const HANDLE ProcessHandle, const LPTHREAD_START_ROUTINE lpStartAddress, const LPVOID lpParameter, const ULONG Flags, const ULONG_PTR StackZeroBits, const SIZE_T SizeOfStackCommit, const SIZE_T SizeOfStackReserve, const LPVOID lpBytesBuffer)
+		PASS_PARAMETERS(hThread, DesiredAccess, ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter, Flags, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve, lpBytesBuffer);
+
+	MAKE_IMPORT(NTSTATUS, NtQueryInformationProcess, HANDLE ProcessHandle, PROCESSINFOCLASS ProcessInformationClass, PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength)
+		PASS_PARAMETERS(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength, ReturnLength);
+	IMPORT_END
 }
