@@ -47,7 +47,6 @@ CONSTEXPR auto DEFAULT_WEBSERVER_SERVERPORT = NULL;
 CONSTEXPR auto DEFAULT_WEBSERVER_FREQUENZ = 30;
 CONSTEXPR auto DEFAULT_WEBSERVER_SPAM_PROTECTION_TIMER = 0.5f;
 CONSTEXPR auto DEFAULT_WEBSERVER_MAX_PEERS = 256;
-CONSTEXPR auto DEFAULT_WEBSERVER_MAX_THREADS = 3;
 CONSTEXPR auto DEFAULT_WEBSERVER_SSL = false;
 CONSTEXPR auto DEFAULT_WEBSERVER_CertFileName = "cert.pem";
 CONSTEXPR auto DEFAULT_WEBSERVER_KeyFileName = "key.pem";
@@ -55,9 +54,9 @@ CONSTEXPR auto DEFAULT_WEBSERVER_CaFileName = "ca.pem";
 CONSTEXPR auto DEFAULT_WEBSERVER_CustomHandshake = false;
 CONSTEXPR auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
 CONSTEXPR auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 4096;
-CONSTEXPR auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10; // Seconds
+CONSTEXPR auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10;
 CONSTEXPR auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
-CONSTEXPR auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
+CONSTEXPR auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 1000;
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
@@ -70,6 +69,9 @@ CONSTEXPR auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 10; // Seconds
 #include <OpenSSL/err.h>
 
 #include <Net/ICMP/icmp.h>
+
+#include <Net/assets/thread.h>
+#include <Net/assets/timer.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
@@ -151,7 +153,7 @@ bool handshake;
 
 typeLatency latency;
 bool bLatency;
-double lastCalcLatency;
+NET_HANDLE_TIMER hCalcLatency;
 
 bool bHasBeenErased;
 bool bQueueLock;
@@ -166,7 +168,7 @@ ssl = nullptr;
 handshake = false;
 latency = -1;
 bLatency = false;
-lastCalcLatency = 0;
+hCalcLatency = nullptr;
 bHasBeenErased = false;
 bQueueLock = false;
 NET_STRUCT_END_CONTRUCTION
@@ -187,13 +189,10 @@ size_t _CounterPeersTable;
 void IncreasePeersCounter();
 void DecreasePeersCounter();
 NET_PEER CreatePeer(sockaddr_in, SOCKET);
-bool ErasePeer(NET_PEER);
-void UpdatePeer(NET_PEER);
 
 char sServerName[128];
 u_short sServerPort;
-long long sfrequenz;
-u_short sMaxThreads;
+DWORD sfrequenz;
 float sTimeSpamProtection;
 unsigned int sMaxPeers;
 bool sSSL;
@@ -212,8 +211,7 @@ NET_CLASS_PUBLIC
 void SetAllToDefault();
 void SetServerName(const char*);
 void SetServerPort(u_short);
-void SetFrequenz(long long);
-void SetMaxThreads(u_short);
+void SetFrequenz(DWORD);
 void SetTimeSpamProtection(float);
 void SetMaxPeers(unsigned int);
 void SetSSL(bool);
@@ -239,8 +237,7 @@ void SetSocketOption(const SocketOption_t<T> opt)
 
 const char* GetServerName() const;
 u_short GetServerPort() const;
-long long GetFrequenz() const;
-u_short GetMaxThreads() const;
+DWORD GetFrequenz() const;
 float GetTimeSpamProtection() const;
 unsigned int GetMaxPeers() const;
 bool GetSSL() const;
@@ -258,7 +255,6 @@ NET_CLASS_PRIVATE
 SOCKET ListenSocket;
 SOCKET AcceptSocket;
 
-bool DoExit;
 bool bRunning;
 bool bShuttingDown;
 
@@ -271,16 +267,19 @@ SOCKET GetListenSocket() const;
 SOCKET GetAcceptSocket() const;
 bool IsRunning() const;
 
+bool ErasePeer(NET_PEER);
+
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
 bool Start(const char*, u_short, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS);
 bool Close();
 
-NET_CLASS_PRIVATE
+bool DoExit;
+
+short Handshake(NET_PEER);
 void Acceptor();
 
 SSL_CTX* ctx;
-short Handshake(NET_PEER);
 void onSSLTimeout(NET_PEER);
 
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
@@ -294,13 +293,13 @@ void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = OPCODE_TEXT);
 
 size_t getCountPeers() const;
 
-NET_CLASS_PRIVATE
-short ThreadsRunning;
-void ReceiveThread(sockaddr_in, SOCKET);
-void TickThread();
-void AcceptorThread();
+DWORD DoReceive(NET_PEER);
 
-void DoReceive(NET_PEER);
+/* CALLBACKS */
+NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
+NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
+
+NET_CLASS_PRIVATE
 void DecodeFrame(NET_PEER);
 void EncodeFrame(const char*, size_t, NET_PEER, unsigned char = OPCODE_TEXT);
 bool ProcessPackage(NET_PEER, BYTE*, size_t);
@@ -309,8 +308,6 @@ NET_CLASS_PROTECTED
 /* CALLBACKS */
 NET_DEFINE_CALLBACK(void, OnPeerConnect, NET_PEER) {}
 NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
 NET_DSA_END
 NET_NAMESPACE_END

@@ -47,7 +47,7 @@ void Server::SetAllToDefault()
 	SetRunning(false);
 
 	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
+	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lu"), sfrequenz);
 	LOG_DEBUG(CSTRING("RSA Key size has been set to default value of %llu"), sRSAKeySize);
 	LOG_DEBUG(CSTRING("AES Key size has been set to default value of %llu"), sAESKeySize);
 	LOG_DEBUG(CSTRING("Crypt Package has been set to default value of %s"), sCryptPackage ? CSTRING("enabled") : CSTRING("disabled"));
@@ -446,6 +446,13 @@ bool Server::ErasePeer(NET_PEER peer)
 			peer->pSocket = INVALID_SOCKET;
 		}
 
+		if (peer->hCalcLatency)
+		{
+			// stop latency interval
+			Timer::Clear(peer->hCalcLatency);
+			peer->hCalcLatency = nullptr;
+		}
+
 		// callback
 		OnPeerDisconnect(peer);
 
@@ -468,9 +475,12 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->pSocket = INVALID_SOCKET;
 	}
 
-	// stop latency interval
-	Timer::Clear(peer->hCalcLatency);
-	peer->hCalcLatency = nullptr;
+	if (peer->hCalcLatency)
+	{
+		// stop latency interval
+		Timer::Clear(peer->hCalcLatency);
+		peer->hCalcLatency = nullptr;
+	}
 
 	peer->unlock();
 	return true;

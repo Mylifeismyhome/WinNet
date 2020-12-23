@@ -1,22 +1,8 @@
 #include "WebServer.h"
+#include <Net/Import/Kernel32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
-static void LatencyThread(Server::NET_PEER peer)
-{
-	if (!peer)
-		return;
-
-	peer->bLatency = true;
-
-	const auto ip = peer->IPAddr();
-	ICMP _icmp(ip.get());
-	_icmp.execute();
-
-	peer->latency = _icmp.getLatency();
-	peer->bLatency = false;
-}
-
 IPRef::IPRef(PCSTR const pointer)
 {
 	this->pointer = (char*)pointer;
@@ -59,7 +45,6 @@ void Server::SetAllToDefault()
 	strcpy_s(sKeyFileName, DEFAULT_WEBSERVER_KeyFileName);
 	strcpy_s(sCaFileName, DEFAULT_WEBSERVER_CaFileName);
 
-	sMaxThreads = DEFAULT_WEBSERVER_MAX_THREADS;
 	hUseCustom = DEFAULT_WEBSERVER_CustomHandshake;
 	hOrigin = nullptr;
 	sCompressPackage = DEFAULT_WEBSERVER_COMPRESS_PACKAGES;
@@ -70,7 +55,7 @@ void Server::SetAllToDefault()
 	SetRunning(false);
 
 	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lld"), sfrequenz);
+	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lu"), sfrequenz);
 	LOG_DEBUG(CSTRING("Spam-Protection timer has been set to default value of %.2f"), sTimeSpamProtection);
 	LOG_DEBUG(CSTRING("Max Peers has been set to default value of %i"), sMaxPeers);
 	LOG_DEBUG(CSTRING("SSL has been set to default value of %s"), sSSL ? CSTRING("enabled") : CSTRING("disabled"));
@@ -78,7 +63,6 @@ void Server::SetAllToDefault()
 	LOG_DEBUG(CSTRING("Key Filename has been set to default value of %s"), sKeyFileName);
 	LOG_DEBUG(CSTRING("CA Filename has been set to default value of %s"), sCaFileName);
 	LOG_DEBUG(CSTRING("Use Custom Handshake has been set to default value of %s"), hUseCustom ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Max Threads has been set to default value of %i"), sMaxThreads);
 	LOG_DEBUG(CSTRING("Compress Package has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
 	LOG_DEBUG(CSTRING("TCP Read timeout has been set to default value of %i"), sTCPReadTimeout);
 	LOG_DEBUG(CSTRING("Without Handshake has been set to default value of %s"), bWithoutHandshake ? "TRUE" : "FALSE");
@@ -115,31 +99,17 @@ void Server::SetServerPort(const u_short sServerPort)
 	}
 }
 
-void Server::SetFrequenz(const long long sfrequenz)
+void Server::SetFrequenz(const DWORD sfrequenz)
 {
 	this->sfrequenz = sfrequenz;
 
 	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
 	{
-		LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to %lld"), sfrequenz);
+		LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to %lu"), sfrequenz);
 	}
 	else
 	{
-		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lld"), GetServerName(), sfrequenz);
-	}
-}
-
-void Server::SetMaxThreads(const u_short sMaxThreads)
-{
-	this->sMaxThreads = sMaxThreads;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Max Threads has been set to %i"), sMaxThreads);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Max Threads has been set to %i"), GetServerName(), sMaxThreads);
+		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lu"), GetServerName(), sfrequenz);
 	}
 }
 
@@ -328,17 +298,12 @@ u_short Server::GetServerPort() const
 	return sServerPort;
 }
 
-u_short Server::GetMaxThreads() const
-{
-	return sMaxThreads;
-}
-
 float Server::GetTimeSpamProtection() const
 {
 	return sTimeSpamProtection;
 }
 
-long long Server::GetFrequenz() const
+DWORD Server::GetFrequenz() const
 {
 	return sfrequenz;
 }
@@ -512,6 +477,41 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
+NET_THREAD(LatencyTick)
+{
+	const auto peer = (Server::NET_PEER)parameter;
+	if (!peer) return NULL;
+
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
+	ICMP _icmp(peer->IPAddr().get());
+	_icmp.execute();
+
+	peer->latency = _icmp.getLatency();
+	peer->bLatency = false;
+	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
+	return NULL;
+}
+
+struct DoCalcLatency_t
+{
+	Server* server;
+	Server::NET_PEER peer;
+};
+
+NET_TIMER(DoCalcLatency)
+{
+	const auto info = (DoCalcLatency_t*)param;
+	if (!info) NET_STOP_TIMER;
+
+	const auto server = info->server;
+	const auto peer = info->peer;
+
+	peer->bLatency = true;
+	Thread::Create(LatencyTick, peer);
+	Timer::SetTime(peer->hCalcLatency, server->GetCalcLatencyInterval());
+	NET_CONTINUE_TIMER;
+}
+
 Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
@@ -525,6 +525,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	tv.tv_sec = GetTCPReadTimeout();
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+	const auto _DoCalcLatency = new DoCalcLatency_t();
+	_DoCalcLatency->server = this;
+	_DoCalcLatency->peer = peer;
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), _DoCalcLatency);
 
 	IncreasePeersCounter();
 
@@ -556,6 +561,13 @@ bool Server::ErasePeer(NET_PEER peer)
 			peer->pSocket = INVALID_SOCKET;
 		}
 
+		if (peer->hCalcLatency)
+		{
+			// stop latency interval
+			Timer::Clear(peer->hCalcLatency);
+			peer->hCalcLatency = nullptr;
+		}
+
 		// callback
 		OnPeerDisconnect(peer);
 
@@ -578,22 +590,15 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->pSocket = INVALID_SOCKET;
 	}
 
+	if (peer->hCalcLatency)
+	{
+		// stop latency interval
+		Timer::Clear(peer->hCalcLatency);
+		peer->hCalcLatency = nullptr;
+	}
+
 	peer->unlock();
 	return false;
-}
-
-void Server::UpdatePeer(NET_PEER peer)
-{
-	PEER_NOT_VALID(peer,
-		return;
-	);
-
-	// Calculate latency interval
-	if (peer->lastCalcLatency < CURRENTCLOCKTIME)
-	{
-		std::thread(LatencyThread, peer).detach();
-		peer->lastCalcLatency = CREATETIMER(GetCalcLatencyInterval());
-	}
 }
 
 void Server::NET_IPEER::clear()
@@ -606,7 +611,7 @@ void Server::NET_IPEER::clear()
 	handshake = false;
 	bLatency = false;
 	latency = -1;
-	lastCalcLatency = 0;
+	hCalcLatency = nullptr;
 
 	network.clear();
 	network.reset();
@@ -658,32 +663,34 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 }
 
 /* Thread functions */
-void Server::TickThread()
+NET_THREAD(TickThread)
 {
-	LOG_DEBUG(CSTRING("TickThread() has been started!"));
+	const auto server = (Server*)parameter;
+	if (!server) return NULL;
 
-	while (IsRunning() && !NeedExit())
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
+	while (server->IsRunning() && !server->NeedExit())
 	{
-		Tick();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
+		server->Tick();
+		Kernel32::Sleep(server->GetFrequenz());
 	}
-
-	LOG_DEBUG(CSTRING("TickThread() has been closed!"));
+	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
+	return NULL;
 }
 
-void Server::AcceptorThread()
+NET_THREAD(AcceptorThread)
 {
-	LOG_DEBUG(CSTRING("AcceptorThread() has been started!"));
+	const auto server = (Server*)parameter;
+	if (!server) return NULL;
 
-	while (IsRunning() && !NeedExit())
+	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
+	while (server->IsRunning() && !server->NeedExit())
 	{
-		Acceptor();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz() * 2));
+		server->Acceptor();
+		Kernel32::Sleep(server->GetFrequenz());
 	}
-
-	LOG_DEBUG(CSTRING("AcceptorThread() has been closed!"));
+	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
+	return NULL;
 }
 
 void Server::SetListenSocket(const SOCKET ListenSocket)
@@ -861,8 +868,8 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	}
 
 	// Create all needed Threads
-	std::thread(&Server::TickThread, this).detach();
-	std::thread(&Server::AcceptorThread, this).detach();
+	Thread::Create(TickThread, this);
+	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
 	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), GetServerName(), GetServerPort());
@@ -1291,6 +1298,106 @@ short Server::Handshake(NET_PEER peer)
 	return WebServerHandshake::HandshakeRet_t::error;
 }
 
+struct Receive_t
+{
+	Server* server;
+	Server::NET_PEER peer;
+};
+
+NET_THREAD(Receive)
+{
+	const auto param = (Receive_t*)parameter;
+	if (!param) return NULL;
+
+	auto peer = param->peer;
+	const auto server = param->server;
+
+	/* Handshake */
+	if (!server->GetWithoutHandshake())
+	{
+		do
+		{
+			peer->setAsync(true);
+			const auto res = server->Handshake(peer);
+			if (res == WebServerHandshake::peer_not_valid)
+			{
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), server->GetServerName(), peer->IPAddr().get());
+
+				// erase him
+				peer->setAsync(false);
+				server->ErasePeer(peer);
+				return NULL;
+			}
+			if (res == WebServerHandshake::would_block)
+			{
+				peer->setAsync(false);
+				continue;
+			}
+			if (res == WebServerHandshake::missmatch)
+			{
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), server->GetServerName(), peer->IPAddr().get());
+
+				// erase him
+				peer->setAsync(false);
+				server->ErasePeer(peer);
+				return NULL;
+			}
+			if (res == WebServerHandshake::error)
+			{
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), server->GetServerName(), peer->IPAddr().get());
+
+				peer->setAsync(false);
+				server->ErasePeer(peer);
+				return NULL;
+			}
+			if (res == WebServerHandshake::success)
+			{
+				peer->setAsync(false);
+				peer->handshake = true;
+				break;
+			}
+			peer->setAsync(false);
+		} while (!server->DoExit);
+
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), server->GetServerName(), peer->IPAddr().get());
+	}
+	peer->estabilished = true;
+	server->OnPeerEstabilished(peer);
+
+	while (peer)
+	{
+		if (!server->IsRunning() || server->NeedExit())
+			break;
+
+		server->OnPeerUpdate(peer);
+
+		DWORD restTime = NULL;
+		SOCKET_VALID(peer->pSocket)
+		{
+			peer->setAsync(true);
+			restTime = server->DoReceive(peer);
+			peer->setAsync(false);
+		}
+		else
+		{
+			peer->setAsync(false);
+			break;
+		}
+
+		Kernel32::Sleep(restTime);
+	}
+
+	// wait until thread has finished
+	while (peer && peer->bLatency) Kernel32::Sleep(server->GetFrequenz());
+
+	// erase him
+	peer->setAsync(false);
+	server->ErasePeer(peer);
+
+	delete peer;
+	peer = nullptr;
+}
+
 void Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
@@ -1310,7 +1417,11 @@ void Server::Acceptor()
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), GetServerName(), entry.opt, GetLastError());
 		}
 
-		std::thread(&Server::ReceiveThread, this, client_addr, GetAcceptSocket()).detach();
+		auto peer = CreatePeer(client_addr, GetAcceptSocket());
+		const auto param = new Receive_t();
+		param->server = this;
+		param->peer = peer;
+		Thread::Create(Receive, param);
 	}
 }
 
@@ -1608,103 +1719,10 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 	///////////////////////
 }
 
-void Server::ReceiveThread(const sockaddr_in client_addr, const SOCKET socket)
-{
-	auto peer = CreatePeer(client_addr, socket);
-
-	/* Handshake */
-	if (!GetWithoutHandshake())
-	{
-		do
-		{
-			peer->setAsync(true);
-			const auto res = Handshake(peer);
-			if (res == WebServerHandshake::peer_not_valid)
-			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), GetServerName(), peer->IPAddr().get());
-
-				// erase him
-				peer->setAsync(false);
-				ErasePeer(peer);
-				return;
-			}
-			if (res == WebServerHandshake::would_block)
-			{
-				peer->setAsync(false);
-				continue;
-			}
-			if (res == WebServerHandshake::missmatch)
-			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), GetServerName(), peer->IPAddr().get());
-
-				// erase him
-				peer->setAsync(false);
-				ErasePeer(peer);
-				return;
-			}
-			if (res == WebServerHandshake::error)
-			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), GetServerName(), peer->IPAddr().get());
-
-				peer->setAsync(false);
-				ErasePeer(peer);
-				return;
-			}
-			if (res == WebServerHandshake::success)
-			{
-				peer->setAsync(false);
-				peer->handshake = true;
-				break;
-			}
-			peer->setAsync(false);
-		} while (!DoExit);
-
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), GetServerName(), peer->IPAddr().get());
-	}
-	peer->estabilished = true;
-	OnPeerEstabilished(peer);
-
-	while (peer)
-	{
-		if (!IsRunning() || NeedExit())
-			break;
-
-		UpdatePeer(peer);
-		OnPeerUpdate(peer);
-
-		SOCKET_VALID(peer->pSocket)
-		{
-			peer->setAsync(true);
-			DoReceive(peer);
-			peer->setAsync(false);
-		}
-		else
-		{
-			peer->setAsync(false);
-			break;
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	}
-
-	// wait until thread has finished
-	while (peer && peer->bLatency)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(GetFrequenz()));
-	};
-
-	// erase him
-	peer->setAsync(false);
-	ErasePeer(peer);
-
-	delete peer;
-	peer = nullptr;
-}
-
-void Server::DoReceive(NET_PEER peer)
+DWORD Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return;
+		return GetFrequenz();
 	);
 
 	if (peer->ssl)
@@ -1717,77 +1735,77 @@ void Server::DoReceive(NET_PEER peer)
 			case WSANOTINITIALISED:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENETDOWN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEFAULT:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENOTCONN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINTR:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINPROGRESS:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENETRESET:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENOTSOCK:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEOPNOTSUPP:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAESHUTDOWN:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEMSGSIZE:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINVAL:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAECONNABORTED:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAETIMEDOUT:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAECONNRESET:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEWOULDBLOCK:
 				break;
@@ -1795,7 +1813,7 @@ void Server::DoReceive(NET_PEER peer)
 			default:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 			}
 		}
 
@@ -1809,41 +1827,41 @@ void Server::DoReceive(NET_PEER peer)
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case SSL_ERROR_WANT_CONNECT:
 			case SSL_ERROR_WANT_ACCEPT:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case SSL_ERROR_WANT_X509_LOOKUP:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case SSL_ERROR_SYSCALL:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case SSL_ERROR_SSL:
 				/* Some servers did not close the connection properly */
 				peer->network.reset();
-				return;
+				return GetFrequenz();
 
 			case SSL_ERROR_WANT_READ:
 				peer->network.reset();
-				return;
+				return GetFrequenz();
 
 			default:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 			}
 		}
 		ERR_clear_error();
@@ -1877,101 +1895,101 @@ void Server::DoReceive(NET_PEER peer)
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENETDOWN:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEFAULT:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENOTCONN:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINTR:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINPROGRESS:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENETRESET:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAENOTSOCK:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEOPNOTSUPP:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAESHUTDOWN:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEWOULDBLOCK:
 				peer->network.reset();
-				return;
+				return GetFrequenz();
 
 			case WSAEMSGSIZE:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAEINVAL:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAECONNABORTED:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAETIMEDOUT:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			case WSAECONNRESET:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 
 			default:
 				peer->network.reset();
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
 				ErasePeer(peer);
-				return;
+				return GetFrequenz();
 			}
 		}
 		if (data_size == 0)
@@ -1979,7 +1997,7 @@ void Server::DoReceive(NET_PEER peer)
 			peer->network.reset();
 			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
 			ErasePeer(peer);
-			return;
+			return GetFrequenz();
 		}
 		peer->network.getDataReceive()[data_size] = '\0';
 
@@ -2002,6 +2020,7 @@ void Server::DoReceive(NET_PEER peer)
 	}
 
 	DecodeFrame(peer);
+	return NULL;
 }
 
 void Server::DecodeFrame(NET_PEER peer)
