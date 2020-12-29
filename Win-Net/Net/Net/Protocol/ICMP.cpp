@@ -289,7 +289,106 @@ struct addrinfo* ResolveLocalAddress(const int af)
 	return res;
 }
 
-lt Exec(const char* addr, const bool bRecordRoute)
+char* ResolveHostname(const char* name)
+{
+	WSADATA wsaData;
+	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (res != NULL)
+	{
+		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
+		return nullptr;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
+		WSACleanup();
+		return nullptr;
+	}
+
+	struct addrinfo hints;
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* result = nullptr;
+	const auto dwRetval = getaddrinfo(name, nullptr, &hints, &result);
+	if (dwRetval != NULL)
+	{
+		LOG_ERROR(CSTRING("[ICMP] - Host look up has been failed with error %d"), dwRetval);
+		WSACleanup();
+		return nullptr;
+	}
+
+	struct sockaddr_in* psockaddrv4 = nullptr;
+	struct sockaddr_in6* psockaddrv6 = nullptr;
+	struct addrinfo* ptr = nullptr;
+	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+	{
+		bool v6 = false;
+		switch (ptr->ai_family)
+		{
+		case AF_INET:
+			break;
+
+		case AF_INET6:
+			v6 = true;
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		switch (ptr->ai_socktype)
+		{
+		case SOCK_RAW:
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		switch (ptr->ai_protocol)
+		{
+		case IPPROTO_ICMP:
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		if (v6) psockaddrv6 = (struct sockaddr_in6*)ptr->ai_addr;
+		else psockaddrv4 = (struct sockaddr_in*)ptr->ai_addr;
+
+		// break out, we have a connectivity we can use
+		break;
+	}
+
+	if (!psockaddrv4 && !psockaddrv6)
+	{
+		freeaddrinfo(result);
+		WSACleanup();
+		return nullptr;
+	}
+
+	const auto len = psockaddrv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN;
+	auto buf = ALLOC<char>(len);
+	memset(buf, NULL, len);
+
+	if (psockaddrv6) buf = (char*)inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
+	else buf = (char*)inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
+
+	freeaddrinfo(result);
+	WSACleanup();
+
+	return buf;
+}
+
+static lt PerformRequest(const char* addr, const bool bRecordRoute)
 {
 	WSADATA wsaData;
 	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -484,6 +583,21 @@ lt Exec(const char* addr, const bool bRecordRoute)
 
 	WSACleanup();
 	return time;
+}
+
+lt Perform(const char* addr, const bool bRecordRoute)
+{
+	return PerformRequest(addr, bRecordRoute);
+}
+
+lt Exec(const char* addr, const bool bRecordRoute)
+{
+	return PerformRequest(addr, bRecordRoute);
+}
+
+lt Run(const char* addr, const bool bRecordRoute)
+{
+	return PerformRequest(addr, bRecordRoute);
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

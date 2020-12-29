@@ -119,7 +119,10 @@ typedef DWORD64 lt;
 typedef DWORD lt;
 #endif
 
+char* ResolveHostname(const char*);
+lt Perform(const char*, bool = false);
 lt Exec(const char*, bool = false);
+lt Run(const char*, bool = false);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
