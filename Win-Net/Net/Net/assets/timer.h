@@ -6,7 +6,7 @@
 typedef BOOL NET_TimerRet;
 #define NET_TIMER(fnc) NET_TimerRet fnc(void* param)
 #define NET_HANDLE_TIMER Net::Timer::Timer_t*
-#define NET_UNUSED_PARAM(param) param = nullptr;
+#define NET_UNUSED_PARAM(param) if(timer->bdelete) delete param; param = nullptr;
 
 namespace Net
 {
@@ -20,9 +20,10 @@ namespace Net
 			double last;
 			bool clear;
 			bool finished;
+			bool bdelete;
 		};
 
-		NET_HANDLE_TIMER Create(NET_TimerRet(*)(void*), double, void* = nullptr);
+		NET_HANDLE_TIMER Create(NET_TimerRet(*)(void*), double, void* = nullptr, bool = false);
 		void Clear(NET_HANDLE_TIMER);
 		void WaitSingleObjectStopped(NET_HANDLE_TIMER);
 		void SetTime(NET_HANDLE_TIMER, double);

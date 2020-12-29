@@ -45,7 +45,7 @@ NET_THREAD(NetTimerThread)
 	}
 }
 
-NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double timer, void* param)
+NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double timer, void* param, const bool bdelete)
 {
 	const auto timer_t = new Timer_t();
 	timer_t->param = param;
@@ -53,6 +53,7 @@ NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double tim
 	timer_t->timer = timer;
 	timer_t->clear = false;
 	timer_t->finished = false;
+	timer_t->bdelete = bdelete;
 	Thread::Create(NetTimerThread, timer_t);
 	return timer_t;
 }

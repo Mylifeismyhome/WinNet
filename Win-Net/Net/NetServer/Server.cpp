@@ -411,7 +411,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	const auto _DoCalcLatency = new DoCalcLatency_t();
 	_DoCalcLatency->server = this;
 	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), _DoCalcLatency);
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), _DoCalcLatency, true);
 
 	IncreasePeersCounter();
 
