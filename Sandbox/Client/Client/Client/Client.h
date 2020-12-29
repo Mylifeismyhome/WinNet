@@ -5,7 +5,6 @@
 
 NET_INHERITANCE(Client, NET_CLIENT)
 {
-	NET_CALLBACK(void, Tick);
 	NET_CALLBACK(void, OnConnected);
 	NET_CALLBACK(void, OnDisconnected);
 	NET_CALLBACK(void, OnForcedDisconnect, int);

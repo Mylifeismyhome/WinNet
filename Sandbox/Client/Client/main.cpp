@@ -1,11 +1,24 @@
 #include "config.h"
 #include "Client/Client.h"
 #include <Net/assets/web/http.h>
+#include <Net/Protocol/NTP.h>
 
 #pragma comment(lib, "NetClient.lib")
 
 int main()
 {
+	Net::load();
+
+	// test NTP
+	const auto res = Net::Protocol::NTP::Exec("216.239.35.4", 123);
+	if (res.valid())
+	{
+		time_t txTm = (time_t)(res.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		printf("Time: %s", ctime((const time_t*)&txTm));
+	}
+
+	system("pause");
+
 	// test http parsing
 	Net::Web::HTTPS https("https://google.com", Net::ssl::NET_SSL_METHOD_TLSv1_2_CLIENT);
 	if(https.Get())

@@ -40,6 +40,9 @@
     <Filter Include="Import">
       <UniqueIdentifier>{d3668493-a839-44a7-9586-d7720675e3c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
@@ -170,6 +173,12 @@
     </ClCompile>
     <ClCompile Include="..\Net\Import\Kernel32.cpp">
       <Filter>Import</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Protocol\NTP.h">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Protocol\NTP.cpp">
+      <Filter>Protocol</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

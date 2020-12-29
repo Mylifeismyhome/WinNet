@@ -1001,6 +1001,8 @@
     <ClCompile Include="..\Net\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Net\NetVersion.cpp" />
     <ClCompile Include="..\Net\Net\Package.cpp" />
+    <ClCompile Include="..\Net\Protocol\NTP.cpp" />
+    <ClCompile Include="..\Net\Protocol\NTP.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\assets\assets.h" />

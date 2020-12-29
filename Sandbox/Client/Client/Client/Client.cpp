@@ -4,10 +4,6 @@ NET_CLIENT_BEGIN_DATA_PACKAGE(Client)
 NET_CLIENT_DEFINE_PACKAGE(Test, Packages::PKG_TEST)
 NET_CLIENT_END_DATA_PACKAGE
 
-void Client::Tick()
-{
-}
-
 void Client::OnConnected()
 {
 }
