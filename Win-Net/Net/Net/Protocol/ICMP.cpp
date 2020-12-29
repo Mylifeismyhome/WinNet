@@ -22,531 +22,288 @@ static bool AddrIsV6(const char* addr)
 }
 
 int PrintAddress(SOCKADDR* sa, const int salen)
-
 {
-
-	char    host[NI_MAXHOST], serv[NI_MAXSERV];
-
-	int     hostlen = NI_MAXHOST, servlen = NI_MAXSERV, rc;
-
-
+	char  host[NI_MAXHOST], serv[NI_MAXSERV];
+	int  hostlen = NI_MAXHOST, servlen = NI_MAXSERV, rc;
 
 	rc = getnameinfo(sa, salen, host, hostlen, serv, servlen, NI_NUMERICHOST | NI_NUMERICSERV);
-
 	if (rc != 0)
 		return rc;
 
 	return NO_ERROR;
-
 }
 
 static int SetTtl(const SOCKET s, int ttl, const int gAddressFamily)
-
 {
-
-	int     optlevel, option, rc;
-
-
-
+	int optlevel, option, rc;
 	rc = NO_ERROR;
 
 	if (gAddressFamily == AF_INET)
-
 	{
-
 		optlevel = IPPROTO_IP;
-
 		option = IP_TTL;
-
 	}
-
 	else if (gAddressFamily == AF_INET6)
-
 	{
-
 		optlevel = IPPROTO_IPV6;
-
 		option = IPV6_UNICAST_HOPS;
-
 	}
-
 	else
-
-	{
-
 		rc = SOCKET_ERROR;
 
-	}
-
 	if (rc == NO_ERROR)
-
-	{
-
 		rc = setsockopt(s, optlevel, option, (char*)&ttl, sizeof(ttl));
 
-	}
-
 	return rc;
-
 }
 
 static void InitIcmpHeader(char* buf, const int datasize)
-
 {
-
 	ICMP_HDR* icmp_hdr = NULL;
-
 	char* datapart = NULL;
 
-
-
 	icmp_hdr = (ICMP_HDR*)buf;
-
 	icmp_hdr->icmp_type = ICMPV4_ECHO_REQUEST_TYPE;        // request an ICMP echo
-
 	icmp_hdr->icmp_code = ICMPV4_ECHO_REQUEST_CODE;
-
 	icmp_hdr->icmp_id = (USHORT)GetCurrentProcessId();
-
 	icmp_hdr->icmp_checksum = 0;
-
 	icmp_hdr->icmp_sequence = 0;
 
+#ifdef _WIN64
+	icmp_hdr->icmp_timestamp = GetTickCount64();
+#else
 	icmp_hdr->icmp_timestamp = GetTickCount();
-
-
+#endif
 
 	datapart = buf + sizeof(ICMP_HDR);
 
-
-
 	// Place some junk in the buffer.
-
 	memset(datapart, 'E', datasize);
-
 }
 
 static int InitIcmp6Header(char* buf, const int datasize)
-
 {
-
 	ICMPV6_HDR* icmp6_hdr = NULL;
-
 	ICMPV6_ECHO_REQUEST* icmp6_req = NULL;
-
 	char* datapart = NULL;
 
-
-
 	// Initialize the ICMP6 header fields
-
 	icmp6_hdr = (ICMPV6_HDR*)buf;
-
 	icmp6_hdr->icmp6_type = ICMPV6_ECHO_REQUEST_TYPE;
-
 	icmp6_hdr->icmp6_code = ICMPV6_ECHO_REQUEST_CODE;
-
 	icmp6_hdr->icmp6_checksum = 0;
 
 	// Initialize the echo request fields
-
 	icmp6_req = (ICMPV6_ECHO_REQUEST*)(buf + sizeof(ICMPV6_HDR));
-
 	icmp6_req->icmp6_echo_id = (USHORT)GetCurrentProcessId();
-
 	icmp6_req->icmp6_echo_sequence = 0;
 
-
-
 	datapart = (char*)buf + sizeof(ICMPV6_HDR) + sizeof(ICMPV6_ECHO_REQUEST);
-
 	memset(datapart, '$', datasize);
 
 	return (sizeof(ICMPV6_HDR) + sizeof(ICMPV6_ECHO_REQUEST));
-
 }
 
 static USHORT checksum(USHORT* buffer, int size)
-
 {
-
 	unsigned long cksum = 0;
 
-
-
 	while (size > 1)
-
 	{
-
 		cksum += *buffer++;
-
 		size -= sizeof(USHORT);
-
 	}
-
-
 
 	if (size)
-
-	{
-
 		cksum += *(UCHAR*)buffer;
 
-	}
-
 	cksum = (cksum >> 16) + (cksum & 0xffff);
-
 	cksum += (cksum >> 16);
-
 	return (USHORT)(~cksum);
-
 }
 
 static int PostRecvfrom(const SOCKET s, char* buf, const int buflen, SOCKADDR* from, int* fromlen, WSAOVERLAPPED* ol)
-
 {
-
-	WSABUF  wbuf;
-
-	DWORD   flags, bytes;
-
-	int     rc;
-
-
+	WSABUF wbuf;
+	DWORD flags, bytes;
+	int rc;
 
 	wbuf.buf = buf;
-
 	wbuf.len = buflen;
-
-
-
 	flags = 0;
-
-
-
 	rc = WSARecvFrom(s, &wbuf, 1, &bytes, &flags, from, fromlen, ol, NULL);
-
 	if (rc == SOCKET_ERROR)
-
 	{
-
 		if (WSAGetLastError() != WSA_IO_PENDING)
 			return SOCKET_ERROR;
 	}
 
 	return NO_ERROR;
-
 }
 
 static void PrintPayload(char* buf, int bytes, const int gAddressFamily)
-
 {
-	int     hdrlen = 0, routes = 0, i;
-
-
-
+	int hdrlen = 0, routes = 0, i;
 	if (gAddressFamily == AF_INET)
 	{
-
 		SOCKADDR_IN      hop;
-
 		IPV4_OPTION_HDR* v4opt = NULL;
-
 		IPV4_HDR* v4hdr = NULL;
 
-
-
 		hop.sin_family = (USHORT)gAddressFamily;
-
 		hop.sin_port = 0;
 
-
-
 		v4hdr = (IPV4_HDR*)buf;
-
 		hdrlen = (v4hdr->ip_verlen & 0x0F) * 4;
 
 		// If the header length is greater than the size of the basic IPv4
-
-		//    header then there are options present. Find them and print them.
-
+		//  header then there are options present. Find them and print them.
 		if (hdrlen > sizeof(IPV4_HDR))
-
 		{
-
 			v4opt = (IPV4_OPTION_HDR*)(buf + sizeof(IPV4_HDR));
-
 			routes = (v4opt->opt_ptr / sizeof(ULONG)) - 1;
-
 			for (i = 0; i < routes; i++)
-
 			{
-
 				hop.sin_addr.s_addr = v4opt->opt_addr[i];
-
-				// Print the route
-
-				if (i == 0)
-
-					printf(CSTRING("    Route: "));
-
-				else
-
-					printf(CSTRING("           "));
-
 				PrintAddress((SOCKADDR*)&hop, sizeof(hop));
-
-
-
-				if (i < routes - 1)
-
-					printf(CSTRING(" ->\n"));
-
-				else
-
-					printf(CSTRING("\n"));
-
 			}
-
 		}
-
 	}
 }
 
 static void SetIcmpSequence(char* buf, const int gAddressFamily)
-
 {
-
-	ULONG    sequence = 0;
-
-
-
+	DWORD sequence = 0;
+#ifdef _WIN64
+	sequence = GetTickCount64();
+#else
 	sequence = GetTickCount();
+#endif
 
 	if (gAddressFamily == AF_INET)
-
 	{
-
 		ICMP_HDR* icmpv4 = NULL;
-
-
-
 		icmpv4 = (ICMP_HDR*)buf;
-
 		icmpv4->icmp_sequence = (USHORT)sequence;
-
 	}
-
 	else if (gAddressFamily == AF_INET6)
-
 	{
-
 		ICMPV6_HDR* icmpv6 = NULL;
-
 		ICMPV6_ECHO_REQUEST* req6 = NULL;
-
-
-
 		icmpv6 = (ICMPV6_HDR*)buf;
-
 		req6 = (ICMPV6_ECHO_REQUEST*)(buf + sizeof(ICMPV6_HDR));
-
-
-
 		req6->icmp6_echo_sequence = (USHORT)sequence;
-
 	}
-
 }
 
 static USHORT ComputeIcmp6PseudoHeaderChecksum(const SOCKET s, char* icmppacket, const int icmplen, struct sockaddr* dest, const int destlen)
-
 {
-
 	SOCKADDR_STORAGE localif;
-
-	DWORD            bytes;
-
-	char             tmp[65535], * ptr = NULL, proto = 0, zero = 0;
-
-	int              rc, total, length, i;
-
-
+	DWORD bytes;
+	char  tmp[65535], * ptr = NULL, proto = 0, zero = 0;
+	int rc, total, length, i;
 
 	// Find out which local interface for the destination
-
 	rc = WSAIoctl(s, SIO_ROUTING_INTERFACE_QUERY, dest, destlen,
-
 		(SOCKADDR*)&localif, sizeof(localif), &bytes, nullptr, nullptr);
 
 	if (rc == SOCKET_ERROR)
 		return -1;
 
 	// We use a temporary buffer to calculate the pseudo header.
-
 	ptr = tmp;
-
 	total = 0;
-	
 
 	// Copy source address
-
 	memcpy(ptr, &((SOCKADDR_IN6*)&localif)->sin6_addr, sizeof(struct in6_addr));
-
 	ptr += sizeof(struct in6_addr);
-
 	total += sizeof(struct in6_addr);
 
 	// Copy destination address
-
 	memcpy(ptr, &((SOCKADDR_IN6*)dest)->sin6_addr, sizeof(struct in6_addr));
-
 	ptr += sizeof(struct in6_addr);
-
 	total += sizeof(struct in6_addr);
 
 	// Copy ICMP packet length
-
 	length = htonl(icmplen);
 
-
-
 	memcpy(ptr, &length, sizeof(length));
-
 	ptr += sizeof(length);
-
 	total += sizeof(length);
 
 	// Zero the 3 bytes
-
 	memset(ptr, 0, 3);
-
 	ptr += 3;
-
 	total += 3;
 
 	// Copy next hop header
-
 	proto = IPPROTO_ICMP6;
-
-
-
 	memcpy(ptr, &proto, sizeof(proto));
-
 	ptr += sizeof(proto);
-
 	total += sizeof(proto);
 
 	// Copy the ICMP header and payload
-
 	memcpy(ptr, icmppacket, icmplen);
-
 	ptr += icmplen;
-
 	total += icmplen;
-
-
-
 	for (i = 0; i < icmplen % 2; i++)
-
 	{
-
 		*ptr = 0;
-
 		ptr++;
-
 		total++;
-
 	}
-
 	return checksum((USHORT*)tmp, total);
-
 }
 
 static void ComputeIcmpChecksum(const SOCKET s, char* buf, const int packetlen, struct sockaddr* dest, const int destlen, const int gAddressFamily)
-
 {
-
 	if (gAddressFamily == AF_INET)
-
 	{
-
 		ICMP_HDR* icmpv4 = NULL;
-
-
-
 		icmpv4 = (ICMP_HDR*)buf;
-
 		icmpv4->icmp_checksum = 0;
-
 		icmpv4->icmp_checksum = checksum((USHORT*)buf, packetlen);
-
 	}
-
 	else if (gAddressFamily == AF_INET6)
-
 	{
-
 		ICMPV6_HDR* icmpv6 = NULL;
-
-
-
 		icmpv6 = (ICMPV6_HDR*)buf;
-
 		icmpv6->icmp6_checksum = 0;
-
 		icmpv6->icmp6_checksum = ComputeIcmp6PseudoHeaderChecksum(s, buf, packetlen, dest, destlen);
-
 	}
-
 }
 
-struct addrinfo* ResolveAddress(char* addr, char* port, const int af, const int type, const int proto)
+struct addrinfo* ResolveLocalAddress(const int af)
 {
-
-	struct addrinfo hints,
-
-		* res = NULL;
-
-	int             rc;
-
-
-
+	struct addrinfo hints, * res = NULL;
 	memset(&hints, 0, sizeof(hints));
-
-	hints.ai_flags = ((addr) ? 0 : AI_PASSIVE);
-
+	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = af;
+	hints.ai_socktype = 0;
+	hints.ai_protocol = 0;
 
-	hints.ai_socktype = type;
-
-	hints.ai_protocol = proto;
-
-
-
-	rc = getaddrinfo(addr, port, &hints, &res);
-
+	const auto 	rc = getaddrinfo(nullptr, (char*)CSTRING("0"), &hints, &res);
 	if (rc != 0)
 		return nullptr;
 
 	return res;
 }
 
-lt Exec(const char* addr)
+lt Exec(const char* addr, const bool bRecordRoute)
 {
 	WSADATA wsaData;
 	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
-		return {};
+		return INVALID_SIZE;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
 		WSACleanup();
-		return {};
+		return INVALID_SIZE;
 	}
 
 	auto v6 = AddrIsV6(addr);
@@ -555,16 +312,22 @@ lt Exec(const char* addr)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Address is neather IPV4 nor IPV6 Protocol"));
 		WSACleanup();
-		return {};
+		return INVALID_SIZE;
 	}
 
-	const auto con = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	const auto con = socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, IPPROTO_ICMP);
 	if (con == INVALID_SOCKET)
 	{
 		return INVALID_SIZE;
 	}
 
 	struct sockaddr* sockaddr = nullptr;
+	struct addrinfo* localsockaddr = ResolveLocalAddress(v4 ? AF_INET : AF_INET6);
+	if (!localsockaddr)
+	{
+		return INVALID_SIZE;
+	}
+
 	int slen = NULL;
 	if (v4)
 	{
@@ -603,49 +366,25 @@ lt Exec(const char* addr)
 		return INVALID_SIZE;
 	}
 
-	int gAddressFamily;// Address family to use
-	int   gDataSize; // Amount of data to send
-	BOOL  bRecordRoute; // Use IPv4 record route?
-	char* gDestination;// Destination
-
-	gAddressFamily = AF_UNSPEC;
-	gDataSize = DEFAULT_DATA_SIZE;
-	bRecordRoute = FALSE;
-	gDestination = nullptr;
-
-	WSADATA            wsd;
-	WSAOVERLAPPED      recvol;
 	char* icmpbuf = nullptr;
 	char recvbuf[0xFFFF];
-	struct addrinfo * local = nullptr;
-	IPV4_OPTION_HDR    ipopt;
+
 	SOCKADDR_STORAGE   from;
 	DWORD              bytes, flags;
 	int                packetlen = 0, fromlen, rc;
 	const auto recvbuflen = 0xFFFF;
 	lt time = 0;
 
-	int gTtl = 128;
-
-	gAddressFamily = AF_INET;
-
-	// Get the bind address
-	local = ResolveAddress(nullptr, (char*)CSTRING("0"), gAddressFamily, 0, 0);
-	if (!local)
-	{
-		return INVALID_SIZE;
-	}
-
-	SetTtl(con, gTtl, gAddressFamily);
+	SetTtl(con, DEFAULT_TTL, v4 ? AF_INET : AF_INET6);
 
 	// Figure out the size of the ICMP header and payload
-	if (gAddressFamily == AF_INET)
+	if (v4)
 		packetlen += sizeof(ICMP_HDR);
-	else if (gAddressFamily == AF_INET6)
+	else if (v6)
 		packetlen += sizeof(ICMPV6_HDR) + sizeof(ICMPV6_ECHO_REQUEST);
 
 	// Add in the data size
-	packetlen += gDataSize;
+	packetlen += DEFAULT_DATA_SIZE;
 
 	icmpbuf = (char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, packetlen);
 	if (!icmpbuf)
@@ -655,17 +394,17 @@ lt Exec(const char* addr)
 	}
 
 	// Initialize the ICMP headers
-	if (gAddressFamily == AF_INET)
+	if (v4)
 	{
 		if (bRecordRoute)
 		{
+			IPV4_OPTION_HDR ipopt;
 			ZeroMemory(&ipopt, sizeof(ipopt));
 			ipopt.opt_code = IP_RECORD_ROUTE; // record route option
 			ipopt.opt_ptr = 4;                 // point to the first addr offset
 			ipopt.opt_len = 39;              // length of option header
 
 			rc = setsockopt(con, IPPROTO_IP, IP_OPTIONS, (char*)&ipopt, sizeof(ipopt));
-
 			if (rc == SOCKET_ERROR)
 			{
 				HeapFree(GetProcessHeap(), 0, icmpbuf);
@@ -673,32 +412,27 @@ lt Exec(const char* addr)
 			}
 		}
 
-		InitIcmpHeader(icmpbuf, gDataSize);
+		InitIcmpHeader(icmpbuf, DEFAULT_DATA_SIZE);
 	}
-	else if (gAddressFamily == AF_INET6)
-		InitIcmp6Header(icmpbuf, gDataSize);
+	else if (v6)
+		InitIcmp6Header(icmpbuf, DEFAULT_DATA_SIZE);
 
-	rc = bind(con, local->ai_addr, local->ai_addrlen);
-
+	rc = bind(con, localsockaddr->ai_addr, localsockaddr->ai_addrlen);
 	if (rc == SOCKET_ERROR)
 	{
 		HeapFree(GetProcessHeap(), 0, icmpbuf);
 		return INVALID_SIZE;
 	}
 
+	WSAOVERLAPPED recvol;
 	memset(&recvol, 0, sizeof(recvol));
-
 	recvol.hEvent = WSACreateEvent();
-
 	fromlen = sizeof(from);
 
 	PostRecvfrom(con, recvbuf, recvbuflen, (SOCKADDR*)&from, &fromlen, &recvol);
-
 	PrintAddress(sockaddr, slen);
-
-	SetIcmpSequence(icmpbuf, gAddressFamily);
-
-	ComputeIcmpChecksum(con, icmpbuf, packetlen, sockaddr, slen, gAddressFamily);
+	SetIcmpSequence(icmpbuf, v4 ? AF_INET : AF_INET6);
+	ComputeIcmpChecksum(con, icmpbuf, packetlen, sockaddr, slen, v4 ? AF_INET : AF_INET6);
 
 #ifdef _WIN64
 	time = GetTickCount64();
@@ -707,7 +441,6 @@ lt Exec(const char* addr)
 #endif
 
 	rc = sendto(con, icmpbuf, packetlen, 0, sockaddr, slen);
-
 	if (rc == SOCKET_ERROR)
 	{
 		HeapFree(GetProcessHeap(), 0, icmpbuf);
@@ -716,7 +449,6 @@ lt Exec(const char* addr)
 
 	// Waite for a response
 	rc = WaitForSingleObject((HANDLE)recvol.hEvent, DEFAULT_RECV_TIMEOUT);
-
 	if (rc == WAIT_FAILED)
 	{
 		HeapFree(GetProcessHeap(), 0, icmpbuf);
@@ -728,7 +460,6 @@ lt Exec(const char* addr)
 		HeapFree(GetProcessHeap(), 0, icmpbuf);
 		return INVALID_SIZE;
 	}
-
 	rc = WSAGetOverlappedResult(con, &recvol, &bytes, FALSE, &flags);
 
 #ifdef _WIN64
@@ -740,16 +471,16 @@ lt Exec(const char* addr)
 	WSAResetEvent(recvol.hEvent);
 	PrintAddress((SOCKADDR*)&from, fromlen);
 
-	PrintPayload(recvbuf, bytes, gAddressFamily);
+	PrintPayload(recvbuf, bytes, v4 ? AF_INET : AF_INET6);
 	fromlen = sizeof(from);
 	PostRecvfrom(con, recvbuf, recvbuflen, (SOCKADDR*)&from, &fromlen, &recvol);
-
-	freeaddrinfo(local);
 
 	if (con != INVALID_SOCKET)
 		closesocket(con);
 
 	HeapFree(GetProcessHeap(), 0, icmpbuf);
+
+	freeaddrinfo(localsockaddr);
 
 	WSACleanup();
 	return time;

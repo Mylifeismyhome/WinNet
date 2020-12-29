@@ -45,6 +45,8 @@ int main()
 		{
 			Sleep(1000);
 		}
+
+		client.WaitUntilAccomplished();
 	}
 
 	Net::unload();

@@ -1,26 +1,26 @@
 #pragma once
 // IPv4 option for record route
-#define IP_RECORD_ROUTE     0x7
+#define IP_RECORD_ROUTE 0x7
 
 // ICMP6 protocol value (used in the socket call and IPv6 header)
-#define IPPROTO_ICMP6       58
+#define IPPROTO_ICMP6 58
 
 // ICMP types and codes
-#define ICMPV4_ECHO_REQUEST_TYPE   8
-#define ICMPV4_ECHO_REQUEST_CODE   0
-#define ICMPV4_ECHO_REPLY_TYPE     0
-#define ICMPV4_ECHO_REPLY_CODE     0
-#define ICMPV4_MINIMUM_HEADER      8
+#define ICMPV4_ECHO_REQUEST_TYPE 8
+#define ICMPV4_ECHO_REQUEST_CODE 0
+#define ICMPV4_ECHO_REPLY_TYPE 0
+#define ICMPV4_ECHO_REPLY_CODE 0
+#define ICMPV4_MINIMUM_HEADER 8
 
 // ICPM6 types and codes
-#define ICMPV6_ECHO_REQUEST_TYPE   128
-#define ICMPV6_ECHO_REQUEST_CODE   0
-#define ICMPV6_ECHO_REPLY_TYPE     129
-#define ICMPV6_ECHO_REPLY_CODE     0
+#define ICMPV6_ECHO_REQUEST_TYPE 128
+#define ICMPV6_ECHO_REQUEST_CODE 0
+#define ICMPV6_ECHO_REPLY_TYPE 129
+#define ICMPV6_ECHO_REPLY_CODE 0
 
 #define DEFAULT_DATA_SIZE 32  
-#define DEFAULT_SEND_COUNT  4
-#define DEFAULT_RECV_TIMEOUT  6000
+#define DEFAULT_SEND_COUNT 4
+#define DEFAULT_RECV_TIMEOUT 6000
 #define DEFAULT_TTL 128
 
 #include <Net/Net/Net.h>
@@ -113,31 +113,13 @@ typedef struct udp_hdr
 	unsigned short udp_checksum;     // Udp checksum (optional)
 } UDP_HDR, * PUDP_HDR;
 
-struct addrinfo* ResolveAddress(char* addr, char* port, int af, int type, int proto);
-
 #ifdef _WIN64
 typedef DWORD64 lt;
 #else
 typedef DWORD lt;
 #endif
 
-lt Exec(const char*);
-
-NET_CLASS_BEGIN(ICMP)
-SOCKET _socket;
-lt _latency;
-char _address[255];
-int gAddressFamily;// Address family to use
-int   gDataSize; // Amount of data to send
-BOOL  bRecordRoute; // Use IPv4 record route?
-char* gDestination;// Destination
-
-NET_CLASS_PUBLIC
-ICMP(const char*);
-
-void execute();
-lt getLatency() const;
-NET_CLASS_END
+lt Exec(const char*, bool = false);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
