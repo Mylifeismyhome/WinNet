@@ -3,6 +3,24 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
+static bool AddrIsV4(const char* addr)
+{
+	struct sockaddr_in sa;
+	if (inet_pton(AF_INET, addr, &(sa.sin_addr)))
+		return true;
+
+	return false;
+}
+
+static bool AddrIsV6(const char* addr)
+{
+	struct sockaddr_in6 sa;
+	if (inet_pton(AF_INET6, addr, &(sa.sin6_addr)))
+		return true;
+
+	return false;
+}
+
 NET_THREAD(LatencyTick)
 {
 	const auto client = (Client*)parameter;
@@ -171,6 +189,105 @@ bool Client::ChangeMode(const bool blocking) const
 	return ret;
 }
 
+char* Client::ResolveHostname(const char* name)
+{
+	WSADATA wsaData;
+	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (res != NULL)
+	{
+		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
+		return nullptr;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		LOG_ERROR(CSTRING("[NET] - Could not find a usable version of Winsock.dll"));
+		WSACleanup();
+		return nullptr;
+	}
+
+	struct addrinfo hints;
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* result = nullptr;
+	const auto dwRetval = getaddrinfo(name, nullptr, &hints, &result);
+	if (dwRetval != NULL)
+	{
+		LOG_ERROR(CSTRING("[NET] - Host look up has been failed with error %d"), dwRetval);
+		WSACleanup();
+		return nullptr;
+	}
+
+	struct sockaddr_in* psockaddrv4 = nullptr;
+	struct sockaddr_in6* psockaddrv6 = nullptr;
+	struct addrinfo* ptr = nullptr;
+	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+	{
+		bool v6 = false;
+		switch (ptr->ai_family)
+		{
+		case AF_INET:
+			break;
+
+		case AF_INET6:
+			v6 = true;
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		switch (ptr->ai_socktype)
+		{
+		case SOCK_STREAM:
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		switch (ptr->ai_protocol)
+		{
+		case IPPROTO_TCP:
+			break;
+
+		default:
+			// skip
+			continue;
+		}
+
+		if (v6) psockaddrv6 = (struct sockaddr_in6*)ptr->ai_addr;
+		else psockaddrv4 = (struct sockaddr_in*)ptr->ai_addr;
+
+		// break out, we have a connectivity we can use
+		break;
+	}
+
+	if (!psockaddrv4 && !psockaddrv6)
+	{
+		freeaddrinfo(result);
+		WSACleanup();
+		return nullptr;
+	}
+
+	const auto len = psockaddrv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN;
+	auto buf = ALLOC<char>(len);
+	memset(buf, NULL, len);
+
+	if (psockaddrv6) buf = (char*)inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
+	else buf = (char*)inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
+
+	freeaddrinfo(result);
+	WSACleanup();
+
+	return buf;
+}
+
 bool Client::Connect(const char* Address, const u_short Port)
 {
 	if (IsConnected())
@@ -180,52 +297,95 @@ bool Client::Connect(const char* Address, const u_short Port)
 	}
 
 	WSADATA wsaData;
-
-	const auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0)
+	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[Client] - WSAStartup failed with error: %d"), iResult);
+		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
+		return false;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		LOG_ERROR(CSTRING("[NET] - Could not find a usable version of Winsock.dll"));
+		WSACleanup();
 		return false;
 	}
 
 	SetServerAddress(Address);
 	SetServerPort(Port);
 
-	struct addrinfo hints = {};
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-
-	char port_str[16] = {};
-	sprintf_s(port_str, CSTRING("%hu"), Port);
-	const auto host = getaddrinfo(Address, port_str, &hints, &connectSocketAddr);
-	if (host != 0)
+	auto v6 = AddrIsV6(GetServerAddress());
+	auto v4 = AddrIsV4(GetServerAddress());
+	if (!v6 && !v4)
 	{
-		LOG_ERROR(CSTRING("[Client] - Could not look up host: %s:%d!"), GetServerAddress(), GetServerPort());
+		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
+		WSACleanup();
 		return false;
 	}
 
-	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
+	SetSocket(socket(v6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP));
+	if (GetSocket() == SOCKET_ERROR)
 	{
-		SetSocket(socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol));
-		if (GetSocket() == INVALID_SOCKET)
+		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), WSAGetLastError());
+		WSACleanup();
+		return false;
+	}
+
+	struct sockaddr* sockaddr = nullptr;
+	int slen = NULL;
+	if (v4)
+	{
+		struct sockaddr_in sockaddr4;
+		memset((char*)&sockaddr4, 0, sizeof(sockaddr4));
+		sockaddr4.sin_family = AF_INET;
+		sockaddr4.sin_port = htons(GetServerPort());
+		sockaddr4.sin_addr.S_un.S_addr = inet_addr(GetServerAddress());
+		sockaddr = (struct sockaddr*)&sockaddr4;
+		slen = static_cast<int>(sizeof(struct sockaddr_in));
+	}
+
+	if (v6)
+	{
+		struct sockaddr_in6 sockaddr6;
+		memset((char*)&sockaddr6, 0, sizeof(sockaddr6));
+		sockaddr6.sin6_family = AF_INET6;
+		sockaddr6.sin6_port = htons(GetServerPort());
+		res = inet_pton(AF_INET6, GetServerAddress(), &sockaddr6.sin6_addr);
+		if (res != 1)
 		{
-			LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), WSAGetLastError());
+			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
+			closesocket(GetSocket());
 			WSACleanup();
 			return false;
 		}
+		sockaddr = (struct sockaddr*)&sockaddr6;
+		slen = static_cast<int>(sizeof(struct sockaddr_in6));
+	}
 
-		/* Connect to the server */
-		if (connect(GetSocket(), addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
-		{
-			closesocket(GetSocket());
-			SetSocket(INVALID_SOCKET);
-		}
+	if (!sockaddr)
+	{
+		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
+		closesocket(GetSocket());
+		WSACleanup();
+		return false;
 	}
 
 	if (GetSocket() == INVALID_SOCKET)
 	{
+		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), WSAGetLastError());
+		closesocket(GetSocket());
+		WSACleanup();
+		return false;
+	}
+
+	/* Connect to the server */
+	if (connect(GetSocket(), sockaddr, slen) == SOCKET_ERROR)
+	{
+		closesocket(GetSocket());
+		SetSocket(INVALID_SOCKET);
+
 		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
+		WSACleanup();
 		return false;
 	}
 

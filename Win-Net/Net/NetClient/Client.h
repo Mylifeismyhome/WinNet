@@ -156,6 +156,7 @@ NET_CLASS_VDESTRUCTUR(Client)
 
 bool ChangeMode(const bool) const;
 
+char* ResolveHostname(const char*);
 bool Connect(const char*, u_short);
 bool Disconnect();
 void Clear();

@@ -10,7 +10,7 @@ int main()
 	Net::load();
 
 	// test
-	const auto host = Net::Protocol::NTP::ResolveHostname("time.google.com");
+	/*const auto host = Net::Protocol::NTP::ResolveHostname("time.google.com");
 
 	// test NTP
 	const auto res = Net::Protocol::NTP::Exec(host, 123);
@@ -33,7 +33,7 @@ int main()
 	else
 		LOG_ERROR("%s", https.GetRawData().data());
 	
-	system("pause");
+	system("pause");*/
 
 	Client client;
 	client.SetCryptPackage(true);
@@ -46,6 +46,8 @@ int main()
 			Sleep(1000);
 		}
 	}
+
+	Net::unload();
 
 	return 0;
 }

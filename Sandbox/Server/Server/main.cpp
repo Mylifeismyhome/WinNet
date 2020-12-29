@@ -5,9 +5,11 @@
 
 int main()
 {
+	Net::load();
+
 	BEGIN_LOG("test2/test/test")
 
-	Server server;
+		Server server;
 	server.SetCryptPackage(true);
 	if (!server.Start(SANDBOX_SERVERNAME, SANDBOX_PORT))
 		MessageBoxA(nullptr, CSTRING("Failure on starting Server"), CSTRING("Startup failure"), MB_OK | MB_ICONERROR);
@@ -19,7 +21,9 @@ int main()
 		}
 	}
 
-	END_LOG
+	END_LOG;
+
+	Net::unload();
 
 	return 0;
 }
