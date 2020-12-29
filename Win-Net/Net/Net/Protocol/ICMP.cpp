@@ -343,6 +343,8 @@ char* ResolveHostname(const char* name)
 
 		switch (ptr->ai_socktype)
 		{
+		case SOCK_STREAM:
+		case SOCK_DGRAM:
 		case SOCK_RAW:
 			break;
 
@@ -353,7 +355,10 @@ char* ResolveHostname(const char* name)
 
 		switch (ptr->ai_protocol)
 		{
+		case IPPROTO_TCP:
+		case IPPROTO_UDP:
 		case IPPROTO_ICMP:
+		case IPPROTO_ICMP6:
 			break;
 
 		default:
@@ -414,9 +419,11 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 		return INVALID_SIZE;
 	}
 
-	const auto con = socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, IPPROTO_ICMP);
+	auto con = socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, v4 ? IPPROTO_ICMP : IPPROTO_ICMP6);
 	if (con == INVALID_SOCKET)
 	{
+		LOG_ERROR(CSTRING("[ICMP] - Unable to create socket"));
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -449,6 +456,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 		if (res != 1)
 		{
 			LOG_ERROR(CSTRING("[ICMP]  - Failure on setting IPV6 Address with error code %d"), res);
+			freeaddrinfo(localsockaddr);
 			closesocket(con);
 			WSACleanup();
 			return INVALID_SIZE;
@@ -460,6 +468,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[ICMP]  - Socket is not being valid"));
+		freeaddrinfo(localsockaddr);
 		closesocket(con);
 		WSACleanup();
 		return INVALID_SIZE;
@@ -485,10 +494,13 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	// Add in the data size
 	packetlen += DEFAULT_DATA_SIZE;
 
-	icmpbuf = (char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, packetlen);
+	icmpbuf = ALLOC<char>(packetlen);
 	if (!icmpbuf)
 	{
-		HeapFree(GetProcessHeap(), 0, icmpbuf);
+		LOG_ERROR(CSTRING("[ICMP] - Unable to allocate enough space for the buffer"));
+		freeaddrinfo(localsockaddr);
+		closesocket(con);
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -506,7 +518,10 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 			rc = setsockopt(con, IPPROTO_IP, IP_OPTIONS, (char*)&ipopt, sizeof(ipopt));
 			if (rc == SOCKET_ERROR)
 			{
-				HeapFree(GetProcessHeap(), 0, icmpbuf);
+				FREE(icmpbuf);
+				freeaddrinfo(localsockaddr);
+				closesocket(con);
+				WSACleanup();
 				return INVALID_SIZE;
 			}
 		}
@@ -519,7 +534,11 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = bind(con, localsockaddr->ai_addr, localsockaddr->ai_addrlen);
 	if (rc == SOCKET_ERROR)
 	{
-		HeapFree(GetProcessHeap(), 0, icmpbuf);
+		LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));
+		FREE(icmpbuf);
+		freeaddrinfo(localsockaddr);
+		closesocket(con);
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -542,7 +561,11 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = sendto(con, icmpbuf, packetlen, 0, sockaddr, slen);
 	if (rc == SOCKET_ERROR)
 	{
-		HeapFree(GetProcessHeap(), 0, icmpbuf);
+		LOG_ERROR(CSTRING("[ICMP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
+		FREE(icmpbuf);
+		freeaddrinfo(localsockaddr);
+		closesocket(con);
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -550,13 +573,21 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = WaitForSingleObject((HANDLE)recvol.hEvent, DEFAULT_RECV_TIMEOUT);
 	if (rc == WAIT_FAILED)
 	{
-		HeapFree(GetProcessHeap(), 0, icmpbuf);
+		LOG_ERROR(CSTRING("[ICMP]  - Waiting for single object failed with error: %d"), WSAGetLastError());
+		FREE(icmpbuf);
+		freeaddrinfo(localsockaddr);
+		closesocket(con);
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 
 	if (rc == WAIT_TIMEOUT)
 	{
-		HeapFree(GetProcessHeap(), 0, icmpbuf);
+		LOG_ERROR(CSTRING("[ICMP]  - Timeout occured!"));
+		FREE(icmpbuf);
+		freeaddrinfo(localsockaddr);
+		closesocket(con);
+		WSACleanup();
 		return INVALID_SIZE;
 	}
 	rc = WSAGetOverlappedResult(con, &recvol, &bytes, FALSE, &flags);
@@ -575,12 +606,13 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	PostRecvfrom(con, recvbuf, recvbuflen, (SOCKADDR*)&from, &fromlen, &recvol);
 
 	if (con != INVALID_SOCKET)
+	{
 		closesocket(con);
+		con = INVALID_SOCKET;
+	}
 
-	HeapFree(GetProcessHeap(), 0, icmpbuf);
-
+	FREE(icmpbuf);
 	freeaddrinfo(localsockaddr);
-
 	WSACleanup();
 	return time;
 }

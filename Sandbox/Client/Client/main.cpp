@@ -35,6 +35,8 @@ int main()
 	
 	system("pause");*/
 
+	const auto lt = Net::Protocol::ICMP::Exec(Net::Protocol::ICMP::ResolveHostname("localhost"));
+
 	Client client;
 	client.SetCryptPackage(true);
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
