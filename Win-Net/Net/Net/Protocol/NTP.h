@@ -48,6 +48,7 @@ NTP_FRAME frame() const;
 bool valid() const;
 NET_CLASS_END
 
+char* ResolveHostname(const char*);
 NTPRes Perform(const char*, u_short);
 NTPRes Exec(const char*, u_short);
 NTPRes Run(const char*, u_short);

@@ -9,8 +9,11 @@ int main()
 {
 	Net::load();
 
+	// test
+	const auto host = Net::Protocol::NTP::ResolveHostname("time.google.com");
+
 	// test NTP
-	const auto res = Net::Protocol::NTP::Exec("216.239.35.4", 123);
+	const auto res = Net::Protocol::NTP::Exec(host, 123);
 	if (res.valid())
 	{
 		time_t txTm = (time_t)(res.frame().txTm_s - NTP_TIMESTAMP_DELTA);
