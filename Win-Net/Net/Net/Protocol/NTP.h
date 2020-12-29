@@ -1,5 +1,6 @@
 #pragma once
 #define NTP_TIMESTAMP_DELTA 2208988800ull
+#define NTP_DEFAULT_PORT 123
 
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
@@ -49,9 +50,9 @@ bool valid() const;
 NET_CLASS_END
 
 char* ResolveHostname(const char*);
-NTPRes Perform(const char*, u_short);
-NTPRes Exec(const char*, u_short);
-NTPRes Run(const char*, u_short);
+NTPRes Perform(const char*, u_short = NTP_DEFAULT_PORT);
+NTPRes Exec(const char*, u_short = NTP_DEFAULT_PORT);
+NTPRes Run(const char*, u_short = NTP_DEFAULT_PORT);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
