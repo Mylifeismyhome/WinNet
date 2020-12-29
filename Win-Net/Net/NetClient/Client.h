@@ -23,7 +23,7 @@
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
 
-#include <Net/ICMP/icmp.h>
+#include <Net/Protocol/ICMP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>

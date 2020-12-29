@@ -32,7 +32,7 @@
 #include <Net/Coding/SHA1.h>
 #include <Net/Compression/Compression.h>
 
-#include <Net/ICMP/icmp.h>
+#include <Net/Protocol/ICMP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>

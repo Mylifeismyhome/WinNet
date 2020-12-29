@@ -28,9 +28,6 @@
     <Filter Include="Compression\ZLib">
       <UniqueIdentifier>{72c61b26-7269-4e78-9b07-b58bb435b02c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ICMP">
-      <UniqueIdentifier>{11eaf0e4-0444-4eee-acf3-c801c09c9bfe}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Database">
       <UniqueIdentifier>{f5c1da9e-6263-4b05-bb5e-c73d987d314f}</UniqueIdentifier>
     </Filter>
@@ -98,9 +95,6 @@
     </ClCompile>
     <ClCompile Include="..\Net\Net\NetCodes.cpp">
       <Filter>Net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\ICMP\icmp.cpp">
-      <Filter>ICMP</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Database\MYSQL.cpp">
       <Filter>Database</Filter>
@@ -180,6 +174,9 @@
     <ClCompile Include="..\Net\Protocol\NTP.cpp">
       <Filter>Protocol</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Protocol\ICMP.cpp">
+      <Filter>Protocol</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -199,9 +196,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetCodes.h">
       <Filter>Net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\ICMP\icmp.h">
-      <Filter>ICMP</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Database\MYSQL.h">
       <Filter>Database</Filter>
@@ -271,6 +265,9 @@
     </ClInclude>
     <ClInclude Include="..\Net\Import\Definition.hpp">
       <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Protocol\ICMP.h">
+      <Filter>Protocol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

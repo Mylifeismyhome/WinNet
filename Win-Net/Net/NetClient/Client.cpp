@@ -27,10 +27,7 @@ NET_THREAD(LatencyTick)
 	if (!client) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
-	ICMP _icmp(client->GetServerAddress());
-	_icmp.execute();
-
-	client->network.latency = _icmp.getLatency();
+	client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
 	return NULL;
 }

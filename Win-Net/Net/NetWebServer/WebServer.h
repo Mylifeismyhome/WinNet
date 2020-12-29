@@ -68,7 +68,7 @@ CONSTEXPR auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 1000;
 #include <OpenSSL/ssl.h>
 #include <OpenSSL/err.h>
 
-#include <Net/ICMP/icmp.h>
+#include <Net/Protocol/ICMP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
