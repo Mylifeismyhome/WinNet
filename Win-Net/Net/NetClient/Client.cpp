@@ -28,6 +28,7 @@ NET_THREAD(LatencyTick)
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
 	client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
+	client->network.bLatency = false;
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
 	return NULL;
 }
@@ -38,6 +39,8 @@ NET_TIMER(DoCalcLatency)
 	if (!client) NET_STOP_TIMER;
 
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
+
+	client->network.bLatency = true;
 	Thread::Create(LatencyTick, client);
 	Timer::SetTime(client->network.hCalcLatency, client->GetCalcLatencyInterval());
 	NET_CONTINUE_TIMER;
@@ -89,6 +92,9 @@ NET_THREAD(Receive)
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 	while (client->IsConnected())
 		Kernel32::Sleep(client->DoReceive());
+
+	// wait until thread has finished
+	while (client && client->network.bLatency) Kernel32::Sleep(client->GetFrequenz());
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
@@ -463,8 +469,8 @@ void Client::ConnectionClosed()
 	}
 
 	network.latency = -1;
-	Timer::Clear(network.hCalcLatency);
-	network.hCalcLatency = nullptr;
+	network.bLatency = false;
+	Timer::WaitSingleObjectStopped(network.hCalcLatency);
 
 	SetConnected(false);
 }

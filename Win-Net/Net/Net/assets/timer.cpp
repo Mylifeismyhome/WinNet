@@ -12,7 +12,6 @@ NET_THREAD(NetTimerThread)
 	{
 		timer->finished = true;
 		NET_UNUSED_PARAM(timer->param);
-		delete timer;
 		timer = nullptr;
 		return NULL;
 	}
@@ -25,7 +24,6 @@ NET_THREAD(NetTimerThread)
 		{
 			timer->finished = true;
 			NET_UNUSED_PARAM(timer->param);
-			delete timer;
 			timer = nullptr;
 			return NULL;
 		}
@@ -36,7 +34,6 @@ NET_THREAD(NetTimerThread)
 			{
 				timer->finished = true;
 				NET_UNUSED_PARAM(timer->param);
-				delete timer;
 				timer = nullptr;
 				return NULL;
 			}
@@ -85,5 +82,4 @@ void Net::Timer::SetTime(NET_HANDLE_TIMER handle, const double timer)
 		return;
 
 	handle->timer = timer;
-	handle = nullptr;
 }

@@ -6,7 +6,7 @@
 typedef BOOL NET_TimerRet;
 #define NET_TIMER(fnc) NET_TimerRet fnc(void* param)
 #define NET_HANDLE_TIMER Net::Timer::Timer_t*
-#define NET_UNUSED_PARAM(param) delete param
+#define NET_UNUSED_PARAM(param) param = nullptr;
 
 namespace Net
 {

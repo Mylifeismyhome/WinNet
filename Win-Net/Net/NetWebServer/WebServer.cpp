@@ -610,7 +610,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
-			Timer::Clear(peer->hCalcLatency);
+			Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 			peer->hCalcLatency = nullptr;
 		}
 
@@ -639,7 +639,7 @@ bool Server::ErasePeer(NET_PEER peer)
 	if (peer->hCalcLatency)
 	{
 		// stop latency interval
-		Timer::Clear(peer->hCalcLatency);
+		Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 		peer->hCalcLatency = nullptr;
 	}
 

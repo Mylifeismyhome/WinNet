@@ -369,7 +369,6 @@ NET_THREAD(LatencyTick)
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
 	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
-	LOG("LATENCY IS: %i", peer->latency);
 	peer->bLatency = false;
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
 	return NULL;
@@ -447,7 +446,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
-			Timer::Clear(peer->hCalcLatency);
+			Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 			peer->hCalcLatency = nullptr;
 		}
 
@@ -476,7 +475,7 @@ bool Server::ErasePeer(NET_PEER peer)
 	if (peer->hCalcLatency)
 	{
 		// stop latency interval
-		Timer::Clear(peer->hCalcLatency);
+		Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 		peer->hCalcLatency = nullptr;
 	}
 

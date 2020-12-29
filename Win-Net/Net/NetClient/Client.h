@@ -65,6 +65,7 @@ bool RSAHandshake; // set to true as soon as we have the public key from the Ser
 bool estabilished;
 
 typeLatency latency;
+bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
@@ -78,6 +79,7 @@ RSA = nullptr;
 RSAHandshake = false;
 estabilished = false;
 latency = -1;
+bLatency = false;
 hCalcLatency = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
