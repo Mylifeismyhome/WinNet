@@ -57,6 +57,7 @@ Client::Client()
 	NeedExit = FALSE;
 	bAccomplished = FALSE;
 	optionBitFlag = NULL;
+	socketOptionBitFlag = NULL;
 
 	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(Option::OPT_CalcLatencyInterval) ? GetOption<bool>(Option::OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
 }
@@ -86,6 +87,12 @@ bool Client::Isset(const DWORD opt) const
 {
 	// use the bit flag to perform faster checks
 	return optionBitFlag & opt;
+}
+
+bool Client::Isset_SocketOpt(const DWORD opt) const
+{
+	// use the bit flag to perform faster checks
+	return socketOptionBitFlag & opt;
 }
 
 bool Client::ChangeMode(const bool blocking) const
@@ -303,6 +310,9 @@ bool Client::Connect(const char* Address, const u_short Port)
 		if (res < 0)
 			LOG_ERROR(CSTRING("[Client] - Failure on settings socket option { 0x%ld : %i }"), entry.opt, GetLastError());
 	}
+
+	// clear the unused vector
+	socketoption.clear();
 
 	// successfully connected
 	SetConnected(true);
