@@ -149,6 +149,19 @@ void Client::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	LOG_DEBUG(CSTRING("[NET] - Calculate latency interval has been set to %i"), sCalcLatencyInterval);
 }
 
+bool Client::Isset(const DWORD opt)
+{
+	auto set = false;
+	for (const auto& entry : option)
+		if (entry.opt == opt)
+		{
+			set = true;
+			break;
+		}
+
+	return set;
+}
+
 DWORD Client::GetFrequenz() const
 {
 	return sfrequenz;

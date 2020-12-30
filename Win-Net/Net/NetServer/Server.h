@@ -200,7 +200,8 @@ bool sCryptPackage;
 bool sCompressPackage;
 long sTCPReadTimeout;
 long sCalcLatencyInterval;
-std::vector<SocketOption_t<char*>> socketoption;
+std::vector<Option_t<void*>> option;
+std::vector<SocketOption_t<void*>> socketoption;
 
 NET_CLASS_PUBLIC
 void SetAllToDefault();
@@ -214,14 +215,38 @@ void SetCryptPackage(bool);
 void SetCompressPackage(bool);
 void SetTCPReadTimeout(long);
 void SetCalcLatencyInterval(long);
-void SetSocketOption(DWORD, bool);
+
+template <class T>
+void SetOption(const Option_t<T> o)
+{
+	Option_t<void*> opt;
+	opt.opt = o.opt;
+	opt.type = reinterpret_cast<void*>(o.type);
+	opt.len = o.len;
+	option.emplace_back(opt);
+}
+
+bool Isset(DWORD);
+
+template <class T>
+T GetOption(const DWORD opt)
+{
+	for (const auto& entry : option)
+		if (entry.opt == opt)
+		{
+			return reinterpret_cast<T>(entry.type);
+			break;
+		}
+
+	return NULL;
+}
 
 template <class T>
 void SetSocketOption(const SocketOption_t<T> opt)
 {
-	SocketOption_t<char*> option;
+	SocketOption_t<void*> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<char*>(opt.type);
+	option.type = reinterpret_cast<void*>(opt.type);
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 }

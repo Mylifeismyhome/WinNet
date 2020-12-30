@@ -36,6 +36,14 @@ int main()
 	system("pause");*/
 
 	Client client;
+	client.SetSocketOption<bool>({ TCP_NODELAY, true });
+	client.SetOption<int>({ TCP_NODELAY,  1050});
+
+	if (client.Isset(0x1))
+	{
+		LOG("%i", client.GetOption<int>(0x1));
+	}
+
 	client.SetCryptPackage(true);
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 		MessageBoxA(nullptr, CSTRING("Connection timeout"), CSTRING("Network failure"), MB_OK | MB_ICONERROR);

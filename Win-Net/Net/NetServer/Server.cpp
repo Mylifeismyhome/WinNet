@@ -198,6 +198,19 @@ void Server::SetCalcLatencyInterval(const long sCalcLatencyInterval)
 	}
 }
 
+bool Server::Isset(const DWORD opt)
+{
+	auto set = false;
+	for (const auto& entry : option)
+		if (entry.opt == opt)
+		{
+			set = true;
+			break;
+		}
+
+	return set;
+}
+
 const char* Server::GetServerName() const
 {
 	return sServerName;

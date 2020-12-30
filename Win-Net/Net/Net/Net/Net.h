@@ -556,7 +556,7 @@ SocketOption_t(const DWORD opt, const T type)
 }
 NET_STRUCT_END
 
-static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
+static int _SetSocketOption(const SOCKET socket, const SocketOption_t<void*> opt)
 {
 	const auto result = setsockopt(socket,
 		IPPROTO_TCP,
@@ -566,6 +566,26 @@ static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt
 
 	return result;
 }
+
+template <class T>
+NET_STRUCT_BEGIN(Option_t)
+DWORD opt;
+T type;
+size_t len;
+
+Option_t()
+{
+	this->opt = NULL;
+	this->len = INVALID_SIZE;
+}
+
+Option_t(const DWORD opt, const T type)
+{
+	this->opt = opt;
+	this->type = type;
+	this->len = sizeof(type);
+}
+NET_STRUCT_END
 #define _NET
 #endif
 
