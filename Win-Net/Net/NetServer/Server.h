@@ -219,6 +219,14 @@ void SetCalcLatencyInterval(long);
 template <class T>
 void SetOption(const Option_t<T> o)
 {
+	for (const auto& entry : option)
+		if (entry.opt == o.opt)
+		{
+			entry.type = reinterpret_cast<void*>(o.type);
+			entry.len = o.len;
+			return;
+		}
+
 	Option_t<void*> opt;
 	opt.opt = o.opt;
 	opt.type = reinterpret_cast<void*>(o.type);

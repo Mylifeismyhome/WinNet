@@ -28,20 +28,27 @@
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
 
-CONSTEXPR auto DEFAULT_RSA_KEY_SIZE = 1024;
-CONSTEXPR auto DEFAULT_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
-CONSTEXPR auto DEFAULT_CRYPT_PACKAGES = false;
-CONSTEXPR auto DEFAULT_COMPRESS_PACKAGES = false;
-CONSTEXPR auto DEFAULT_BLOCKING_MODE = false;
-CONSTEXPR auto DEFAULT_FREQUENZ = 66;
 CONSTEXPR auto DEFAULT_MAX_PACKET_SIZE = 512;
-CONSTEXPR auto DEFAULT_CALC_LATENCY_INTERVAL = 1000;
+
+CONSTEXPR auto DEFAULT_OPTION_RSA_KEY_SIZE = 1024;
+CONSTEXPR auto DEFAULT_OPTION_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
+CONSTEXPR auto DEFAULT_OPTION_CRYPT_PACKAGES = false;
+CONSTEXPR auto DEFAULT_OPTION_COMPRESS_PACKAGES = false;
+CONSTEXPR auto DEFAULT_OPTION_FREQUENZ = 66;
+CONSTEXPR auto DEFAULT_OPTION_NON_BLOCKING_MODE = true;
+CONSTEXPR auto DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
-enum class Option
+enum Option
 {
-	OPT_Frequenz = 0x1
+	OPT_Frequenz = 0x1,
+	OPT_NonBlocking,
+	OPT_CryptPackage,
+	OPT_RSA_KeySize,
+	OPT_AES_KeySize,
+	OPT_CompressPackage,
+	OPT_CalcLatencyInterval
 };
 NET_DSA_BEGIN
 NET_ABSTRAC_CLASS_BEGIN(Client, Package)
@@ -87,29 +94,21 @@ NET_CLASS_PUBLIC
 Network network;
 
 NET_CLASS_PRIVATE
-DWORD sfrequenz;
-bool sBlockingMode;
-size_t sRSAKeySize;
-size_t sAESKeySize;
-bool sCryptPackage;
-bool sCompressPackage;
-long sCalcLatencyInterval;
 std::vector<Option_t<void*>> option;
 std::vector<SocketOption_t<void*>> socketoption;
 
 NET_CLASS_PUBLIC
-void SetAllToDefault();
-void SetFrequenz(DWORD);
-void SetBlockingMode(bool);
-void SetRSAKeySize(size_t);
-void SetAESKeySize(size_t);
-void SetCryptPackage(bool);
-void SetCompressPackage(bool);
-void SetCalcLatencyInterval(long);
-
 template <class T>
 void SetOption(const Option_t<T> o)
 {
+	for (const auto& entry : option)
+		if (entry.opt == o.opt)
+		{
+			entry.type = reinterpret_cast<void*>(o.type);
+			entry.len = o.len;
+			return;
+		}
+
 	Option_t<void*> opt;
 	opt.opt = o.opt;
 	opt.type = reinterpret_cast<void*>(o.type);
@@ -118,9 +117,23 @@ void SetOption(const Option_t<T> o)
 }
 
 bool Isset(DWORD);
+bool Isset(DWORD) const;
 
 template <class T>
 T GetOption(const DWORD opt)
+{
+	for (const auto& entry : option)
+		if (entry.opt == opt)
+		{
+			return reinterpret_cast<T>(entry.type);
+			break;
+		}
+
+	return NULL;
+}
+
+template <class T>
+T GetOption(const DWORD opt) const
 {
 	for (const auto& entry : option)
 		if (entry.opt == opt)
@@ -141,14 +154,6 @@ void SetSocketOption(const SocketOption_t<T> opt)
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 }
-
-DWORD GetFrequenz() const;
-bool GetBlockingMode() const;
-size_t GetRSAKeySize() const;
-size_t GetAESKeySize() const;
-bool GetCryptPackage() const;
-bool GetCompressPackage() const;
-long GetCalcLatencyInterval() const;
 
 NET_CLASS_PRIVATE
 bool NeedExit;
