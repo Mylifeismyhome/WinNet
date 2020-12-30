@@ -94,6 +94,7 @@ NET_CLASS_PUBLIC
 Network network;
 
 NET_CLASS_PRIVATE
+DWORD optionBitFlag;
 std::vector<Option_t<void*>> option;
 std::vector<SocketOption_t<void*>> socketoption;
 
@@ -101,40 +102,36 @@ NET_CLASS_PUBLIC
 template <class T>
 void SetOption(const Option_t<T> o)
 {
-	for (const auto& entry : option)
-		if (entry.opt == o.opt)
-		{
-			entry.type = reinterpret_cast<void*>(o.type);
-			entry.len = o.len;
-			return;
-		}
+	// check option is been set using bitflag
+	if (optionBitFlag & o.opt)
+	{
+		// reset the option value
+		for (auto& entry : option)
+			if (entry.opt == o.opt)
+			{
+				entry.type = reinterpret_cast<void*>(o.type);
+				entry.len = o.len;
+				return;
+			}
+	}
 
+	// save the option value
 	Option_t<void*> opt;
 	opt.opt = o.opt;
 	opt.type = reinterpret_cast<void*>(o.type);
 	opt.len = o.len;
 	option.emplace_back(opt);
+
+	// set the bit flag
+	optionBitFlag |= opt.opt;
 }
 
-bool Isset(DWORD);
 bool Isset(DWORD) const;
-
-template <class T>
-T GetOption(const DWORD opt)
-{
-	for (const auto& entry : option)
-		if (entry.opt == opt)
-		{
-			return reinterpret_cast<T>(entry.type);
-			break;
-		}
-
-	return NULL;
-}
 
 template <class T>
 T GetOption(const DWORD opt) const
 {
+	if (!Isset(opt)) return NULL;
 	for (const auto& entry : option)
 		if (entry.opt == opt)
 		{

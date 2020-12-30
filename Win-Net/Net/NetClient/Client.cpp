@@ -56,6 +56,7 @@ Client::Client()
 	SetKeysSet(NULL);
 	NeedExit = FALSE;
 	bAccomplished = FALSE;
+	optionBitFlag = NULL;
 
 	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(Option::OPT_CalcLatencyInterval) ? GetOption<bool>(Option::OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
 }
@@ -81,30 +82,10 @@ NET_THREAD(Receive)
 	return NULL;
 }
 
-bool Client::Isset(const DWORD opt)
-{
-	auto set = false;
-	for (const auto& entry : option)
-		if (entry.opt == opt)
-		{
-			set = true;
-			break;
-		}
-
-	return set;
-}
-
 bool Client::Isset(const DWORD opt) const
 {
-	auto set = false;
-	for (const auto& entry : option)
-		if (entry.opt == opt)
-		{
-			set = true;
-			break;
-		}
-
-	return set;
+	// use the bit flag to perform faster checks
+	return optionBitFlag & opt;
 }
 
 bool Client::ChangeMode(const bool blocking) const
