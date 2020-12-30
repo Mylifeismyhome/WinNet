@@ -42,7 +42,7 @@ NET_TIMER(DoCalcLatency)
 
 	client->network.bLatency = true;
 	Thread::Create(LatencyTick, client);
-	Timer::SetTime(client->network.hCalcLatency, client->Isset(Option::OPT_CalcLatencyInterval) ? client->GetOption<bool>(Option::OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
+	Timer::SetTime(client->network.hCalcLatency, client->Isset(OPT_CalcLatencyInterval) ? client->GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -59,7 +59,7 @@ Client::Client()
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
 
-	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(Option::OPT_CalcLatencyInterval) ? GetOption<bool>(Option::OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
+	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(OPT_CalcLatencyInterval) ? GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
 }
 
 Client::~Client()
@@ -76,7 +76,7 @@ NET_THREAD(Receive)
 		Kernel32::Sleep(client->DoReceive());
 
 	// wait until thread has finished
-	while (client && client->network.bLatency) Kernel32::Sleep(client->Isset(Option::OPT_Frequenz) ? client->GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ);
+	while (client && client->network.bLatency) Kernel32::Sleep(client->Isset(OPT_Frequenz) ? client->GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ);
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
@@ -95,7 +95,7 @@ bool Client::Isset_SocketOpt(const DWORD opt) const
 	return socketOptionBitFlag & opt;
 }
 
-bool Client::ChangeMode(const bool blocking) const
+bool Client::ChangeMode(const bool blocking)
 {
 	auto ret = true;
 	u_long non_blocking = blocking ? 0 : 1;
@@ -318,11 +318,11 @@ bool Client::Connect(const char* Address, const u_short Port)
 	SetConnected(true);
 
 	// Set Mode
-	ChangeMode(Isset(Option::OPT_NonBlocking) ? !GetOption<bool>(Option::OPT_NonBlocking) : !DEFAULT_OPTION_NON_BLOCKING_MODE);
+	ChangeMode(Isset(OPT_NonBlocking) ? !GetOption<bool>(OPT_NonBlocking) : !DEFAULT_OPTION_NON_BLOCKING_MODE);
 
-	if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
+	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
 		/* create RSA Key Pair */
-		network.createNewRSAKeys(Isset(Option::OPT_RSA_KeySize) ? GetOption<size_t>(Option::OPT_RSA_KeySize) : DEFAULT_OPTION_RSA_KEY_SIZE);
+		network.createNewRSAKeys(Isset(OPT_RSA_KeySize) ? GetOption<size_t>(OPT_RSA_KeySize) : DEFAULT_OPTION_RSA_KEY_SIZE);
 
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
@@ -399,7 +399,7 @@ void Client::Clear()
 
 	network.clear();
 
-	if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
+	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
 		SetKeysSet(false);
 }
 
@@ -411,7 +411,7 @@ bool Client::DoNeedExit() const
 void Client::WaitUntilAccomplished()
 {
 	while (!bAccomplished)
-		Kernel32::Sleep(Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ);
+		Kernel32::Sleep(FREQUENZ);
 }
 
 void Client::SetSocket(const SOCKET connectSocket)
@@ -1058,13 +1058,13 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
 		&& network.RSAHandshake)
 	{
 		NET_AES aes;
 
 		/* Generate new AES Keypair */
-		auto aesKeySize = Isset(Option::OPT_AES_KeySize) ? GetOption<size_t>(Option::OPT_AES_KeySize) : DEFAULT_OPTION_AES_KEY_SIZE;
+		size_t aesKeySize = Isset(OPT_AES_KeySize) ? GetOption<size_t>(OPT_AES_KeySize) : DEFAULT_OPTION_AES_KEY_SIZE;
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
@@ -1121,7 +1121,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		dataBuffer.get()[dataBufferSize] = '\0';
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
-		if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
 		if (PKG.HasRawData())
@@ -1136,7 +1136,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1147,7 +1147,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1233,7 +1233,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	{
 		CPOINTER<BYTE> dataBuffer;
 		size_t dataBufferSize = NULL;
-		if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataBufferSize = buffer.GetSize();
 			dataBuffer = ALLOC<BYTE>(dataBufferSize + 1);
@@ -1251,7 +1251,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1262,7 +1262,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1320,7 +1320,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
-		if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed);
 		else
 			SingleSend(buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
@@ -1350,7 +1350,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 DWORD Client::DoReceive()
 {
 	if (!IsConnected())
-		return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+		return FREQUENZ;
 
 	const auto data_size = recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
@@ -1361,102 +1361,102 @@ DWORD Client::DoReceive()
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAENETDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEFAULT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAENOTCONN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The socket is not connected"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEINTR:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The (blocking) call was canceled through WSACancelBlockingCall()"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEINPROGRESS:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAENETRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAENOTSOCK:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEOPNOTSUPP:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAESHUTDOWN:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEWOULDBLOCK:
 			ProcessPackages();
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEMSGSIZE:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The message was too large to fit into the specified buffer and was truncated"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAEINVAL:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAECONNABORTED:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 			Timeout();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAETIMEDOUT:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
 			Timeout();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		case WSAECONNRESET:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 			Timeout();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 
 		default:
 			memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[NET] - Something bad happen..."));
 			Disconnect();
-			return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+			return FREQUENZ;
 		}
 	}
 	if (data_size == 0)
@@ -1464,7 +1464,7 @@ DWORD Client::DoReceive()
 		memset(network.dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
 		LOG_PEER(CSTRING("[NET] - Connection has been gracefully closed"));
 		Disconnect();
-		return Isset(Option::OPT_Frequenz) ? GetOption<DWORD>(Option::OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ;
+		return FREQUENZ;
 	}
 
 	if (!network.data.valid())
@@ -1560,7 +1560,7 @@ void Client::ProcessPackages()
 	}
 
 	// Execute the package
-	if (!ExecutePackage()) return;
+	ExecutePackage();
 
 	// re-alloc buffer
 	const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
@@ -1579,13 +1579,13 @@ void Client::ProcessPackages()
 	network.clearData();
 }
 
-bool Client::ExecutePackage()
+void Client::ExecutePackage()
 {
 	CPOINTER<BYTE> data;
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
 		&& network.RSAHandshake)
 	{
 		auto offset = network.data_offset + 1;
@@ -1662,7 +1662,7 @@ bool Client::ExecutePackage()
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("[NET] - Failure on initializing RSA"));
-			return false;
+			return;
 		}
 
 		if (!network.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
@@ -1671,7 +1671,7 @@ bool Client::ExecutePackage()
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
-			return false;
+			return;
 		}
 
 		if (!network.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
@@ -1680,7 +1680,7 @@ bool Client::ExecutePackage()
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
-			return false;
+			return;
 		}
 
 		NET_AES aes;
@@ -1690,7 +1690,7 @@ bool Client::ExecutePackage()
 			AESIV.free();
 
 			LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
-			return false;
+			return;
 		}
 
 		AESKey.free();
@@ -1757,14 +1757,14 @@ bool Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize };
 
-					if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 						DecompressData(entry.value(), entry.size());
 
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
-						return false;
+						return;
 					}
 
 					rawData.emplace_back(entry);
@@ -1806,7 +1806,7 @@ bool Client::ExecutePackage()
 
 				offset += packageSize;
 
-				if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 					DecompressData(data.reference().get(), packageSize);
 
 				/* decrypt aes */
@@ -1814,7 +1814,7 @@ bool Client::ExecutePackage()
 				{
 					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					data.free();
-					return false;
+					return;
 				}
 			}
 
@@ -1889,7 +1889,7 @@ bool Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize };
 
-					if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 						DecompressData(entry.value(), entry.size());
 
 					rawData.emplace_back(entry);
@@ -1931,7 +1931,7 @@ bool Client::ExecutePackage()
 
 				offset += packageSize;
 
-				if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 					DecompressData(data.reference().get(), packageSize);
 			}
 
@@ -1945,7 +1945,7 @@ bool Client::ExecutePackage()
 	if (!data.valid())
 	{
 		LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
-		return false;
+		return;
 	}
 
 	Package PKG;
@@ -1954,7 +1954,7 @@ bool Client::ExecutePackage()
 	{
 		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
-		return false;
+		return;
 	}
 
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
@@ -1962,14 +1962,14 @@ bool Client::ExecutePackage()
 	{
 		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
-		return false;
+		return;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
 		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		data.free();
-		return false;
+		return;
 	}
 
 	Package Content;
@@ -1990,13 +1990,12 @@ bool Client::ExecutePackage()
 		}
 
 	data.free();
-	return true;
 }
 
-void Client::CompressData(BYTE*& data, size_t& size) const
+void Client::CompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 	{
 #ifdef DEBUG
 		const auto PrevSize = size;
@@ -2008,10 +2007,10 @@ void Client::CompressData(BYTE*& data, size_t& size) const
 	}
 }
 
-void Client::DecompressData(BYTE*& data, size_t& size) const
+void Client::DecompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(Option::OPT_CompressPackage) ? GetOption<bool>(Option::OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 	{
 		auto copy = ALLOC<BYTE>(size + 1);
 		memcpy(copy, data, size);
@@ -2076,7 +2075,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
 	&& !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
@@ -2101,7 +2100,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(Option::OPT_CryptPackage) ? GetOption<size_t>(Option::OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
 	&& !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);

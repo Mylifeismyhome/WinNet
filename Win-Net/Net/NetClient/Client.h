@@ -13,6 +13,8 @@
 
 #define NET_SEND DoSend
 
+#define FREQUENZ Isset(OPT_Frequenz) ? GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ
+
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
@@ -40,16 +42,6 @@ CONSTEXPR auto DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
-enum Option
-{
-	OPT_Frequenz = 0x1,
-	OPT_NonBlocking,
-	OPT_CryptPackage,
-	OPT_RSA_KeySize,
-	OPT_AES_KeySize,
-	OPT_CompressPackage,
-	OPT_CalcLatencyInterval
-};
 NET_DSA_BEGIN
 NET_ABSTRAC_CLASS_BEGIN(Client, Package)
 NET_STRUCT_BEGIN(Network)
@@ -95,10 +87,10 @@ Network network;
 
 NET_CLASS_PRIVATE
 DWORD optionBitFlag;
-std::vector<Option_t<void*>> option;
+std::vector<Option_t<char*>> option;
 
 DWORD socketOptionBitFlag;
-std::vector<SocketOption_t<void*>> socketoption;
+std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
 template <class T>
@@ -111,16 +103,16 @@ void SetOption(const Option_t<T> o)
 		for (auto& entry : option)
 			if (entry.opt == o.opt)
 			{
-				entry.type = reinterpret_cast<void*>(o.type);
+				entry.type = reinterpret_cast<char*>(o.type);
 				entry.len = o.len;
 				return;
 			}
 	}
 
 	// save the option value
-	Option_t<void*> opt;
+	Option_t<char*> opt;
 	opt.opt = o.opt;
-	opt.type = reinterpret_cast<void*>(o.type);
+	opt.type = reinterpret_cast<char*>(o.type);
 	opt.len = o.len;
 	option.emplace_back(opt);
 
@@ -131,7 +123,7 @@ void SetOption(const Option_t<T> o)
 bool Isset(DWORD) const;
 
 template <class T>
-T GetOption(const DWORD opt) const
+T GetOption(const DWORD opt)
 {
 	if (!Isset(opt)) return NULL;
 	for (const auto& entry : option)
@@ -154,16 +146,16 @@ void SetSocketOption(const SocketOption_t<T> opt)
 		for (auto& entry : socketoption)
 			if (entry.opt == opt.opt)
 			{
-				entry.type = reinterpret_cast<void*>(opt.type);
+				entry.type = reinterpret_cast<char*>(opt.type);
 				entry.len = opt.len;
 				return;
 			}
 	}
 
 	// save the option value
-	SocketOption_t<void*> option;
+	SocketOption_t<char*> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<void*>(opt.type);
+	option.type = reinterpret_cast<char*>(opt.type);
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 
@@ -190,14 +182,14 @@ void Timeout();
 /* clear all stored data */
 void ConnectionClosed();
 
-void CompressData(BYTE*&, size_t&) const;
-void DecompressData(BYTE*&, size_t&) const;
+void CompressData(BYTE*&, size_t&);
+void DecompressData(BYTE*&, size_t&);
 
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(Client)
 NET_CLASS_VDESTRUCTUR(Client)
 
-bool ChangeMode(const bool) const;
+bool ChangeMode(bool);
 
 char* ResolveHostname(const char*);
 bool Connect(const char*, u_short);
@@ -236,7 +228,7 @@ void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE
 void ProcessPackages();
-bool ExecutePackage();
+void ExecutePackage();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);

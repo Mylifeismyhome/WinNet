@@ -274,7 +274,7 @@ static void Free(T*& data)
 #define PEER_VALID(peer) if(peer)
 #define PEER_NOT_VALID(peer, stuff) if(!peer) \
 	{ \
-		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), GetServerName()); \
+		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(this)); \
 		stuff \
 	}
 
@@ -556,7 +556,7 @@ SocketOption_t(const DWORD opt, const T type)
 }
 NET_STRUCT_END
 
-static int _SetSocketOption(const SOCKET socket, const SocketOption_t<void*> opt)
+static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
 {
 	const auto result = setsockopt(socket,
 		IPPROTO_TCP,
@@ -586,8 +586,18 @@ Option_t(const DWORD opt, const T type)
 	this->len = sizeof(type);
 }
 NET_STRUCT_END
-#define _NET
-#endif
+
+/* OPTION BIT FLAGS */
+#define OPT_Frequenz (1 << 0)
+#define OPT_NonBlocking (1 << 1)
+#define OPT_CryptPackage (1 << 2)
+#define OPT_RSA_KeySize (1 << 3)
+#define OPT_AES_KeySize (1 << 4)
+#define OPT_CompressPackage (1 << 5)
+#define OPT_CalcLatencyInterval (1 << 6)
+#define OPT_TCPReadTimeout (1 << 7)
+#define OPT_ServerName (1 << 8)
+#define OPT_ServerPort (1 << 9)
 
 #ifndef VS13
 #define NOEXPECT noexcept
@@ -597,4 +607,7 @@ NET_STRUCT_END
 #define NOEXPECT
 #define CONSTEXPR const
 #define FUNCNAME __FUNCTION__
+#endif
+
+#define _NET
 #endif

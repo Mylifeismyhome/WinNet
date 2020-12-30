@@ -205,7 +205,7 @@ bool sCompressPackage;
 long sTCPReadTimeout;
 bool bWithoutHandshake;
 long sCalcLatencyInterval;
-std::vector<SocketOption_t<void*>> socketoption;
+std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
 void SetAllToDefault();
@@ -228,9 +228,9 @@ void SetCalcLatencyInterval(long);
 template <class T>
 void SetSocketOption(const SocketOption_t<T> opt)
 {
-	SocketOption_t<void*> option;
+	SocketOption_t<char*> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<void*>(opt.type);
+	option.type = reinterpret_cast<char*>(opt.type);
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 }

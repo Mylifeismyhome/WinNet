@@ -1,3 +1,4 @@
+#include <Net/Net/Net.h>
 #include "config.h"
 #include "Client/Client.h"
 #include <Net/assets/web/http.h>
@@ -37,7 +38,7 @@ int main()
 
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
-	client.SetOption<bool>({ Net::Client::Option::OPT_CryptPackage,  true});
+	client.SetOption<bool>({ OPT_CryptPackage, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 		MessageBoxA(nullptr, CSTRING("Connection timeout"), CSTRING("Network failure"), MB_OK | MB_ICONERROR);

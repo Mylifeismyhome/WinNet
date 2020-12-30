@@ -20,6 +20,10 @@
 
 #define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
 
+#define SERVERNAME(instance) instance->Isset(OPT_ServerName) ? instance->GetOption<char*>(OPT_ServerName) : DEFAULT_OPTION_SERVERNAME
+#define SERVERPORT(instance) instance->Isset(OPT_ServerPort) ? instance->GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT
+#define FREQUENZ(instance) instance->Isset(OPT_Frequenz) ? instance->GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ
+
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
@@ -37,19 +41,18 @@
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
 
-/* DEFAULT SETTINGS AS MACRO */
-CONSTEXPR auto DEFAULT_SERVER_SERVERNAME = "UNKNOWN";
-CONSTEXPR auto DEFAULT_SERVER_SERVERPORT = 50000;
-CONSTEXPR auto DEFAULT_SERVER_FREQUENZ = 30;
-CONSTEXPR auto DEFAULT_SERVER_RSA_KEY_SIZE = 1024;
-CONSTEXPR auto DEFAULT_SERVER_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
-CONSTEXPR auto DEFAULT_SERVER_CRYPT_PACKAGES = false;
-CONSTEXPR auto DEFAULT_SERVER_COMPRESS_PACKAGES = false;
-CONSTEXPR auto DEFAULT_SERVER_MAX_PACKET_SIZE = 512;
-CONSTEXPR auto DEFAULT_SERVER_TCP_READ_TIMEOUT = 10;
-CONSTEXPR auto DEFAULT_SERVER_CALC_LATENCY_INTERVAL = 1000;
+CONSTEXPR auto DEFAULT_MAX_PACKET_SIZE = 512;
 
-CONSTEXPR auto SERVERNAME_LENGTH = 128;
+CONSTEXPR auto DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
+CONSTEXPR auto DEFAULT_OPTION_SERVERPORT = 50000;
+CONSTEXPR auto DEFAULT_OPTION_RSA_KEY_SIZE = 1024;
+CONSTEXPR auto DEFAULT_OPTION_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
+CONSTEXPR auto DEFAULT_OPTION_CRYPT_PACKAGES = false;
+CONSTEXPR auto DEFAULT_OPTION_COMPRESS_PACKAGES = false;
+CONSTEXPR auto DEFAULT_OPTION_FREQUENZ = 66;
+CONSTEXPR auto DEFAULT_OPTION_NON_BLOCKING_MODE = true;
+CONSTEXPR auto DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
+CONSTEXPR auto DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
@@ -70,7 +73,7 @@ NET_CLASS_PUBLIC
 
 #pragma region Network Structure
 NET_STRUCT_BEGIN(network_t)
-byte _dataReceive[DEFAULT_SERVER_MAX_PACKET_SIZE];
+byte _dataReceive[DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> _data;
 size_t _data_size;
 size_t _data_full_size;
@@ -172,8 +175,8 @@ void unlock();
 NET_STRUCT_END
 
 NET_CLASS_PRIVATE
-void CompressData(BYTE*&, size_t&) const;
-void DecompressData(BYTE*&, size_t&) const;
+void CompressData(BYTE*&, size_t&);
+void DecompressData(BYTE*&, size_t&);
 
 NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);
@@ -187,58 +190,50 @@ void IncreasePeersCounter();
 void DecreasePeersCounter();
 NET_PEER CreatePeer(sockaddr_in, SOCKET);
 
-size_t GetNextPackageSize(NET_PEER) const;
-size_t GetReceivedPackageSize(NET_PEER) const;
-float GetReceivedPackageSizeAsPerc(NET_PEER) const;
+size_t GetNextPackageSize(NET_PEER);
+size_t GetReceivedPackageSize(NET_PEER);
+float GetReceivedPackageSizeAsPerc(NET_PEER);
 
-char sServerName[SERVERNAME_LENGTH];
-u_short sServerPort;
-DWORD sfrequenz;
-size_t sRSAKeySize;
-size_t sAESKeySize;
-bool sCryptPackage;
-bool sCompressPackage;
-long sTCPReadTimeout;
-long sCalcLatencyInterval;
-std::vector<Option_t<void*>> option;
-std::vector<SocketOption_t<void*>> socketoption;
+DWORD optionBitFlag;
+std::vector<Option_t<char*>> option;
+
+DWORD socketOptionBitFlag;
+std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
-void SetAllToDefault();
-void SetServerName(const char*);
-void SetServerPort(u_short);
-void SetFrequenz(DWORD);
-void SetTimeSpamProtection(float);
-void SetRSAKeySize(size_t);
-void SetAESKeySize(size_t);
-void SetCryptPackage(bool);
-void SetCompressPackage(bool);
-void SetTCPReadTimeout(long);
-void SetCalcLatencyInterval(long);
-
 template <class T>
 void SetOption(const Option_t<T> o)
 {
-	for (const auto& entry : option)
-		if (entry.opt == o.opt)
-		{
-			entry.type = reinterpret_cast<void*>(o.type);
-			entry.len = o.len;
-			return;
-		}
+	// check option is been set using bitflag
+	if (optionBitFlag & o.opt)
+	{
+		// reset the option value
+		for (auto& entry : option)
+			if (entry.opt == o.opt)
+			{
+				entry.type = reinterpret_cast<char*>(o.type);
+				entry.len = o.len;
+				return;
+			}
+	}
 
-	Option_t<void*> opt;
+	// save the option value
+	Option_t<char*> opt;
 	opt.opt = o.opt;
-	opt.type = reinterpret_cast<void*>(o.type);
+	opt.type = reinterpret_cast<char*>(o.type);
 	opt.len = o.len;
 	option.emplace_back(opt);
+
+	// set the bit flag
+	optionBitFlag |= opt.opt;
 }
 
-bool Isset(DWORD);
+bool Isset(DWORD) const;
 
 template <class T>
 T GetOption(const DWORD opt)
 {
+	if (!Isset(opt)) return NULL;
 	for (const auto& entry : option)
 		if (entry.opt == opt)
 		{
@@ -252,22 +247,31 @@ T GetOption(const DWORD opt)
 template <class T>
 void SetSocketOption(const SocketOption_t<T> opt)
 {
-	SocketOption_t<void*> option;
+	// check option is been set using bitflag
+	if (socketOptionBitFlag & opt.opt)
+	{
+		// reset the option value
+		for (auto& entry : socketoption)
+			if (entry.opt == opt.opt)
+			{
+				entry.type = reinterpret_cast<char*>(opt.type);
+				entry.len = opt.len;
+				return;
+			}
+	}
+
+	// save the option value
+	SocketOption_t<char*> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<void*>(opt.type);
+	option.type = reinterpret_cast<char*>(opt.type);
 	option.len = opt.len;
 	socketoption.emplace_back(option);
+
+	// set the bit flag
+	socketOptionBitFlag |= option.opt;
 }
 
-const char* GetServerName() const;
-u_short GetServerPort() const;
-DWORD GetFrequenz() const;
-size_t GetRSAKeySize() const;
-size_t GetAESKeySize() const;
-bool GetCryptPackage() const;
-bool GetCompressPackage() const;
-long GetTCPReadTimeout() const;
-long GetCalcLatencyInterval() const;
+bool Isset_SocketOpt(DWORD) const;
 
 bool DoExit;
 
@@ -288,7 +292,7 @@ bool IsRunning() const;
 
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
-bool Start(const char*, u_short);
+bool Run();
 bool Close();
 
 short Handshake(NET_PEER);
@@ -312,7 +316,7 @@ NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 
 NET_CLASS_PRIVATE
 void ProcessPackages(NET_PEER);
-bool ExecutePackage(NET_PEER);
+void ExecutePackage(NET_PEER);
 
 bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 
