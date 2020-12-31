@@ -20,46 +20,46 @@
 
 #define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
 
-#define SERVERNAME(instance) instance->Isset(OPT_ServerName) ? instance->GetOption<char*>(OPT_ServerName) : DEFAULT_OPTION_SERVERNAME
-#define SERVERPORT(instance) instance->Isset(OPT_ServerPort) ? instance->GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT
-#define FREQUENZ(instance) instance->Isset(OPT_Frequenz) ? instance->GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ
+#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : CSTRING(DEFAULT_OPTION_SERVERNAME)
+#define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT
+#define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : DEFAULT_OPTION_FREQUENZ
 
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
 
 /* Websocket frame protocol operationcodes */
-CONSTEXPR auto OPCODE_CONTINUE = 0x0;
-CONSTEXPR auto OPCODE_TEXT = 0x1;
-CONSTEXPR auto OPCODE_BINARY = 0x2;
-CONSTEXPR auto OPCODE_CLOSE = 0x8;
-CONSTEXPR auto OPCODE_PING = 0x9;
-CONSTEXPR auto OPCODE_PONG = 0xA;
+CONSTEXPR auto NET_OPCODE_CONTINUE = 0x0;
+CONSTEXPR auto NET_OPCODE_TEXT = 0x1;
+CONSTEXPR auto NET_OPCODE_BINARY = 0x2;
+CONSTEXPR auto NET_OPCODE_CLOSE = 0x8;
+CONSTEXPR auto NET_OPCODE_PING = 0x9;
+CONSTEXPR auto NET_OPCODE_PONG = 0xA;
 
-CONSTEXPR auto WS_CONTROL_PACKAGE = -1; // used to send a ping or pong frame
-CONSTEXPR auto WS_FIN = 0x80;
-CONSTEXPR auto WS_OPCODE = 0xF;
-CONSTEXPR auto WS_MASK = 0x7F;
-CONSTEXPR auto WS_PAYLOADLENGTH = 0x7F;
-CONSTEXPR auto WS_CONTROLFRAME = 8;
-CONSTEXPR auto WS_PAYLOAD_LENGTH_16 = 126;
-CONSTEXPR auto WS_PAYLOAD_LENGTH_63 = 127;
+CONSTEXPR auto NET_WS_CONTROL_PACKAGE = -1; // used to send a ping or pong frame
+CONSTEXPR auto NET_WS_FIN = 0x80;
+CONSTEXPR auto NET_WS_OPCODE = 0xF;
+CONSTEXPR auto NET_WS_MASK = 0x7F;
+CONSTEXPR auto NET_WS_PAYLOADLENGTH = 0x7F;
+CONSTEXPR auto NET_WS_CONTROLFRAME = 8;
+CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_16 = 126;
+CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
 
 CONSTEXPR size_t DEFAULT_MAX_PACKET_SIZE = 512;
 
-CONSTEXPR auto DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
-CONSTEXPR auto DEFAULT_OPTION_SERVERPORT = 50000;
-CONSTEXPR auto DEFAULT_OPTION_FREQUENZ = 66;
-CONSTEXPR auto DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
-CONSTEXPR auto DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
-CONSTEXPR auto DEFAULT_OPTION_SSL = false;
+CONSTEXPR char* DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
+CONSTEXPR u_short DEFAULT_OPTION_SERVERPORT = 50000;
+CONSTEXPR DWORD DEFAULT_OPTION_FREQUENZ = 66;
+CONSTEXPR int DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
+CONSTEXPR long DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
+CONSTEXPR bool DEFAULT_OPTION_SSL = false;
 CONSTEXPR int DEFAULT_OPTION_SSL_METHOD = Net::ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS;
-CONSTEXPR auto DEFAULT_OPTION_CertFileName = "cert.pem";
-CONSTEXPR auto DEFAULT_OPTION_KeyFileName = "key.pem";
-CONSTEXPR auto DEFAULT_OPTION_CaFileName = "ca.pem";
-CONSTEXPR auto DEFAULT_OPTION_CustomHandshake = false;
-CONSTEXPR auto DEFAULT_OPTION_CustomOrigin = "localhost";
-CONSTEXPR auto DEFAULT_OPTION_WITHOUT_HANDSHAKE = false;
+CONSTEXPR char* DEFAULT_OPTION_CertFileName = "cert.pem";
+CONSTEXPR char* DEFAULT_OPTION_KeyFileName = "key.pem";
+CONSTEXPR char* DEFAULT_OPTION_CaFileName = "servercert.pem";
+CONSTEXPR bool DEFAULT_OPTION_CustomHandshake = false;
+CONSTEXPR char* DEFAULT_OPTION_CustomOrigin = "localhost";
+CONSTEXPR bool DEFAULT_OPTION_WITHOUT_HANDSHAKE = false;
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
@@ -310,7 +310,7 @@ NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
 bool NeedExit() const;
 
-void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = OPCODE_TEXT);
+void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
 
 size_t getCountPeers() const;
 
@@ -322,7 +322,7 @@ NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 
 NET_CLASS_PRIVATE
 void DecodeFrame(NET_PEER);
-void EncodeFrame(const char*, size_t, NET_PEER, unsigned char = OPCODE_TEXT);
+void EncodeFrame(const char*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
 bool ProcessPackage(NET_PEER, BYTE*, size_t);
 
 NET_CLASS_PROTECTED

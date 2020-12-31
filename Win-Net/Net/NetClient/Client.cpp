@@ -42,7 +42,7 @@ NET_TIMER(DoCalcLatency)
 
 	client->network.bLatency = true;
 	Thread::Create(LatencyTick, client);
-	Timer::SetTime(client->network.hCalcLatency, client->Isset(OPT_CalcLatencyInterval) ? client->GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
+	Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -58,7 +58,7 @@ Client::Client()
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
 
-	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(OPT_CalcLatencyInterval) ? GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
+	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, this);
 }
 
 Client::~Client()
@@ -75,7 +75,7 @@ NET_THREAD(Receive)
 		Kernel32::Sleep(client->DoReceive());
 
 	// wait until thread has finished
-	while (client && client->network.bLatency) Kernel32::Sleep(client->Isset(OPT_Frequenz) ? client->GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ);
+	while (client && client->network.bLatency) Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : DEFAULT_OPTION_FREQUENZ);
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
@@ -317,11 +317,11 @@ bool Client::Connect(const char* Address, const u_short Port)
 	SetConnected(true);
 
 	// Set Mode
-	ChangeMode(Isset(OPT_NonBlocking) ? !GetOption<bool>(OPT_NonBlocking) : !DEFAULT_OPTION_NON_BLOCKING_MODE);
+	ChangeMode(Isset(NET_OPT_MODE_BLOCKING) ? GetOption<bool>(NET_OPT_MODE_BLOCKING) : DEFAULT_OPTION_BLOCKING_MODE);
 
-	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
+	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES)
 		/* create RSA Key Pair */
-		network.createNewRSAKeys(Isset(OPT_RSA_KeySize) ? GetOption<size_t>(OPT_RSA_KeySize) : DEFAULT_OPTION_RSA_KEY_SIZE);
+		network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : DEFAULT_OPTION_RSA_KEY_SIZE);
 
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
@@ -1044,13 +1044,13 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES
 		&& network.RSAHandshake)
 	{
 		NET_AES aes;
 
 		/* Generate new AES Keypair */
-		size_t aesKeySize = Isset(OPT_AES_KeySize) ? GetOption<size_t>(OPT_AES_KeySize) : DEFAULT_OPTION_AES_KEY_SIZE;
+		size_t aesKeySize = Isset(NET_OPT_CIPHER_AES_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : DEFAULT_OPTION_AES_KEY_SIZE;
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
@@ -1107,7 +1107,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		dataBuffer.get()[dataBufferSize] = '\0';
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
-		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
 		if (PKG.HasRawData())
@@ -1122,7 +1122,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1133,7 +1133,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1219,7 +1219,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	{
 		CPOINTER<BYTE> dataBuffer;
 		size_t dataBufferSize = NULL;
-		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataBufferSize = buffer.GetSize();
 			dataBuffer = ALLOC<BYTE>(dataBufferSize + 1);
@@ -1237,7 +1237,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1248,7 +1248,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1306,7 +1306,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
-		if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 			SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed);
 		else
 			SingleSend(buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
@@ -1571,7 +1571,7 @@ void Client::ExecutePackage()
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if ((Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES) && network.RSAHandshake)
+	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES) && network.RSAHandshake)
 	{
 		auto offset = network.data_offset + 1;
 
@@ -1742,7 +1742,7 @@ void Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize };
 
-					if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 						DecompressData(entry.value(), entry.size());
 
 					/* decrypt aes */
@@ -1791,7 +1791,7 @@ void Client::ExecutePackage()
 
 				offset += packageSize;
 
-				if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 					DecompressData(data.reference().get(), packageSize);
 
 				/* decrypt aes */
@@ -1874,7 +1874,7 @@ void Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize };
 
-					if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 						DecompressData(entry.value(), entry.size());
 
 					rawData.emplace_back(entry);
@@ -1916,7 +1916,7 @@ void Client::ExecutePackage()
 
 				offset += packageSize;
 
-				if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 					DecompressData(data.reference().get(), packageSize);
 			}
 
@@ -1980,7 +1980,7 @@ void Client::ExecutePackage()
 void Client::CompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 	{
 #ifdef DEBUG
 		const auto PrevSize = size;
@@ -1995,7 +1995,7 @@ void Client::CompressData(BYTE*& data, size_t& size)
 void Client::DecompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(OPT_CompressPackage) ? GetOption<bool>(OPT_CompressPackage) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
 	{
 		auto copy = ALLOC<BYTE>(size + 1);
 		memcpy(copy, data, size);
@@ -2060,7 +2060,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES
 	&& !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
@@ -2085,7 +2085,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
+if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES
 	&& !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
