@@ -53,7 +53,6 @@ Client::Client()
 	SetServerAddress(CSTRING(""));
 	SetServerPort(NULL);
 	SetConnected(false);
-	SetKeysSet(NULL);
 	NeedExit = FALSE;
 	bAccomplished = FALSE;
 	optionBitFlag = NULL;
@@ -398,9 +397,6 @@ void Client::Clear()
 	WSACleanup();
 
 	network.clear();
-
-	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES)
-		SetKeysSet(false);
 }
 
 bool Client::DoNeedExit() const
@@ -456,16 +452,6 @@ void Client::SetConnected(const bool connected)
 bool Client::IsConnected() const
 {
 	return connected;
-}
-
-void Client::SetKeysSet(const bool KeysSet)
-{
-	this->KeysSet = KeysSet;
-}
-
-bool Client::GetKeysSet() const
-{
-	return KeysSet;
 }
 
 size_t Client::GetNextPackageSize() const
@@ -1585,8 +1571,7 @@ void Client::ExecutePackage()
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
-		&& network.RSAHandshake)
+	if ((Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES) && network.RSAHandshake)
 	{
 		auto offset = network.data_offset + 1;
 

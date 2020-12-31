@@ -173,7 +173,6 @@ struct addrinfo* connectSocketAddr;
 CPOINTER<char> ServerAddress;
 u_short ServerPort;
 bool connected;
-bool KeysSet;
 
 void SetRecordingData(bool);
 
@@ -209,9 +208,6 @@ u_short GetServerPort() const;
 
 void SetConnected(bool);
 bool IsConnected() const;
-
-void SetKeysSet(bool);
-bool GetKeysSet() const;
 
 size_t GetNextPackageSize() const;
 size_t GetReceivedPackageSize() const;

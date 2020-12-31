@@ -1942,8 +1942,7 @@ void Server::ExecutePackage(NET_PEER peer)
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if (Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES
-		&& peer->cryption.getHandshakeStatus())
+	if ((Isset(OPT_CryptPackage) ? GetOption<bool>(OPT_CryptPackage) : DEFAULT_OPTION_CRYPT_PACKAGES) && peer->cryption.getHandshakeStatus())
 	{
 		auto offset = peer->network.getDataOffset() + 1;
 
