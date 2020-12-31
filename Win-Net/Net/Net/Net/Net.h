@@ -598,6 +598,14 @@ NET_STRUCT_END
 #define OPT_TCPReadTimeout (1 << 7)
 #define OPT_ServerName (1 << 8)
 #define OPT_ServerPort (1 << 9)
+#define OPT_SSL (1 << 10)
+#define OPT_SSL_METHOD (1 << 11)
+#define OPT_SSL_CERT (1 << 12)
+#define OPT_SSL_KEY (1 << 13)
+#define OPT_SSL_CA (1 << 14)
+#define OPT_WS_CUSTOM_HANDSHAKE (1 << 15)
+#define OPT_WS_CUSTOM_ORIGIN (1 << 16)
+#define OPT_WS_NO_HANDSHAKE (1 << 17)
 
 #ifndef VS13
 #define NOEXPECT noexcept

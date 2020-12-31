@@ -21,346 +21,26 @@ PCSTR IPRef::get() const
 Server::Server()
 {
 	Net::Codes::NetLoadErrorCodes();
-	SetAllToDefault();
+	SetListenSocket(INVALID_SOCKET);
+	SetAcceptSocket(INVALID_SOCKET);
+	SetRunning(false);
+	DoExit = NULL;
 }
 
 Server::~Server()
 {
-	this->hOrigin.free();
 }
 
-void Server::SetAllToDefault()
+bool Server::Isset(const DWORD opt) const
 {
-	strcpy_s(sServerName, DEFAULT_WEBSERVER_SERVERNAME);
-	sServerPort = DEFAULT_WEBSERVER_SERVERPORT;
-	SetListenSocket(INVALID_SOCKET);
-	SetAcceptSocket(INVALID_SOCKET);
-	sfrequenz = DEFAULT_WEBSERVER_FREQUENZ;
-	DoExit = NULL;
-	sTimeSpamProtection = DEFAULT_WEBSERVER_SPAM_PROTECTION_TIMER;
-	sMaxPeers = DEFAULT_WEBSERVER_MAX_PEERS;
-	sSSL = DEFAULT_WEBSERVER_SSL;
-	ctx = nullptr;
-	strcpy_s(sCertFileName, DEFAULT_WEBSERVER_CertFileName);
-	strcpy_s(sKeyFileName, DEFAULT_WEBSERVER_KeyFileName);
-	strcpy_s(sCaFileName, DEFAULT_WEBSERVER_CaFileName);
-
-	hUseCustom = DEFAULT_WEBSERVER_CustomHandshake;
-	hOrigin = nullptr;
-	sCompressPackage = DEFAULT_WEBSERVER_COMPRESS_PACKAGES;
-	sTCPReadTimeout = DEFAULT_WEBSERVER_TCP_READ_TIMEOUT;
-	bWithoutHandshake = DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE;
-	sCalcLatencyInterval = DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL;
-
-	SetRunning(false);
-
-	LOG_DEBUG(CSTRING("---------- SERVER DEFAULT SETTINGS ----------"));
-	LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to default value of %lu"), sfrequenz);
-	LOG_DEBUG(CSTRING("Spam-Protection timer has been set to default value of %.2f"), sTimeSpamProtection);
-	LOG_DEBUG(CSTRING("Max Peers has been set to default value of %i"), sMaxPeers);
-	LOG_DEBUG(CSTRING("SSL has been set to default value of %s"), sSSL ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Certification Filename has been set to default value of %s"), sCertFileName);
-	LOG_DEBUG(CSTRING("Key Filename has been set to default value of %s"), sKeyFileName);
-	LOG_DEBUG(CSTRING("CA Filename has been set to default value of %s"), sCaFileName);
-	LOG_DEBUG(CSTRING("Use Custom Handshake has been set to default value of %s"), hUseCustom ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("Compress Package has been set to default value of %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	LOG_DEBUG(CSTRING("TCP Read timeout has been set to default value of %i"), sTCPReadTimeout);
-	LOG_DEBUG(CSTRING("Without Handshake has been set to default value of %s"), bWithoutHandshake ? "TRUE" : "FALSE");
-	LOG_DEBUG(CSTRING("Calculate latency interval has been set to default value of %i"), sCalcLatencyInterval);
-	LOG_DEBUG(CSTRING("---------------------------------------------"));
+	// use the bit flag to perform faster checks
+	return optionBitFlag & opt;
 }
 
-void Server::SetServerName(const char* sServerName)
+bool Server::Isset_SocketOpt(const DWORD opt) const
 {
-	const auto oldName = GetServerName();
-	strcpy_s(this->sServerName, sServerName);
-
-	if (strcmp(oldName, DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Server Name has been set to %s"), sServerName);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("Server Name has been changed from %s to %s"), oldName, sServerName);
-	}
-}
-
-void Server::SetServerPort(const u_short sServerPort)
-{
-	this->sServerPort = sServerPort;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Server Port has been set to %i"), sServerPort);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Server Port has been set to %i"), GetServerName(), sServerPort);
-	}
-}
-
-void Server::SetFrequenz(const DWORD sfrequenz)
-{
-	this->sfrequenz = sfrequenz;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Refresh-Frequenz has been set to %lu"), sfrequenz);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Refresh-Frequenz has been set to %lu"), GetServerName(), sfrequenz);
-	}
-}
-
-void Server::SetTimeSpamProtection(const float sTimeSpamProtection)
-{
-	this->sTimeSpamProtection = sTimeSpamProtection;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Spam-Protection timer has been set to %.2f"), sTimeSpamProtection);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Spam-Protection timer has been set to %.2f"), GetServerName(), sTimeSpamProtection);
-	}
-}
-
-void Server::SetMaxPeers(const unsigned int sMaxPeers)
-{
-	this->sMaxPeers = sMaxPeers;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Max Peers has been set to %i"), sMaxPeers);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Max Peers has been set to %i"), GetServerName(), sMaxPeers);
-	}
-}
-
-void Server::SetSSL(const bool sSSL)
-{
-	this->sSSL = sSSL;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("SSL has been %s"), sSSL ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - SSL has been %s"), GetServerName(), sSSL ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-}
-
-void Server::SetCertFileName(const char* sCertFileName)
-{
-	strcpy_s(this->sCertFileName, sCertFileName);
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Certification Filename has been set to %s"), sCertFileName);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Certification Filename has been set to %s"), GetServerName(), sCertFileName);
-	}
-}
-
-void Server::SetKeyFileName(const char* sKeyFileName)
-{
-	strcpy_s(this->sKeyFileName, sKeyFileName);
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Key Filename has been set to %s"), sKeyFileName);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Key Filename has been set to %s"), GetServerName(), sKeyFileName);
-	}
-}
-
-void Server::SetCaFileName(const char* sCaFileName)
-{
-	strcpy_s(this->sCaFileName, sCaFileName);
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("CA Filename has been set to %s"), sCaFileName);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - CA Filename has been set to %s"), GetServerName(), sCaFileName);
-	}
-}
-
-void Server::SetCustomHandshakeMethode(const bool hUseCustom)
-{
-	this->hUseCustom = hUseCustom;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Custom Handshake has been %s"), hUseCustom ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Custom Handshake has been %s"), GetServerName(), hUseCustom ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-}
-
-void Server::SetHandshakeOriginCompare(const char* hOrigin)
-{
-	const auto size = strlen(hOrigin);
-	this->hOrigin.free();
-	this->hOrigin = ALLOC<char>(size + 1);
-	memcpy(this->hOrigin.get(), hOrigin, size);
-	this->hOrigin.get()[size] = '\0';
-
-	SetCustomHandshakeMethode(true);
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Origin Handshake Variable Check has been set to %s"), hOrigin);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Origin Handshake Variable Check has been set to %s"), GetServerName(), hOrigin);
-	}
-}
-
-void Server::SetCompressPackage(const bool sCompressPackage)
-{
-	this->sCompressPackage = sCompressPackage;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Compress Package has been %s"), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Compress Package has been %s"), GetServerName(), sCompressPackage ? CSTRING("enabled") : CSTRING("disabled"));
-	}
-}
-
-void Server::SetTCPReadTimeout(const long sTCPReadTimeout)
-{
-	this->sTCPReadTimeout = sTCPReadTimeout;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("TCP Read timeout has been set to %i"), GetServerName(), sTCPReadTimeout);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - TCP Read timeout has been set to %i"), GetServerName(), sTCPReadTimeout);
-	}
-}
-
-
-void Server::SetWithoutHandshake(const bool bWithoutHandshake)
-{
-	this->bWithoutHandshake = bWithoutHandshake;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Without Handshake has been set to %s"), GetServerName(), bWithoutHandshake ? "TRUE" : "FALSE");
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Without Handshake has been set to %s"), GetServerName(), bWithoutHandshake ? "TRUE" : "FALSE");
-	}
-}
-
-void Server::SetCalcLatencyInterval(const long sCalcLatencyInterval)
-{
-	this->sCalcLatencyInterval = sCalcLatencyInterval;
-
-	if (strcmp(GetServerName(), DEFAULT_WEBSERVER_SERVERNAME) == 0)
-	{
-		LOG_DEBUG(CSTRING("Calculate latency interval has been set to %i"), sCalcLatencyInterval);
-	}
-	else
-	{
-		LOG_DEBUG(CSTRING("[%s] - Calculate latency interval has been set to %i"), GetServerName(), sCalcLatencyInterval);
-	}
-}
-
-const char* Server::GetServerName() const
-{
-	return sServerName;
-}
-
-u_short Server::GetServerPort() const
-{
-	return sServerPort;
-}
-
-float Server::GetTimeSpamProtection() const
-{
-	return sTimeSpamProtection;
-}
-
-DWORD Server::GetFrequenz() const
-{
-	return sfrequenz;
-}
-
-unsigned int Server::GetMaxPeers() const
-{
-	return sMaxPeers;
-}
-
-bool Server::GetSSL() const
-{
-	return sSSL;
-}
-
-const char* Server::GetCertFileName() const
-{
-	return sCertFileName;
-}
-
-const char* Server::GetKeyFileName() const
-{
-	return sKeyFileName;
-}
-
-const char* Server::GetCaFileName() const
-{
-	return sCaFileName;
-}
-
-bool Server::GetCustomHandshakeMethode() const
-{
-	return hUseCustom;
-}
-
-CPOINTER<char> Server::GetHandshakeOriginCompare() const
-{
-	return hOrigin;
-}
-
-bool Server::GetCompressPackage() const
-{
-	return sCompressPackage;
-}
-
-long Server::GetTCPReadTimeout() const
-{
-	return sTCPReadTimeout;
-}
-
-bool Server::GetWithoutHandshake() const
-{
-	return bWithoutHandshake;
-}
-
-long Server::GetCalcLatencyInterval() const
-{
-	return sCalcLatencyInterval;
+	// use the bit flag to perform faster checks
+	return socketOptionBitFlag & opt;
 }
 
 #pragma region Network Structure
@@ -418,7 +98,7 @@ byte* Server::network_t::getDataFragmented() const
 
 void Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, DEFAULT_WEBSERVER_MAX_PACKET_SIZE * sizeof(byte));
+	memset(_dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE * sizeof(byte));
 }
 
 void Server::network_t::clear()
@@ -505,7 +185,7 @@ NET_TIMER(DoCalcLatency)
 
 	peer->bLatency = true;
 	Thread::Create(LatencyTick, peer);
-	Timer::SetTime(peer->hCalcLatency, server->GetCalcLatencyInterval());
+	Timer::SetTime(peer->hCalcLatency, server->Isset(OPT_CalcLatencyInterval) ? server->GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -519,11 +199,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	/* Set Read Timeout */
 	timeval tv = {};
-	tv.tv_sec = GetTCPReadTimeout();
+	tv.tv_sec = Isset(OPT_TCPReadTimeout) ? GetOption<long>(OPT_TCPReadTimeout) : DEFAULT_OPTION_TCP_READ_TIMEOUT;
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-	if (GetSSL())
+	if (Isset(OPT_SSL) ? GetOption<bool>(OPT_SSL) : DEFAULT_OPTION_SSL)
 	{
 		peer->ssl = SSL_new(ctx);
 		SSL_set_accept_state(peer->ssl); /* sets ssl to work in server mode. */
@@ -535,7 +215,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		const auto res = SSL_accept(peer->ssl);
 		if (res == 0)
 		{
-			LOG_ERROR("[%s] - The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol", GetServerName());
+			LOG_ERROR("[%s] - The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol", SERVERNAME(this));
 			return false;
 		}
 		if (res < 0)
@@ -543,27 +223,27 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 			const auto err = SSL_get_error(peer->ssl, res);
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
-				LOG_DEBUG("[%s] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed", GetServerName());
+				LOG_DEBUG("[%s] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed", SERVERNAME(this));
 				return false;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
-				LOG_DEBUG("[%s] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used", GetServerName());
+				LOG_DEBUG("[%s] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used", SERVERNAME(this));
 				return false;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				LOG_DEBUG("[%s] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application", GetServerName());
+				LOG_DEBUG("[%s] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application", SERVERNAME(this));
 				return false;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
-				LOG_DEBUG("[%s] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details", GetServerName());
+				LOG_DEBUG("[%s] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details", SERVERNAME(this));
 				return false;
 			}
 			if (err == SSL_ERROR_SSL)
 			{
-				LOG_DEBUG("[%s] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called", GetServerName());
+				LOG_DEBUG("[%s] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called", SERVERNAME(this));
 				return false;
 			}
 			ERR_clear_error();
@@ -575,14 +255,14 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	const auto _DoCalcLatency = new DoCalcLatency_t();
 	_DoCalcLatency->server = this;
 	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, GetCalcLatencyInterval(), _DoCalcLatency, true);
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(OPT_CalcLatencyInterval) ? GetOption<int>(OPT_CalcLatencyInterval) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, _DoCalcLatency, true);
 
 	IncreasePeersCounter();
 
 	// callback
 	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), GetServerName(), peer->IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), SERVERNAME(this), peer->IPAddr().get());
 	return peer;
 }
 
@@ -617,7 +297,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		// callback
 		OnPeerDisconnect(peer);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), GetServerName(), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
 
@@ -702,7 +382,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 		return;
 	);
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), GetServerName(), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 
 	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
@@ -718,7 +398,7 @@ NET_THREAD(TickThread)
 	while (server->IsRunning() && !server->NeedExit())
 	{
 		server->Tick();
-		Kernel32::Sleep(server->GetFrequenz());
+		Kernel32::Sleep(FREQUENZ(server));
 	}
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
 	return NULL;
@@ -733,7 +413,7 @@ NET_THREAD(AcceptorThread)
 	while (server->IsRunning() && !server->NeedExit())
 	{
 		server->Acceptor();
-		Kernel32::Sleep(server->GetFrequenz());
+		Kernel32::Sleep(FREQUENZ(server));
 	}
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
 	return NULL;
@@ -769,54 +449,50 @@ bool Server::IsRunning() const
 	return bRunning;
 }
 
-bool Server::Start(const char* serverName, const u_short serverPort, const ssl::NET_SSL_METHOD Method)
+bool Server::Run()
 {
 	if (IsRunning())
 		return false;
 
-	/* set name and port */
-	SetServerName(serverName);
-	SetServerPort(serverPort);
-
 	/* SSL */
-	if (GetSSL())
+	if (Isset(OPT_SSL) ? GetOption<bool>(OPT_SSL) : DEFAULT_OPTION_SSL)
 	{
 		/* Init SSL */
 		SSL_load_error_strings();
 		OpenSSL_add_ssl_algorithms();
 
 		// create CTX
-		ctx = SSL_CTX_new(NET_CREATE_SSL_OBJECT(Method));
+		ctx = SSL_CTX_new(Net::ssl::NET_CREATE_SSL_OBJECT(Isset(OPT_SSL_METHOD) ? GetOption<int>(OPT_SSL_METHOD) : DEFAULT_OPTION_SSL_METHOD));
 		if (!ctx)
 		{
-			LOG_ERROR(CSTRING("[%s] - ctx is NULL"), GetServerName());
+			LOG_ERROR(CSTRING("[%s] - ctx is NULL"), SERVERNAME(this));
 			return false;
 		}
 
 		/* Set the key and cert */
-		if (SSL_CTX_use_certificate_file(ctx, GetCertFileName(), SSL_FILETYPE_PEM) <= 0)
+		if (SSL_CTX_use_certificate_file(ctx, Isset(OPT_SSL_CERT) ? GetOption<char*>(OPT_SSL_CERT) : DEFAULT_OPTION_CertFileName, SSL_FILETYPE_PEM) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), GetServerName(), GetCertFileName());
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(OPT_SSL_CERT) ? GetOption<char*>(OPT_SSL_CERT) : DEFAULT_OPTION_CertFileName);
 			return false;
 		}
 
-		if (SSL_CTX_use_PrivateKey_file(ctx, GetKeyFileName(), SSL_FILETYPE_PEM) <= 0)
+		if (SSL_CTX_use_PrivateKey_file(ctx, Isset(OPT_SSL_KEY) ? GetOption<char*>(OPT_SSL_KEY) : DEFAULT_OPTION_KeyFileName, SSL_FILETYPE_PEM) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), GetServerName(), GetKeyFileName());
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(OPT_SSL_KEY) ? GetOption<char*>(OPT_SSL_KEY) : DEFAULT_OPTION_KeyFileName);
 			return false;
 		}
 
 		/* load verfiy location (CA)*/
-		if (SSL_CTX_load_verify_locations(ctx, GetCaFileName(), nullptr) <= 0)
+		if (SSL_CTX_load_verify_locations(ctx, Isset(OPT_SSL_CA) ? GetOption<char*>(OPT_SSL_CA) : DEFAULT_OPTION_CaFileName, nullptr) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), GetServerName(), GetCaFileName());
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(OPT_SSL_CA) ? GetOption<char*>(OPT_SSL_CA) : DEFAULT_OPTION_CaFileName);
 			return false;
 		}
 
 		/* verify private key */
 		if (!SSL_CTX_check_private_key(ctx))
 		{
-			LOG_ERROR(CSTRING("[%s] - Private key does not match with the public certificate"), GetServerName());
+			LOG_ERROR(CSTRING("[%s] - Private key does not match with the public certificate"), SERVERNAME(this));
 			ERR_print_errors_fp(stderr);
 			return false;
 		}
@@ -827,7 +503,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 					LOG(CSTRING("CALLBACK CTX SET INFO!"));
 			});*/
 
-		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), GetServerName(), Net::ssl::GET_SSL_METHOD_NAME(Method).data());
+		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), SERVERNAME(this), Net::ssl::GET_SSL_METHOD_NAME(Isset(OPT_SSL_METHOD) ? GetOption<int>(OPT_SSL_METHOD) : DEFAULT_OPTION_SSL_METHOD).data());
 	}
 
 	// create WSADATA object
@@ -845,7 +521,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != 0)
 	{
-		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), GetServerName(), res);
+		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), SERVERNAME(this), res);
 		return false;
 	}
 
@@ -856,12 +532,12 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	const auto Port = std::to_string(GetServerPort());
+	const auto Port = std::to_string(Isset(OPT_ServerPort) ? GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT);
 	res = getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0)
 	{
-		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), GetServerName(), res);
+		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), SERVERNAME(this), res);
 		WSACleanup();
 		return false;
 	}
@@ -871,7 +547,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 
 	if (GetListenSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), GetServerName(), WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), WSAGetLastError());
 		freeaddrinfo(result);
 		WSACleanup();
 		return false;
@@ -882,7 +558,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	res = ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), GetServerName(), WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), WSAGetLastError());
 		closesocket(GetListenSocket());
 		WSACleanup();
 		return false;
@@ -893,7 +569,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), GetServerName(), WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), WSAGetLastError());
 		freeaddrinfo(result);
 		closesocket(GetListenSocket());
 		WSACleanup();
@@ -907,7 +583,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	res = listen(GetListenSocket(), SOMAXCONN);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), GetServerName(), WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), WSAGetLastError());
 		closesocket(GetListenSocket());
 		WSACleanup();
 		return false;
@@ -918,7 +594,7 @@ bool Server::Start(const char* serverName, const u_short serverPort, const ssl::
 	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
-	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), GetServerName(), GetServerPort());
+	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), Isset(OPT_ServerPort) ? GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT);
 	return true;
 }
 
@@ -926,7 +602,7 @@ bool Server::Close()
 {
 	if (!IsRunning())
 	{
-		LOG_ERROR(CSTRING("[%s] - Can't close server, because server is not running!"), GetServerName());
+		LOG_ERROR(CSTRING("[%s] - Can't close server, because server is not running!"), SERVERNAME(this));
 		return false;
 	}
 
@@ -940,7 +616,7 @@ bool Server::Close()
 
 	WSACleanup();
 
-	LOG_DEBUG(CSTRING("[%s] - Closed!"), GetServerName());
+	LOG_DEBUG(CSTRING("[%s] - Closed!"), SERVERNAME(this));
 	return true;
 }
 
@@ -960,13 +636,13 @@ short Server::Handshake(NET_PEER peer)
 			{
 			case WSAETIMEDOUT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAECONNRESET:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
@@ -975,7 +651,7 @@ short Server::Handshake(NET_PEER peer)
 			}
 		}
 
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -983,26 +659,26 @@ short Server::Handshake(NET_PEER peer)
 			{
 			case SSL_ERROR_ZERO_RETURN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case SSL_ERROR_WANT_CONNECT:
 			case SSL_ERROR_WANT_ACCEPT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case SSL_ERROR_WANT_X509_LOOKUP:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case SSL_ERROR_SYSCALL:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
@@ -1017,7 +693,7 @@ short Server::Handshake(NET_PEER peer)
 
 			default:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
@@ -1044,68 +720,68 @@ short Server::Handshake(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE, 0);
+		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAENETDOWN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAEFAULT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAENOTCONN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAEINTR:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAEINPROGRESS:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAENETRESET:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAENOTSOCK:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAEOPNOTSUPP:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAESHUTDOWN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
@@ -1115,37 +791,37 @@ short Server::Handshake(NET_PEER peer)
 
 			case WSAEMSGSIZE:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAEINVAL:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAECONNABORTED:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAETIMEDOUT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			case WSAECONNRESET:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 
 			default:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
@@ -1153,7 +829,7 @@ short Server::Handshake(NET_PEER peer)
 		if (data_size == 0)
 		{
 			peer->network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			ErasePeer(peer);
 			return WebServerHandshake::HandshakeRet_t::error;
 		}
@@ -1229,21 +905,21 @@ short Server::Handshake(NET_PEER peer)
 		NET_BASE64::encode(enc_Sec_Key, outlen);
 
 		char host[15];
-		if (GetCustomHandshakeMethode())
-			sprintf_s(host, CSTRING("%s:%i"), GetHandshakeOriginCompare().get(), GetServerPort());
+		if (Isset(OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
+			sprintf_s(host, CSTRING("%s:%i"), Isset(OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(OPT_WS_CUSTOM_ORIGIN) : DEFAULT_OPTION_CustomOrigin, Isset(OPT_ServerPort) ? GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT);
 		else
-			sprintf_s(host, CSTRING("127.0.0.1:%i"), GetServerPort());
+			sprintf_s(host, CSTRING("127.0.0.1:%i"), Isset(OPT_ServerPort) ? GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT);
 
 		CPOINTER<char> origin;
-		if (GetCustomHandshakeMethode())
+		if (Isset(OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
 		{
-			const auto originSize = strlen(GetHandshakeOriginCompare().get());
+			const auto originSize = strlen(Isset(OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(OPT_WS_CUSTOM_ORIGIN) : DEFAULT_OPTION_CustomOrigin);
 			origin = ALLOC<char>(originSize + 1);
-			sprintf(origin.get(), CSTRING("%s%s"), GetSSL() ? CSTRING("https://") : CSTRING("http://"), GetHandshakeOriginCompare().get());
+			sprintf(origin.get(), CSTRING("%s%s"), (Isset(OPT_SSL) ? GetOption<bool>(OPT_SSL) : DEFAULT_OPTION_SSL) ? CSTRING("https://") : CSTRING("http://"), Isset(OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(OPT_WS_CUSTOM_ORIGIN) : DEFAULT_OPTION_CustomOrigin);
 		}
 
 		// Create Response
-		CPOINTER<char> buffer(ALLOC<char>(DEFAULT_WEBSERVER_MAX_PACKET_SIZE + 1));
+		CPOINTER<char> buffer(ALLOC<char>(DEFAULT_MAX_PACKET_SIZE + 1));
 		sprintf(buffer.get(), CSTRING("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n"), reinterpret_cast<char*>(enc_Sec_Key));
 
 		/* SSL */
@@ -1261,7 +937,7 @@ short Server::Handshake(NET_PEER peer)
 				if (send(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
-					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), GetServerName());
+					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
 					return WebServerHandshake::HandshakeRet_t::error;
 				}
 
@@ -1295,7 +971,7 @@ short Server::Handshake(NET_PEER peer)
 				if (res == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
-					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), GetServerName());
+					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
 					return WebServerHandshake::HandshakeRet_t::error;
 				}
 
@@ -1313,12 +989,12 @@ short Server::Handshake(NET_PEER peer)
 		const auto stringOrigin = CSTRING("Origin");
 
 		/* Handshake Failed - Display Error Message */
-		if (GetCustomHandshakeMethode())
+		if (Isset(OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
 		{
 			if (!(strcmp(entries[stringUpdate].data(), CSTRING("websocket")) == 0 && strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0 && strcmp(entries[stringHost].data(), host) == 0 && strcmp(entries[stringOrigin].data(), origin.get()) == 0))
 			{
 				origin.free();
-				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s\nHost: %s\nOrigin: %s"), GetServerName(), peer->IPAddr().get(), entries[stringUpdate].data(), entries[stringHost].data(), entries[stringOrigin].data());
+				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s\nHost: %s\nOrigin: %s"), SERVERNAME(this), peer->IPAddr().get(), entries[stringUpdate].data(), entries[stringHost].data(), entries[stringOrigin].data());
 				return WebServerHandshake::HandshakeRet_t::missmatch;
 			}
 		}
@@ -1327,7 +1003,7 @@ short Server::Handshake(NET_PEER peer)
 			if (!(strcmp(entries[stringUpdate].data(), CSTRING("websocket")) == 0 && strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0))
 			{
 				origin.free();
-				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s"), GetServerName(), peer->IPAddr().get(), entries[stringUpdate].data());
+				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s"), SERVERNAME(this), peer->IPAddr().get(), entries[stringUpdate].data());
 				return WebServerHandshake::HandshakeRet_t::missmatch;
 			}
 		}
@@ -1337,7 +1013,7 @@ short Server::Handshake(NET_PEER peer)
 		return WebServerHandshake::HandshakeRet_t::success;
 	}
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), GetServerName(), peer->IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), SERVERNAME(this), peer->IPAddr().get());
 
 	// clear data
 	peer->network.clear();
@@ -1359,7 +1035,7 @@ NET_THREAD(Receive)
 	const auto server = param->server;
 
 	/* Handshake */
-	if (!server->GetWithoutHandshake())
+	if (!(server->Isset(OPT_WS_NO_HANDSHAKE) ? server->GetOption<bool>(OPT_WS_NO_HANDSHAKE) : DEFAULT_OPTION_WITHOUT_HANDSHAKE))
 	{
 		do
 		{
@@ -1367,7 +1043,7 @@ NET_THREAD(Receive)
 			const auto res = server->Handshake(peer);
 			if (res == WebServerHandshake::peer_not_valid)
 			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), server->GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
 				peer->setAsync(false);
@@ -1381,7 +1057,7 @@ NET_THREAD(Receive)
 			}
 			if (res == WebServerHandshake::missmatch)
 			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), server->GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
 				peer->setAsync(false);
@@ -1390,7 +1066,7 @@ NET_THREAD(Receive)
 			}
 			if (res == WebServerHandshake::error)
 			{
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), server->GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), SERVERNAME(server), peer->IPAddr().get());
 
 				peer->setAsync(false);
 				server->ErasePeer(peer);
@@ -1405,7 +1081,7 @@ NET_THREAD(Receive)
 			peer->setAsync(false);
 		} while (!server->DoExit);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), server->GetServerName(), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), SERVERNAME(server), peer->IPAddr().get());
 	}
 	peer->estabilished = true;
 	server->OnPeerEstabilished(peer);
@@ -1434,7 +1110,7 @@ NET_THREAD(Receive)
 	}
 
 	// wait until thread has finished
-	while (peer && peer->bLatency) Kernel32::Sleep(server->GetFrequenz());
+	while (peer && peer->bLatency) Kernel32::Sleep(FREQUENZ(server));
 
 	// erase him
 	peer->setAsync(false);
@@ -1460,7 +1136,7 @@ void Server::Acceptor()
 		{
 			const auto res = _SetSocketOption(GetAcceptSocket(), entry);
 			if (res < 0)
-				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), GetServerName(), entry.opt, GetLastError());
+				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, GetLastError());
 		}
 
 		auto peer = CreatePeer(client_addr, GetAcceptSocket());
@@ -1507,19 +1183,19 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 	);
 
 	/* ENCODE FRAME */
-	auto frameCount = static_cast<int>(ceil((float)frame_length / DEFAULT_WEBSERVER_MAX_PACKET_SIZE));
+	auto frameCount = static_cast<int>(ceil((float)frame_length / DEFAULT_MAX_PACKET_SIZE));
 	if (frameCount == 0)
 		frameCount = 1;
 
 	const auto maxFrame = frameCount - 1;
-	const int lastFrameBufferLength = (frame_length % DEFAULT_WEBSERVER_MAX_PACKET_SIZE) != 0 ? (frame_length % DEFAULT_WEBSERVER_MAX_PACKET_SIZE) : (frame_length != 0 ? DEFAULT_WEBSERVER_MAX_PACKET_SIZE : 0);
+	const int lastFrameBufferLength = (frame_length % DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? DEFAULT_MAX_PACKET_SIZE : 0);
 
 	for (auto i = 0; i < frameCount; i++)
 	{
 		const unsigned char fin = i != maxFrame ? 0 : WS_FIN;
 		const unsigned char opcode = i != 0 ? OPCODE_CONTINUE : opc;
 
-		const size_t bufferLength = i != maxFrame ? DEFAULT_WEBSERVER_MAX_PACKET_SIZE : lastFrameBufferLength;
+		const size_t bufferLength = i != maxFrame ? DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength;
 		CPOINTER<char> buf;
 		size_t totalLength;
 
@@ -1560,7 +1236,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 
 		if (!buf.valid())
 		{
-			LOG_DEBUG(CSTRING("[%s] - Buffer is nullptr!"), GetServerName());
+			LOG_DEBUG(CSTRING("[%s] - Buffer is nullptr!"), SERVERNAME(this));
 			return;
 		}
 
@@ -1587,26 +1263,26 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 					{
 					case SSL_ERROR_ZERO_RETURN:
 						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer->IPAddr().get());
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case SSL_ERROR_WANT_CONNECT:
 					case SSL_ERROR_WANT_ACCEPT:
 						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer->IPAddr().get());
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case SSL_ERROR_WANT_X509_LOOKUP:
 						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer->IPAddr().get());
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case SSL_ERROR_SYSCALL:
 						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer->IPAddr().get());
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
@@ -1619,7 +1295,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 
 					default:
 						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer->IPAddr().get());
+						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 					}
@@ -1639,73 +1315,73 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 					{
 					case WSANOTINITIALISED:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAENETDOWN:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEACCES:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEINTR:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEINPROGRESS:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEFAULT:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAENETRESET:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAENOBUFS:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): No buffer space is available"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAENOTCONN:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAENOTSOCK:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEOPNOTSUPP:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAESHUTDOWN:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
@@ -1714,43 +1390,43 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 
 					case WSAEMSGSIZE:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEHOSTUNREACH:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The remote host cannot be reached from this host at this time"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAEINVAL:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAECONNABORTED:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAECONNRESET:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					case WSAETIMEDOUT:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped, because of a network failure or because the system on the other end went down without notice"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 
 					default:
 						buf.free();
-						LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), GetServerName(), peer->IPAddr().get());
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
 						return;
 					}
@@ -1768,7 +1444,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 DWORD Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return GetFrequenz();
+		return FREQUENZ(this);
 	);
 
 	if (peer->ssl)
@@ -1779,91 +1455,91 @@ DWORD Server::DoReceive(NET_PEER peer)
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENETDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEFAULT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENOTCONN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINTR:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINPROGRESS:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENETRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENOTSOCK:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEOPNOTSUPP:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAESHUTDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEMSGSIZE:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINVAL:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAECONNABORTED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAETIMEDOUT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAECONNRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEWOULDBLOCK:
 				break;
 
 			default:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 			}
 		}
 
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -1871,43 +1547,43 @@ DWORD Server::DoReceive(NET_PEER peer)
 			{
 			case SSL_ERROR_ZERO_RETURN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case SSL_ERROR_WANT_CONNECT:
 			case SSL_ERROR_WANT_ACCEPT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case SSL_ERROR_WANT_X509_LOOKUP:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case SSL_ERROR_SYSCALL:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case SSL_ERROR_SSL:
 				/* Some servers did not close the connection properly */
 				peer->network.reset();
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case SSL_ERROR_WANT_READ:
 				peer->network.reset();
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			default:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 			}
 		}
 		ERR_clear_error();
@@ -1932,118 +1608,118 @@ DWORD Server::DoReceive(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_WEBSERVER_MAX_PACKET_SIZE, 0);
+		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENETDOWN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEFAULT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENOTCONN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINTR:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINPROGRESS:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENETRESET:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAENOTSOCK:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEOPNOTSUPP:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAESHUTDOWN:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEWOULDBLOCK:
 				peer->network.reset();
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEMSGSIZE:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAEINVAL:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAECONNABORTED:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAETIMEDOUT:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			case WSAECONNRESET:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 
 			default:
 				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), GetServerName(), peer->IPAddr().get());
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return GetFrequenz();
+				return FREQUENZ(this);
 			}
 		}
 		if (data_size == 0)
 		{
 			peer->network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			ErasePeer(peer);
-			return GetFrequenz();
+			return FREQUENZ(this);
 		}
 		peer->network.getDataReceive()[data_size] = '\0';
 
@@ -2087,7 +1763,7 @@ void Server::DecodeFrame(NET_PEER peer)
 	const unsigned char OPC = peer->network.getData()[0] & WS_OPCODE;
 	if (OPC == OPCODE_CLOSE)
 	{
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), GetServerName(), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		ErasePeer(peer);
 		return;
 	}
@@ -2160,7 +1836,7 @@ void Server::DecodeFrame(NET_PEER peer)
 	}
 	else
 	{
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been closed due to unmasked message"), GetServerName(), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been closed due to unmasked message"), SERVERNAME(this), peer->IPAddr().get());
 		ErasePeer(peer);
 		return;
 	}
@@ -2298,7 +1974,7 @@ void Server::onSSLTimeout(NET_PEER peer)
 		return;
 	);
 	
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): timouted!"), GetServerName(), peer->IPAddr().get());
+	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 	ErasePeer(peer);
 }
 

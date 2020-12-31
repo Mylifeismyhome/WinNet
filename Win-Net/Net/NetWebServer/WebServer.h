@@ -20,6 +20,10 @@
 
 #define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
 
+#define SERVERNAME(instance) instance->Isset(OPT_ServerName) ? instance->GetOption<char*>(OPT_ServerName) : DEFAULT_OPTION_SERVERNAME
+#define SERVERPORT(instance) instance->Isset(OPT_ServerPort) ? instance->GetOption<u_short>(OPT_ServerPort) : DEFAULT_OPTION_SERVERPORT
+#define FREQUENZ(instance) instance->Isset(OPT_Frequenz) ? instance->GetOption<DWORD>(OPT_Frequenz) : DEFAULT_OPTION_FREQUENZ
+
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
@@ -41,22 +45,21 @@ CONSTEXPR auto WS_CONTROLFRAME = 8;
 CONSTEXPR auto WS_PAYLOAD_LENGTH_16 = 126;
 CONSTEXPR auto WS_PAYLOAD_LENGTH_63 = 127;
 
-/* DEFAULT SETTINGS AS MACRO */
-CONSTEXPR auto DEFAULT_WEBSERVER_SERVERNAME = "UNKNOWN";
-CONSTEXPR auto DEFAULT_WEBSERVER_SERVERPORT = NULL;
-CONSTEXPR auto DEFAULT_WEBSERVER_FREQUENZ = 30;
-CONSTEXPR auto DEFAULT_WEBSERVER_SPAM_PROTECTION_TIMER = 0.5f;
-CONSTEXPR auto DEFAULT_WEBSERVER_MAX_PEERS = 256;
-CONSTEXPR auto DEFAULT_WEBSERVER_SSL = false;
-CONSTEXPR auto DEFAULT_WEBSERVER_CertFileName = "cert.pem";
-CONSTEXPR auto DEFAULT_WEBSERVER_KeyFileName = "key.pem";
-CONSTEXPR auto DEFAULT_WEBSERVER_CaFileName = "ca.pem";
-CONSTEXPR auto DEFAULT_WEBSERVER_CustomHandshake = false;
-CONSTEXPR auto DEFAULT_WEBSERVER_COMPRESS_PACKAGES = true;
-CONSTEXPR auto DEFAULT_WEBSERVER_MAX_PACKET_SIZE = 4096;
-CONSTEXPR auto DEFAULT_WEBSERVER_TCP_READ_TIMEOUT = 10;
-CONSTEXPR auto DEFAULT_WEBSERVER_WITHOUT_HANDSHAKE = false;
-CONSTEXPR auto DEFAULT_WEBSERVER_CALC_LATENCY_INTERVAL = 1000;
+CONSTEXPR size_t DEFAULT_MAX_PACKET_SIZE = 512;
+
+CONSTEXPR auto DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
+CONSTEXPR auto DEFAULT_OPTION_SERVERPORT = 50000;
+CONSTEXPR auto DEFAULT_OPTION_FREQUENZ = 66;
+CONSTEXPR auto DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
+CONSTEXPR auto DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
+CONSTEXPR auto DEFAULT_OPTION_SSL = false;
+CONSTEXPR int DEFAULT_OPTION_SSL_METHOD = Net::ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS;
+CONSTEXPR auto DEFAULT_OPTION_CertFileName = "cert.pem";
+CONSTEXPR auto DEFAULT_OPTION_KeyFileName = "key.pem";
+CONSTEXPR auto DEFAULT_OPTION_CaFileName = "ca.pem";
+CONSTEXPR auto DEFAULT_OPTION_CustomHandshake = false;
+CONSTEXPR auto DEFAULT_OPTION_CustomOrigin = "localhost";
+CONSTEXPR auto DEFAULT_OPTION_WITHOUT_HANDSHAKE = false;
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
@@ -91,7 +94,7 @@ NET_CLASS_PUBLIC
 #pragma region PEERS TABLE
 #pragma region Network Structure
 NET_STRUCT_BEGIN(network_t)
-byte _dataReceive[DEFAULT_WEBSERVER_MAX_PACKET_SIZE];
+byte _dataReceive[DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> _data;
 size_t _data_size;
 CPOINTER<byte> _dataFragment;
@@ -190,66 +193,84 @@ void IncreasePeersCounter();
 void DecreasePeersCounter();
 NET_PEER CreatePeer(sockaddr_in, SOCKET);
 
-char sServerName[128];
-u_short sServerPort;
-DWORD sfrequenz;
-float sTimeSpamProtection;
-unsigned int sMaxPeers;
-bool sSSL;
-char sCertFileName[MAX_PATH];
-char sKeyFileName[MAX_PATH];
-char sCaFileName[MAX_PATH];
-bool hUseCustom;
-CPOINTER<char> hOrigin;
-bool sCompressPackage;
-long sTCPReadTimeout;
-bool bWithoutHandshake;
-long sCalcLatencyInterval;
+DWORD optionBitFlag;
+std::vector<Option_t<char*>> option;
+
+DWORD socketOptionBitFlag;
 std::vector<SocketOption_t<char*>> socketoption;
 
 NET_CLASS_PUBLIC
-void SetAllToDefault();
-void SetServerName(const char*);
-void SetServerPort(u_short);
-void SetFrequenz(DWORD);
-void SetTimeSpamProtection(float);
-void SetMaxPeers(unsigned int);
-void SetSSL(bool);
-void SetCertFileName(const char*);
-void SetKeyFileName(const char*);
-void SetCaFileName(const char*);
-void SetCustomHandshakeMethode(bool);
-void SetHandshakeOriginCompare(const char*);
-void SetCompressPackage(bool);
-void SetTCPReadTimeout(long);
-void SetWithoutHandshake(bool);
-void SetCalcLatencyInterval(long);
+template <class T>
+void SetOption(const Option_t<T> o)
+{
+	// check option is been set using bitflag
+	if (optionBitFlag & o.opt)
+	{
+		// reset the option value
+		for (auto& entry : option)
+			if (entry.opt == o.opt)
+			{
+				entry.type = reinterpret_cast<char*>(o.type);
+				entry.len = o.len;
+				return;
+			}
+	}
+
+	// save the option value
+	Option_t<char*> opt;
+	opt.opt = o.opt;
+	opt.type = reinterpret_cast<char*>(o.type);
+	opt.len = o.len;
+	option.emplace_back(opt);
+
+	// set the bit flag
+	optionBitFlag |= opt.opt;
+}
+
+bool Isset(DWORD) const;
+
+template <class T>
+T GetOption(const DWORD opt)
+{
+	if (!Isset(opt)) return NULL;
+	for (const auto& entry : option)
+		if (entry.opt == opt)
+		{
+			return reinterpret_cast<T>(entry.type);
+			break;
+		}
+
+	return NULL;
+}
 
 template <class T>
 void SetSocketOption(const SocketOption_t<T> opt)
 {
+	// check option is been set using bitflag
+	if (socketOptionBitFlag & opt.opt)
+	{
+		// reset the option value
+		for (auto& entry : socketoption)
+			if (entry.opt == opt.opt)
+			{
+				entry.type = reinterpret_cast<char*>(opt.type);
+				entry.len = opt.len;
+				return;
+			}
+	}
+
+	// save the option value
 	SocketOption_t<char*> option;
 	option.opt = opt.opt;
 	option.type = reinterpret_cast<char*>(opt.type);
 	option.len = opt.len;
 	socketoption.emplace_back(option);
+
+	// set the bit flag
+	socketOptionBitFlag |= option.opt;
 }
 
-const char* GetServerName() const;
-u_short GetServerPort() const;
-DWORD GetFrequenz() const;
-float GetTimeSpamProtection() const;
-unsigned int GetMaxPeers() const;
-bool GetSSL() const;
-const char* GetCertFileName() const;
-const char* GetKeyFileName() const;
-const char* GetCaFileName() const;
-bool GetCustomHandshakeMethode() const;
-CPOINTER<char> GetHandshakeOriginCompare() const;
-bool GetCompressPackage() const;
-long GetTCPReadTimeout() const;
-bool GetWithoutHandshake() const;
-long GetCalcLatencyInterval() const;
+bool Isset_SocketOpt(DWORD) const;
 
 NET_CLASS_PRIVATE
 SOCKET ListenSocket;
@@ -271,7 +292,7 @@ bool ErasePeer(NET_PEER);
 
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
-bool Start(const char*, u_short, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS);
+bool Run();
 bool Close();
 
 bool DoExit;
