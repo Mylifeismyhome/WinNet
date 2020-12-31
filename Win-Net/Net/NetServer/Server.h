@@ -20,9 +20,9 @@
 
 #define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
 
-#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : CSTRING(DEFAULT_OPTION_SERVERNAME)
-#define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT
-#define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : DEFAULT_OPTION_FREQUENZ
+#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
+#define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT
+#define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
@@ -40,18 +40,6 @@
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
-
-CONSTEXPR size_t DEFAULT_MAX_PACKET_SIZE = 512;
-
-CONSTEXPR auto DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
-CONSTEXPR u_short DEFAULT_OPTION_SERVERPORT = 50000;
-CONSTEXPR size_t DEFAULT_OPTION_RSA_KEY_SIZE = 1024;
-CONSTEXPR size_t DEFAULT_OPTION_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
-CONSTEXPR bool DEFAULT_OPTION_CRYPT_PACKAGES = false;
-CONSTEXPR bool DEFAULT_OPTION_COMPRESS_PACKAGES = false;
-CONSTEXPR DWORD DEFAULT_OPTION_FREQUENZ = 66;
-CONSTEXPR long DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
-CONSTEXPR int DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
@@ -72,7 +60,7 @@ NET_CLASS_PUBLIC
 
 #pragma region Network Structure
 NET_STRUCT_BEGIN(network_t)
-byte _dataReceive[DEFAULT_MAX_PACKET_SIZE];
+byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> _data;
 size_t _data_size;
 size_t _data_full_size;

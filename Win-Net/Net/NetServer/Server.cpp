@@ -72,7 +72,7 @@ byte* Server::network_t::getData() const
 
 void Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
+	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 }
 
 void Server::network_t::clear()
@@ -190,7 +190,7 @@ NET_TIMER(DoCalcLatency)
 
 	peer->bLatency = true;
 	Thread::Create(LatencyTick, peer);
-	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
+	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
 }
 
@@ -204,14 +204,14 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	/* Set Read Timeout */
 	timeval tv = {};
-	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : DEFAULT_OPTION_TCP_READ_TIMEOUT;
+	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	const auto _DoCalcLatency = new DoCalcLatency_t();
 	_DoCalcLatency->server = this;
 	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, _DoCalcLatency, true);
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
 
 	IncreasePeersCounter();
 
@@ -481,7 +481,7 @@ bool Server::Run()
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT);
+	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 	res = getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0) {
@@ -1086,13 +1086,13 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES
+	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
 		&& peer->cryption.getHandshakeStatus())
 	{
 		NET_AES aes;
 
 		/* Generate new AES Keypair */
-		size_t aesKeySize = Isset(NET_OPT_CIPHER_AES_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : DEFAULT_OPTION_AES_KEY_SIZE;
+		size_t aesKeySize = Isset(NET_OPT_CIPHER_AES_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE;
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
@@ -1161,7 +1161,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1172,7 +1172,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1258,7 +1258,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	{
 		CPOINTER<BYTE> dataBuffer;
 		size_t dataBufferSize = NULL;
-		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
 			dataBufferSize = buffer.GetSize();
 			dataBuffer = ALLOC<BYTE>(dataBufferSize + 1);
@@ -1276,7 +1276,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		// Append Raw data package size
 		if (PKG.HasRawData())
 		{
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 			{
 				const auto rawData = PKG.GetRawData();
 				for (auto data : rawData)
@@ -1287,7 +1287,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		std::string dataSizeStr;
-		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
 			dataSizeStr = std::to_string(dataBufferSize);
 			combinedSize += dataSizeStr.length();
@@ -1345,7 +1345,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
-		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 			SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
 		else
 			SingleSend(peer, buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
@@ -1361,7 +1361,7 @@ short Server::Handshake(NET_PEER peer)
 		return ServerHandshake::peer_not_valid;
 	);
 
-	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
+	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())
@@ -1599,10 +1599,10 @@ NET_THREAD(Receive)
 		peer->setAsync(false);
 	} while (!server->DoExit);
 
-	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES)
+	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
 		/* Create new RSA Key Pair */
-		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : DEFAULT_OPTION_RSA_KEY_SIZE);
+		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_CIPHER_RSA_SIZE);
 
 		const auto PublicKey = peer->cryption.RSA->PublicKey();
 
@@ -1704,7 +1704,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	SOCKET_NOT_VALID(peer->pSocket)
 		return FREQUENZ(this);
 
-	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
+	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())
@@ -1942,7 +1942,7 @@ void Server::ExecutePackage(NET_PEER peer)
 	std::vector<Package_RawData_t> rawData;
 
 	/* Crypt */
-	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES) && peer->cryption.getHandshakeStatus())
+	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
 	{
 		auto offset = peer->network.getDataOffset() + 1;
 
@@ -2113,7 +2113,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
 
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 						DecompressData(entry.value(), entry.size());
 
 					/* decrypt aes */
@@ -2162,7 +2162,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 				offset += packageSize;
 
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					DecompressData(data.reference().get(), packageSize);
 
 				/* decrypt aes */
@@ -2245,7 +2245,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
 
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 						DecompressData(entry.value(), entry.size());
 
 					rawData.emplace_back(entry);
@@ -2287,7 +2287,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 				offset += packageSize;
 
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					DecompressData(data.reference().get(), packageSize);
 			}
 
@@ -2351,7 +2351,7 @@ void Server::ExecutePackage(NET_PEER peer)
 void Server::CompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 	{
 #ifdef DEBUG
 		const auto PrevSize = size;
@@ -2366,7 +2366,7 @@ void Server::CompressData(BYTE*& data, size_t& size)
 void Server::DecompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : DEFAULT_OPTION_COMPRESS_PACKAGES)
+	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 	{
 		auto copy = ALLOC<BYTE>(size + 1);
 		memcpy(copy, data, size);
@@ -2432,7 +2432,7 @@ if (peer->estabilished)
 	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has already been estabilished, something went wrong!"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
-if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : DEFAULT_OPTION_CRYPT_PACKAGES
+if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
 	&& !peer->cryption.getHandshakeStatus())
 {
 	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has not done the RSA Handshake yet, something went wrong!"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());

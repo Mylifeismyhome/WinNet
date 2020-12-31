@@ -98,7 +98,7 @@ byte* Server::network_t::getDataFragmented() const
 
 void Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE * sizeof(byte));
+	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE * sizeof(byte));
 }
 
 void Server::network_t::clear()
@@ -185,7 +185,7 @@ NET_TIMER(DoCalcLatency)
 
 	peer->bLatency = true;
 	Thread::Create(LatencyTick, peer);
-	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL);
+	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
 }
 
@@ -199,11 +199,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	/* Set Read Timeout */
 	timeval tv = {};
-	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : DEFAULT_OPTION_TCP_READ_TIMEOUT;
+	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : DEFAULT_OPTION_SSL)
+	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : NET_OPT_DEFAULT_SSL)
 	{
 		peer->ssl = SSL_new(ctx);
 		SSL_set_accept_state(peer->ssl); /* sets ssl to work in server mode. */
@@ -255,7 +255,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	const auto _DoCalcLatency = new DoCalcLatency_t();
 	_DoCalcLatency->server = this;
 	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : DEFAULT_OPTION_CALC_LATENCY_INTERVAL, _DoCalcLatency, true);
+	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
 
 	IncreasePeersCounter();
 
@@ -455,14 +455,14 @@ bool Server::Run()
 		return false;
 
 	/* SSL */
-	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : DEFAULT_OPTION_SSL)
+	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : NET_OPT_DEFAULT_SSL)
 	{
 		/* Init SSL */
 		SSL_load_error_strings();
 		OpenSSL_add_ssl_algorithms();
 
 		// create CTX
-		ctx = SSL_CTX_new(Net::ssl::NET_CREATE_SSL_OBJECT(Isset(NET_OPT_SSL_METHOD) ? GetOption<int>(NET_OPT_SSL_METHOD) : DEFAULT_OPTION_SSL_METHOD));
+		ctx = SSL_CTX_new(Net::ssl::NET_CREATE_SSL_OBJECT(Isset(NET_OPT_SSL_METHOD) ? GetOption<int>(NET_OPT_SSL_METHOD) : NET_OPT_DEFAULT_SSL_METHOD));
 		if (!ctx)
 		{
 			LOG_ERROR(CSTRING("[%s] - ctx is NULL"), SERVERNAME(this));
@@ -470,22 +470,22 @@ bool Server::Run()
 		}
 
 		/* Set the key and cert */
-		if (SSL_CTX_use_certificate_file(ctx, Isset(NET_OPT_SSL_CERT) ? GetOption<char*>(NET_OPT_SSL_CERT) : CSTRING(DEFAULT_OPTION_CertFileName), SSL_FILETYPE_PEM) <= 0)
+		if (SSL_CTX_use_certificate_file(ctx, Isset(NET_OPT_SSL_CERT) ? GetOption<char*>(NET_OPT_SSL_CERT) : NET_OPT_DEFAULT_SSL_CERT, SSL_FILETYPE_PEM) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_CERT) ? GetOption<char*>(NET_OPT_SSL_CERT) : CSTRING(DEFAULT_OPTION_CertFileName));
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_CERT) ? GetOption<char*>(NET_OPT_SSL_CERT) : NET_OPT_DEFAULT_SSL_CERT);
 			return false;
 		}
 
-		if (SSL_CTX_use_PrivateKey_file(ctx, Isset(NET_OPT_SSL_KEY) ? GetOption<char*>(NET_OPT_SSL_KEY) : CSTRING(DEFAULT_OPTION_KeyFileName), SSL_FILETYPE_PEM) <= 0)
+		if (SSL_CTX_use_PrivateKey_file(ctx, Isset(NET_OPT_SSL_KEY) ? GetOption<char*>(NET_OPT_SSL_KEY) : NET_OPT_DEFAULT_SSL_KEY, SSL_FILETYPE_PEM) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_KEY) ? GetOption<char*>(NET_OPT_SSL_KEY) : CSTRING(DEFAULT_OPTION_KeyFileName));
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_KEY) ? GetOption<char*>(NET_OPT_SSL_KEY) : NET_OPT_DEFAULT_SSL_KEY);
 			return false;
 		}
 
 		/* load verfiy location (CA)*/
-		if (SSL_CTX_load_verify_locations(ctx, Isset(NET_OPT_SSL_CA) ? GetOption<char*>(NET_OPT_SSL_CA) : CSTRING(DEFAULT_OPTION_CaFileName), nullptr) <= 0)
+		if (SSL_CTX_load_verify_locations(ctx, Isset(NET_OPT_SSL_CA) ? GetOption<char*>(NET_OPT_SSL_CA) : NET_OPT_DEFAULT_SSL_CA, nullptr) <= 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_CA) ? GetOption<char*>(NET_OPT_SSL_CA) : CSTRING(DEFAULT_OPTION_CaFileName));
+			LOG_ERROR(CSTRING("[%s] - Failed to load %s"), SERVERNAME(this), Isset(NET_OPT_SSL_CA) ? GetOption<char*>(NET_OPT_SSL_CA) : NET_OPT_DEFAULT_SSL_CA);
 			return false;
 		}
 
@@ -503,7 +503,7 @@ bool Server::Run()
 					LOG(CSTRING("CALLBACK CTX SET INFO!"));
 			});*/
 
-		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), SERVERNAME(this), Net::ssl::GET_SSL_METHOD_NAME(Isset(NET_OPT_SSL_METHOD) ? GetOption<int>(NET_OPT_SSL_METHOD) : DEFAULT_OPTION_SSL_METHOD).data());
+		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), SERVERNAME(this), Net::ssl::GET_SSL_METHOD_NAME(Isset(NET_OPT_SSL_METHOD) ? GetOption<int>(NET_OPT_SSL_METHOD) : NET_OPT_DEFAULT_SSL_METHOD).data());
 	}
 
 	// create WSADATA object
@@ -532,7 +532,7 @@ bool Server::Run()
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT);
+	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 	res = getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0)
@@ -594,7 +594,7 @@ bool Server::Run()
 	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
-	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT);
+	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 	return true;
 }
 
@@ -651,7 +651,7 @@ short Server::Handshake(NET_PEER peer)
 			}
 		}
 
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -720,7 +720,7 @@ short Server::Handshake(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -905,21 +905,21 @@ short Server::Handshake(NET_PEER peer)
 		NET_BASE64::encode(enc_Sec_Key, outlen);
 
 		char host[15];
-		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
-			sprintf_s(host, CSTRING("%s:%i"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : CSTRING(DEFAULT_OPTION_CustomOrigin), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT);
+		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
+			sprintf_s(host, CSTRING("%s:%i"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN, Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 		else
-			sprintf_s(host, CSTRING("127.0.0.1:%i"), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT);
+			sprintf_s(host, CSTRING("127.0.0.1:%i"), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 
 		CPOINTER<char> origin;
-		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
+		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
 		{
-			const auto originSize = strlen(Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : CSTRING(DEFAULT_OPTION_CustomOrigin));
+			const auto originSize = strlen(Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN);
 			origin = ALLOC<char>(originSize + 1);
-			sprintf(origin.get(), CSTRING("%s%s"), (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : DEFAULT_OPTION_SSL) ? CSTRING("https://") : CSTRING("http://"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : CSTRING(DEFAULT_OPTION_CustomOrigin));
+			sprintf(origin.get(), CSTRING("%s%s"), (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : NET_OPT_DEFAULT_SSL) ? CSTRING("https://") : CSTRING("http://"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN);
 		}
 
 		// Create Response
-		CPOINTER<char> buffer(ALLOC<char>(DEFAULT_MAX_PACKET_SIZE + 1));
+		CPOINTER<char> buffer(ALLOC<char>(NET_OPT_DEFAULT_MAX_PACKET_SIZE + 1));
 		sprintf(buffer.get(), CSTRING("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n"), reinterpret_cast<char*>(enc_Sec_Key));
 
 		/* SSL */
@@ -989,7 +989,7 @@ short Server::Handshake(NET_PEER peer)
 		const auto stringOrigin = CSTRING("Origin");
 
 		/* Handshake Failed - Display Error Message */
-		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : DEFAULT_OPTION_CustomHandshake)
+		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
 		{
 			if (!(strcmp(entries[stringUpdate].data(), CSTRING("websocket")) == 0 && strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0 && strcmp(entries[stringHost].data(), host) == 0 && strcmp(entries[stringOrigin].data(), origin.get()) == 0))
 			{
@@ -1035,7 +1035,7 @@ NET_THREAD(Receive)
 	const auto server = param->server;
 
 	/* Handshake */
-	if (!(server->Isset(NET_OPT_WS_NO_HANDSHAKE) ? server->GetOption<bool>(NET_OPT_WS_NO_HANDSHAKE) : DEFAULT_OPTION_WITHOUT_HANDSHAKE))
+	if (!(server->Isset(NET_OPT_WS_NO_HANDSHAKE) ? server->GetOption<bool>(NET_OPT_WS_NO_HANDSHAKE) : NET_OPT_DEFAULT_WS_NO_HANDSHAKE))
 	{
 		do
 		{
@@ -1183,19 +1183,19 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 	);
 
 	/* ENCODE FRAME */
-	auto frameCount = static_cast<int>(ceil((float)frame_length / DEFAULT_MAX_PACKET_SIZE));
+	auto frameCount = static_cast<int>(ceil((float)frame_length / NET_OPT_DEFAULT_MAX_PACKET_SIZE));
 	if (frameCount == 0)
 		frameCount = 1;
 
 	const auto maxFrame = frameCount - 1;
-	const int lastFrameBufferLength = (frame_length % DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? DEFAULT_MAX_PACKET_SIZE : 0);
+	const int lastFrameBufferLength = (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : 0);
 
 	for (auto i = 0; i < frameCount; i++)
 	{
 		const unsigned char fin = i != maxFrame ? 0 : NET_WS_FIN;
 		const unsigned char opcode = i != 0 ? NET_OPCODE_CONTINUE : opc;
 
-		const size_t bufferLength = i != maxFrame ? DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength;
+		const size_t bufferLength = i != maxFrame ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength;
 		CPOINTER<char> buf;
 		size_t totalLength;
 
@@ -1539,7 +1539,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 			}
 		}
 
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -1608,7 +1608,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -1924,7 +1924,7 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 	PEER_NOT_VALID(peer,
 		return false;
 	);
-	
+
 	if (!data)
 		return false;
 
@@ -1973,7 +1973,7 @@ void Server::onSSLTimeout(NET_PEER peer)
 	PEER_NOT_VALID(peer,
 		return;
 	);
-	
+
 	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 	ErasePeer(peer);
 }

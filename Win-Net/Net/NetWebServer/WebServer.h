@@ -20,9 +20,9 @@
 
 #define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
 
-#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : CSTRING(DEFAULT_OPTION_SERVERNAME)
-#define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : DEFAULT_OPTION_SERVERPORT
-#define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : DEFAULT_OPTION_FREQUENZ
+#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
+#define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT
+#define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
@@ -44,22 +44,6 @@ CONSTEXPR auto NET_WS_PAYLOADLENGTH = 0x7F;
 CONSTEXPR auto NET_WS_CONTROLFRAME = 8;
 CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_16 = 126;
 CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
-
-CONSTEXPR size_t DEFAULT_MAX_PACKET_SIZE = 512;
-
-CONSTEXPR char* DEFAULT_OPTION_SERVERNAME = "UNKNOWN";
-CONSTEXPR u_short DEFAULT_OPTION_SERVERPORT = 50000;
-CONSTEXPR DWORD DEFAULT_OPTION_FREQUENZ = 66;
-CONSTEXPR int DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
-CONSTEXPR long DEFAULT_OPTION_TCP_READ_TIMEOUT = 10;
-CONSTEXPR bool DEFAULT_OPTION_SSL = false;
-CONSTEXPR int DEFAULT_OPTION_SSL_METHOD = Net::ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS;
-CONSTEXPR char* DEFAULT_OPTION_CertFileName = "cert.pem";
-CONSTEXPR char* DEFAULT_OPTION_KeyFileName = "key.pem";
-CONSTEXPR char* DEFAULT_OPTION_CaFileName = "servercert.pem";
-CONSTEXPR bool DEFAULT_OPTION_CustomHandshake = false;
-CONSTEXPR char* DEFAULT_OPTION_CustomOrigin = "localhost";
-CONSTEXPR bool DEFAULT_OPTION_WITHOUT_HANDSHAKE = false;
 
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
@@ -94,7 +78,7 @@ NET_CLASS_PUBLIC
 #pragma region PEERS TABLE
 #pragma region Network Structure
 NET_STRUCT_BEGIN(network_t)
-byte _dataReceive[DEFAULT_MAX_PACKET_SIZE];
+byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> _data;
 size_t _data_size;
 CPOINTER<byte> _dataFragment;

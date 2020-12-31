@@ -13,7 +13,7 @@
 
 #define NET_SEND DoSend
 
-#define FREQUENZ Isset(NET_OPT_FREQUENZ) ? GetOption<DWORD>(NET_OPT_FREQUENZ) : DEFAULT_OPTION_FREQUENZ
+#define FREQUENZ Isset(NET_OPT_FREQUENZ) ? GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
@@ -30,22 +30,12 @@
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
 
-CONSTEXPR size_t DEFAULT_MAX_PACKET_SIZE = 512;
-
-CONSTEXPR size_t DEFAULT_OPTION_RSA_KEY_SIZE = 1024;
-CONSTEXPR size_t DEFAULT_OPTION_AES_KEY_SIZE = CryptoPP::AES::MAX_KEYLENGTH;
-CONSTEXPR bool DEFAULT_OPTION_CRYPT_PACKAGES = false;
-CONSTEXPR bool DEFAULT_OPTION_COMPRESS_PACKAGES = false;
-CONSTEXPR DWORD DEFAULT_OPTION_FREQUENZ = 66;
-CONSTEXPR bool DEFAULT_OPTION_BLOCKING_MODE = false;
-CONSTEXPR long DEFAULT_OPTION_CALC_LATENCY_INTERVAL = 1000;
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 NET_DSA_BEGIN
 NET_ABSTRAC_CLASS_BEGIN(Client, Package)
 NET_STRUCT_BEGIN(Network)
-byte dataReceive[DEFAULT_MAX_PACKET_SIZE];
+byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> data;
 size_t data_size;
 size_t data_full_size;
@@ -61,7 +51,7 @@ bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
-memset(dataReceive, NULL, DEFAULT_MAX_PACKET_SIZE);
+memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 data = nullptr;
 data_size = 0;
 data_full_size = 0;
