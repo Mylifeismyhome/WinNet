@@ -13,6 +13,10 @@ int main()
 	server.SetOption<char*>({ OPT_ServerName, (char*)SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ OPT_ServerPort, SANDBOX_PORT });
 	server.SetOption<bool>({ OPT_CryptPackage, true });
+
+	if (server.Isset(OPT_RSA_KeySize))
+		LOG("ISSET");
+
 	if (!server.Run())
 		MessageBoxA(nullptr, CSTRING("Failure on starting Server"), CSTRING("Startup failure"), MB_OK | MB_ICONERROR);
 	else

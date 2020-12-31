@@ -40,6 +40,9 @@ int main()
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ OPT_CryptPackage, true });
 
+	if (client.Isset(OPT_RSA_KeySize))
+		LOG("ISSET");
+
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 		MessageBoxA(nullptr, CSTRING("Connection timeout"), CSTRING("Network failure"), MB_OK | MB_ICONERROR);
 	else
