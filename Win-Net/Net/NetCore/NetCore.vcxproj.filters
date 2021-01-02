@@ -177,6 +177,9 @@
     <ClCompile Include="..\Net\Protocol\ICMP.cpp">
       <Filter>Protocol</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Coding\BASE32.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -268,6 +271,9 @@
     </ClInclude>
     <ClInclude Include="..\Net\Protocol\ICMP.h">
       <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\BASE32.h">
+      <Filter>Coding</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

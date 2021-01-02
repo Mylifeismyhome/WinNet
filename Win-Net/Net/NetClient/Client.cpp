@@ -203,6 +203,8 @@ char* Client::ResolveHostname(const char* name)
 
 bool Client::Connect(const char* Address, const u_short Port)
 {
+	BuildNTPHash();
+
 	if (IsConnected())
 	{
 		LOG_ERROR(CSTRING("[NET] - Can't connect to server, reason: already connected!"));
@@ -1993,7 +1995,7 @@ void Client::CompressData(BYTE*& data, size_t& size)
 
 bool Client::BuildNTPHash()
 {
-/*	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
 		return false;
 
 	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
@@ -2003,6 +2005,14 @@ bool Client::BuildNTPHash()
 		return false;
 
 	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+	const auto offset = 1;
+	tm timeNew;
+	gmtime_s(&timeNew, &txTm);
+	timeNew.tm_hour = (round(timeNew.tm_min + offset)) > 60 ? (round(timeNew.tm_hour + 1)) : round(timeNew.tm_hour);
+	timeNew.tm_min = (round(timeNew.tm_min + offset)) > 60 ? 0 : (round(timeNew.tm_min + offset));
+	timeNew.tm_sec = 0;
+	txTm = mktime(&timeNew);
 	
 	Net::Coding::SHA1 sha1;
 	sha1.Reset();
@@ -2015,7 +2025,7 @@ bool Client::BuildNTPHash()
 	if (hash == NULL)
 		return false;
 
-	LOG("HASH IS: %u", hash);*/
+	LOG("HASH IS: %u", hash);
 	return true;
 }
 

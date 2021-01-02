@@ -24,10 +24,10 @@
 #include <Net/Cryption/RSA.h>
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
-//#include <Net/Coding/SHA1.h>
+#include <Net/Coding/SHA1.h>
 
 #include <Net/Protocol/ICMP.h>
-//#include <Net/Protocol/NTP.h>
+#include <Net/Protocol/NTP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
