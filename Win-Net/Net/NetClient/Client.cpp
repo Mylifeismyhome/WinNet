@@ -2048,23 +2048,31 @@ NET_CLIENT_DEFINE_PACKAGE(ClosePackage, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage)
 NET_CLIENT_END_DATA_PACKAGE
 
 NET_BEGIN_FNC_PKG(Client, RSAHandshake)
+if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
+{
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, cipher option is been disabled, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
+	return;
+}
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
 	return;
 }
 if (network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - Client has already done the RSA Handshake, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already performed a handshake, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
 	return;
 }
 
 NET_JOIN_PACKAGE(pkg, pkgRel);
 
 const auto publicKey = pkgRel.String(CSTRING("PublicKey"));
-
 if (!publicKey.valid())
 {
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
 	return;
 }
@@ -2081,15 +2089,16 @@ network.RSAHandshake = true;
 NET_END_FNC_PKG
 
 NET_BEGIN_FNC_PKG(Client, VersionPackage)
-// should not happen
-if (network.estabilished)
-{
-	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
-	return;
-}
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
+	return;
+}
+if (network.estabilished)
+{
+	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
 	return;
 }
 
@@ -2105,15 +2114,16 @@ NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
 NET_END_FNC_PKG
 
 NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
-// should not happen
-if (network.estabilished)
-{
-	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
-	return;
-}
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
+	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
+	return;
+}
+if (network.estabilished)
+{
+	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
+	Disconnect();
 	return;
 }
 
@@ -2128,7 +2138,7 @@ NET_BEGIN_FNC_PKG(Client, ClosePackage)
 // connection has been closed
 ConnectionClosed();
 
-LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by Server"));
+LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by the Server"));
 
 const auto code = PKG.Int(CSTRING("code"));
 if (!code.valid())
