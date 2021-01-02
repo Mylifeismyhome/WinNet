@@ -42,7 +42,7 @@ NET_TIMER(DoCalcLatency)
 
 	client->network.bLatency = true;
 	Thread::Create(LatencyTick, client);
-	Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_INTERVAL_LATENCY);
+	Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
 }
 
@@ -58,7 +58,7 @@ Client::Client()
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
 
-	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_INTERVAL_LATENCY, this);
+	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 }
 
 Client::~Client()
@@ -1044,8 +1044,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
-		&& network.RSAHandshake)
+	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
 	{
 		NET_AES aes;
 
@@ -1992,6 +1991,34 @@ void Client::CompressData(BYTE*& data, size_t& size)
 	}
 }
 
+bool Client::BuildNTPHash()
+{
+/*	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+		return false;
+
+	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+																	Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+	if (!time.valid())
+		return false;
+
+	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	
+	Net::Coding::SHA1 sha1;
+	sha1.Reset();
+	sha1.Input((char)txTm);
+
+	unsigned int hash = NULL;
+	sha1.Result(&hash);
+
+	// something failed
+	if (hash == NULL)
+		return false;
+
+	LOG("HASH IS: %u", hash);*/
+	return true;
+}
+
 void Client::DecompressData(BYTE*& data, size_t& size)
 {
 	/* Compression */
@@ -2060,8 +2087,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
-	&& !network.RSAHandshake)
+if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
 	return;
@@ -2085,8 +2111,7 @@ if (network.estabilished)
 	LOG_ERROR(CSTRING("[NET][%s] - Client has already been estabilished, something went wrong!"), FUNCTION_NAME);
 	return;
 }
-if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
-	&& !network.RSAHandshake)
+if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
 	LOG_ERROR(CSTRING("[NET][%s] - Client has not done the RSA Handshake yet, something went wrong!"), FUNCTION_NAME);
 	return;

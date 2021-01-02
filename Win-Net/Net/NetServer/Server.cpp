@@ -1086,8 +1086,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	size_t combinedSize = NULL;
 
 	/* Crypt */
-	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER
-		&& peer->cryption.getHandshakeStatus())
+	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
 	{
 		NET_AES aes;
 
@@ -1602,7 +1601,7 @@ NET_THREAD(Receive)
 	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
 		/* Create new RSA Key Pair */
-		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_CIPHER_RSA_SIZE);
+		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
 
 		const auto PublicKey = peer->cryption.RSA->PublicKey();
 

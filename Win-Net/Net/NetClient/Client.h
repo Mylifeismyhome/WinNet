@@ -24,8 +24,10 @@
 #include <Net/Cryption/RSA.h>
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
+//#include <Net/Coding/SHA1.h>
 
 #include <Net/Protocol/ICMP.h>
+//#include <Net/Protocol/NTP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
@@ -215,6 +217,7 @@ void DoSend(int, NET_PACKAGE);
 NET_CLASS_PRIVATE
 void ProcessPackages();
 void ExecutePackage();
+bool BuildNTPHash();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);
