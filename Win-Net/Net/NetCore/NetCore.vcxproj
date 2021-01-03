@@ -978,6 +978,7 @@
     <ClCompile Include="..\Net\assets\thread.cpp" />
     <ClCompile Include="..\Net\assets\timer.cpp" />
     <ClCompile Include="..\Net\assets\web\http.cpp" />
+    <ClCompile Include="..\Net\Coding\2FA.cpp" />
     <ClCompile Include="..\Net\Coding\BASE32.cpp" />
     <ClCompile Include="..\Net\Coding\BASE64.cpp" />
     <ClCompile Include="..\Net\Coding\Hex.cpp" />
@@ -1013,6 +1014,7 @@
     <ClInclude Include="..\Net\assets\thread.h" />
     <ClInclude Include="..\Net\assets\timer.h" />
     <ClInclude Include="..\Net\assets\web\http.h" />
+    <ClInclude Include="..\Net\Coding\2FA.h" />
     <ClInclude Include="..\Net\Coding\BASE32.h" />
     <ClInclude Include="..\Net\Coding\BASE64.h" />
     <ClInclude Include="..\Net\Coding\Hex.h" />

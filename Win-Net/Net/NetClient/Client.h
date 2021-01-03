@@ -52,6 +52,12 @@ typeLatency latency;
 bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
+/* 2fa secret */
+byte* fa2_secret;
+
+/* last token */
+uint32_t lastToken;
+
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 data = nullptr;
@@ -65,6 +71,8 @@ estabilished = false;
 latency = -1;
 bLatency = false;
 hCalcLatency = nullptr;
+fa2_secret = nullptr;
+lastToken = NULL;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();

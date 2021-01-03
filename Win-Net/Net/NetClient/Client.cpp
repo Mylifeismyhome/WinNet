@@ -490,6 +490,9 @@ void Client::Network::clear()
 	estabilished = false;
 	clearData();
 	deleteRSAKeys();
+
+	FREE(fa2_secret);
+	lastToken = NULL;
 }
 
 void Client::Network::AllocData(const size_t size)

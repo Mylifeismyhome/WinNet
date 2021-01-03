@@ -180,6 +180,9 @@
     <ClCompile Include="..\Net\Coding\BASE32.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Coding\2FA.cpp">
+      <Filter>Coding</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -273,6 +276,9 @@
       <Filter>Protocol</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Coding\BASE32.h">
+      <Filter>Coding</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Coding\2FA.h">
       <Filter>Coding</Filter>
     </ClInclude>
   </ItemGroup>
