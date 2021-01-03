@@ -1053,20 +1053,23 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (!IsConnected())
 		return;
 
-	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
-		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
-		if (!time.valid())
-			return;
+			if (!time.valid())
+				return;
 
-		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+
+		}
+		else
+			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
-	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1494,26 +1497,21 @@ DWORD Client::DoReceive()
 		return FREQUENZ;
 	}
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
-		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
-		if (!time.valid())
-			return FREQUENZ;
+			if (!time.valid())
+				return FREQUENZ;
 
-		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-
-		byte* ptr = network.dataReceive;
-		for (size_t it = 0; it < data_size; ++it)
-			ptr[it] = ptr[it] ^ network.lastToken;
-	}
-	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-	{
-		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		}
+		else
+			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 		byte* ptr = network.dataReceive;
 		for (size_t it = 0; it < data_size; ++it)
