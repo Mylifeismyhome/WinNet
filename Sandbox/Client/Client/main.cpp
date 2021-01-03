@@ -50,40 +50,6 @@ int main()
 
 	system("pause");*/
 
-	const auto host = Net::Protocol::NTP::ResolveHostname("time.google.com");
-
-	// create secret
-	byte* secret = nullptr;
-	size_t secretLen = NULL;
-	const auto res = Net::Protocol::NTP::Exec(host, 123);
-	if (res.valid())
-	{
-		time_t txTm = (time_t)(res.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		tm tm;
-		gmtime_s(&tm, &txTm);
-		tm.tm_hour = roundUp(tm.tm_hour, 10);
-		tm.tm_min = roundUp(tm.tm_min, 10);
-		tm.tm_sec = 0;
-		txTm = mktime(&tm);
-		secret = (byte*)ctime(&txTm);
-		secretLen = strlen((char*)secret);
-		Net::Coding::Base32::base32_encode(secret, secretLen);
-	}
-
-	do
-	{
-		// test NTP
-		const auto res = Net::Protocol::NTP::Exec(host, 123);
-		if (res.valid())
-		{
-			time_t txTm = (time_t)(res.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			const auto token = Net::Coding::FA2::generateToken(secret, secretLen, txTm, 5);
-			LOG("TOKEN IS: %u", token);
-		}
-
-		Sleep(1000);
-	} while (true);
-
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });

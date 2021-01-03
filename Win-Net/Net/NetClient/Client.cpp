@@ -203,8 +203,6 @@ char* Client::ResolveHostname(const char* name)
 
 bool Client::Connect(const char* Address, const u_short Port)
 {
-	BuildNTPHash();
-
 	if (IsConnected())
 	{
 		LOG_ERROR(CSTRING("[NET] - Can't connect to server, reason: already connected!"));
@@ -330,6 +328,10 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	// callback
 	OnConnected();
+
+	// if we use NTP execute the needed code
+	if (PerformNTPFA2Hash())
+		LOG_DEBUG(CSTRING("[NET] - Successfully created NTP-2FA hash"));
 
 	return true;
 }
@@ -492,6 +494,7 @@ void Client::Network::clear()
 	deleteRSAKeys();
 
 	FREE(fa2_secret);
+	fa2_secret_len = NULL;
 	lastToken = NULL;
 }
 
@@ -542,6 +545,13 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 
 	if (bPreviousSentFailed)
 		return;
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		char* ptr = (char*)data;
+		for (size_t it = 0; it < size; ++it)
+			ptr[it] = ptr[it] ^ network.lastToken;
+	}
 
 	do
 	{
@@ -687,6 +697,12 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 	{
 		FREE(data);
 		return;
+	}
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		for (size_t it = 0; it < size; ++it)
+			data[it] = data[it] ^ network.lastToken;
 	}
 
 	do
@@ -854,6 +870,12 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 	{
 		data.free();
 		return;
+	}
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		for (size_t it = 0; it < size; ++it)
+			data.get()[it] = data.get()[it] ^ network.lastToken;
 	}
 
 	do
@@ -1030,6 +1052,18 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 {
 	if (!IsConnected())
 		return;
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+		if (!time.valid())
+			return;
+
+		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, 120);
+	}
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1455,6 +1489,22 @@ DWORD Client::DoReceive()
 		LOG_PEER(CSTRING("[NET] - Connection has been gracefully closed"));
 		Disconnect();
 		return FREQUENZ;
+	}
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+		if (!time.valid())
+			return FREQUENZ;
+
+		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, 120);
+
+		byte* ptr = network.dataReceive;
+		for (size_t it = 0; it < data_size; ++it)
+			ptr[it] = ptr[it] ^ network.lastToken;
 	}
 
 	if (!network.data.valid())
@@ -1996,39 +2046,30 @@ void Client::CompressData(BYTE*& data, size_t& size)
 	}
 }
 
-bool Client::BuildNTPHash()
+bool Client::PerformNTPFA2Hash()
 {
 	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
 		return false;
 
 	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-																	Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+		Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
 		return false;
 
 	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	tm tm;
+	gmtime_s(&tm, &txTm);
+	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
+	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
+	tm.tm_sec = 0;
+	txTm = mktime(&tm);
 
-	const auto offset = 1;
-	tm timeNew;
-	gmtime_s(&timeNew, &txTm);
-	timeNew.tm_hour = (round(timeNew.tm_min + offset)) > 60 ? (round(timeNew.tm_hour + 1)) : round(timeNew.tm_hour);
-	timeNew.tm_min = (round(timeNew.tm_min + offset)) > 60 ? 0 : (round(timeNew.tm_min + offset));
-	timeNew.tm_sec = 0;
-	txTm = mktime(&timeNew);
-	
-	Net::Coding::SHA1 sha1;
-	sha1.Reset();
-	sha1.Input((char)txTm);
+	FREE(network.fa2_secret);
+	network.fa2_secret = (byte*)ctime(&txTm);
+	network.fa2_secret_len = strlen((char*)network.fa2_secret);
+	Net::Coding::Base32::base32_encode(network.fa2_secret, network.fa2_secret_len);
 
-	unsigned int hash = NULL;
-	sha1.Result(&hash);
-
-	// something failed
-	if (hash == NULL)
-		return false;
-
-	LOG("HASH IS: %u", hash);
 	return true;
 }
 

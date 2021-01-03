@@ -24,7 +24,8 @@
 #include <Net/Cryption/RSA.h>
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
-#include <Net/Coding/SHA1.h>
+#include <Net/Coding/BASE32.h>
+#include <Net/Coding/2FA.h>
 
 #include <Net/Protocol/ICMP.h>
 #include <Net/Protocol/NTP.h>
@@ -54,6 +55,7 @@ NET_HANDLE_TIMER hCalcLatency;
 
 /* 2fa secret */
 byte* fa2_secret;
+size_t fa2_secret_len;
 
 /* last token */
 uint32_t lastToken;
@@ -72,6 +74,7 @@ latency = -1;
 bLatency = false;
 hCalcLatency = nullptr;
 fa2_secret = nullptr;
+fa2_secret_len = NULL;
 lastToken = NULL;
 NET_STRUCT_END_CONTRUCTION
 
@@ -225,7 +228,7 @@ void DoSend(int, NET_PACKAGE);
 NET_CLASS_PRIVATE
 void ProcessPackages();
 void ExecutePackage();
-bool BuildNTPHash();
+bool PerformNTPFA2Hash();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);

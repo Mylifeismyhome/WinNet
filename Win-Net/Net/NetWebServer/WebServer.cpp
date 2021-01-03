@@ -262,7 +262,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	// callback
 	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), SERVERNAME(this), peer->IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 	return peer;
 }
 
@@ -297,7 +297,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		// callback
 		OnPeerDisconnect(peer);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), SERVERNAME(this), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
 

@@ -133,4 +133,18 @@ uintptr_t GetRandSeed()
 	return Net::Math::GetRandNumber<uintptr_t>(0, UINTPTR_MAX);
 }
 NET_NAMESPACE_END
+
+NET_NAMESPACE_BEGIN(Util)
+int roundUp(int numToRound, int multiple)
+{
+	if (multiple == 0)
+		return numToRound;
+
+	int remainder = numToRound % multiple;
+	if (remainder == 0)
+		return numToRound;
+
+	return numToRound + multiple - remainder;
+}
+NET_NAMESPACE_END
 NET_NAMESPACE_END

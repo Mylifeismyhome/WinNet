@@ -68,6 +68,10 @@ extern "C" NET_API void GetRandString(char*& out, size_t len);
 extern "C" NET_API void GetRandStringNew(BYTE * &out, size_t len);
 extern "C" NET_API uintptr_t GetRandSeed();
 NET_NAMESPACE_END
+
+NET_NAMESPACE_BEGIN(Util)
+int roundUp(int, int);
+NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END

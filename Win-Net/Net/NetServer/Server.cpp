@@ -218,7 +218,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	// callback
 	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected!"), SERVERNAME(this), peer->IPAddr().get());
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
+
+	if(PerformNTPFA2Hash(peer))
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created NTP-2FA hash"), SERVERNAME(this), peer->IPAddr().get());
+
 	return peer;
 }
 
@@ -253,7 +257,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		// callback
 		OnPeerDisconnect(peer);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected!"), SERVERNAME(this), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
 
@@ -339,6 +343,10 @@ void Server::NET_IPEER::clear()
 	network.reset();
 
 	cryption.deleteKeyPair();
+
+	FREE(fa2_secret);
+	fa2_secret_len = NULL;
+	lastToken = NULL;
 }
 
 void Server::NET_IPEER::setAsync(const bool status)
@@ -581,6 +589,13 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	if (bPreviousSentFailed)
 		return;
 
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		char* ptr = (char*)data;
+		for (size_t it = 0; it < size; ++it)
+			ptr[it] = ptr[it] ^ peer->lastToken;
+	}
+
 	do
 	{
 		const auto res = send(peer->pSocket, data, static_cast<int>(size), 0);
@@ -724,6 +739,12 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	{
 		FREE(data);
 		return;
+	}
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		for (size_t it = 0; it < size; ++it)
+			data[it] = data[it] ^ peer->lastToken;
 	}
 
 	do
@@ -890,6 +911,12 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 	{
 		data.free();
 		return;
+	}
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		for (size_t it = 0; it < size; ++it)
+			data.get()[it] = data.get()[it] ^ peer->lastToken;
 	}
 
 	do
@@ -1067,6 +1094,18 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+		if (!time.valid())
+			return;
+
+		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, 120);
+	}
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1818,6 +1857,22 @@ DWORD Server::DoReceive(NET_PEER peer)
 		return FREQUENZ(this);
 	}
 
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+		if (!time.valid())
+			return FREQUENZ(this);
+
+		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, 120);
+
+		byte* ptr = peer->network.getDataReceive();
+		for (size_t it = 0; it < data_size; ++it)
+			ptr[it] = ptr[it] ^ peer->lastToken;
+	}
+
 	if (!peer->network.dataValid())
 	{
 		peer->network.allocData(data_size);
@@ -2489,6 +2544,37 @@ NET_END_FNC_PKG
 size_t Server::getCountPeers() const
 {
 	return _CounterPeersTable;
+}
+
+bool Server::PerformNTPFA2Hash(NET_PEER peer)
+{
+	PEER_NOT_VALID(peer,
+		return false;
+	);
+
+	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+		return false;
+
+	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+	if (!time.valid())
+		return false;
+
+	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	tm tm;
+	gmtime_s(&tm, &txTm);
+	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
+	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
+	tm.tm_sec = 0;
+	txTm = mktime(&tm);
+
+	FREE(peer->fa2_secret);
+	peer->fa2_secret = (byte*)ctime(&txTm);
+	peer->fa2_secret_len = strlen((char*)peer->fa2_secret);
+	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
+
+	return true;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

@@ -33,10 +33,12 @@
 #include <Net/Cryption/RSA.h>
 #include <Net/Coding/MD5.h>
 #include <Net/Coding/BASE64.h>
-#include <Net/Coding/SHA1.h>
+#include <Net/Coding/BASE32.h>
+#include <Net/Coding/2FA.h>
 #include <Net/Compression/Compression.h>
 
 #include <Net/Protocol/ICMP.h>
+#include <Net/Protocol/NTP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
@@ -138,6 +140,13 @@ NET_HANDLE_TIMER hCalcLatency;
 bool bHasBeenErased;
 bool bQueueLock;
 
+/* 2fa secret */
+byte* fa2_secret;
+size_t fa2_secret_len;
+
+/* last token */
+uint32_t lastToken;
+
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
@@ -150,6 +159,9 @@ bLatency = false;
 hCalcLatency = nullptr;
 bHasBeenErased = false;
 bQueueLock = false;
+fa2_secret = nullptr;
+fa2_secret_len = NULL;
+lastToken = NULL;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
@@ -164,6 +176,7 @@ NET_STRUCT_END
 NET_CLASS_PRIVATE
 void CompressData(BYTE*&, size_t&);
 void DecompressData(BYTE*&, size_t&);
+bool PerformNTPFA2Hash(NET_PEER);
 
 NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);
