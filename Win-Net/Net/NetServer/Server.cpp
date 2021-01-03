@@ -220,8 +220,8 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 
-	if(PerformNTPFA2Hash(peer))
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created NTP-2FA hash"), SERVERNAME(this), peer->IPAddr().get());
+	if(Create2FASecret(peer))
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created 2FA-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
 	return peer;
 }
@@ -589,7 +589,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	if (bPreviousSentFailed)
 		return;
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
@@ -741,7 +741,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data[it] = data[it] ^ peer->lastToken;
@@ -913,7 +913,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data.get()[it] = data.get()[it] ^ peer->lastToken;
@@ -1094,6 +1094,21 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+		if (!time.valid())
+			return;
+
+		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+	}
+	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
@@ -1866,7 +1881,17 @@ DWORD Server::DoReceive(NET_PEER peer)
 			return FREQUENZ(this);
 
 		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, 120);
+
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+
+		byte* ptr = peer->network.getDataReceive();
+		for (size_t it = 0; it < data_size; ++it)
+			ptr[it] = ptr[it] ^ peer->lastToken;
+	}
+	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 		byte* ptr = peer->network.getDataReceive();
 		for (size_t it = 0; it < data_size; ++it)
@@ -2546,28 +2571,26 @@ size_t Server::getCountPeers() const
 	return _CounterPeersTable;
 }
 
-bool Server::PerformNTPFA2Hash(NET_PEER peer)
+bool Server::Create2FASecret(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return false;
 	);
 
-	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
 
-	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-		Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+	time_t txTm = time(nullptr);
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
-	if (!time.valid())
-		return false;
+		if (!time.valid())
+			return false;
 
-	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	tm tm;
-	gmtime_s(&tm, &txTm);
-	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
-	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
-	tm.tm_sec = 0;
-	txTm = mktime(&tm);
+		txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	}
 
 	FREE(peer->fa2_secret);
 	peer->fa2_secret = (byte*)ctime(&txTm);

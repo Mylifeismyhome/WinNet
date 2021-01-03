@@ -176,7 +176,7 @@ NET_STRUCT_END
 NET_CLASS_PRIVATE
 void CompressData(BYTE*&, size_t&);
 void DecompressData(BYTE*&, size_t&);
-bool PerformNTPFA2Hash(NET_PEER);
+bool Create2FASecret(NET_PEER);
 
 NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);

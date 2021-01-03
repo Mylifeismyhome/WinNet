@@ -228,7 +228,7 @@ void DoSend(int, NET_PACKAGE);
 NET_CLASS_PRIVATE
 void ProcessPackages();
 void ExecutePackage();
-bool PerformNTPFA2Hash();
+bool Create2FASecret();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);

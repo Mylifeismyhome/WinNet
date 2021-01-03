@@ -330,8 +330,8 @@ bool Client::Connect(const char* Address, const u_short Port)
 	OnConnected();
 
 	// if we use NTP execute the needed code
-	if (PerformNTPFA2Hash())
-		LOG_DEBUG(CSTRING("[NET] - Successfully created NTP-2FA hash"));
+	if (Create2FASecret())
+		LOG_DEBUG(CSTRING("[NET] - Successfully created 2FA-Hash"));
 
 	return true;
 }
@@ -546,7 +546,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 	if (bPreviousSentFailed)
 		return;
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
@@ -699,7 +699,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data[it] = data[it] ^ network.lastToken;
@@ -872,7 +872,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data.get()[it] = data.get()[it] ^ network.lastToken;
@@ -1053,7 +1053,8 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (!IsConnected())
 		return;
 
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
 	{
 		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
@@ -1062,8 +1063,10 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			return;
 
 		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, 120);
+		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
+	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1500,7 +1503,17 @@ DWORD Client::DoReceive()
 			return FREQUENZ;
 
 		time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, 120);
+
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+
+		byte* ptr = network.dataReceive;
+		for (size_t it = 0; it < data_size; ++it)
+			ptr[it] = ptr[it] ^ network.lastToken;
+	}
+	else if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 
 		byte* ptr = network.dataReceive;
 		for (size_t it = 0; it < data_size; ++it)
@@ -2046,24 +2059,22 @@ void Client::CompressData(BYTE*& data, size_t& size)
 	}
 }
 
-bool Client::PerformNTPFA2Hash()
+bool Client::Create2FASecret()
 {
-	if (!(Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
 
-	const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-		Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+	time_t txTm = time(nullptr);
+	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+	{
+		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
-	if (!time.valid())
-		return false;
+		if (!time.valid())
+			return false;
 
-	time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	tm tm;
-	gmtime_s(&tm, &txTm);
-	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
-	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
-	tm.tm_sec = 0;
-	txTm = mktime(&tm);
+		txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	}
 
 	FREE(network.fa2_secret);
 	network.fa2_secret = (byte*)ctime(&txTm);
