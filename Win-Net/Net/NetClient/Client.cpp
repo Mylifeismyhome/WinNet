@@ -53,6 +53,7 @@ NET_TIMER(NTPSyncClock)
 	}
 
 	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	LOG("CURTIME UPDATED: %lld", client->network.curTime);
 
 	Timer::SetTime(client->network.hSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
@@ -338,15 +339,15 @@ bool Client::Connect(const char* Address, const u_short Port)
 		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
 		network.hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this, true);
 
+	// if we use NTP execute the needed code
+	if (Create2FASecret())
+		LOG_DEBUG(CSTRING("[NET] - Successfully created 2FA-Hash"));
+
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
 
 	// callback
 	OnConnected();
-
-	// if we use NTP execute the needed code
-	if (Create2FASecret())
-		LOG_DEBUG(CSTRING("[NET] - Successfully created 2FA-Hash"));
 
 	return true;
 }
@@ -1066,6 +1067,8 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			network.sendToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
 
+	LOG("SENDING USING TOKEN: %d", network.sendToken);
+
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
@@ -1541,6 +1544,8 @@ void Client::ProcessPackages()
 		for (size_t it = 0; it < offset; ++it)
 			network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
+		LOG_ERROR("RECEIVED USING TOKEN: %d", network.lastToken);
+
 		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			// shift back
@@ -1561,6 +1566,8 @@ void Client::ProcessPackages()
 			// shift the first bytes to check if we are using the correct token - using new token
 			for (size_t it = 0; it < offset; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+
+			LOG("RECEIVED USING TOKEN: %d", network.curToken);
 
 			// [PROTOCOL] - check header is actually valid
 			if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
@@ -2139,7 +2146,7 @@ bool Client::Create2FASecret()
 	network.fa2_secret[network.fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(network.fa2_secret, network.fa2_secret_len);
 
-	network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+	network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	network.lastToken = network.curToken;
 	network.sendToken = network.lastToken;
 

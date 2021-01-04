@@ -258,10 +258,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	IncreasePeersCounter();
 
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
+
 	// callback
 	OnPeerConnect(peer);
 
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 	return peer;
 }
 

@@ -149,10 +149,6 @@ uint32_t sendToken;
 uint32_t curToken;
 uint32_t lastToken;
 
-/* time */
-time_t curTime;
-NET_HANDLE_TIMER hSyncClockNTP;
-
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
@@ -170,8 +166,6 @@ fa2_secret_len = NULL;
 sendToken = NULL;
 curToken = NULL;
 lastToken = NULL;
-curTime = NULL;
-hSyncClockNTP = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
@@ -193,6 +187,10 @@ void DisconnectPeer(NET_PEER, int, bool = false);
 #pragma endregion
 
 bool ErasePeer(NET_PEER);
+
+/* time */
+time_t curTime;
+NET_HANDLE_TIMER hSyncClockNTP;
 
 NET_CLASS_PRIVATE
 size_t _CounterPeersTable;

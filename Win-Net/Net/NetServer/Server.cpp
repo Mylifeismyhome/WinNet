@@ -24,6 +24,8 @@ Server::Server()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
+	curTime = NULL;
+	hSyncClockNTP = nullptr;
 }
 
 Server::~Server()
@@ -183,32 +185,22 @@ NET_TIMER(CalcLatency)
 	NET_CONTINUE_TIMER;
 }
 
-struct NTPSyncClock_t
-{
-	Server* server;
-	Server::NET_PEER peer;
-};
-
 NET_TIMER(NTPSyncClock)
 {
-	const auto info = (NTPSyncClock_t*)param;
-	if (!info) NET_STOP_TIMER;
+	const auto server = (Server*)param;
+	if (!server) NET_STOP_TIMER;
 
-	const auto server = info->server;
-	const auto peer = info->peer;
-
-	const auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-		server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
+	const auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 	if (!time.valid())
 	{
 		LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(server));
 		NET_CONTINUE_TIMER;
 	}
 
-	peer->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	server->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	LOG("CURTIME UPDATED: %lld", server->curTime);
 
-	Timer::SetTime(peer->hSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
+	Timer::SetTime(server->hSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -231,25 +223,15 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	_CalcLatency->peer = peer;
 	peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
 
-	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
-	{
-		const auto _NTPSyncClock_t = new NTPSyncClock_t();
-		_NTPSyncClock_t->server = this;
-		_NTPSyncClock_t->peer = peer;
-		peer->hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, _NTPSyncClock_t, true);
-	}
+	if (Create2FASecret(peer))
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created 2FA-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
 	IncreasePeersCounter();
 
-	// callback
-	OnPeerConnect(peer);
-
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 
-	if (Create2FASecret(peer))
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created 2FA-Hash"), SERVERNAME(this), peer->IPAddr().get());
+	// callback
+	OnPeerConnect(peer);
 
 	return peer;
 }
@@ -282,13 +264,6 @@ bool Server::ErasePeer(NET_PEER peer)
 			peer->hCalcLatency = nullptr;
 		}
 
-		if (peer->hSyncClockNTP)
-		{
-			// stop latency interval
-			Timer::WaitSingleObjectStopped(peer->hSyncClockNTP);
-			peer->hSyncClockNTP = nullptr;
-		}
-
 		// callback
 		OnPeerDisconnect(peer);
 
@@ -316,13 +291,6 @@ bool Server::ErasePeer(NET_PEER peer)
 		// stop latency interval
 		Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 		peer->hCalcLatency = nullptr;
-	}
-
-	if (peer->hSyncClockNTP)
-	{
-		// stop latency interval
-		Timer::WaitSingleObjectStopped(peer->hSyncClockNTP);
-		peer->hSyncClockNTP = nullptr;
 	}
 
 	peer->unlock();
@@ -391,8 +359,6 @@ void Server::NET_IPEER::clear()
 	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
-	curTime = NULL;
-	hSyncClockNTP = nullptr;
 }
 
 void Server::NET_IPEER::setAsync(const bool status)
@@ -591,6 +557,11 @@ bool Server::Run()
 	}
 
 	// Create all needed Threads
+	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
+	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+		hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+
 	Thread::Create(TickThread, this);
 	Thread::Create(AcceptorThread, this);
 
@@ -606,6 +577,14 @@ bool Server::Close()
 		LOG_ERROR(CSTRING("[%s] - Can't close server, because server is not running!"), SERVERNAME(this));
 		return false;
 	}
+
+	if (hSyncClockNTP)
+	{
+		Timer::WaitSingleObjectStopped(hSyncClockNTP);
+		hSyncClockNTP = nullptr;
+	}
+
+	curTime = NULL;
 
 	SetRunning(false);
 
@@ -1139,10 +1118,12 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 		else
 			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
+
+	LOG("SENDING USING TOKEN: %d", peer->sendToken);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1953,7 +1934,7 @@ void Server::ProcessPackages(NET_PEER peer)
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
 				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 			}
 			else
 			{
@@ -2647,7 +2628,7 @@ bool Server::Create2FASecret(NET_PEER peer)
 	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
 
-	peer->curTime = time(nullptr);
+	curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
 		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
@@ -2659,11 +2640,11 @@ bool Server::Create2FASecret(NET_PEER peer)
 			return false;
 		}
 
-		peer->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	}
 
 	tm tm;
-	gmtime_s(&tm, &peer->curTime);
+	gmtime_s(&tm, &curTime);
 	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
 	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
 	tm.tm_sec = 0;
@@ -2678,7 +2659,7 @@ bool Server::Create2FASecret(NET_PEER peer)
 	peer->fa2_secret[peer->fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
 
-	peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+	peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	peer->lastToken = peer->curToken;
 	peer->sendToken = peer->lastToken;
 
