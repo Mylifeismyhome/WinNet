@@ -198,8 +198,6 @@ NET_TIMER(NTPSyncClock)
 	}
 
 	server->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	LOG("CURTIME UPDATED: %lld", server->curTime);
-
 	Timer::SetTime(server->hSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
@@ -1139,8 +1137,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		else
 			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
-
-	LOG("SENDING USING TOKEN: %d", peer->sendToken);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -2661,9 +2657,9 @@ bool Server::Create2FASecret(NET_PEER peer)
 	peer->fa2_secret[peer->fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
 
-	peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-	peer->lastToken = peer->curToken;
-	peer->sendToken = peer->lastToken;
+	peer->curToken = NULL;
+	peer->lastToken = NULL;
+	peer->sendToken = NULL;
 
 	return true;
 }
