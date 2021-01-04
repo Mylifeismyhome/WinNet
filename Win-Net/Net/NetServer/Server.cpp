@@ -1939,17 +1939,20 @@ void Server::ProcessPackages(NET_PEER peer)
 		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
+	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+	if (peer->network.getDataSize() < offset) return;
+
 	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
-		for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+		for (size_t it = 0; it < offset; ++it)
 			peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
 		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			// shift back
-			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			for (size_t it = 0; it < offset; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
@@ -1964,7 +1967,7 @@ void Server::ProcessPackages(NET_PEER peer)
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
-			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			for (size_t it = 0; it < offset; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 			// [PROTOCOL] - check header is actually valid
@@ -1992,7 +1995,6 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// [PROTOCOL] - read data full size from header
-	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
 	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
 	{
 		// shift the byte

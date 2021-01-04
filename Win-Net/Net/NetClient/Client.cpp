@@ -1536,17 +1536,20 @@ void Client::ProcessPackages()
 		|| network.data_size == INVALID_SIZE)
 		return;
 
+	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+	if (network.data_size < offset) return;
+
 	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
-		for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+		for (size_t it = 0; it < offset; ++it)
 			network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
 		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			// shift back
-			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			for (size_t it = 0; it < offset; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
@@ -1561,7 +1564,7 @@ void Client::ProcessPackages()
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
-			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			for (size_t it = 0; it < offset; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
 			// [PROTOCOL] - check header is actually valid
@@ -1589,7 +1592,6 @@ void Client::ProcessPackages()
 	}
 
 	// [PROTOCOL] - read data full size from header
-	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
 	for (size_t i = offset; i < network.data_size; ++i)
 	{
 		// shift the byte
