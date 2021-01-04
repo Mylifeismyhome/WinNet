@@ -1607,16 +1607,12 @@ void Client::ProcessPackages()
 
 	// [PROTOCOL] - read data full size from header
 	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-
-	// shift the bytes
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-	{
-		for (size_t it = offset; it < network.data_size; ++it)
-			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
-	}
-
 	for (size_t i = offset; i < network.data_size; ++i)
 	{
+		// shift the byte
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
+
 		// iterate until we have found the end tag
 		if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
@@ -1639,14 +1635,21 @@ void Client::ProcessPackages()
 				newBuffer[network.data_full_size] = '\0';
 				network.data = newBuffer; // pointer swap
 
-				// shift back
+				// shift all the way back
 				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 				{
-					for (size_t it = 0; it < network.data_size; ++it)
+					for (size_t it = 0; it < i; ++it)
 						network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 				}
 
 				return;
+			}
+
+			// shift all the way back
+			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			{
+				for (size_t it = 0; it < i; ++it)
+					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 			}
 
 			break;
@@ -1654,16 +1657,13 @@ void Client::ProcessPackages()
 	}
 
 	// keep going until we have received the entire package
-	if (network.data_size < network.data_full_size) 
-	{
-		// shift all back
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		{
-			for (size_t it = 0; it < network.data_size; ++it)
-				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
-		}
+	if (network.data_size < network.data_full_size) return;
 
-		return;
+	// shift only as much as required
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		for (size_t it = 0; it < network.data_full_size; ++it)
+			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 	}
 
 	// [PROTOCOL] - check footer is actually valid
@@ -1689,14 +1689,6 @@ void Client::ProcessPackages()
 		network.clearData();
 		network.data = leftBuffer; // swap pointer
 		network.data_size = leftSize;
-
-		// shift new bytes using the curToken
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		{
-			for (size_t it = 0; it < network.data_size; ++it)
-				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-		}
-
 		return;
 	}
 

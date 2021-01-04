@@ -1999,16 +1999,12 @@ void Server::ProcessPackages(NET_PEER peer)
 
 	// [PROTOCOL] - read data full size from header
 	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-
-	// shift the bytes
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-	{
-		for (size_t it = offset; it < peer->network.getDataSize(); ++it)
-			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-	}
-
 	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
 	{
+		// shift the byte
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
+
 		// iterate until we have found the end tag
 		if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
@@ -2031,14 +2027,21 @@ void Server::ProcessPackages(NET_PEER peer)
 				newBuffer[peer->network.getDataFullSize()] = '\0';
 				peer->network.setData(newBuffer); // pointer swap
 
-				// shift back
+				// shift all the way back
 				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 				{
-					for (size_t it = 0; it < peer->network.getDataSize(); ++it)
+					for (size_t it = 0; it < i; ++it)
 						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 				}
 
 				return;
+			}
+
+			// shift all the way back
+			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			{
+				for (size_t it = 0; it < i; ++it)
+					peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 			}
 
 			break;
@@ -2046,16 +2049,13 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// keep going until we have received the entire package
-	if (peer->network.getDataSize() < peer->network.getDataFullSize())
-	{
-		// shift all back
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		{
-			for (size_t it = 0; it < peer->network.getDataSize(); ++it)
-				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-		}
+	if (peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
-		return;
+	// shift only as much as required
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		for (size_t it = 0; it < peer->network.getDataFullSize(); ++it)
+			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 	}
 
 	// [PROTOCOL] - check footer is actually valid
@@ -2081,14 +2081,6 @@ void Server::ProcessPackages(NET_PEER peer)
 		peer->network.clear();
 		peer->network.setData(leftBuffer); // swap pointer
 		peer->network.setDataSize(leftSize);
-
-		// shift new bytes using the curToken
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		{
-			for (size_t it = 0; it < peer->network.getDataSize(); ++it)
-				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
-		}
-
 		return;
 	}
 
