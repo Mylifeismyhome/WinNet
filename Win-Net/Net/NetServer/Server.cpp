@@ -162,35 +162,49 @@ void Server::DecreasePeersCounter()
 		_CounterPeersTable = NULL;
 }
 
-NET_THREAD(LatencyTick)
-{
-	const auto peer = (Server::NET_PEER)parameter;
-	if (!peer) return NULL;
-
-	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
-	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
-	peer->bLatency = false;
-	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
-	return NULL;
-}
-
-struct DoCalcLatency_t
+struct	 CalcLatency_t
 {
 	Server* server;
 	Server::NET_PEER peer;
 };
 
-NET_TIMER(DoCalcLatency)
+NET_TIMER(CalcLatency)
 {
-	const auto info = (DoCalcLatency_t*)param;
+	const auto info = (CalcLatency_t*)param;
 	if (!info) NET_STOP_TIMER;
 
 	const auto server = info->server;
 	const auto peer = info->peer;
 
 	peer->bLatency = true;
-	Thread::Create(LatencyTick, peer);
+	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
+	peer->bLatency = false;
+
 	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
+	NET_CONTINUE_TIMER;
+}
+
+struct NTPSyncClock_t
+{
+	Server* server;
+	Server::NET_PEER peer;
+};
+
+NET_TIMER(NTPSyncClock)
+{
+	const auto info = (NTPSyncClock_t*)param;
+	if (!info) NET_STOP_TIMER;
+
+	const auto server = info->server;
+	const auto peer = info->peer;
+
+	const auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+	if (!time.valid())
+		return;
+
+	peer->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	NET_CONTINUE_TIMER;
 }
 
@@ -208,10 +222,20 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	tv.tv_usec = 0;
 	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-	const auto _DoCalcLatency = new DoCalcLatency_t();
-	_DoCalcLatency->server = this;
-	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
+	const auto _CalcLatency = new CalcLatency_t();
+	_CalcLatency->server = this;
+	_CalcLatency->peer = peer;
+	peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
+
+	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
+	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	{
+		const auto _NTPSyncClock_t = new NTPSyncClock_t();
+		_NTPSyncClock_t->server = this;
+		_NTPSyncClock_t->peer = peer;
+		peer->hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, _NTPSyncClock_t, true);
+	}
 
 	IncreasePeersCounter();
 
@@ -220,7 +244,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 
-	if(Create2FASecret(peer))
+	if (Create2FASecret(peer))
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created 2FA-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
 	return peer;
@@ -346,7 +370,9 @@ void Server::NET_IPEER::clear()
 
 	FREE(fa2_secret);
 	fa2_secret_len = NULL;
+	curToken = NULL;
 	lastToken = NULL;
+	curTime = NULL;
 }
 
 void Server::NET_IPEER::setAsync(const bool status)
@@ -593,7 +619,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ peer->lastToken;
+			ptr[it] = ptr[it] ^ peer->curToken;
 	}
 
 	do
@@ -744,7 +770,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data[it] = data[it] ^ peer->lastToken;
+			data[it] = data[it] ^ peer->curToken;
 	}
 
 	do
@@ -916,7 +942,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data.get()[it] = data.get()[it] ^ peer->lastToken;
+			data.get()[it] = data.get()[it] ^ peer->curToken;
 	}
 
 	do
@@ -1099,17 +1125,14 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 		{
-			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-			if (!time.valid())
-				return;
-
-			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			peer->lastToken = peer->curToken;
+			peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 		}
 		else
-			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		{
+			peer->lastToken = peer->curToken;
+			peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		}
 	}
 
 	rapidjson::Document JsonBuffer;
@@ -1862,27 +1885,6 @@ DWORD Server::DoReceive(NET_PEER peer)
 		return FREQUENZ(this);
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-	{
-		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-			if (!time.valid())
-				return FREQUENZ(this);
-
-			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
-		else
-			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-
-		byte* ptr = peer->network.getDataReceive();
-		for (size_t it = 0; it < data_size; ++it)
-			ptr[it] = ptr[it] ^ peer->lastToken;
-	}
-
 	if (!peer->network.dataValid())
 	{
 		peer->network.allocData(data_size);
@@ -1923,17 +1925,68 @@ void Server::ProcessPackages(NET_PEER peer)
 		|| peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
-	// [PROTOCOL] - check header is actually valid
-	if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+	auto use_old_token = true;
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-		peer->network.clear();
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
-		return;
+		// shift the first bytes to check if we are using the correct token - using old token
+		for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
+
+		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		{
+			// shift back
+			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
+
+			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+			{
+				peer->lastToken = peer->curToken;
+				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			}
+			else
+			{
+				peer->lastToken = peer->curToken;
+				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			}
+
+			// shift the first bytes to check if we are using the correct token - using new token
+			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
+
+			// [PROTOCOL] - check header is actually valid
+			if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+			{
+				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+				peer->network.clear();
+				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
+				return;
+			}
+
+			use_old_token = false;
+		}
+	}
+	else
+	{
+		// [PROTOCOL] - check header is actually valid
+		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		{
+			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+			peer->network.clear();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
+			return;
+		}
 	}
 
 	// [PROTOCOL] - read data full size from header
 	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+
+	// shift the bytes
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		for (size_t it = offset; it < peer->network.getDataSize(); ++it)
+			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+	}
+
 	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
 	{
 		// iterate until we have found the end tag
@@ -1957,6 +2010,14 @@ void Server::ProcessPackages(NET_PEER peer)
 				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
 				newBuffer[peer->network.getDataFullSize()] = '\0';
 				peer->network.setData(newBuffer); // pointer swap
+
+				// shift back
+				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+				{
+					for (size_t it = 0; it < peer->network.getDataSize(); ++it)
+						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+				}
+
 				return;
 			}
 
@@ -1965,7 +2026,17 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// keep going until we have received the entire package
-	if (peer->network.getDataSize() < peer->network.getDataFullSize()) return;
+	if (peer->network.getDataSize() < peer->network.getDataFullSize())
+	{
+		// shift all back
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		{
+			for (size_t it = 0; it < peer->network.getDataSize(); ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+		}
+
+		return;
+	}
 
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
@@ -1990,6 +2061,14 @@ void Server::ProcessPackages(NET_PEER peer)
 		peer->network.clear();
 		peer->network.setData(leftBuffer); // swap pointer
 		peer->network.setDataSize(leftSize);
+
+		// shift new bytes using the curToken
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		{
+			for (size_t it = 0; it < peer->network.getDataSize(); ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+		}
+
 		return;
 	}
 

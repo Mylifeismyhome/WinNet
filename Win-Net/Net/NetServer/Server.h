@@ -144,8 +144,13 @@ bool bQueueLock;
 byte* fa2_secret;
 size_t fa2_secret_len;
 
-/* last token */
+/* shift token */
+uint32_t curToken;
 uint32_t lastToken;
+
+/* time */
+time_t curTime;
+NET_HANDLE_TIMER hSyncClockNTP;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
@@ -161,7 +166,9 @@ bHasBeenErased = false;
 bQueueLock = false;
 fa2_secret = nullptr;
 fa2_secret_len = NULL;
+curToken = NULL;
 lastToken = NULL;
+curTime = NULL;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
