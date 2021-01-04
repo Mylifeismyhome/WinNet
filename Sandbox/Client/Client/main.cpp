@@ -50,6 +50,40 @@ int main()
 
 	system("pause");*/
 
+	/*auto time = Net::Protocol::NTP::Exec("2001:4860:4806:4::");
+	if (!time.valid())
+		return 0;
+
+	auto curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+	tm tm;
+	gmtime_s(&tm, &curTime);
+	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
+	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
+	tm.tm_sec = 0;
+	const auto txTm = mktime(&tm);
+
+	const auto strTime = ctime(&txTm);
+	auto fa2_secret_len = strlen(strTime);
+
+	auto fa2_secret = ALLOC<byte>(fa2_secret_len + 1);
+	memcpy(fa2_secret, strTime, fa2_secret_len);
+	fa2_secret[fa2_secret_len] = '\0';
+	Net::Coding::Base32::base32_encode(fa2_secret, fa2_secret_len);
+
+	while (true)
+	{
+		time = Net::Protocol::NTP::Exec("2001:4860:4806:4::");
+		if (!time.valid())
+			return 0;
+
+		curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+		LOG("%d", Net::Coding::FA2::generateToken(fa2_secret, fa2_secret_len, curTime));
+
+		Sleep(1000);
+	}*/
+
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
