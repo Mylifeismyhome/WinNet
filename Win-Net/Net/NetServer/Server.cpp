@@ -2026,7 +2026,7 @@ void Server::ProcessPackages(NET_PEER peer)
 				// shift all the way back
 				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 				{
-					for (size_t it = 0; it < i; ++it)
+					for (size_t it = 0; it < i + 1; ++it)
 						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 				}
 
@@ -2036,7 +2036,7 @@ void Server::ProcessPackages(NET_PEER peer)
 			// shift all the way back
 			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 			{
-				for (size_t it = 0; it < i; ++it)
+				for (size_t it = 0; it < i + 1; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 			}
 

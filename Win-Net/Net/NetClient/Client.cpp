@@ -1570,6 +1570,7 @@ void Client::ProcessPackages()
 			// [PROTOCOL] - check header is actually valid
 			if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 			{
+				LOG("%s", network.data.get());
 				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 				network.clearData();
 				Disconnect();
@@ -1623,7 +1624,7 @@ void Client::ProcessPackages()
 				// shift all the way back
 				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 				{
-					for (size_t it = 0; it < i; ++it)
+					for (size_t it = 0; it < i + 1; ++it)
 						network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 				}
 
@@ -1633,7 +1634,7 @@ void Client::ProcessPackages()
 			// shift all the way back
 			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 			{
-				for (size_t it = 0; it < i; ++it)
+				for (size_t it = 0; it < i + 1; ++it)
 					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 			}
 
