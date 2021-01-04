@@ -388,6 +388,7 @@ void Server::NET_IPEER::clear()
 
 	FREE(fa2_secret);
 	fa2_secret_len = NULL;
+	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
 	curTime = NULL;
@@ -633,7 +634,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ peer->curToken;
+			ptr[it] = ptr[it] ^ peer->sendToken;
 	}
 
 	do
@@ -784,7 +785,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data[it] = data[it] ^ peer->curToken;
+			data[it] = data[it] ^ peer->sendToken;
 	}
 
 	do
@@ -956,7 +957,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data.get()[it] = data.get()[it] ^ peer->curToken;
+			data.get()[it] = data.get()[it] ^ peer->sendToken;
 	}
 
 	do
@@ -1138,15 +1139,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			peer->lastToken = peer->curToken;
-			peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
+			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 		else
-		{
-			peer->lastToken = peer->curToken;
-			peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
+			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
 
 	rapidjson::Document JsonBuffer;

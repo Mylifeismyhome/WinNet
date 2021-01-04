@@ -145,6 +145,7 @@ byte* fa2_secret;
 size_t fa2_secret_len;
 
 /* shift token */
+uint32_t sendToken;
 uint32_t curToken;
 uint32_t lastToken;
 
@@ -166,6 +167,7 @@ bHasBeenErased = false;
 bQueueLock = false;
 fa2_secret = nullptr;
 fa2_secret_len = NULL;
+sendToken = NULL;
 curToken = NULL;
 lastToken = NULL;
 curTime = NULL;

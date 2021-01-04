@@ -496,6 +496,7 @@ void Client::Network::clear()
 
 	FREE(fa2_secret);
 	fa2_secret_len = NULL;
+	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
 	curTime = NULL;
@@ -554,7 +555,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ network.curToken;
+			ptr[it] = ptr[it] ^ network.sendToken;
 	}
 
 	do
@@ -706,7 +707,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data[it] = data[it] ^ network.curToken;
+			data[it] = data[it] ^ network.sendToken;
 	}
 
 	do
@@ -879,7 +880,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data.get()[it] = data.get()[it] ^ network.curToken;
+			data.get()[it] = data.get()[it] ^ network.sendToken;
 	}
 
 	do
@@ -1060,15 +1061,9 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			network.lastToken = network.curToken;
-			network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
+			network.sendToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 		else
-		{
-			network.lastToken = network.curToken;
-			network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
+			network.sendToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 	}
 
 	rapidjson::Document JsonBuffer;
