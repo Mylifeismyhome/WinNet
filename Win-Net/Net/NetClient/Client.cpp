@@ -1065,7 +1065,6 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 
 			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-
 		}
 		else
 			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);

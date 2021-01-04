@@ -1107,7 +1107,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-
 		}
 		else
 			peer->lastToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
