@@ -24,7 +24,6 @@ Server::Server()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
-	DoExit = NULL;
 }
 
 Server::~Server()
@@ -480,7 +479,7 @@ NET_THREAD(TickThread)
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
-	while (server->IsRunning() && !server->NeedExit())
+	while (server->IsRunning())
 	{
 		server->Tick();
 		Kernel32::Sleep(FREQUENZ(server));
@@ -495,7 +494,7 @@ NET_THREAD(AcceptorThread)
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
-	while (server->IsRunning() && !server->NeedExit())
+	while (server->IsRunning())
 	{
 		server->Acceptor();
 		Kernel32::Sleep(FREQUENZ(server));
@@ -619,11 +618,6 @@ bool Server::Close()
 
 	LOG_DEBUG(CSTRING("[%s] - Closed!"), SERVERNAME(this));
 	return true;
-}
-
-bool Server::NeedExit() const
-{
-	return DoExit;
 }
 
 void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPreviousSentFailed)
@@ -1683,7 +1677,7 @@ NET_THREAD(Receive)
 			break;
 		}
 		peer->setAsync(false);
-	} while (!server->DoExit);
+	} while (true);
 
 	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
@@ -1705,7 +1699,7 @@ NET_THREAD(Receive)
 
 	while (peer)
 	{
-		if (!server->IsRunning() || server->NeedExit())
+		if (!server->IsRunning())
 			break;
 
 		server->OnPeerUpdate(peer);

@@ -279,8 +279,6 @@ NET_CLASS_VDESTRUCTUR(Server)
 bool Run();
 bool Close();
 
-bool DoExit;
-
 short Handshake(NET_PEER);
 void Acceptor();
 
@@ -292,8 +290,6 @@ bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
-bool NeedExit() const;
-
 void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
 
 size_t getCountPeers() const;

@@ -65,8 +65,6 @@ Client::Client()
 	SetServerAddress(CSTRING(""));
 	SetServerPort(NULL);
 	SetConnected(false);
-	NeedExit = FALSE;
-	bAccomplished = FALSE;
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
 }
@@ -367,8 +365,6 @@ bool Client::Disconnect()
 	// callback
 	OnDisconnected();
 
-	bAccomplished = TRUE;
-
 	LOG_SUCCESS(CSTRING("[NET] - Disconnected from server"));
 	return true;
 }
@@ -386,8 +382,6 @@ void Client::Timeout()
 
 	// callback
 	OnTimeout();
-
-	bAccomplished = TRUE;
 
 	LOG_ERROR(CSTRING("[NET] - Connection has been closed, server did not answer anymore (TIMEOUT)"));
 }
@@ -419,17 +413,6 @@ void Client::Clear()
 	WSACleanup();
 
 	network.clear();
-}
-
-bool Client::DoNeedExit() const
-{
-	return NeedExit;
-}
-
-void Client::WaitUntilAccomplished()
-{
-	while (!bAccomplished)
-		Kernel32::Sleep(FREQUENZ);
 }
 
 void Client::SetSocket(const SOCKET connectSocket)

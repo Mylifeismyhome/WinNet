@@ -177,8 +177,6 @@ void SetSocketOption(const SocketOption_t<T> opt)
 bool Isset_SocketOpt(DWORD) const;
 
 NET_CLASS_PRIVATE
-bool NeedExit;
-bool bAccomplished;
 SOCKET connectSocket;
 struct addrinfo* connectSocketAddr;
 CPOINTER<char> ServerAddress;
@@ -205,8 +203,6 @@ char* ResolveHostname(const char*);
 bool Connect(const char*, u_short);
 bool Disconnect();
 void Clear();
-bool DoNeedExit() const;
-void WaitUntilAccomplished();
 
 void SetSocket(const SOCKET);
 SOCKET GetSocket() const;

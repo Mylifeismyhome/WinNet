@@ -281,8 +281,6 @@ void SetSocketOption(const SocketOption_t<T> opt)
 
 bool Isset_SocketOpt(DWORD) const;
 
-bool DoExit;
-
 NET_CLASS_PRIVATE
 SOCKET ListenSocket;
 SOCKET AcceptSocket;
@@ -308,8 +306,6 @@ short Handshake(NET_PEER);
 NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
-bool NeedExit() const;
-
 void SingleSend(NET_PEER, const char*, size_t, bool&);
 void SingleSend(NET_PEER, BYTE*&, size_t, bool&);
 void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&);

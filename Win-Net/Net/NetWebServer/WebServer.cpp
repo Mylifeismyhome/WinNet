@@ -24,7 +24,6 @@ Server::Server()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
-	DoExit = NULL;
 }
 
 Server::~Server()
@@ -395,7 +394,7 @@ NET_THREAD(TickThread)
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
-	while (server->IsRunning() && !server->NeedExit())
+	while (server->IsRunning())
 	{
 		server->Tick();
 		Kernel32::Sleep(FREQUENZ(server));
@@ -410,7 +409,7 @@ NET_THREAD(AcceptorThread)
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
-	while (server->IsRunning() && !server->NeedExit())
+	while (server->IsRunning())
 	{
 		server->Acceptor();
 		Kernel32::Sleep(FREQUENZ(server));
@@ -1086,7 +1085,7 @@ NET_THREAD(Receive)
 				break;
 			}
 			peer->setAsync(false);
-		} while (!server->DoExit);
+		} while (true);
 
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), SERVERNAME(server), peer->IPAddr().get());
 	}
@@ -1095,7 +1094,7 @@ NET_THREAD(Receive)
 
 	while (peer)
 	{
-		if (!server->IsRunning() || server->NeedExit())
+		if (!server->IsRunning())
 			break;
 
 		server->OnPeerUpdate(peer);
@@ -1152,11 +1151,6 @@ void Server::Acceptor()
 		param->peer = peer;
 		Thread::Create(Receive, param);
 	}
-}
-
-bool Server::NeedExit() const
-{
-	return DoExit;
 }
 
 void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned char opc)
