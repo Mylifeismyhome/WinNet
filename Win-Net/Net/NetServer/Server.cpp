@@ -2678,6 +2678,10 @@ bool Server::Create2FASecret(NET_PEER peer)
 	peer->fa2_secret[peer->fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
 
+	peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, peer->curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+	peer->lastToken = peer->curToken;
+	peer->sendToken = peer->lastToken;
+
 	return true;
 }
 NET_NAMESPACE_END

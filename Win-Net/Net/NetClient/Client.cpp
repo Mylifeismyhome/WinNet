@@ -2139,6 +2139,10 @@ bool Client::Create2FASecret()
 	network.fa2_secret[network.fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(network.fa2_secret, network.fa2_secret_len);
 
+	network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+	network.lastToken = network.curToken;
+	network.sendToken = network.lastToken;
+
 	return true;
 }
 
