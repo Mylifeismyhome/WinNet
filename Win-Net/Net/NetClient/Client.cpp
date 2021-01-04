@@ -21,19 +21,7 @@ static bool AddrIsV6(const char* addr)
 	return false;
 }
 
-NET_THREAD(LatencyTick)
-{
-	const auto client = (Client*)parameter;
-	if (!client) return NULL;
-
-	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
-	client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
-	client->network.bLatency = false;
-	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
-	return NULL;
-}
-
-NET_TIMER(DoCalcLatency)
+NET_TIMER(CalcLatency)
 {
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
@@ -41,8 +29,32 @@ NET_TIMER(DoCalcLatency)
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
 	client->network.bLatency = true;
-	Thread::Create(LatencyTick, client);
+	client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
+	client->network.bLatency = false;
+
 	Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
+	NET_CONTINUE_TIMER;
+}
+
+NET_TIMER(NTPSyncClock)
+{
+	const auto client = (Client*)param;
+	if (!client) NET_STOP_TIMER;
+
+	if (!client->IsConnected()) NET_CONTINUE_TIMER;
+
+	const auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+	if (!time.valid())
+	{
+		LOG_ERROR(CSTRING("[NET] - critical failure on calling NTP host"));
+		NET_CONTINUE_TIMER;
+	}
+
+	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+	Timer::SetTime(client->network.hSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -57,8 +69,6 @@ Client::Client()
 	bAccomplished = FALSE;
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
-
-	network.hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 }
 
 Client::~Client()
@@ -323,6 +333,13 @@ bool Client::Connect(const char* Address, const u_short Port)
 		/* create RSA Key Pair */
 		network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
 
+	network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
+
+	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
+	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+		network.hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this, true);
+
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
 
@@ -386,6 +403,7 @@ void Client::ConnectionClosed()
 	network.latency = -1;
 	network.bLatency = false;
 	Timer::WaitSingleObjectStopped(network.hCalcLatency);
+	Timer::WaitSingleObjectStopped(network.hSyncClockNTP);
 
 	SetConnected(false);
 }
@@ -495,7 +513,10 @@ void Client::Network::clear()
 
 	FREE(fa2_secret);
 	fa2_secret_len = NULL;
+	curToken = NULL;
 	lastToken = NULL;
+	curTime = NULL;
+	hSyncClockNTP = nullptr;
 }
 
 void Client::Network::AllocData(const size_t size)
@@ -550,7 +571,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ network.lastToken;
+			ptr[it] = ptr[it] ^ network.curToken;
 	}
 
 	do
@@ -702,7 +723,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data[it] = data[it] ^ network.lastToken;
+			data[it] = data[it] ^ network.curToken;
 	}
 
 	do
@@ -875,7 +896,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data.get()[it] = data.get()[it] ^ network.lastToken;
+			data.get()[it] = data.get()[it] ^ network.curToken;
 	}
 
 	do
@@ -1057,17 +1078,14 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 		{
-			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-			if (!time.valid())
-				return;
-
-			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			network.lastToken = network.curToken;
+			network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
 		}
 		else
-			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		{
+			network.lastToken = network.curToken;
+			network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		}
 	}
 
 	rapidjson::Document JsonBuffer;
@@ -1496,27 +1514,6 @@ DWORD Client::DoReceive()
 		return FREQUENZ;
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-	{
-		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-			if (!time.valid())
-				return FREQUENZ;
-
-			time_t txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, txTm, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-		}
-		else
-			network.lastToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
-
-		byte* ptr = network.dataReceive;
-		for (size_t it = 0; it < data_size; ++it)
-			ptr[it] = ptr[it] ^ network.lastToken;
-	}
-
 	if (!network.data.valid())
 	{
 		network.AllocData(data_size);
@@ -1556,17 +1553,68 @@ void Client::ProcessPackages()
 		|| network.data_size == INVALID_SIZE)
 		return;
 
-	// [PROTOCOL] - check header is actually valid
-	if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+	auto use_old_token = true;
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 	{
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-		network.clearData();
-		Disconnect();
-		return;
+		// shift the first bytes to check if we are using the correct token - using old token
+		for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+			network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+
+		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		{
+			// shift back
+			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+
+			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+			{
+				network.lastToken = network.curToken;
+				network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			}
+			else
+			{
+				network.lastToken = network.curToken;
+				network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			}
+
+			// shift the first bytes to check if we are using the correct token - using new token
+			for (size_t it = 0; it < strlen(NET_PACKAGE_HEADER); ++it)
+				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+
+			// [PROTOCOL] - check header is actually valid
+			if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+			{
+				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+				network.clearData();
+				Disconnect();
+				return;
+			}
+
+			use_old_token = false;
+		}
+	}
+	else
+	{
+		// [PROTOCOL] - check header is actually valid
+		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		{
+			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+			network.clearData();
+			Disconnect();
+			return;
+		}
 	}
 
 	// [PROTOCOL] - read data full size from header
 	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
+
+	// shift the bytes
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		for (size_t it = offset; it < network.data_size; ++it)
+			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+	}
+
 	for (size_t i = offset; i < network.data_size; ++i)
 	{
 		// iterate until we have found the end tag
@@ -1590,6 +1638,14 @@ void Client::ProcessPackages()
 				memcpy(newBuffer, network.data.get(), network.data_size);
 				newBuffer[network.data_full_size] = '\0';
 				network.data = newBuffer; // pointer swap
+
+				// shift back
+				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+				{
+					for (size_t it = 0; it < network.data_size; ++it)
+						network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+				}
+
 				return;
 			}
 
@@ -1598,7 +1654,17 @@ void Client::ProcessPackages()
 	}
 
 	// keep going until we have received the entire package
-	if (network.data_size < network.data_full_size) return;
+	if (network.data_size < network.data_full_size) 
+	{
+		// shift all back
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		{
+			for (size_t it = 0; it < network.data_size; ++it)
+				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+		}
+
+		return;
+	}
 
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
@@ -1623,6 +1689,14 @@ void Client::ProcessPackages()
 		network.clearData();
 		network.data = leftBuffer; // swap pointer
 		network.data_size = leftSize;
+
+		// shift new bytes using the curToken
+		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		{
+			for (size_t it = 0; it < network.data_size; ++it)
+				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+		}
+
 		return;
 	}
 
@@ -2061,17 +2135,27 @@ bool Client::Create2FASecret()
 	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
 
-	time_t txTm = time(nullptr);
+	network.curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
 		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 		if (!time.valid())
+		{
+			LOG_ERROR(CSTRING("[NET] - critical failure on calling NTP host"));
 			return false;
+		}
 
-		txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	}
+
+	tm tm;
+	gmtime_s(&tm, &network.curTime);
+	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
+	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
+	tm.tm_sec = 0;
+	const auto txTm = mktime(&tm);
 
 	FREE(network.fa2_secret);
 	network.fa2_secret = (byte*)ctime(&txTm);

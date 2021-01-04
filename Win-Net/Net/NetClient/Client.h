@@ -57,8 +57,13 @@ NET_HANDLE_TIMER hCalcLatency;
 byte* fa2_secret;
 size_t fa2_secret_len;
 
-/* last token */
+/* shift token */
+uint32_t curToken;
 uint32_t lastToken;
+
+/* time */
+time_t curTime;
+NET_HANDLE_TIMER hSyncClockNTP;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -75,7 +80,10 @@ bLatency = false;
 hCalcLatency = nullptr;
 fa2_secret = nullptr;
 fa2_secret_len = NULL;
+curToken = NULL;
 lastToken = NULL;
+curTime = NULL;
+hSyncClockNTP = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();

@@ -202,9 +202,14 @@ NET_TIMER(NTPSyncClock)
 		server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
-		return;
+	{
+		LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(server));
+		NET_CONTINUE_TIMER;
+	}
 
 	peer->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+	Timer::SetTime(peer->hSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -278,6 +283,13 @@ bool Server::ErasePeer(NET_PEER peer)
 			peer->hCalcLatency = nullptr;
 		}
 
+		if (peer->hSyncClockNTP)
+		{
+			// stop latency interval
+			Timer::WaitSingleObjectStopped(peer->hSyncClockNTP);
+			peer->hSyncClockNTP = nullptr;
+		}
+
 		// callback
 		OnPeerDisconnect(peer);
 
@@ -305,6 +317,13 @@ bool Server::ErasePeer(NET_PEER peer)
 		// stop latency interval
 		Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 		peer->hCalcLatency = nullptr;
+	}
+
+	if (peer->hSyncClockNTP)
+	{
+		// stop latency interval
+		Timer::WaitSingleObjectStopped(peer->hSyncClockNTP);
+		peer->hSyncClockNTP = nullptr;
 	}
 
 	peer->unlock();
@@ -373,6 +392,7 @@ void Server::NET_IPEER::clear()
 	curToken = NULL;
 	lastToken = NULL;
 	curTime = NULL;
+	hSyncClockNTP = nullptr;
 }
 
 void Server::NET_IPEER::setAsync(const bool status)
@@ -2066,7 +2086,7 @@ void Server::ProcessPackages(NET_PEER peer)
 		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
 		{
 			for (size_t it = 0; it < peer->network.getDataSize(); ++it)
-				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 		}
 
 		return;
@@ -2644,17 +2664,27 @@ bool Server::Create2FASecret(NET_PEER peer)
 	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
 
-	time_t txTm = time(nullptr);
+	peer->curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
 		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 		if (!time.valid())
+		{
+			LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(this));
 			return false;
+		}
 
-		txTm = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		peer->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	}
+
+	tm tm;
+	gmtime_s(&tm, &peer->curTime);
+	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
+	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
+	tm.tm_sec = 0;
+	const auto txTm = mktime(&tm);
 
 	FREE(peer->fa2_secret);
 	peer->fa2_secret = (byte*)ctime(&txTm);

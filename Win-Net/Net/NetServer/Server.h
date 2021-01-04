@@ -169,6 +169,7 @@ fa2_secret_len = NULL;
 curToken = NULL;
 lastToken = NULL;
 curTime = NULL;
+hSyncClockNTP = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
