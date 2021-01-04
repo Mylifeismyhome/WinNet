@@ -558,9 +558,26 @@ bool Server::Run()
 
 	// Create all needed Threads
 	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
-		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
-		hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	{
+		curTime = time(nullptr);
+		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
+			if (!time.valid())
+			{
+				LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(this));
+				return false;
+			}
+
+			curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		}
+
+		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+			hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+	}
 
 	Thread::Create(TickThread, this);
 	Thread::Create(AcceptorThread, this);
@@ -2627,21 +2644,6 @@ bool Server::Create2FASecret(NET_PEER peer)
 
 	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
 		return false;
-
-	curTime = time(nullptr);
-	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-	{
-		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-		if (!time.valid())
-		{
-			LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(this));
-			return false;
-		}
-
-		curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	}
 
 	tm tm;
 	gmtime_s(&tm, &curTime);
