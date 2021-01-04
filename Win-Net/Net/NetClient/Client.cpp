@@ -2157,9 +2157,13 @@ bool Client::Create2FASecret()
 	tm.tm_sec = 0;
 	const auto txTm = mktime(&tm);
 
+	const auto strTime = ctime(&txTm);
+	network.fa2_secret_len = strlen(strTime);
+
 	FREE(network.fa2_secret);
-	network.fa2_secret = (byte*)ctime(&txTm);
-	network.fa2_secret_len = strlen((char*)network.fa2_secret);
+	network.fa2_secret = ALLOC<byte>(network.fa2_secret_len + 1);
+	memcpy(network.fa2_secret, strTime, network.fa2_secret_len);
+	network.fa2_secret[network.fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(network.fa2_secret, network.fa2_secret_len);
 
 	return true;

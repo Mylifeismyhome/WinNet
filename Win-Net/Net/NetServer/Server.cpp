@@ -2686,9 +2686,13 @@ bool Server::Create2FASecret(NET_PEER peer)
 	tm.tm_sec = 0;
 	const auto txTm = mktime(&tm);
 
+	const auto strTime = ctime(&txTm);
+	peer->fa2_secret_len = strlen(strTime);
+
 	FREE(peer->fa2_secret);
-	peer->fa2_secret = (byte*)ctime(&txTm);
-	peer->fa2_secret_len = strlen((char*)peer->fa2_secret);
+	peer->fa2_secret = ALLOC<byte>(peer->fa2_secret_len + 1);
+	memcpy(peer->fa2_secret, strTime, peer->fa2_secret_len);
+	peer->fa2_secret[peer->fa2_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
 
 	return true;
