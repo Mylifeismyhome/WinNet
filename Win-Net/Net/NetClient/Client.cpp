@@ -1060,10 +1060,12 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 		else
-			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 	}
+
+	LOG("SENDING W TOKEN: %d\nTIME: %lld", network.sendToken, network.curTime);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1548,14 +1550,14 @@ void Client::ProcessPackages()
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
-				LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", network.curTime);
 				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+				LOG_SUCCESS("LAST TOKEN: %d\nCUR TOKEN: %d\nTIME: %lld", network.lastToken, network.curToken, network.curTime);
 			}
 			else
 			{
 				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token

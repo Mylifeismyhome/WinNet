@@ -8,18 +8,6 @@
 
 #pragma comment(lib, "NetClient.lib")
 
-static int roundUp(int numToRound, int multiple)
-{
-	if (multiple == 0)
-		return numToRound;
-
-	int remainder = numToRound % multiple;
-	if (remainder == 0)
-		return numToRound;
-
-	return numToRound + multiple - remainder;
-}
-
 int main()
 {
 	Net::load();
@@ -93,14 +81,15 @@ int main()
 
 	do
 	{
-		std::cout << Net::Coding::FA2::generateToken(out, len, time(nullptr), 10) << std::endl;
+		std::cout << Net::Coding::TOTP::generateToken(out, len, time(nullptr), 30) << std::endl;
 		Sleep(1000);
 	} while (true);*/
 
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
-	client.SetOption<bool>({ NET_OPT_USE_2FA, true });
+	client.SetOption<bool>({ NET_OPT_USE_TOTP, true });
+	//client.SetOption<int>({ NET_OPT_TOTP_INTERVAL, 30000 });
 	client.SetOption<bool>({ NET_OPT_USE_NTP, true });
 	client.SetOption<char*>({ NET_OPT_NTP_HOST, (char*)CSTRING("2001:4860:4806:4::") });
 

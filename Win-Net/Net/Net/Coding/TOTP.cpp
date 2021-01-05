@@ -130,7 +130,7 @@ uint32_t totp(const ByteString& key, uint64_t timeNow, uint64_t timeStart, uint6
 	return hotp(key, timeValue, digitCount);
 }
 
-uint32_t TOTP::generateToken(const byte* t_secret, const size_t len, time_t time, const int& t_interval)
+uint32_t TOTP::generateToken(const byte* t_secret, const size_t len, time_t time, const int t_interval)
 {
 	return totp(ByteString(t_secret, t_secret + len), time, 0, t_interval, 10);
 }

@@ -1133,13 +1133,12 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", curTime);
-			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
-		}
+			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 		else
-			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 	}
+
+	LOG("SENDING W TOKEN: %d\nTIME: %lld", peer->sendToken, curTime);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1949,14 +1948,13 @@ void Server::ProcessPackages(NET_PEER peer)
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
-				LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", curTime);
 				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 			}
 			else
 			{
 				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
