@@ -180,7 +180,7 @@
     <ClCompile Include="..\Net\Coding\BASE32.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Coding\2FA.cpp">
+    <ClCompile Include="..\Net\Coding\TOTP.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
   </ItemGroup>
@@ -278,7 +278,7 @@
     <ClInclude Include="..\Net\Coding\BASE32.h">
       <Filter>Coding</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\Coding\2FA.h">
+    <ClInclude Include="..\Net\Coding\TOTP.h">
       <Filter>Coding</Filter>
     </ClInclude>
   </ItemGroup>

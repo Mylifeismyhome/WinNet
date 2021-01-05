@@ -34,7 +34,7 @@
 #include <Net/Coding/MD5.h>
 #include <Net/Coding/BASE64.h>
 #include <Net/Coding/BASE32.h>
-#include <Net/Coding/2FA.h>
+#include <Net/Coding/TOTP.h>
 #include <Net/Compression/Compression.h>
 
 #include <Net/Protocol/ICMP.h>
@@ -140,9 +140,9 @@ NET_HANDLE_TIMER hCalcLatency;
 bool bHasBeenErased;
 bool bQueueLock;
 
-/* 2fa secret */
-byte* fa2_secret;
-size_t fa2_secret_len;
+/* TOTP secret */
+byte* totp_secret;
+size_t totp_secret_len;
 
 /* shift token */
 uint32_t sendToken;
@@ -161,8 +161,8 @@ bLatency = false;
 hCalcLatency = nullptr;
 bHasBeenErased = false;
 bQueueLock = false;
-fa2_secret = nullptr;
-fa2_secret_len = NULL;
+totp_secret = nullptr;
+totp_secret_len = NULL;
 sendToken = NULL;
 curToken = NULL;
 lastToken = NULL;
@@ -180,7 +180,7 @@ NET_STRUCT_END
 NET_CLASS_PRIVATE
 void CompressData(BYTE*&, size_t&);
 void DecompressData(BYTE*&, size_t&);
-bool Create2FASecret(NET_PEER);
+bool CreateTOTPSecret(NET_PEER);
 
 NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);

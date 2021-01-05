@@ -221,8 +221,8 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	_CalcLatency->peer = peer;
 	peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
 
-	if (Create2FASecret(peer))
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created 2FA-Hash"), SERVERNAME(this), peer->IPAddr().get());
+	if (CreateTOTPSecret(peer))
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created TOTP-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
 	IncreasePeersCounter();
 
@@ -352,8 +352,8 @@ void Server::NET_IPEER::clear()
 
 	cryption.deleteKeyPair();
 
-	FREE(fa2_secret);
-	fa2_secret_len = NULL;
+	FREE(totp_secret);
+	totp_secret_len = NULL;
 	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
@@ -556,7 +556,7 @@ bool Server::Run()
 
 	// Create all needed Threads
 	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		curTime = time(nullptr);
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
@@ -624,7 +624,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	if (bPreviousSentFailed)
 		return;
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
@@ -776,7 +776,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data[it] = data[it] ^ peer->sendToken;
@@ -948,7 +948,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data.get()[it] = data.get()[it] ^ peer->sendToken;
@@ -1130,12 +1130,15 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		return;
 	);
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+		{
+			LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", curTime);
+			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+		}
 		else
-			peer->sendToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 	}
 
 	rapidjson::Document JsonBuffer;
@@ -1932,7 +1935,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	if (peer->network.getDataSize() < offset) return;
 
 	auto use_old_token = true;
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
 		for (size_t it = 0; it < offset; ++it)
@@ -1946,13 +1949,14 @@ void Server::ProcessPackages(NET_PEER peer)
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
+				LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", curTime);
 				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 			}
 			else
 			{
 				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::FA2::generateToken(peer->fa2_secret, peer->fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
@@ -1987,7 +1991,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
 	{
 		// shift the byte
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
 
 		// iterate until we have found the end tag
@@ -2013,7 +2017,7 @@ void Server::ProcessPackages(NET_PEER peer)
 				peer->network.setData(newBuffer); // pointer swap
 
 				// shift all the way back
-				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+				if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 				{
 					for (size_t it = 0; it < i + 1; ++it)
 						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
@@ -2023,7 +2027,7 @@ void Server::ProcessPackages(NET_PEER peer)
 			}
 
 			// shift all the way back
-			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			{
 				for (size_t it = 0; it < i + 1; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
@@ -2037,7 +2041,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	if (peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
 	// shift only as much as required
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < peer->network.getDataFullSize(); ++it)
 			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
@@ -2632,13 +2636,13 @@ size_t Server::getCountPeers() const
 	return _CounterPeersTable;
 }
 
-bool Server::Create2FASecret(NET_PEER peer)
+bool Server::CreateTOTPSecret(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return false;
 	);
 
-	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
+	if (!(Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP))
 		return false;
 
 	tm tm;
@@ -2649,13 +2653,13 @@ bool Server::Create2FASecret(NET_PEER peer)
 	const auto txTm = mktime(&tm);
 
 	const auto strTime = ctime(&txTm);
-	peer->fa2_secret_len = strlen(strTime);
+	peer->totp_secret_len = strlen(strTime);
 
-	FREE(peer->fa2_secret);
-	peer->fa2_secret = ALLOC<byte>(peer->fa2_secret_len + 1);
-	memcpy(peer->fa2_secret, strTime, peer->fa2_secret_len);
-	peer->fa2_secret[peer->fa2_secret_len] = '\0';
-	Net::Coding::Base32::base32_encode(peer->fa2_secret, peer->fa2_secret_len);
+	FREE(peer->totp_secret);
+	peer->totp_secret = ALLOC<byte>(peer->totp_secret_len + 1);
+	memcpy(peer->totp_secret, strTime, peer->totp_secret_len);
+	peer->totp_secret[peer->totp_secret_len] = '\0';
+	Net::Coding::Base32::base32_encode(peer->totp_secret, peer->totp_secret_len);
 
 	peer->curToken = NULL;
 	peer->lastToken = NULL;

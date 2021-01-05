@@ -25,7 +25,7 @@
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/Coding/BASE32.h>
-#include <Net/Coding/2FA.h>
+#include <Net/Coding/TOTP.h>
 
 #include <Net/Protocol/ICMP.h>
 #include <Net/Protocol/NTP.h>
@@ -53,9 +53,9 @@ typeLatency latency;
 bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
-/* 2fa secret */
-byte* fa2_secret;
-size_t fa2_secret_len;
+/* TOTP secret */
+byte* totp_secret;
+size_t totp_secret_len;
 
 /* shift token */
 uint32_t sendToken;
@@ -79,8 +79,8 @@ estabilished = false;
 latency = -1;
 bLatency = false;
 hCalcLatency = nullptr;
-fa2_secret = nullptr;
-fa2_secret_len = NULL;
+totp_secret = nullptr;
+totp_secret_len = NULL;
 sendToken = NULL;
 curToken = NULL;
 lastToken = NULL;
@@ -234,7 +234,7 @@ void DoSend(int, NET_PACKAGE);
 NET_CLASS_PRIVATE
 void ProcessPackages();
 void ExecutePackage();
-bool Create2FASecret();
+bool CreateTOTPSecret();
 
 NET_DEF_FNC_PKG(RSAHandshake);
 NET_DEF_FNC_PKG(KeysPackage);

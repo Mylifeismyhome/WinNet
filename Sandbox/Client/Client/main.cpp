@@ -84,6 +84,19 @@ int main()
 		Sleep(1000);
 	}*/
 
+	/*const char* str = "ddn45nd5dr";
+	auto len = strlen(str);
+	byte* out = new byte[len + 1];
+	memcpy(out, str, len);
+	out[len] = '\0';
+	Net::Coding::Base32::base32_encode(out, len);
+
+	do
+	{
+		std::cout << Net::Coding::FA2::generateToken(out, len, time(nullptr), 10) << std::endl;
+		Sleep(1000);
+	} while (true);*/
+
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });

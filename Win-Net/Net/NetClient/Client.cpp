@@ -333,13 +333,13 @@ bool Client::Connect(const char* Address, const u_short Port)
 	network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 
 	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-	if ((Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
 		network.hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
 
 	// if we use NTP execute the needed code
-	if (Create2FASecret())
-		LOG_DEBUG(CSTRING("[NET] - Successfully created 2FA-Hash"));
+	if (CreateTOTPSecret())
+		LOG_DEBUG(CSTRING("[NET] - Successfully created TOTP-Hash"));
 
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
@@ -493,8 +493,8 @@ void Client::Network::clear()
 	clearData();
 	deleteRSAKeys();
 
-	FREE(fa2_secret);
-	fa2_secret_len = NULL;
+	FREE(totp_secret);
+	totp_secret_len = NULL;
 	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
@@ -550,7 +550,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 	if (bPreviousSentFailed)
 		return;
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
@@ -703,7 +703,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data[it] = data[it] ^ network.sendToken;
@@ -876,7 +876,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 		return;
 	}
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
 			data.get()[it] = data.get()[it] ^ network.sendToken;
@@ -1057,12 +1057,12 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (!IsConnected())
 		return;
 
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			network.sendToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 		else
-			network.sendToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+			network.sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 	}
 
 	rapidjson::Document JsonBuffer;
@@ -1534,7 +1534,7 @@ void Client::ProcessPackages()
 	if (network.data_size < offset) return;
 
 	auto use_old_token = true;
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
 		for (size_t it = 0; it < offset; ++it)
@@ -1548,13 +1548,14 @@ void Client::ProcessPackages()
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
+				LOG_SUCCESS("TOKEN UPDATED WITH TIME: %lld", network.curTime);
 				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, network.curTime, Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 			}
 			else
 			{
 				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::FA2::generateToken(network.fa2_secret, network.fa2_secret_len, time(nullptr), Isset(NET_OPT_2FA_INTERVAL) ? GetOption<int>(NET_OPT_2FA_INTERVAL) : NET_OPT_DEFAULT_2FA_INTERVAL);
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
@@ -1589,7 +1590,7 @@ void Client::ProcessPackages()
 	for (size_t i = offset; i < network.data_size; ++i)
 	{
 		// shift the byte
-		if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
 
 		// iterate until we have found the end tag
@@ -1615,7 +1616,7 @@ void Client::ProcessPackages()
 				network.data = newBuffer; // pointer swap
 
 				// shift all the way back
-				if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+				if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 				{
 					for (size_t it = 0; it < i + 1; ++it)
 						network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
@@ -1625,7 +1626,7 @@ void Client::ProcessPackages()
 			}
 
 			// shift all the way back
-			if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			{
 				for (size_t it = 0; it < i + 1; ++it)
 					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
@@ -1639,7 +1640,7 @@ void Client::ProcessPackages()
 	if (network.data_size < network.data_full_size) return;
 
 	// shift only as much as required
-	if (Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < network.data_full_size; ++it)
 			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
@@ -2101,9 +2102,9 @@ void Client::CompressData(BYTE*& data, size_t& size)
 	}
 }
 
-bool Client::Create2FASecret()
+bool Client::CreateTOTPSecret()
 {
-	if (!(Isset(NET_OPT_USE_2FA) ? GetOption<bool>(NET_OPT_USE_2FA) : NET_OPT_DEFAULT_USE_2FA))
+	if (!(Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP))
 		return false;
 
 	network.curTime = time(nullptr);
@@ -2129,13 +2130,13 @@ bool Client::Create2FASecret()
 	const auto txTm = mktime(&tm);
 
 	const auto strTime = ctime(&txTm);
-	network.fa2_secret_len = strlen(strTime);
+	network.totp_secret_len = strlen(strTime);
 
-	FREE(network.fa2_secret);
-	network.fa2_secret = ALLOC<byte>(network.fa2_secret_len + 1);
-	memcpy(network.fa2_secret, strTime, network.fa2_secret_len);
-	network.fa2_secret[network.fa2_secret_len] = '\0';
-	Net::Coding::Base32::base32_encode(network.fa2_secret, network.fa2_secret_len);
+	FREE(network.totp_secret);
+	network.totp_secret = ALLOC<byte>(network.totp_secret_len + 1);
+	memcpy(network.totp_secret, strTime, network.totp_secret_len);
+	network.totp_secret[network.totp_secret_len] = '\0';
+	Net::Coding::Base32::base32_encode(network.totp_secret, network.totp_secret_len);
 
 	network.curToken = NULL;
 	network.lastToken = NULL;
