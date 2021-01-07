@@ -1988,33 +1988,45 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// [PROTOCOL] - read data full size from header
-	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
-			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-
-	const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
-	for (size_t i = start; i < peer->network.getDataSize(); ++i)
+	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE)
 	{
-		// shift the byte
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-			peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
+			for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 
-		// iterate until we have found the end tag
-		if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+		const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
+		for (size_t i = start; i < peer->network.getDataSize(); ++i)
 		{
-			peer->network.SetDataOffset(i);
-			const auto size = i - start;
-			char* end = (char*)peer->network.getData()[start] + size;
-			peer->network.setDataFullSize(strtoull((const char*)&peer->network.getData()[start], &end, 10));
+			// shift the byte
+			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+				peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
 
-			// awaiting more bytes
-			if (peer->network.getDataFullSize() > peer->network.getDataSize())
+			// iterate until we have found the end tag
+			if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 			{
-				// pre-allocate enough space
-				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
-				memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
-				newBuffer[peer->network.getDataFullSize()] = '\0';
-				peer->network.setData(newBuffer); // pointer swap
+				peer->network.SetDataOffset(i);
+				const auto size = i - start;
+				char* end = (char*)peer->network.getData()[start] + size;
+				peer->network.setDataFullSize(strtoull((const char*)&peer->network.getData()[start], &end, 10));
+
+				// awaiting more bytes
+				if (peer->network.getDataFullSize() > peer->network.getDataSize())
+				{
+					// pre-allocate enough space
+					const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
+					memcpy(newBuffer, peer->network.getData(), peer->network.getDataSize());
+					newBuffer[peer->network.getDataFullSize()] = '\0';
+					peer->network.setData(newBuffer); // pointer swap
+
+					// shift all the way back
+					if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+					{
+						for (size_t it = 0; it < i + 1; ++it)
+							peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+					}
+
+					return;
+				}
 
 				// shift all the way back
 				if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -2023,17 +2035,17 @@ void Server::ProcessPackages(NET_PEER peer)
 						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 				}
 
-				return;
+				break;
 			}
-
-			// shift all the way back
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-			{
-				for (size_t it = 0; it < i + 1; ++it)
-					peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-			}
-
-			break;
+		}
+	}
+	else
+	{
+		// shift all the way back
+		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		{
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 		}
 	}
 

@@ -1590,33 +1590,45 @@ void Client::ProcessPackages()
 	}
 
 	// [PROTOCOL] - read data full size from header
-	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
-			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
-
-	const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
-	for (size_t i = start; i < network.data_size; ++i)
+	if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
 	{
-		// shift the byte
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-			network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
+			for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
+				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 
-		// iterate until we have found the end tag
-		if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+		const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
+		for (size_t i = start; i < network.data_size; ++i)
 		{
-			network.data_offset = i;
-			const auto size = i - start;
-			char* end = (char*)network.data.get()[start] + size;
-			network.data_full_size = strtoull((const char*)&network.data.get()[start], &end, 10);
+			// shift the byte
+			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+				network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
 
-			// awaiting more bytes
-			if (network.data_full_size > network.data_size)
+			// iterate until we have found the end tag
+			if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 			{
-				// pre-allocate enough space
-				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-				memcpy(newBuffer, network.data.get(), network.data_size);
-				newBuffer[network.data_full_size] = '\0';
-				network.data = newBuffer; // pointer swap
+				network.data_offset = i;
+				const auto size = i - start;
+				char* end = (char*)network.data.get()[start] + size;
+				network.data_full_size = strtoull((const char*)&network.data.get()[start], &end, 10);
+
+				// awaiting more bytes
+				if (network.data_full_size > network.data_size)
+				{
+					// pre-allocate enough space
+					const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+					memcpy(newBuffer, network.data.get(), network.data_size);
+					newBuffer[network.data_full_size] = '\0';
+					network.data = newBuffer; // pointer swap
+
+					// shift all the way back
+					if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+					{
+						for (size_t it = 0; it < i + 1; ++it)
+							network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+					}
+
+					return;
+				}
 
 				// shift all the way back
 				if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1625,17 +1637,17 @@ void Client::ProcessPackages()
 						network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 				}
 
-				return;
+				break;
 			}
-
-			// shift all the way back
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-			{
-				for (size_t it = 0; it < i + 1; ++it)
-					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
-			}
-
-			break;
+		}
+	}
+	else
+	{
+		// shift all the way back
+		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		{
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 		}
 	}
 
