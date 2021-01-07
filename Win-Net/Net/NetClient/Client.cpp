@@ -1157,7 +1157,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				aes.encrypt(data.value(), data.size());
 		}
 
-		combinedSize = dataBufferSize + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + strlen(NET_AES_KEY) + strlen(NET_AES_IV) + aesKeySize + IVSize + 8;
+		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + NET_AES_KEY_LEN + strlen(NET_AES_IV) + aesKeySize + IVSize + 8;
 
 		// Append Raw data package size
 		if (PKG.HasRawData())
@@ -1195,16 +1195,16 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed);
 
 		// Append Package Size Syntax
-		SingleSend(NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 
 		/* Append Package Key */
-		SingleSend(NET_AES_KEY, strlen(NET_AES_KEY), bPreviousSentFailed);
+		SingleSend(NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
@@ -1246,14 +1246,14 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		SingleSend(NET_DATA, strlen(NET_DATA), bPreviousSentFailed);
+		SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed);
 
 		/* Append Package Footer */
-		SingleSend(NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed);
 	}
 	else
 	{
@@ -1269,10 +1269,10 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
-			combinedSize = dataBufferSize + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + 4;
+			combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
 		}
 		else
-			combinedSize = buffer.GetSize() + strlen(NET_PACKAGE_HEADER) + strlen(NET_PACKAGE_SIZE) + strlen(NET_DATA) + strlen(NET_PACKAGE_FOOTER) + 4;
+			combinedSize = buffer.GetSize() + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
 
 		// Append Raw data package size
 		if (PKG.HasRawData())
@@ -1304,10 +1304,10 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed);
 
 		// Append Package Size Syntax
-		SingleSend(NET_PACKAGE_SIZE, strlen(NET_PACKAGE_SIZE), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
 		SingleSend(EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
@@ -1341,7 +1341,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		SingleSend(NET_DATA, strlen(NET_DATA), bPreviousSentFailed);
+		SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed);
 		SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
@@ -1352,7 +1352,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			SingleSend(buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
 
 		/* Append Package Footer */
-		SingleSend(NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER), bPreviousSentFailed);
+		SingleSend(NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed);
 	}
 }
 
@@ -1685,9 +1685,14 @@ void Client::ProcessPackages()
 			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 	}
 
-	// [PROTOCOL] - wait until we have a footer
-	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
+	// [PROTOCOL] - check footer is actually valid
+	if (memcmp(&network.data.get()[network.data_full_size - NET_PACKAGE_FOOTER_LEN], NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN) != 0)
+	{
+		LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid footer"));
+		network.clear();
+		Disconnect();
 		return;
+	}
 
 	// Execute the package
 	ExecutePackage();
@@ -1723,9 +1728,9 @@ void Client::ExecutePackage()
 		size_t AESKeySize;
 
 		// look for key tag
-		if (!memcmp(&network.data.get()[offset], NET_AES_KEY, strlen(NET_AES_KEY)))
+		if (!memcmp(&network.data.get()[offset], NET_AES_KEY, NET_AES_KEY_LEN))
 		{
-			offset += strlen(NET_AES_KEY);
+			offset += NET_AES_KEY_LEN;
 
 			// read size
 			for (auto y = offset; y < network.data_size; ++y)
@@ -1904,9 +1909,9 @@ void Client::ExecutePackage()
 			}
 
 			// look for data tag
-			if (!memcmp(&network.data.get()[offset], NET_DATA, strlen(NET_DATA)))
+			if (!memcmp(&network.data.get()[offset], NET_DATA, NET_DATA_LEN))
 			{
-				offset += strlen(NET_DATA);
+				offset += NET_DATA_LEN;
 
 				// read size
 				size_t packageSize = NULL;
@@ -1948,7 +1953,7 @@ void Client::ExecutePackage()
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == network.data_full_size)
+			if (offset + NET_PACKAGE_FOOTER_LEN == network.data_full_size)
 				break;
 
 		} while (true);
@@ -2029,9 +2034,9 @@ void Client::ExecutePackage()
 			}
 
 			// look for data tag
-			if (!memcmp(&network.data.get()[offset], NET_DATA, strlen(NET_DATA)))
+			if (!memcmp(&network.data.get()[offset], NET_DATA, NET_DATA_LEN))
 			{
-				offset += strlen(NET_DATA);
+				offset += NET_DATA_LEN;
 
 				// read size
 				size_t packageSize = NULL;
@@ -2065,7 +2070,7 @@ void Client::ExecutePackage()
 			}
 
 			// we have reached the end of reading
-			if (offset + strlen(NET_PACKAGE_FOOTER) == network.data_full_size)
+			if (offset + NET_PACKAGE_FOOTER_LEN == network.data_full_size)
 				break;
 
 		} while (true);

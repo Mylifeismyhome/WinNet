@@ -252,19 +252,23 @@ static void Free(T*& data)
 #define NET_RAW_DATA CSTRING("{RAW DATA}")
 
 #define NET_DATA CSTRING("{DATA}")
+#define NET_DATA_LEN 6
 
 #define NET_PACKAGE_HEADER CSTRING("{BEGIN PACKAGE}")
 #define NET_PACKAGE_HEADER_LEN 15
 #define NET_PACKAGE_FOOTER CSTRING("{END PACKAGE}")
+#define NET_PACKAGE_FOOTER_LEN 13
 
 #define NET_PACKAGE_SIZE CSTRING("{PACKAGE SIZE}")
 #define NET_PACKAGE_SIZE_LEN 14
 
 // Key is crypted using RSA
 #define NET_AES_KEY CSTRING("{KEY}")
+#define NET_AES_KEY_LEN 5
 
 // IV is crypted using RSA
 #define NET_AES_IV CSTRING("{IV}")
+#define NET_AES_IV_LEN 4
 
 #define NET_UID size_t
 #define INVALID_UID  (size_t)(~0)
