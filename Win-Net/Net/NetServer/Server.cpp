@@ -1926,24 +1926,25 @@ void Server::ProcessPackages(NET_PEER peer)
 		return;
 	);
 
-	if (!peer->network.getDataSize()
-		|| peer->network.getDataSize() == INVALID_SIZE)
+	if (!peer->network.getDataSize())
 		return;
 
-	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-	if (peer->network.getDataSize() < offset) return;
+	if (peer->network.getDataSize() == INVALID_SIZE)
+		return;
+
+	if (peer->network.getDataSize() < NET_PACKAGE_HEADER_LEN) return;
 
 	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
-		for (size_t it = 0; it < offset; ++it)
+		for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 			peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
 		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			// shift back
-			for (size_t it = 0; it < offset; ++it)
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
@@ -1958,12 +1959,13 @@ void Server::ProcessPackages(NET_PEER peer)
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
-			for (size_t it = 0; it < offset; ++it)
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 			// [PROTOCOL] - check header is actually valid
 			if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 			{
+				LOG("%s", peer->network.getData());
 				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 				peer->network.clear();
 				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
@@ -1986,7 +1988,12 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// [PROTOCOL] - read data full size from header
-	for (size_t i = offset; i < peer->network.getDataSize(); ++i)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
+			peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
+
+	const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
+	for (size_t i = start; i < peer->network.getDataSize(); ++i)
 	{
 		// shift the byte
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1995,18 +2002,13 @@ void Server::ProcessPackages(NET_PEER peer)
 		// iterate until we have found the end tag
 		if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
-			const auto bDoPreAlloc = peer->network.getDataFullSize() == 0 ? true : false;
 			peer->network.SetDataOffset(i);
-			const auto size = i - offset - 1;
-			CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
-			memcpy(sizestr.get(), &peer->network.getData()[offset + 1], size);
-			sizestr.get()[size] = '\0';
-			peer->network.setDataFullSize(strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10));
-			sizestr.free();
+			const auto size = i - start;
+			char* end = (char*)peer->network.getData()[start] + size;
+			peer->network.setDataFullSize(strtoull((const char*)&peer->network.getData()[start], &end, 10));
 
 			// awaiting more bytes
-			if (bDoPreAlloc &&
-				peer->network.getDataFullSize() > peer->network.getDataSize())
+			if (peer->network.getDataFullSize() > peer->network.getDataSize())
 			{
 				// pre-allocate enough space
 				const auto newBuffer = ALLOC<BYTE>(peer->network.getDataFullSize() + 1);
@@ -2036,7 +2038,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// keep going until we have received the entire package
-	if (peer->network.getDataSize() < peer->network.getDataFullSize()) return;
+	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE || peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
 	// shift only as much as required
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -2048,6 +2050,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 	{
+		LOG("Datasize: %llu\nData full size: %llu", peer->network.getDataSize(), peer->network.getDataFullSize());
 		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping frame"));
 		peer->network.clear();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);

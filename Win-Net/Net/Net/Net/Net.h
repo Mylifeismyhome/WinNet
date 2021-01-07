@@ -254,9 +254,11 @@ static void Free(T*& data)
 #define NET_DATA CSTRING("{DATA}")
 
 #define NET_PACKAGE_HEADER CSTRING("{BEGIN PACKAGE}")
+#define NET_PACKAGE_HEADER_LEN 15
 #define NET_PACKAGE_FOOTER CSTRING("{END PACKAGE}")
 
 #define NET_PACKAGE_SIZE CSTRING("{PACKAGE SIZE}")
+#define NET_PACKAGE_SIZE_LEN 14
 
 // Key is crypted using RSA
 #define NET_AES_KEY CSTRING("{KEY}")

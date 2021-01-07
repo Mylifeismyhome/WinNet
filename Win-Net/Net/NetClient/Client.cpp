@@ -1528,24 +1528,25 @@ DWORD Client::DoReceive()
 void Client::ProcessPackages()
 {
 	// check valid data size
-	if (!network.data_size
-		|| network.data_size == INVALID_SIZE)
+	if (!network.data_size)
 		return;
 
-	const auto offset = static_cast<int>(strlen(NET_PACKAGE_HEADER)) + static_cast<int>(strlen(NET_PACKAGE_SIZE)); // skip header tags
-	if (network.data_size < offset) return;
+	if (network.data_size == INVALID_SIZE)
+		return;
+
+	if (network.data_size < NET_PACKAGE_HEADER_LEN) return;
 
 	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
-		for (size_t it = 0; it < offset; ++it)
+		for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 			network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
 		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
 		{
 			// shift back
-			for (size_t it = 0; it < offset; ++it)
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
 			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
@@ -1561,7 +1562,7 @@ void Client::ProcessPackages()
 			}
 
 			// shift the first bytes to check if we are using the correct token - using new token
-			for (size_t it = 0; it < offset; ++it)
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
 			// [PROTOCOL] - check header is actually valid
@@ -1589,7 +1590,12 @@ void Client::ProcessPackages()
 	}
 
 	// [PROTOCOL] - read data full size from header
-	for (size_t i = offset; i < network.data_size; ++i)
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
+			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+
+	const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
+	for (size_t i = start; i < network.data_size; ++i)
 	{
 		// shift the byte
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1598,18 +1604,13 @@ void Client::ProcessPackages()
 		// iterate until we have found the end tag
 		if (!memcmp(&network.data.get()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
 		{
-			const auto bDoPreAlloc = network.data_full_size == 0 ? true : false;
 			network.data_offset = i;
-			const auto size = i - offset - 1;
-			CPOINTER<BYTE> sizestr(ALLOC<BYTE>(size + 1));
-			memcpy(sizestr.get(), &network.data.get()[offset + 1], size);
-			sizestr.get()[size] = '\0';
-			network.data_full_size = strtoull(reinterpret_cast<const char*>(sizestr.get()), nullptr, 10);
-			sizestr.free();
+			const auto size = i - start;
+			char* end = (char*)network.data.get()[start] + size;
+			network.data_full_size = strtoull((const char*)&network.data.get()[start], &end, 10);
 
 			// awaiting more bytes
-			if (bDoPreAlloc &&
-				network.data_full_size > network.data_size)
+			if (network.data_full_size > network.data_size)
 			{
 				// pre-allocate enough space
 				const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
@@ -1639,7 +1640,7 @@ void Client::ProcessPackages()
 	}
 
 	// keep going until we have received the entire package
-	if (network.data_size < network.data_full_size) return;
+	if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
 
 	// shift only as much as required
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1648,14 +1649,9 @@ void Client::ProcessPackages()
 			network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 	}
 
-	// [PROTOCOL] - check footer is actually valid
+	// [PROTOCOL] - wait until we have a footer
 	if (memcmp(&network.data.get()[network.data_full_size - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
-	{
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping frame"));
-		network.clearData();
-		Disconnect();
 		return;
-	}
 
 	// Execute the package
 	ExecutePackage();

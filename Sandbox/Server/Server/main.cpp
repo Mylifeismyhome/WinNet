@@ -13,7 +13,7 @@ int main()
 	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
-	server.SetOption<bool>({ NET_OPT_USE_TOTP, true });
+	server.SetOption<bool>({ NET_OPT_USE_TOTP, false });
 //	server.SetOption<int>({ NET_OPT_TOTP_INTERVAL, 30000 });
 	server.SetOption<bool>({ NET_OPT_USE_NTP, true });
 	server.SetOption<char*>({ NET_OPT_NTP_HOST, (char*)CSTRING("2001:4860:4806:4::") });
