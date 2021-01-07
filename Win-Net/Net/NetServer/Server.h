@@ -319,6 +319,7 @@ DWORD DoReceive(NET_PEER);
 NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 
 NET_CLASS_PRIVATE
+bool ValidHeader(NET_PEER, bool&);
 void ProcessPackages(NET_PEER);
 void ExecutePackage(NET_PEER);
 

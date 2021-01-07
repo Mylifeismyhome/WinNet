@@ -1920,21 +1920,8 @@ DWORD Server::DoReceive(NET_PEER peer)
 	return NULL;
 }
 
-void Server::ProcessPackages(NET_PEER peer)
+bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 {
-	PEER_NOT_VALID(peer,
-		return;
-	);
-
-	if (!peer->network.getDataSize())
-		return;
-
-	if (peer->network.getDataSize() == INVALID_SIZE)
-		return;
-
-	if (peer->network.getDataSize() < NET_PACKAGE_HEADER_LEN) return;
-
-	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
@@ -1969,7 +1956,7 @@ void Server::ProcessPackages(NET_PEER peer)
 				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 				peer->network.clear();
 				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
-				return;
+				return false;
 			}
 
 			use_old_token = false;
@@ -1983,13 +1970,36 @@ void Server::ProcessPackages(NET_PEER peer)
 			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 			peer->network.clear();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
-			return;
+			return false;
 		}
 	}
+
+	return true;
+}
+
+void Server::ProcessPackages(NET_PEER peer)
+{
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	if (!peer->network.getDataSize())
+		return;
+
+	if (peer->network.getDataSize() == INVALID_SIZE)
+		return;
+
+	if (peer->network.getDataSize() < NET_PACKAGE_HEADER_LEN) return;
+
+	auto use_old_token = true;
+	bool already_checked = false;
 
 	// [PROTOCOL] - read data full size from header
 	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE)
 	{
+		already_checked = true;
+		if (!ValidHeader(peer, use_old_token)) return;
+
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
@@ -2039,18 +2049,12 @@ void Server::ProcessPackages(NET_PEER peer)
 			}
 		}
 	}
-	else
-	{
-		// shift all the way back
-		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		{
-			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
-				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-		}
-	}
 
 	// keep going until we have received the entire package
 	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE || peer->network.getDataSize() < peer->network.getDataFullSize()) return;
+
+	if (!already_checked)
+		if (!ValidHeader(peer, use_old_token)) return;
 
 	// shift only as much as required
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)

@@ -232,6 +232,7 @@ void SingleSend(CPOINTER<BYTE>&, size_t, bool&);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE
+bool ValidHeader(bool&);
 void ProcessPackages();
 void ExecutePackage();
 bool CreateTOTPSecret();

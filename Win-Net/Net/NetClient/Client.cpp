@@ -1525,18 +1525,8 @@ DWORD Client::DoReceive()
 	return NULL;
 }
 
-void Client::ProcessPackages()
+bool Client::ValidHeader(bool& use_old_token)
 {
-	// check valid data size
-	if (!network.data_size)
-		return;
-
-	if (network.data_size == INVALID_SIZE)
-		return;
-
-	if (network.data_size < NET_PACKAGE_HEADER_LEN) return;
-
-	auto use_old_token = true;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
@@ -1571,7 +1561,7 @@ void Client::ProcessPackages()
 				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 				network.clearData();
 				Disconnect();
-				return;
+				return false;
 			}
 
 			use_old_token = false;
@@ -1585,13 +1575,33 @@ void Client::ProcessPackages()
 			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
 			network.clearData();
 			Disconnect();
-			return;
+			return false;
 		}
 	}
+
+	return true;
+}
+
+void Client::ProcessPackages()
+{
+	// check valid data size
+	if (!network.data_size)
+		return;
+
+	if (network.data_size == INVALID_SIZE)
+		return;
+
+	if (network.data_size < NET_PACKAGE_HEADER_LEN) return;
+
+	auto use_old_token = true;
+	bool already_checked = false;
 
 	// [PROTOCOL] - read data full size from header
 	if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
 	{
+		already_checked = true;
+		if (!ValidHeader(use_old_token)) return;
+
 		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
@@ -1641,18 +1651,12 @@ void Client::ProcessPackages()
 			}
 		}
 	}
-	else
-	{
-		// shift all the way back
-		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		{
-			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
-				network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
-		}
-	}
 
 	// keep going until we have received the entire package
 	if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
+
+	if (!already_checked)
+		if (!ValidHeader(use_old_token)) return;
 
 	// shift only as much as required
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
