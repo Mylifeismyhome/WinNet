@@ -1928,46 +1928,66 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 		for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 			peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
-		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
 			// shift back
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
-			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			{
-				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-			}
-			else
-			{
-				peer->lastToken = peer->curToken;
-				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-			}
-
-			// shift the first bytes to check if we are using the correct token - using new token
+			// shift the first bytes to check if we are using the correct token - using cur token
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
-			// [PROTOCOL] - check header is actually valid
-			if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+			if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 			{
-				LOG("%s", peer->network.getData());
-				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-				peer->network.clear();
-				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
-				return false;
-			}
+				// shift back
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
-			use_old_token = false;
+				if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+				{
+					peer->lastToken = peer->curToken;
+					peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+				}
+				else
+				{
+					peer->lastToken = peer->curToken;
+					peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+				}
+
+				// shift the first bytes to check if we are using the correct token - using new token
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
+
+				// [PROTOCOL] - check header is actually valid
+				if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+				{
+					LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid header"), SERVERNAME(this), peer->IPAddr().get());
+					peer->network.clear();
+					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
+					return false;
+				}
+
+				// sift back using new token
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
+
+				use_old_token = false;
+			}
+		}
+		else
+		{
+			// sift back using old token
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 		}
 	}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid
-		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
+			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid header"), SERVERNAME(this), peer->IPAddr().get());
 			peer->network.clear();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
 			return false;
@@ -2000,14 +2020,10 @@ void Server::ProcessPackages(NET_PEER peer)
 		already_checked = true;
 		if (!ValidHeader(peer, use_old_token)) return;
 
-		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-			for (size_t it = NET_PACKAGE_HEADER_LEN; it < NET_PACKAGE_SIZE_LEN + 1; ++it)
-				peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
-
 		const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
 		for (size_t i = start; i < peer->network.getDataSize(); ++i)
 		{
-			// shift the byte
+			// shift the bytes
 			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 				peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
 
@@ -2031,7 +2047,7 @@ void Server::ProcessPackages(NET_PEER peer)
 					// shift all the way back
 					if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 					{
-						for (size_t it = 0; it < i + 1; ++it)
+						for (size_t it = start; it < i + 1; ++it)
 							peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 					}
 
@@ -2041,7 +2057,7 @@ void Server::ProcessPackages(NET_PEER peer)
 				// shift all the way back
 				if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 				{
-					for (size_t it = 0; it < i + 1; ++it)
+					for (size_t it = start; it < i + 1; ++it)
 						peer->network.getData()[it] = peer->network.getData()[it] ^ (use_old_token ? peer->lastToken : peer->curToken);
 				}
 
@@ -2066,8 +2082,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - strlen(NET_PACKAGE_FOOTER)], NET_PACKAGE_FOOTER, strlen(NET_PACKAGE_FOOTER)) != 0)
 	{
-		LOG("Datasize: %llu\nData full size: %llu", peer->network.getDataSize(), peer->network.getDataFullSize());
-		LOG_ERROR(CSTRING("[NET] - Frame has no valid footer... dropping frame"));
+		LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid footer"), SERVERNAME(this), peer->IPAddr().get());
 		peer->network.clear();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);
 		return;

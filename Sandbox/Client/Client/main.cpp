@@ -88,7 +88,7 @@ int main()
 	Client client;
 	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
-	client.SetOption<bool>({ NET_OPT_USE_TOTP, false });
+	client.SetOption<bool>({ NET_OPT_USE_TOTP, true });
 	//client.SetOption<int>({ NET_OPT_TOTP_INTERVAL, 30000 });
 	client.SetOption<bool>({ NET_OPT_USE_NTP, true });
 	client.SetOption<char*>({ NET_OPT_NTP_HOST, (char*)CSTRING("2001:4860:4806:4::") });

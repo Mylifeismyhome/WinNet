@@ -1533,47 +1533,67 @@ bool Client::ValidHeader(bool& use_old_token)
 		for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 			network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
-		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
 			// shift back
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 
-			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			{
-				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-				LOG_SUCCESS("LAST TOKEN: %d\nCUR TOKEN: %d\nTIME: %lld", network.lastToken, network.curToken, network.curTime);
-			}
-			else
-			{
-				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-			}
-
-			// shift the first bytes to check if we are using the correct token - using new token
+			// shift the first bytes to check if we are using the correct token - using cur token
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
-			// [PROTOCOL] - check header is actually valid
-			if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+			if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 			{
-				LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-				network.clearData();
-				Disconnect();
-				return false;
-			}
+				// shift back
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
-			use_old_token = false;
+				if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+				{
+					network.lastToken = network.curToken;
+					network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+				}
+				else
+				{
+					network.lastToken = network.curToken;
+					network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+				}
+
+				// shift the first bytes to check if we are using the correct token - using new token
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+
+				// [PROTOCOL] - check header is actually valid
+				if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+				{
+					LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
+					network.clear();
+					Disconnect();
+					return false;
+				}
+
+				// sift back using new token
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+
+				use_old_token = false;
+			}
+		}
+		else
+		{
+			// sift back using old token
+			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 		}
 	}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid
-		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, strlen(NET_PACKAGE_HEADER)) != 0)
+		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
-			LOG_ERROR(CSTRING("[NET] - Frame has no valid header... dropping frame"));
-			network.clearData();
+			LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
+			network.clear();
 			Disconnect();
 			return false;
 		}
@@ -1609,7 +1629,7 @@ void Client::ProcessPackages()
 		const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
 		for (size_t i = start; i < network.data_size; ++i)
 		{
-			// shift the byte
+			// shift the bytes
 			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 				network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
 
