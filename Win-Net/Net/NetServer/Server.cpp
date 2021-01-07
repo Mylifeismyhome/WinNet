@@ -354,7 +354,6 @@ void Server::NET_IPEER::clear()
 
 	FREE(totp_secret);
 	totp_secret_len = NULL;
-	sendToken = NULL;
 	curToken = NULL;
 	lastToken = NULL;
 }
@@ -615,7 +614,7 @@ bool Server::Close()
 	return true;
 }
 
-void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPreviousSentFailed)
+void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -628,7 +627,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	{
 		char* ptr = (char*)data;
 		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ peer->sendToken;
+			ptr[it] = ptr[it] ^ sendToken;
 	}
 
 	do
@@ -763,7 +762,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	} while (size > 0);
 }
 
-void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed)
+void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		FREE(data);
@@ -779,7 +778,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data[it] = data[it] ^ peer->sendToken;
+			data[it] = data[it] ^ sendToken;
 	}
 
 	do
@@ -935,7 +934,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	FREE(data);
 }
 
-void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
+void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		data.free();
@@ -951,7 +950,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		for (size_t it = 0; it < size; ++it)
-			data.get()[it] = data.get()[it] ^ peer->sendToken;
+			data.get()[it] = data.get()[it] ^ sendToken;
 	}
 
 	do
@@ -1130,15 +1129,14 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		return;
 	);
 
+	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 		else
-			peer->sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
+			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
 	}
-
-	LOG("SENDING W TOKEN: %d\nTIME: %lld", peer->sendToken, curTime);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1265,27 +1263,27 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed, sendToken);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
-		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
 		/* Append Package Key */
-		SingleSend(peer, NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
-		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-		SingleSend(peer, Key, aesKeySize, bPreviousSentFailed);
+		SingleSend(peer, NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, Key, aesKeySize, bPreviousSentFailed, sendToken);
 
 		/* Append Package IV */
-		SingleSend(peer, NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
-		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-		SingleSend(peer, IV, IVSize, bPreviousSentFailed);
+		SingleSend(peer, NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, IV, IVSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Data */
 		if (PKG.HasRawData())
@@ -1294,36 +1292,36 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			for (auto data : rawData)
 			{
 				// Append Key
-				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
 
-				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed);
+				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
-				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
 
-				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed);
+				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed, sendToken);
 				PKG.DoNotDestruct();
 			}
 		}
 
-		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
-		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
+		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 	else
 	{
@@ -1374,13 +1372,13 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed, sendToken);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
-		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
 		/* Append Package Data */
 		if (PKG.HasRawData())
@@ -1389,40 +1387,40 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			for (auto data : rawData)
 			{
 				// Append Key
-				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
 
-				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed);
+				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
-				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed);
+				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
 
-				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
-				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed);
+				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed, sendToken);
 				PKG.DoNotDestruct();
 			}
 		}
 
-		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed);
-		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed);
+		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed, sendToken);
+		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
 		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-			SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
+			SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 		else
-			SingleSend(peer, buffer.GetString(), buffer.GetSize(), bPreviousSentFailed);
+			SingleSend(peer, buffer.GetString(), buffer.GetSize(), bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed);
+		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 }
 
@@ -1970,6 +1968,14 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 				}
 
 				// sift back using new token
+				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
+
+				use_old_token = false;
+			}
+			else
+			{
+				// sift back using cur token
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 

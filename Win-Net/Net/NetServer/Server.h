@@ -145,7 +145,6 @@ byte* totp_secret;
 size_t totp_secret_len;
 
 /* shift token */
-uint32_t sendToken;
 uint32_t curToken;
 uint32_t lastToken;
 
@@ -163,7 +162,6 @@ bHasBeenErased = false;
 bQueueLock = false;
 totp_secret = nullptr;
 totp_secret_len = NULL;
-sendToken = NULL;
 curToken = NULL;
 lastToken = NULL;
 NET_STRUCT_END_CONTRUCTION
@@ -306,9 +304,9 @@ short Handshake(NET_PEER);
 NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
-void SingleSend(NET_PEER, const char*, size_t, bool&);
-void SingleSend(NET_PEER, BYTE*&, size_t, bool&);
-void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&);
+void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void DoSend(NET_PEER, int, NET_PACKAGE);
 
 size_t getCountPeers() const;

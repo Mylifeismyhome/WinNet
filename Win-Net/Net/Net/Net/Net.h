@@ -273,6 +273,7 @@ static void Free(T*& data)
 #define NET_UID size_t
 #define INVALID_UID  (size_t)(~0)
 #define INVALID_SIZE (size_t)(~0)
+#define INVALID_UINT_SIZE (uint32_t)(~0)
 
 #define SOCKET_VALID(socket) if(socket != INVALID_SOCKET)
 #define SOCKET_NOT_VALID(socket) if(socket == INVALID_SOCKET)
