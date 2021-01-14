@@ -31,5 +31,5 @@ void Server::OnPeerUpdate(NET_PEER peer)
 }
 
 NET_BEGIN_FNC_PKG(Server, Test)
-LOG("TEST PKG!!!");
+//LOG("TEST PKG!!!");
 NET_END_FNC_PKG

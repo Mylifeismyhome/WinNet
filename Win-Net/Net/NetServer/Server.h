@@ -189,6 +189,7 @@ bool ErasePeer(NET_PEER);
 /* time */
 time_t curTime;
 NET_HANDLE_TIMER hSyncClockNTP;
+NET_HANDLE_TIMER hReSyncClockNTP;
 
 NET_CLASS_PRIVATE
 size_t _CounterPeersTable;

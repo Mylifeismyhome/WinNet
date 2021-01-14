@@ -64,6 +64,7 @@ uint32_t lastToken;
 /* time */
 time_t curTime;
 NET_HANDLE_TIMER hSyncClockNTP;
+NET_HANDLE_TIMER hReSyncClockNTP;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);

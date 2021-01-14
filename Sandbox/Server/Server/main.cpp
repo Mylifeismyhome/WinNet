@@ -10,6 +10,7 @@ int main()
 	BEGIN_LOG("test2/test/test");
 
 	Server server;
+	server.SetSocketOption<bool>({ TCP_NODELAY, true });
 	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });

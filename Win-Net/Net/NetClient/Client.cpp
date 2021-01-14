@@ -40,6 +40,18 @@ NET_TIMER(NTPSyncClock)
 {
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
+	if (!client->IsConnected()) NET_CONTINUE_TIMER;
+
+	tm* tm = localtime(&client->network.curTime);
+	tm->tm_sec += 1;
+	client->network.curTime = mktime(tm);
+	NET_CONTINUE_TIMER;
+}
+
+NET_TIMER(NTPReSyncClock)
+{
+	const auto client = (Client*)param;
+	if (!client) NET_STOP_TIMER;
 
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
@@ -53,7 +65,7 @@ NET_TIMER(NTPSyncClock)
 	}
 
 	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	Timer::SetTime(client->network.hSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
+	Timer::SetTime(client->network.hReSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -332,14 +344,17 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 
-	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-	if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
-		network.hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
-
 	// if we use NTP execute the needed code
 	if (CreateTOTPSecret())
 		LOG_DEBUG(CSTRING("[NET] - Successfully created TOTP-Hash"));
+
+	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
+	if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
+	{
+		network.hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
+		network.hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+	}
 
 	// Create Loop-Receive Thread
 	Thread::Create(Receive, this);
@@ -395,8 +410,24 @@ void Client::ConnectionClosed()
 
 	network.latency = -1;
 	network.bLatency = false;
-	Timer::WaitSingleObjectStopped(network.hCalcLatency);
-	Timer::WaitSingleObjectStopped(network.hSyncClockNTP);
+
+	if (network.hCalcLatency)
+	{
+		Timer::WaitSingleObjectStopped(network.hCalcLatency);
+		network.hCalcLatency = nullptr;
+	}
+
+	if (network.hSyncClockNTP)
+	{
+		Timer::WaitSingleObjectStopped(network.hSyncClockNTP);
+		network.hSyncClockNTP = nullptr;
+	}
+
+	if (network.hReSyncClockNTP)
+	{
+		Timer::WaitSingleObjectStopped(network.hReSyncClockNTP);
+		network.hReSyncClockNTP = nullptr;
+	}
 
 	SetConnected(false);
 }
@@ -499,6 +530,7 @@ void Client::Network::clear()
 	lastToken = NULL;
 	curTime = NULL;
 	hSyncClockNTP = nullptr;
+	hReSyncClockNTP = nullptr;
 }
 
 void Client::Network::AllocData(const size_t size)
@@ -1058,12 +1090,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-	{
-		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-		else
-			sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-	}
+		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1547,16 +1574,8 @@ bool Client::ValidHeader(bool& use_old_token)
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
-				if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-				{
-					network.lastToken = network.curToken;
-					network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-				}
-				else
-				{
-					network.lastToken = network.curToken;
-					network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-				}
+				network.lastToken = network.curToken;
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 
 				// shift the first bytes to check if we are using the correct token - using new token
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
@@ -2161,6 +2180,7 @@ bool Client::CreateTOTPSecret()
 		}
 
 		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		LOG("time: %lld", network.curTime);
 	}
 
 	tm tm;

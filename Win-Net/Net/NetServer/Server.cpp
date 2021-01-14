@@ -26,6 +26,7 @@ Server::Server()
 	SetRunning(false);
 	curTime = NULL;
 	hSyncClockNTP = nullptr;
+	hReSyncClockNTP = nullptr;
 }
 
 Server::~Server()
@@ -190,15 +191,28 @@ NET_TIMER(NTPSyncClock)
 	const auto server = (Server*)param;
 	if (!server) NET_STOP_TIMER;
 
-	const auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+	tm* tm = localtime(&server->curTime);
+	tm->tm_sec += 1;
+	server->curTime = mktime(tm);
+	NET_CONTINUE_TIMER;
+}
+
+NET_TIMER(NTPReSyncClock)
+{
+	const auto server = (Server*)param;
+	if (!server) NET_STOP_TIMER;
+
+	const auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+
 	if (!time.valid())
 	{
-		LOG_ERROR(CSTRING("[%s] - critical failure on calling NTP host"), SERVERNAME(server));
+		LOG_ERROR(CSTRING("[NET] - critical failure on calling NTP host"));
 		NET_CONTINUE_TIMER;
 	}
 
 	server->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	Timer::SetTime(server->hSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
+	Timer::SetTime(server->hReSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
@@ -570,10 +584,9 @@ bool Server::Run()
 			}
 
 			curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+			hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
+			hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
 		}
-
-		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			hSyncClockNTP = Timer::Create(NTPSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
 	}
 
 	Thread::Create(TickThread, this);
@@ -596,6 +609,12 @@ bool Server::Close()
 	{
 		Timer::WaitSingleObjectStopped(hSyncClockNTP);
 		hSyncClockNTP = nullptr;
+	}
+
+	if (hReSyncClockNTP)
+	{
+		Timer::WaitSingleObjectStopped(hReSyncClockNTP);
+		hReSyncClockNTP = nullptr;
 	}
 
 	curTime = NULL;
@@ -1131,12 +1150,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-	{
-		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-		else
-			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-	}
+			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1943,16 +1957,8 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
-				if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-				{
-					peer->lastToken = peer->curToken;
-					peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, curTime, (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-				}
-				else
-				{
-					peer->lastToken = peer->curToken;
-					peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, time(nullptr), (Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL));
-				}
+				peer->lastToken = peer->curToken;
+				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
 
 				// shift the first bytes to check if we are using the correct token - using new token
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
@@ -2702,7 +2708,6 @@ bool Server::CreateTOTPSecret(NET_PEER peer)
 
 	peer->curToken = NULL;
 	peer->lastToken = NULL;
-	peer->sendToken = NULL;
 
 	return true;
 }
