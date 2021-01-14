@@ -1125,6 +1125,7 @@ NET_THREAD(Receive)
 
 	delete peer;
 	peer = nullptr;
+	return NULL;
 }
 
 void Server::Acceptor()
