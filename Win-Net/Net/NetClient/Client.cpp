@@ -1090,7 +1090,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1575,7 +1575,7 @@ bool Client::ValidHeader(bool& use_old_token)
 					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 
 				network.lastToken = network.curToken;
-				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
 				// shift the first bytes to check if we are using the correct token - using new token
 				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
