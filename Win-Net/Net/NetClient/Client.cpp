@@ -2180,7 +2180,6 @@ bool Client::CreateTOTPSecret()
 		}
 
 		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-		LOG("time: %lld", network.curTime);
 	}
 
 	tm tm;
