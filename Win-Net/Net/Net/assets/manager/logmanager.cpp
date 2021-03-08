@@ -1,5 +1,19 @@
 #include "logmanager.h"
 
+// global override able callback
+static void (*OnLogA)(int state, const char* buffer) = nullptr;
+static void (*OnLogW)(int state, const wchar_t* buffer) = nullptr;
+
+void NetSetLogCallbackA(OnLogA_t callback)
+{
+	OnLogA = callback;
+}
+
+void NetSetLogCallbackW(OnLogW_t callback)
+{
+	OnLogW = callback;
+}
+
 void SetFname(const char* name)
 {
 	NetString tmp(name);
@@ -120,6 +134,10 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
 
 	printf(buffer);
+
+	if (OnLogA)
+		(*OnLogA)((int)state, buffer);
+
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
@@ -176,6 +194,10 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
 
 	wprintf(buffer);
+
+	if (OnLogW)
+		(*OnLogW)((int)state, buffer);
+
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
@@ -306,6 +328,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 			buffer[bsize] = '\0';
 
+			if (OnLogA)
+				(*OnLogA)((int)state, buffer);
+
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
@@ -324,6 +349,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			auto buffer = ALLOC<char>(bsize + 1);
 			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 			buffer[bsize] = '\0';
+
+			if (OnLogA)
+				(*OnLogA)((int)state, buffer);
 
 			if (!WriteToFile(buffer))
 			{
@@ -404,6 +432,9 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 			buffer[bsize] = '\0';
 
+			if (OnLogW)
+				(*OnLogW)((int)state, buffer);
+
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
@@ -422,6 +453,9 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
 			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 			buffer[bsize] = '\0';
+
+			if (OnLogW)
+				(*OnLogW)((int)state, buffer);
 
 			if (!WriteToFile(buffer))
 			{

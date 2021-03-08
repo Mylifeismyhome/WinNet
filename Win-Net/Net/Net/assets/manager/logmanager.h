@@ -1,8 +1,25 @@
 #pragma once
+#define NET_ON_LOG_PARAMETERS_A int state, const char* buffer
+#define NET_ON_LOG_PARAMETERS_W int state, const wchar_t* buffer
+
+#ifdef UNICODE
+#define NET_ON_LOG_PARAMETERS NET_ON_LOG_PARAMETERS_W
+#define NET_ON_LOG NetSetLogCallbackW
+#else
+#define NET_ON_LOG_PARAMETERS NET_ON_LOG_PARAMETERS_A
+#define NET_ON_LOG NetSetLogCallbackA
+#endif
+
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
 #include <Net/assets/assets.h>
 #include <Net/assets/manager/filemanager.h>
+
+typedef void (*OnLogA_t)(int state, const char* buffer);
+typedef void (*OnLogW_t)(int state, const wchar_t* buffer);
+
+void NetSetLogCallbackA(OnLogA_t);
+void NetSetLogCallbackW(OnLogW_t);
 
 NET_DSA_BEGIN
 

@@ -70,6 +70,11 @@ public:
 		return nullptr;
 	}
 
+	std::vector<NetProfile_t<T>>& all()
+	{
+		return info;
+	}
+
 	size_t count() const
 	{
 		return info.size();

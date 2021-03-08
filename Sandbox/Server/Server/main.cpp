@@ -3,11 +3,18 @@
 
 #pragma comment(lib, "NetServer.lib")
 
+void OnLogCallback(NET_ON_LOG_PARAMETERS)
+{
+	std::cout << "OK WE ARE GETTING CALLBACKED!!" << std::endl;
+}
+
 int main()
 {
 	Net::load();
 
 	BEGIN_LOG("test2/test/test");
+
+	NET_ON_LOG(OnLogCallback);
 
 	Server server;
 	server.SetSocketOption<bool>({ TCP_NODELAY, true });
