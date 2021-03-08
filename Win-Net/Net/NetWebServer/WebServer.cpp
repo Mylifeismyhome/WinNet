@@ -1088,7 +1088,7 @@ NET_THREAD(Receive)
 			peer->setAsync(false);
 		} while (true);
 
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been successfully handshaked"), SERVERNAME(server), peer->IPAddr().get());
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): handshake has succesfully been performed"), SERVERNAME(server), peer->IPAddr().get());
 	}
 	peer->estabilished = true;
 	server->OnPeerEstabilished(peer);
@@ -1176,7 +1176,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
 
-	EncodeFrame(buffer.GetString(), buffer.GetLength(), peer, opc);
+	EncodeFrame(buffer.GetString(), buffer.GetSize(), peer, opc);
 }
 
 void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
@@ -1216,8 +1216,8 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			buf = ALLOC<char>(totalLength);
 			buf.get()[0] = fin | opcode;
 			buf.get()[1] = NET_WS_PAYLOAD_LENGTH_16;
-			buf.get()[2] = (char)bufferLength >> 8;
-			buf.get()[3] = (char)bufferLength;
+			buf.get()[2] = (bufferLength >> 8) & 0xFF;
+			buf.get()[3] = (bufferLength) & 0xFF;
 			memcpy(buf.get() + 4, in_frame, frame_length);
 		}
 		else
@@ -1226,14 +1226,14 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			buf = ALLOC<char>(totalLength);
 			buf.get()[0] = fin | opcode;
 			buf.get()[1] = NET_WS_PAYLOAD_LENGTH_63;
-			buf.get()[2] = 0;
-			buf.get()[3] = 0;
-			buf.get()[4] = 0;
-			buf.get()[5] = 0;
-			buf.get()[6] = (char)bufferLength >> 24;
-			buf.get()[7] = (char)bufferLength >> 16;
-			buf.get()[8] = (char)bufferLength >> 8;
-			buf.get()[9] = (char)bufferLength;
+			buf.get()[2] = (bufferLength >> 56) & 0xFF;
+			buf.get()[3] = (bufferLength >> 48) & 0xFF;
+			buf.get()[4] = (bufferLength >> 40) & 0xFF;
+			buf.get()[5] = (bufferLength >> 32) & 0xFF;
+			buf.get()[6] = (bufferLength >> 24) & 0xFF;
+			buf.get()[7] = (bufferLength >> 16) & 0xFF;
+			buf.get()[8] = (bufferLength >> 8) & 0xFF;
+			buf.get()[9] = (bufferLength) & 0xFF;
 			memcpy(buf.get() + 10, in_frame, frame_length);
 		}
 

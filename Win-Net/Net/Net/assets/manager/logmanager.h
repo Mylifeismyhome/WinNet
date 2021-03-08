@@ -91,7 +91,7 @@ Net::Console::Log(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define LOG(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -102,7 +102,7 @@ else \
 #define LOG_ERROR(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -113,7 +113,7 @@ else \
 #define LOG_WARNING(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -124,7 +124,7 @@ else \
 #define LOG_SUCCESS(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -136,7 +136,7 @@ else \
 #define LOG_DEBUG(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -150,7 +150,7 @@ else \
 #define LOG_PEER(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__); \
 } \
 else \
@@ -162,7 +162,7 @@ else \
 #define NLOG(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::normal, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -173,7 +173,7 @@ else \
 #define NLOG_ERROR(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::error, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -184,7 +184,7 @@ else \
 #define NLOG_WARNING(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::warning, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -195,7 +195,7 @@ else \
 #define NLOG_SUCCESS(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::success, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -207,7 +207,7 @@ else \
 #define NLOG_DEBUG(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::debug, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -221,7 +221,7 @@ else \
 #define NLOG_PEER(...) \
 if(IsAreaInUse()) \
 { \
-	Net::manager::Log l; \
+	Net::Manager::Log l; \
 	l.doLog(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__); \
 } \
 else \
@@ -268,7 +268,7 @@ extern "C" NET_API bool GetPrintFState();
 extern "C" NET_API WORD GetColorFromState(LogStates);
 NET_NAMESPACE_END
 
-NET_NAMESPACE_BEGIN(manager)
+NET_NAMESPACE_BEGIN(Manager)
 NET_CLASS_BEGIN(Log)
 NET_FILEMANAGER* file;
 bool WriteToFile(const char*) const;

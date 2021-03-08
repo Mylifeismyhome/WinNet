@@ -49,16 +49,16 @@ struct NET_FILE_ATTRA
 
 #define NET_FILES NET_FILE_ATTR
 
-#define NET_DIRMANAGER Net::manager::dirmanager
-#define NET_CREATEDIR Net::manager::dirmanager::createDir
-#define NET_DELETEDIR Net::manager::dirmanager::deleteDir
-#define NET_SCANDIR Net::manager::dirmanager::scandir
-#define NET_HOMEDIR Net::manager::dirmanager::homeDir()
-#define NET_CURRENTFILENAME(x) Net::manager::dirmanager::currentFileName(x)
+#define NET_DIRMANAGER Net::Manager::Directory
+#define NET_CREATEDIR Net::Manager::Directory::createDir
+#define NET_DELETEDIR Net::Manager::Directory::deleteDir
+#define NET_SCANDIR Net::Manager::Directory::scandir
+#define NET_HOMEDIR Net::Manager::Directory::homeDir()
+#define NET_CURRENTFILENAME(x) Net::Manager::Directory::currentFileName(x)
 
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(manager)
-NET_NAMESPACE_BEGIN(dirmanager)
+NET_NAMESPACE_BEGIN(Manager)
+NET_NAMESPACE_BEGIN(Directory)
 enum class createDirCodes
 {
 	SUCCESS = 0,

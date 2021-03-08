@@ -1,17 +1,21 @@
 #pragma once
+#define NET_PROFILE Net::Manager::Profile
+#define NET_PROFILE_DATA Net::Manager::Profile_t
+
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <mutex>
 
 NET_DSA_BEGIN
 NET_NAMESPACE_BEGIN(Net)
+NET_NAMESPACE_BEGIN(Manager)
 template <typename T>
-struct NetProfile_t
+struct Profile_t
 {
 	T peer;
 	Package* data;
 
-	NetProfile_t(T peer)
+	Profile_t(T peer)
 	{
 		this->peer = peer;
 		data = new Package();
@@ -25,16 +29,16 @@ struct NetProfile_t
 };
 
 template <typename T>
-class NetProfile
+class Profile
 {
-	std::vector<NetProfile_t<T>> info;
+	std::vector<NET_PROFILE_DATA<T>> info;
 	std::mutex critical;
 
 public:
 	Package* Add(T peer)
 	{
 		critical.lock();
-		info.emplace_back(NetProfile_t<T>(peer));
+		info.emplace_back(NET_PROFILE_DATA<T>(peer));
 		critical.unlock();
 		return this->peer(peer);
 	}
@@ -44,7 +48,7 @@ public:
 		critical.lock();
 		for (auto it = info.begin(); it != info.end(); ++it)
 		{
-			NetProfile_t<T> entry = (NetProfile_t<T>) * it;
+			NET_PROFILE_DATA<T> entry = (NET_PROFILE_DATA<T>) * it;
 			if (entry.peer == peer)
 			{
 				entry.clear();
@@ -58,7 +62,7 @@ public:
 	Package* peer(T peer)
 	{
 		critical.lock();
-		for (NetProfile_t<T> it : info)
+		for (NET_PROFILE_DATA<T> it : info)
 		{
 			if (it.peer == peer)
 			{
@@ -70,7 +74,7 @@ public:
 		return nullptr;
 	}
 
-	std::vector<NetProfile_t<T>>& all()
+	std::vector<NET_PROFILE_DATA<T>>& All()
 	{
 		return info;
 	}
@@ -80,5 +84,6 @@ public:
 		return info.size();
 	}
 };
+NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_DSA_END

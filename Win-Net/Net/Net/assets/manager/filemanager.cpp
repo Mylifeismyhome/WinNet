@@ -50,13 +50,13 @@ static const wchar_t* GetModeW(const uint8_t Mode)
 	return L"rb";
 }
 
-static Net::manager::FileManagerErrorRef GetErrorDescription(const Net::manager::ErrorCodes code)
+static Net::Manager::FileManagerErrorRef GetErrorDescription(const Net::Manager::ErrorCodes code)
 {
-	return Net::manager::FileManagerErrorRef(code);
+	return Net::Manager::FileManagerErrorRef(code);
 }
 
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(manager)
+NET_NAMESPACE_BEGIN(Manager)
 FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
 {
 	strerror_s(buffer, ERRORCODEDESC_LEN, (int)code);

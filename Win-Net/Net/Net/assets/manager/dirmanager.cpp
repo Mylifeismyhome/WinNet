@@ -1,9 +1,9 @@
 #include "dirmanager.h"
 
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(manager)
+NET_NAMESPACE_BEGIN(Manager)
 // Return true if the folder exists, false otherwise
-bool dirmanager::folderExists(const wchar_t* folderName)
+bool Directory::folderExists(const wchar_t* folderName)
 {
 	if (_waccess(folderName, 0) == -1) {
 		//File not found
@@ -18,7 +18,7 @@ bool dirmanager::folderExists(const wchar_t* folderName)
 	return true;
 }
 
-bool dirmanager::folderExists(const char* folderName)
+bool Directory::folderExists(const char* folderName)
 {
 #ifndef VS13
 	if (_access(folderName, 0) == -1) {
@@ -35,7 +35,7 @@ bool dirmanager::folderExists(const char* folderName)
 	return true;
 }
 
-static dirmanager::createDirResW ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
+static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
 {
 	const auto len = wcslen(path);
 
@@ -74,7 +74,7 @@ static dirmanager::createDirResW ProcessCreateDirectory(wchar_t* path, std::vect
 	if (bDirectory)
 		directories.emplace_back(directory);
 
-	std::vector<dirmanager::createDirResW_t> failures;
+	std::vector<Directory::createDirResW_t> failures;
 	auto bError = false;
 
 	for (auto entry : directories)
@@ -82,7 +82,7 @@ static dirmanager::createDirResW ProcessCreateDirectory(wchar_t* path, std::vect
 		struct _stat st = { 0 };
 		if (_wstat(entry, &st) != -1)
 		{
-			failures.emplace_back(entry, dirmanager::createDirCodes::ERR_EXISTS);
+			failures.emplace_back(entry, Directory::createDirCodes::ERR_EXISTS);
 			bError = true;
 			continue;
 		}
@@ -90,15 +90,15 @@ static dirmanager::createDirResW ProcessCreateDirectory(wchar_t* path, std::vect
 		const auto ret = _wmkdir(entry);
 		if (ret)
 		{
-			failures.emplace_back(entry, dirmanager::createDirCodes::ERR);
+			failures.emplace_back(entry, Directory::createDirCodes::ERR);
 			bError = true;
 		}
 	}
 
-	return dirmanager::createDirResW(bError, failures);
+	return Directory::createDirResW(bError, failures);
 }
 
-static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
+static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
 {
 	const auto len = strlen(path);
 
@@ -137,7 +137,7 @@ static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<
 	if (bDirectory)
 		directories.emplace_back(directory);
 
-	std::vector<dirmanager::createDirResA_t> failures;
+	std::vector<Directory::createDirResA_t> failures;
 	auto bError = false;
 
 	for (auto entry : directories)
@@ -146,7 +146,7 @@ static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<
 		struct stat st = { 0 };
 		if (stat(entry, &st) != -1)
 		{
-			failures.emplace_back(entry, dirmanager::createDirCodes::ERR_EXISTS);
+			failures.emplace_back(entry, Directory::createDirCodes::ERR_EXISTS);
 			bError = true;
 			continue;
 		}
@@ -155,15 +155,15 @@ static dirmanager::createDirResA ProcessCreateDirectory(char* path, std::vector<
 		const auto ret = _mkdir(entry);
 		if (ret)
 		{
-			failures.emplace_back(entry, dirmanager::createDirCodes::ERR);
+			failures.emplace_back(entry, Directory::createDirCodes::ERR);
 			bError = true;
 		}
 	}
 
-	return dirmanager::createDirResA(bError, failures);
+	return Directory::createDirResA(bError, failures);
 }
 
-dirmanager::createDirResW dirmanager::createDir(wchar_t* path)
+Directory::createDirResW Directory::createDir(wchar_t* path)
 {
 	const auto len = wcslen(path);
 
@@ -187,7 +187,7 @@ dirmanager::createDirResW dirmanager::createDir(wchar_t* path)
 	return ProcessCreateDirectory(fixed);
 }
 
-dirmanager::createDirResA dirmanager::createDir(char* path)
+Directory::createDirResA Directory::createDir(char* path)
 {
 	const auto len = strlen(path);
 
@@ -211,7 +211,7 @@ dirmanager::createDirResA dirmanager::createDir(char* path)
 	return ProcessCreateDirectory(fixed);
 }
 
-bool dirmanager::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
+bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 {
 	std::wstring     strFilePath;                 // Filepath
 	std::wstring     strPattern;                  // Pattern
@@ -278,7 +278,7 @@ bool dirmanager::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
+bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 {
 	std::string     strFilePath;                 // Filepath
 	std::string     strPattern;                  // Pattern
@@ -345,7 +345,7 @@ bool dirmanager::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-void dirmanager::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
+void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
 	WIN32_FIND_DATAW ffblk;
 	wchar_t buf[MAX_PATH];
@@ -385,7 +385,7 @@ void dirmanager::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 	memset(buf, NULL, MAX_PATH);
 }
 
-void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
+void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 {
 	WIN32_FIND_DATA ffblk;
 	char buf[MAX_PATH];
@@ -425,7 +425,7 @@ void dirmanager::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 	memset(buf, NULL, MAX_PATH);
 }
 
-std::wstring dirmanager::homeDirW()
+std::wstring Directory::homeDirW()
 {
 	do
 	{
@@ -446,7 +446,7 @@ std::wstring dirmanager::homeDirW()
 	} while (true);
 }
 
-std::string dirmanager::homeDirA()
+std::string Directory::homeDirA()
 {
 	do
 	{
@@ -467,7 +467,7 @@ std::string dirmanager::homeDirA()
 	} while (true);
 }
 
-std::wstring dirmanager::currentFileNameW()
+std::wstring Directory::currentFileNameW()
 {
 	do
 	{
@@ -488,7 +488,7 @@ std::wstring dirmanager::currentFileNameW()
 	} while (true);
 }
 
-std::string dirmanager::currentFileNameA()
+std::string Directory::currentFileNameA()
 {
 	do
 	{

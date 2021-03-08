@@ -29,7 +29,7 @@ void SetFname(const char* name)
 		}
 		else
 		{
-			strcpy_s(fname, Net::manager::dirmanager::homeDir().data());
+			strcpy_s(fname, Net::Manager::Directory::homeDir().data());
 			strcpy_s(fname, name);
 			strcat_s(fname, CSTRING(".log"));
 			NET_DIRMANAGER::createDir(fname);
@@ -37,7 +37,7 @@ void SetFname(const char* name)
 	}
 	else
 	{
-		strcpy_s(fname, Net::manager::dirmanager::homeDir().data());
+		strcpy_s(fname, Net::Manager::Directory::homeDir().data());
 		strcat_s(fname, name);
 		strcat_s(fname, CSTRING(".log"));
 	}
@@ -255,7 +255,7 @@ WORD GetColorFromState(const LogStates state)
 }
 NET_NAMESPACE_END
 
-NET_NAMESPACE_BEGIN(manager)
+NET_NAMESPACE_BEGIN(Manager)
 Log::Log()
 {
 	file = new NET_FILEMANAGER(GetFname(), NET_FILE_WRITE | NET_FILE_APPAND);

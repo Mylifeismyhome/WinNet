@@ -5,13 +5,13 @@
 NET_DSA_BEGIN
 
 #ifdef UNICODE
-#define NET_FILEMANAGER Net::manager::FileManagerW
+#define NET_FILEMANAGER Net::Manager::FileManagerW
 #else
-#define NET_FILEMANAGER Net::manager::FileManagerA
+#define NET_FILEMANAGER Net::Manager::FileManagerA
 #endif
 
-#define NET_FILEMANAGERW Net::manager::FileManagerW
-#define NET_FILEMANAGERA Net::manager::FileManagerA
+#define NET_FILEMANAGERW Net::Manager::FileManagerW
+#define NET_FILEMANAGERA Net::Manager::FileManagerA
 
 #define NET_FILE_APPAND (1 << 0)
 #define NET_FILE_READ (1 << 1)
@@ -23,7 +23,7 @@ NET_DSA_BEGIN
 #define ERRORCODEDESC_LEN 256
 
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(manager)
+NET_NAMESPACE_BEGIN(Manager)
 enum class ErrorCodes
 {
 	ERR_OK = 0,
