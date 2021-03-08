@@ -1011,6 +1011,7 @@
     <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
     <ClInclude Include="..\Net\assets\manager\filemanager.h" />
     <ClInclude Include="..\Net\assets\manager\logmanager.h" />
+    <ClInclude Include="..\Net\assets\manager\profile.hpp" />
     <ClInclude Include="..\Net\assets\thread.h" />
     <ClInclude Include="..\Net\assets\timer.h" />
     <ClInclude Include="..\Net\assets\web\http.h" />

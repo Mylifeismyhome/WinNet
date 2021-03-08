@@ -14,6 +14,10 @@ void Server::Tick()
 
 void Server::OnPeerConnect(NET_PEER peer)
 {
+	profile.Add(peer);
+	auto info = profile.peer(peer);
+	if (info)
+		info->Append("Test", "Hallo du tester");
 }
 
 void Server::OnPeerEstabilished(NET_PEER peer)
@@ -24,6 +28,15 @@ void Server::OnPeerEstabilished(NET_PEER peer)
 
 void Server::OnPeerDisconnect(NET_PEER peer)
 {
+	auto info = profile.peer(peer);
+	if (info)
+	{
+		auto str = info->String("Test");
+		if (str.valid())
+			LOG(str.value());
+	}
+
+	profile.Remove(peer);
 }
 
 void Server::OnPeerUpdate(NET_PEER peer)

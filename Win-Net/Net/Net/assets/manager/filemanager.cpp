@@ -213,6 +213,22 @@ bool FileManagerW::write(const wchar_t* str)
 	return written != NULL;
 }
 
+bool FileManagerW::size(size_t& size)
+{
+	if (file_exists())
+	{
+		if (!openFile())
+			return false;
+
+		fseek(file, 0, SEEK_END);
+		const auto size = static_cast<size_t>(ftell(file));
+		rewind(file);
+		return true;
+	}
+
+	return false;
+}
+
 void FileManagerW::clear() const
 {
 	fflush(file);
@@ -362,6 +378,22 @@ bool FileManagerA::write(const wchar_t* str)
 	const auto written = fwrite(str, 2, wcslen(str), file);
 	close();
 	return written != NULL;
+}
+
+bool FileManagerA::size(size_t& size)
+{
+	if (file_exists())
+	{
+		if (!openFile())
+			return false;
+
+		fseek(file, 0, SEEK_END);
+		const auto size = static_cast<size_t>(ftell(file));
+		rewind(file);
+		return true;
+	}
+
+	return false;
 }
 
 void FileManagerA::clear() const

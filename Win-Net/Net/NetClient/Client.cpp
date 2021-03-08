@@ -2198,6 +2198,8 @@ bool Client::CreateTOTPSecret()
 	network.totp_secret[network.totp_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(network.totp_secret, network.totp_secret_len);
 
+	LOG("SECRET: %s", network.totp_secret);
+
 	network.curToken = NULL;
 	network.lastToken = NULL;
 

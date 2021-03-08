@@ -281,6 +281,9 @@
     <ClInclude Include="..\Net\Coding\TOTP.h">
       <Filter>Coding</Filter>
     </ClInclude>
+    <ClInclude Include="..\Net\assets\manager\profile.hpp">
+      <Filter>Assets\manager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S">
