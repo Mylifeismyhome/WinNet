@@ -14,16 +14,19 @@ struct Profile_t
 {
 	T peer;
 	Package* data;
+	void* ext;
 
 	Profile_t(T peer)
 	{
 		this->peer = peer;
 		data = new Package();
+		ext = nullptr;
 	}
 
 	void clear()
 	{
 		FREE(data);
+		FREE(ext);
 		peer = NULL;
 	}
 };
@@ -59,10 +62,39 @@ public:
 		critical.unlock();
 	}
 
+	void* peerExt(T peer)
+	{
+		critical.lock();
+		for (NET_PROFILE_DATA<T>& it : info)
+		{
+			if (it.peer == peer)
+			{
+				critical.unlock();
+				return it.ext;
+			}
+		}
+		critical.unlock();
+		return nullptr;
+	}
+
+	void setPeerExt(T peer, void* ext)
+	{
+		critical.lock();
+		for (NET_PROFILE_DATA<T>& it : info)
+		{
+			if (it.peer == peer)
+			{
+				it.ext = ext;
+				break;
+			}
+		}
+		critical.unlock();
+	}
+
 	Package* peer(T peer)
 	{
 		critical.lock();
-		for (NET_PROFILE_DATA<T> it : info)
+		for (NET_PROFILE_DATA<T>& it : info)
 		{
 			if (it.peer == peer)
 			{
