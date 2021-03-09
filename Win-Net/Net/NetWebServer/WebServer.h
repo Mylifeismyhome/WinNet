@@ -18,8 +18,6 @@
 
 #define NET_SEND DoSend
 
-#define NET_PEER_WAIT_LOCK(peer) while (peer && peer->bQueueLock) {};
-
 #define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
 #define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT
 #define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
@@ -59,6 +57,8 @@ CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
+
+#include <mutex>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
@@ -143,7 +143,7 @@ bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
 bool bHasBeenErased;
-bool bQueueLock;
+std::mutex critical;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
@@ -157,7 +157,6 @@ latency = -1;
 bLatency = false;
 hCalcLatency = nullptr;
 bHasBeenErased = false;
-bQueueLock = false;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();

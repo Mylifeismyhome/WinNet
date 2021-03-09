@@ -254,7 +254,6 @@ bool Server::ErasePeer(NET_PEER peer)
 		return false;
 	);
 
-	NET_PEER_WAIT_LOCK(peer);
 	peer->lock();
 
 	if (peer->bHasBeenErased)
@@ -394,12 +393,12 @@ IPRef Server::NET_IPEER::IPAddr() const
 
 void Server::NET_IPEER::lock()
 {
-	bQueueLock = true;
+	critical.lock();
 }
 
 void Server::NET_IPEER::unlock()
 {
-	bQueueLock = false;
+	critical.unlock();
 }
 
 void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)
