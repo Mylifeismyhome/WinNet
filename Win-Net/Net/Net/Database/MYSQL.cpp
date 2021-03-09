@@ -241,13 +241,13 @@ bool MYSQL::reconnect()
 
 void MYSQL::lock()
 {
-	this->bGuardLock = true;
+	this->critical.lock();
 	msqldriver->threadInit();
 }
 
 void MYSQL::unlock()
 {
-	this->bGuardLock = false;
+	this->critical.unlock();
 	msqldriver->threadEnd();
 }
 
@@ -268,7 +268,6 @@ char* MYSQL::GetLastError() const
 
 MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 {
-	MYSQL_GUARD_LOCK;
 	lock();
 
 	if(retry)
@@ -357,7 +356,6 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 
 MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 {
-	MYSQL_GUARD_LOCK;
 	lock();
 
 	if (retry)
@@ -446,7 +444,6 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 
 MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 {
-	MYSQL_GUARD_LOCK;
 	lock();
 
 	if (retry)

@@ -3,6 +3,7 @@
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
 #include <Net/assets/manager/logmanager.h>
+#include <mutex>
 
 NET_DSA_BEGIN
 
@@ -42,8 +43,6 @@ NET_DSA_BEGIN
 #define MULTIQUERY MYSQL_MUTLIQUERY
 
 #define FREESTRING(sql) delete[] sql; sql = nullptr;
-
-#define MYSQL_GUARD_LOCK while(bGuardLock) {}
 
 #include <MYSQL/include/jdbc/cppconn/driver.h>
 #include <MYSQL/include/jdbc/cppconn/exception.h>
@@ -146,7 +145,7 @@ NET_CLASS_BEGIN(MYSQL)
 sql::Driver* msqldriver = nullptr;
 sql::Connection* msqlcon = nullptr;
 MYSQL_CON conConfig;
-bool bGuardLock;
+std::mutex critical;
 
 bool setup();
 
