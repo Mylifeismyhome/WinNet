@@ -201,7 +201,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	timeval tv = {};
 	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
 	tv.tv_usec = 0;
-	setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
 	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : NET_OPT_DEFAULT_SSL)
 	{
@@ -283,7 +283,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		// close endpoint
 		SOCKET_VALID(peer->pSocket)
 		{
-			closesocket(peer->pSocket);
+			Ws2_32::closesocket(peer->pSocket);
 			peer->pSocket = INVALID_SOCKET;
 		}
 
@@ -312,7 +312,7 @@ bool Server::ErasePeer(NET_PEER peer)
 	// close endpoint
 	SOCKET_VALID(peer->pSocket)
 	{
-		closesocket(peer->pSocket);
+		Ws2_32::closesocket(peer->pSocket);
 		peer->pSocket = INVALID_SOCKET;
 	}
 
@@ -525,7 +525,7 @@ bool Server::Run()
 	auto hints = addrinfo();
 
 	// Initialize Winsock
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != 0)
 	{
 		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), SERVERNAME(this), res);
@@ -540,59 +540,59 @@ bool Server::Run()
 	hints.ai_flags = AI_PASSIVE;
 
 	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
-	res = getaddrinfo(NULLPTR, Port.data(), &hints, &result);
+	res = Ws2_32::getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0)
 	{
 		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), SERVERNAME(this), res);
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	// Create a SOCKET for connecting to server
-	SetListenSocket(socket(result->ai_family, result->ai_socktype, result->ai_protocol));
+	SetListenSocket(Ws2_32::socket(result->ai_family, result->ai_socktype, result->ai_protocol));
 
 	if (GetListenSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), WSAGetLastError());
-		freeaddrinfo(result);
-		WSACleanup();
+		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		Ws2_32::freeaddrinfo(result);
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	// Set the mode of the socket to be nonblocking
 	u_long iMode = 1;
-	res = ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
+	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), WSAGetLastError());
-		closesocket(GetListenSocket());
-		WSACleanup();
+		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		Ws2_32::closesocket(GetListenSocket());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	// Setup the TCP listening socket
-	res = bind(GetListenSocket(), result->ai_addr, (int)result->ai_addrlen);
+	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, (int)result->ai_addrlen);
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), WSAGetLastError());
-		freeaddrinfo(result);
-		closesocket(GetListenSocket());
-		WSACleanup();
+		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		Ws2_32::freeaddrinfo(result);
+		Ws2_32::closesocket(GetListenSocket());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	// no longer need address information
-	freeaddrinfo(result);
+	Ws2_32::freeaddrinfo(result);
 
 	// start listening for new clients attempting to connect
-	res = listen(GetListenSocket(), SOMAXCONN);
+	res = Ws2_32::listen(GetListenSocket(), SOMAXCONN);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), WSAGetLastError());
-		closesocket(GetListenSocket());
-		WSACleanup();
+		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		Ws2_32::closesocket(GetListenSocket());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
@@ -616,12 +616,12 @@ bool Server::Close()
 	SetRunning(false);
 
 	if (GetListenSocket())
-		closesocket(GetListenSocket());
+		Ws2_32::closesocket(GetListenSocket());
 
 	if (GetAcceptSocket())
-		closesocket(GetAcceptSocket());
+		Ws2_32::closesocket(GetAcceptSocket());
 
-	WSACleanup();
+	Ws2_32::WSACleanup();
 
 	LOG_DEBUG(CSTRING("[%s] - Closed!"), SERVERNAME(this));
 	return true;
@@ -639,7 +639,7 @@ short Server::Handshake(NET_PEER peer)
 		// check socket still open
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSAETIMEDOUT:
 				peer->network.reset();
@@ -730,7 +730,7 @@ short Server::Handshake(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				peer->network.reset();
@@ -1314,7 +1314,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
 				if (res == SOCKET_ERROR)
 				{
-					switch (WSAGetLastError())
+					switch (Ws2_32::WSAGetLastError())
 					{
 					case WSANOTINITIALISED:
 						buf.free();
@@ -1455,7 +1455,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 		// check socket still open
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
@@ -1614,7 +1614,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				peer->network.reset();

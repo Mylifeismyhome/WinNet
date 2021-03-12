@@ -293,6 +293,8 @@ namespace Net
 	void load();
 	void unload();
 
+	int SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen);
+
 	namespace ssl
 	{
 		struct NET_SSL_METHOD_T
@@ -565,7 +567,7 @@ NET_STRUCT_END
 
 static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
 {
-	const auto result = setsockopt(socket,
+	const auto result = Net::SocketOpt(socket,
 		IPPROTO_TCP,
 		opt.opt,
 		(char*)&opt.type,

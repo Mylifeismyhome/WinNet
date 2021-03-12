@@ -20,6 +20,11 @@ void Net::unload()
 	Ws2_32::Uninitialize();
 }
 
+int Net::SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen)
+{
+	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
+}
+
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
 {
 	for (auto& val : NET_SSL_METHOD_L)

@@ -118,14 +118,14 @@ bool Client::ChangeMode(const bool blocking)
 {
 	auto ret = true;
 	u_long non_blocking = blocking ? 0 : 1;
-	ret = NO_ERROR == ioctlsocket(GetSocket(), FIONBIO, &non_blocking);
+	ret = NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking);
 	return ret;
 }
 
 char* Client::ResolveHostname(const char* name)
 {
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
@@ -135,7 +135,7 @@ char* Client::ResolveHostname(const char* name)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[NET] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -146,11 +146,11 @@ char* Client::ResolveHostname(const char* name)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	struct addrinfo* result = nullptr;
-	const auto dwRetval = getaddrinfo(name, nullptr, &hints, &result);
+	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
 	if (dwRetval != NULL)
 	{
 		LOG_ERROR(CSTRING("[NET] - Host look up has been failed with error %d"), dwRetval);
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -203,8 +203,8 @@ char* Client::ResolveHostname(const char* name)
 
 	if (!psockaddrv4 && !psockaddrv6)
 	{
-		freeaddrinfo(result);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(result);
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -215,8 +215,8 @@ char* Client::ResolveHostname(const char* name)
 	if (psockaddrv6) buf = (char*)inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
 	else buf = (char*)inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
 
-	freeaddrinfo(result);
-	WSACleanup();
+	Ws2_32::freeaddrinfo(result);
+	Ws2_32::WSACleanup();
 
 	return buf;
 }
@@ -230,7 +230,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	}
 
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
@@ -240,7 +240,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[NET] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
@@ -252,15 +252,15 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (!v6 && !v4)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
-	SetSocket(socket(v6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP));
+	SetSocket(Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP));
 	if (GetSocket() == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), WSAGetLastError());
-		WSACleanup();
+		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), Ws2_32::WSAGetLastError());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
@@ -287,8 +287,8 @@ bool Client::Connect(const char* Address, const u_short Port)
 		if (res != 1)
 		{
 			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
-			closesocket(GetSocket());
-			WSACleanup();
+			Ws2_32::closesocket(GetSocket());
+			Ws2_32::WSACleanup();
 			return false;
 		}
 		sockaddr = (struct sockaddr*)&sockaddr6;
@@ -298,27 +298,27 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
-		closesocket(GetSocket());
-		WSACleanup();
+		Ws2_32::closesocket(GetSocket());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	if (GetSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), WSAGetLastError());
-		closesocket(GetSocket());
-		WSACleanup();
+		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), Ws2_32::WSAGetLastError());
+		Ws2_32::closesocket(GetSocket());
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
 	/* Connect to the server */
 	if (connect(GetSocket(), sockaddr, slen) == SOCKET_ERROR)
 	{
-		closesocket(GetSocket());
+		Ws2_32::closesocket(GetSocket());
 		SetSocket(INVALID_SOCKET);
 
 		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return false;
 	}
 
@@ -405,7 +405,7 @@ void Client::ConnectionClosed()
 {
 	if (GetSocket())
 	{
-		closesocket(GetSocket());
+		Ws2_32::closesocket(GetSocket());
 		SetSocket(INVALID_SOCKET);
 	}
 
@@ -441,7 +441,7 @@ void Client::Clear()
 		return;
 	}
 
-	WSACleanup();
+	Ws2_32::WSACleanup();
 
 	network.clear();
 }
@@ -594,7 +594,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 		const auto res = Ws2_32::send(GetSocket(), data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
@@ -746,7 +746,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
@@ -919,7 +919,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
-			switch (WSAGetLastError())
+			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				bPreviousSentFailed = true;
@@ -1407,7 +1407,7 @@ DWORD Client::DoReceive()
 	const auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
-		switch (WSAGetLastError())
+		switch (Ws2_32::WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
 			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
