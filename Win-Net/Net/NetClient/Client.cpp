@@ -1,5 +1,6 @@
 #include <NetClient/Client.h>
 #include <Net/Import/Kernel32.h>
+#include <Net/Import/Ws2_32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
@@ -590,7 +591,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 
 	do
 	{
-		const auto res = send(GetSocket(), data, static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -742,7 +743,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 
 	do
 	{
-		const auto res = send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -915,7 +916,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 
 	do
 	{
-		const auto res = send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -1403,7 +1404,7 @@ DWORD Client::DoReceive()
 	if (!IsConnected())
 		return FREQUENZ;
 
-	const auto data_size = recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+	const auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())

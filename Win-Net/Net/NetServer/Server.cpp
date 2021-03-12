@@ -1,5 +1,6 @@
 #include <NetServer/Server.h>
 #include <Net/Import/Kernel32.h>
+#include <Net/Import/Ws2_32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
@@ -650,7 +651,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 
 	do
 	{
-		const auto res = send(peer->pSocket, data, static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -801,7 +802,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 
 	do
 	{
-		const auto res = send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -973,7 +974,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 
 	do
 	{
-		const auto res = send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -1443,7 +1444,7 @@ short Server::Handshake(NET_PEER peer)
 		return ServerHandshake::peer_not_valid;
 	);
 
-	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+	const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())
@@ -1787,7 +1788,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	SOCKET_NOT_VALID(peer->pSocket)
 		return FREQUENZ(this);
 
-	const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+	const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
 		switch (WSAGetLastError())

@@ -183,6 +183,9 @@
     <ClCompile Include="..\Net\Coding\TOTP.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Import\Ws2_32.cpp">
+      <Filter>Import</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -283,6 +286,9 @@
     </ClInclude>
     <ClInclude Include="..\Net\assets\manager\profile.hpp">
       <Filter>Assets\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Ws2_32.h">
+      <Filter>Import</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

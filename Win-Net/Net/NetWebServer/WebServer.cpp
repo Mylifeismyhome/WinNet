@@ -1,5 +1,6 @@
 #include "WebServer.h"
 #include <Net/Import/Kernel32.h>
+#include <Net/Import/Ws2_32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
@@ -636,7 +637,7 @@ short Server::Handshake(NET_PEER peer)
 	if (peer->ssl)
 	{
 		// check socket still open
-		if (recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
+		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
@@ -726,7 +727,7 @@ short Server::Handshake(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
@@ -940,7 +941,7 @@ short Server::Handshake(NET_PEER peer)
 				SOCKET_NOT_VALID(peer->pSocket)
 					return false;
 
-				if (send(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
+				if (Ws2_32::send(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
 					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
@@ -973,7 +974,7 @@ short Server::Handshake(NET_PEER peer)
 			auto res = 0;
 			do
 			{
-				res = send(peer->pSocket, buffer.get(), size, 0);
+				res = Ws2_32::send(peer->pSocket, buffer.get(), size, 0);
 				if (res == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
@@ -1310,7 +1311,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			auto sendSize = totalLength;
 			do
 			{
-				const auto res = send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
+				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
 				if (res == SOCKET_ERROR)
 				{
 					switch (WSAGetLastError())
@@ -1452,7 +1453,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	if (peer->ssl)
 	{
 		// check socket still open
-		if (recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
+		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())
 			{
@@ -1610,7 +1611,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			switch (WSAGetLastError())

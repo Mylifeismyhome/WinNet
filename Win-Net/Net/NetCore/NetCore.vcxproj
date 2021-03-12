@@ -997,6 +997,7 @@
     <ClCompile Include="..\Net\Import\Kernel32.cpp" />
     <ClCompile Include="..\Net\Import\MemoryModule.c" />
     <ClCompile Include="..\Net\Import\Ntdll.cpp" />
+    <ClCompile Include="..\Net\Import\Ws2_32.cpp" />
     <ClCompile Include="..\Net\Net\Net.cpp" />
     <ClCompile Include="..\Net\Net\NetCodes.cpp" />
     <ClCompile Include="..\Net\Net\NetString.cpp" />
@@ -1033,6 +1034,7 @@
     <ClInclude Include="..\Net\Import\Kernel32.h" />
     <ClInclude Include="..\Net\Import\MemoryModule.h" />
     <ClInclude Include="..\Net\Import\Ntdll.h" />
+    <ClInclude Include="..\Net\Import\Ws2_32.h" />
     <ClInclude Include="..\Net\Net\NativePackages.h" />
     <ClInclude Include="..\Net\Net\Net.h" />
     <ClInclude Include="..\Net\Net\NetCodes.h" />
