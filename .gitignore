@@ -357,3 +357,5 @@ MigrationBackup/
 *.dll
 
 Win-Net/extern/*
+
+!Tools/*.exe

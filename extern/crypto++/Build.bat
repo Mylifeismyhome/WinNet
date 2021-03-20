@@ -1,5 +1,5 @@
-start BUILDX86d.bat
-start BUILDX64d.bat
-start BUILDX86.bat
-start BUILDX64.bat
+call BUILDX86d.bat
+call BUILDX64d.bat
+call BUILDX86.bat
+call BUILDX64.bat
 exit
