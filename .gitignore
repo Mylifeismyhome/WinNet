@@ -364,3 +364,6 @@ Win-Net/extern/*
 # ignore compiled OpenSSL
 extern/OpenSSL/src/BIN/
 extern/OpenSSL/src/openssl-master/test/
+
+# ignore compiled CryptoPP
+extern/crypto++/lib/
