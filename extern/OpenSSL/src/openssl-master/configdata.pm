@@ -220,7 +220,7 @@ our %config = (
     "patch" => "0",
     "perl_archname" => "MSWin32-x64-multi-thread",
     "perl_cmd" => "C:\\Strawberry\\perl\\bin\\perl.exe",
-    "perl_version" => "5.30.1",
+    "perl_version" => "5.32.1",
     "perlargv" => [
         "VC-WIN64A",
         "--prefix=D:\\Projects\\WinNet\\extern\\OpenSSL\\src\\openssl-master\\..\\BIN\\Lib\\x64\\Release",
@@ -286,7 +286,7 @@ our %target = (
     "LDFLAGS" => "/nologo /debug",
     "MT" => "mt",
     "MTFLAGS" => "-nologo",
-    "RANLIB" => "CODE(0x27856f8)",
+    "RANLIB" => "CODE(0x6de108)",
     "RC" => "rc",
     "_conf_fname_int" => [
         "Configurations\\00-base-templates.conf",

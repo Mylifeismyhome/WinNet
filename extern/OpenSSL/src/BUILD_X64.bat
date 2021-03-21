@@ -1,8 +1,7 @@
 @echo off
-set /p BuildOpenssl=<../../Config/BUILDPATH_OPENSSL
-set /p Build=<../../Config/VCVARSALL
+set /p BuildOpenssl=<../../../Config/BUILDPATH_OPENSSL
 call "%BuildOpenssl%vcvars64.bat"
-call "%Build%" x64
+call "%BuildOpenssl%vcvarsall.bat" x64
 
 cd openssl-master
 
@@ -34,3 +33,5 @@ xcopy %CD%\..\BIN\Lib\x64\Release\lib\libssl.lib %CD%\..\..\lib\x64\Release\ /F 
 xcopy %CD%\..\BIN\Lib\x64\Release\lib\ossl_static.pdb %CD%\..\..\lib\x64\Release\ /F /R /Y /I /J >> openssl_copy.log
 
 xcopy %CD%\..\BIN\Lib\x64\Release\include\openssl\* %CD%\..\..\include\openssl\ /F /R /Y /I /J >> openssl_copy.log
+
+cd ..

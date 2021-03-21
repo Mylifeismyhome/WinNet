@@ -29,7 +29,7 @@ BEGIN
             VALUE "ProductVersion", "3.0.0-alpha7-dev\0"
             // Optional:
             //VALUE "Comments", "\0"
-            VALUE "LegalCopyright", "Copyright 1998-2020 The OpenSSL Authors. All rights reserved.\0"
+            VALUE "LegalCopyright", "Copyright 1998-2021 The OpenSSL Authors. All rights reserved.\0"
             //VALUE "LegalTrademarks", "\0"
             //VALUE "PrivateBuild", "\0"
             //VALUE "SpecialBuild", "\0"

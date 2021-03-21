@@ -7,25 +7,23 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/opensslconf.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/opensslv.h
 Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
-Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes.h
+Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\ciphers\cipher_aes.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/aes.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\stddef.h
 Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt.h
-Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
-Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\sal.h
-Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\ConcurrencySal.h
-Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vadefs.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\vcruntime.h
+Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\sal.h
+Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\concurrencysal.h
+Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\vadefs.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/ciphercommon.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/params.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/types.h
-Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\limits.h
-Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\limits.h
 Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/e_os2.h
 Note: including file:       D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
-Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdint.h
-Note: including file:        C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\stdint.h
 Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/safestack.h
 Note: including file:       D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:       D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/stack.h
@@ -48,8 +46,7 @@ Note: including file:       D:\Projects\WinNet\extern\OpenSSL\src\openssl-master
 Note: including file:        D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/bnerr.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_dispatch.h
-Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdarg.h
-Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\stdarg.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_names.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/evp.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
@@ -69,8 +66,7 @@ Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.190
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_memory.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_memcpy_s.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\errno.h
-Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime_string.h
-Note: including file:        C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:       C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\vcruntime_string.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstring.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/buffer.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
@@ -85,39 +81,38 @@ Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.190
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\winapifamily.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\winpackagefamily.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\sdkddkver.h
-Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\excpt.h
-Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\excpt.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\windef.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\minwindef.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\specstrings.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\specstrings_strict.h
 Note: including file:         C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\specstrings_undef.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\driverspecs.h
-Note: including file:         c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\sdv_driverspecs.h
+Note: including file:         C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\sdv_driverspecs.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\winnt.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\ctype.h
 Note: including file:         C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wctype.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\kernelspecs.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\basetsd.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\guiddef.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack2.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack2.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack8.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack1.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\pshpack1.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:        c:\program files (x86)\windows kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack8.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack1.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack1.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\apiset.h
 Note: including file:        C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\ktmtypes.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um\winbase.h
@@ -196,8 +191,8 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/aes_platform.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\include\prov/implementations.h
-Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes_cts.inc
-Note: including file:  d:\projects\winnet\extern\openssl\src\openssl-master\providers\implementations\ciphers\cipher_aes_cts.h
+Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\ciphers\cipher_aes_cts.inc
+Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\providers\implementations\ciphers\cipher_aes_cts.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/evp.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h

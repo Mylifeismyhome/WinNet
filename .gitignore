@@ -358,4 +358,9 @@ MigrationBackup/
 
 Win-Net/extern/*
 
+# Upload Tools required to compile dependencies
 !Tools/*.exe
+
+# ignore compiled OpenSSL
+extern/OpenSSL/src/BIN/
+extern/OpenSSL/src/openssl-master/test/
