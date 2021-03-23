@@ -358,8 +358,8 @@ MigrationBackup/
 
 Win-Net/extern/*
 
-# Upload Tools required to compile dependencies
-!Tools/*.exe
+#ignore Tools
+Tools/
 
 # ignore compiled OpenSSL
 extern/OpenSSL/src/BIN/
@@ -367,6 +367,3 @@ extern/OpenSSL/src/openssl-master/test/
 
 # ignore compiled CryptoPP
 extern/crypto++/lib/
-
-# ignore big file installation PERL
-Tools/strawberry-perl-5.32.1.1-64bit.msi
