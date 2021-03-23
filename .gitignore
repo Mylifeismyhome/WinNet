@@ -367,3 +367,6 @@ extern/OpenSSL/src/openssl-master/test/
 
 # ignore compiled CryptoPP
 extern/crypto++/lib/
+
+# ignore big file installation PERL
+Tools/strawberry-perl-5.32.1.1-64bit.msi

@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! C:\Strawberry\perl\bin\perl.exe
 # -*- mode: perl -*-
 
 package configdata;
@@ -32,7 +32,7 @@ our %config = (
     "CPPINCLUDES" => [],
     "CXXFLAGS" => [],
     "FIPSKEY" => "f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813",
-    "HASHBANGPERL" => "/usr/bin/env perl",
+    "HASHBANGPERL" => "C:\\Strawberry\\perl\\bin\\perl.exe",
     "LD" => "link",
     "LDFLAGS" => [
         "/nologo /debug"
@@ -249,7 +249,7 @@ our %config = (
         "MT" => undef,
         "MTFLAGS" => undef,
         "OPENSSL_LOCAL_CONFIG_DIR" => undef,
-        "PERL" => undef,
+        "PERL" => "C:\\Strawberry\\perl\\bin\\perl.exe",
         "RANLIB" => undef,
         "RC" => undef,
         "RCFLAGS" => undef,
@@ -286,7 +286,7 @@ our %target = (
     "LDFLAGS" => "/nologo /debug",
     "MT" => "mt",
     "MTFLAGS" => "-nologo",
-    "RANLIB" => "CODE(0x6de108)",
+    "RANLIB" => "CODE(0x266c488)",
     "RC" => "rc",
     "_conf_fname_int" => [
         "Configurations\\00-base-templates.conf",

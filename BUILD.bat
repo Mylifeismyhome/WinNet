@@ -3,7 +3,7 @@
 title Compiling WinNet Dependencies [%date% %time%]
 
 echo -------------------------------------------
-echo Started :: %date% %time%
+echo Started Build :: %date% %time%
 echo -------------------------------------------
 
 REM Crypto++
@@ -17,6 +17,5 @@ call BUILD.bat
 cd ../../
 
 echo -------------------------------------------
-echo Completed :: %date% %time%
+echo Completed Build :: %date% %time%
 echo -------------------------------------------
-pause

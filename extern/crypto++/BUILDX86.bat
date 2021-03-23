@@ -1,6 +1,8 @@
 @echo off
-set /p Build=<../../Config/BUILDPATH
-call "%Build%"
+title Compiling CryptoPP x86 [RELEASE] - [%date% %time%] - [3/4]
+
+set /p TOOL=<../../Config/BUILDTOOLS_PATH
+call "%TOOL%\vcbuildtools_msbuild.bat"
 
 set pathMSBuild=%CD%\src\
 cd %pathMSBuild%

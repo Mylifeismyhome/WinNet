@@ -1,29 +1,37 @@
 @echo off
-set /p BuildOpenssl=<../../../Config/BUILDPATH_OPENSSL
-call "%BuildOpenssl%vcvars32.bat"
-call "%BuildOpenssl%vcvarsall.bat" x86
+title Compiling OpenSSL x86 - [%date% %time%] - [1/2]
+
+set /p VCVARS=<../../../Config/VCVARS_PATH
+call "%VCVARS%vcvars32.bat"
+call "%VCVARS%vcvarsall.bat" x86
+
+REM Nasm.exe
+set /p NASM=<../../../Config/NASM_PATH
+
+REM Perl.exe
+set /p PERL=<../../../Config/PERL_PATH
 
 cd openssl-master
 
-nmake clean
-perl Configure VC-WIN32 --debug --prefix=%CD%\..\BIN\DLL\x86\Debug --openssldir=%CD%\..\BIN\SSL
-nmake
-nmake install_sw
+%NASM% clean
+%PERL% Configure VC-WIN32 --debug --prefix=%CD%\..\BIN\DLL\x86\Debug --openssldir=%CD%\..\BIN\SSL
+%NASM%
+%NASM% install_sw
 
-nmake clean
-perl Configure VC-WIN32 --prefix=%CD%\..\BIN\DLL\x86\Release --openssldir=%CD%\..\BIN\SSL
-nmake
-nmake install_sw
+%NASM% clean
+%PERL% Configure VC-WIN32 --prefix=%CD%\..\BIN\DLL\x86\Release --openssldir=%CD%\..\BIN\SSL
+%NASM%
+%NASM% install_sw
 
-nmake clean
-perl Configure VC-WIN32 --debug --prefix=%CD%\..\BIN\Lib\x86\Debug --openssldir=%CD%\..\BIN\SSL no-shared
-nmake
-nmake install_sw
+%NASM% clean
+%PERL% Configure VC-WIN32 --debug --prefix=%CD%\..\BIN\Lib\x86\Debug --openssldir=%CD%\..\BIN\SSL no-shared
+%NASM%
+%NASM% install_sw
 
-nmake clean
-perl Configure VC-WIN32 --prefix=%CD%\..\BIN\Lib\x86\Release --openssldir=%CD%\..\BIN\SSL no-shared
-nmake
-nmake install_sw
+%NASM% clean
+%PERL% Configure VC-WIN32 --prefix=%CD%\..\BIN\Lib\x86\Release --openssldir=%CD%\..\BIN\SSL no-shared
+%NASM%
+%NASM% install_sw
 
 REM Copy all needed files
 xcopy %CD%\..\BIN\Lib\x86\Debug\lib\libcrypto.lib %CD%\..\..\lib\x86\Debug\ /F /R /Y /I /J >> openssl_copy.log
