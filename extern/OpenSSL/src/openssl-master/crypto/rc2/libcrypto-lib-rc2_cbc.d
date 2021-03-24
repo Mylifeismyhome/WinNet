@@ -9,4 +9,4 @@ Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\i
 Note: including file:      D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/rc2.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
-Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\rc2\rc2_local.h
+Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\rc2\rc2_local.h

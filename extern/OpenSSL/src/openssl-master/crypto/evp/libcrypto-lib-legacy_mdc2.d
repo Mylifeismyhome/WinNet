@@ -11,24 +11,27 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inclu
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\stdlib.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt.h
-Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\vcruntime.h
-Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\sal.h
-Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\concurrencysal.h
-Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\vadefs.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\sal.h
+Note: including file:      C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\ConcurrencySal.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vadefs.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_malloc.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_search.h
 Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\stddef.h
 Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstdlib.h
-Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\limits.h
+Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\limits.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/des.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/e_os2.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
-Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\stdint.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdint.h
+Note: including file:     C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/evp.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/evp.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
-Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\stdarg.h
+Note: including file:   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\stdarg.h
+Note: including file:    C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE\vcruntime.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/types.h
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/safestack.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
@@ -63,4 +66,4 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/core_dispatch.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
-Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\legacy_meth.h
+Note: including file: d:\projects\winnet\extern\openssl\src\openssl-master\crypto\evp\legacy_meth.h
