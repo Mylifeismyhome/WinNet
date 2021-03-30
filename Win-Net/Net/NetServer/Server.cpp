@@ -2706,8 +2706,6 @@ bool Server::CreateTOTPSecret(NET_PEER peer)
 	peer->totp_secret[peer->totp_secret_len] = '\0';
 	Net::Coding::Base32::base32_encode(peer->totp_secret, peer->totp_secret_len);
 
-	LOG("SECRET: %s", peer->totp_secret);
-
 	peer->curToken = NULL;
 	peer->lastToken = NULL;
 
