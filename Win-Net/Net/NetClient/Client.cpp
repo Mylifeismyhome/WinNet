@@ -312,7 +312,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	}
 
 	/* Connect to the server */
-	if (connect(GetSocket(), sockaddr, slen) == SOCKET_ERROR)
+	if (Ws2_32::connect(GetSocket(), sockaddr, slen) == SOCKET_ERROR)
 	{
 		Ws2_32::closesocket(GetSocket());
 		SetSocket(INVALID_SOCKET);

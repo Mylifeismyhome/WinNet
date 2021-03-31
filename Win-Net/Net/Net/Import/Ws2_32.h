@@ -19,5 +19,7 @@ namespace Net
 	IMPORT_DEFINE_FNC_WINAPI(int, bind, SOCKET, const struct sockaddr FAR*, int);
 	IMPORT_DEFINE_FNC_WINAPI(int, listen, SOCKET, int);
 	IMPORT_DEFINE_FNC_WINAPI(int, setsockopt, SOCKET, int, int, const char*, int);
+	IMPORT_DEFINE_FNC_WINAPI(int, connect, SOCKET, const sockaddr*, int);
+	IMPORT_DEFINE_FNC_WINAPI(SOCKET, accept, SOCKET, sockaddr*, int*);
 	IMPORT_END
 };

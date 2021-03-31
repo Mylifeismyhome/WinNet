@@ -1742,7 +1742,7 @@ void Server::Acceptor()
 	// if client waiting, accept the connection and save the socket
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
-	SetAcceptSocket(accept(GetListenSocket(), (sockaddr*)&client_addr, &slen));
+	SetAcceptSocket(Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen));
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{

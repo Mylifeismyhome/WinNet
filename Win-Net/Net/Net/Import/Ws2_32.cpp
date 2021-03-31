@@ -23,6 +23,8 @@ namespace Net
 	IMPORT_DEFINE(bind);
 	IMPORT_DEFINE(listen);
 	IMPORT_DEFINE(setsockopt);
+	IMPORT_DEFINE(connect);
+	IMPORT_DEFINE(accept);
 
 	IMPORT_INIT
 		NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\Ws2_32.dll"), NET_FILE_READ);
@@ -56,6 +58,8 @@ namespace Net
 	IMPORT_MPROCADDR(bind);
 	IMPORT_MPROCADDR(listen);
 	IMPORT_MPROCADDR(setsockopt);
+	IMPORT_MPROCADDR(connect);
+	IMPORT_MPROCADDR(accept);
 	return true;
 	IMPORT_END;
 
@@ -76,6 +80,8 @@ namespace Net
 	DELETE_IMPORT(bind);
 	DELETE_IMPORT(listen);
 	DELETE_IMPORT(setsockopt);
+	DELETE_IMPORT(connect);
+	DELETE_IMPORT(accept);
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
@@ -119,5 +125,11 @@ namespace Net
 
 	MAKE_IMPORT(int, setsockopt, SOCKET s, int level, int optname, const char* optval, int optlen)
 		PASS_PARAMETERS(s, level, optname, optval, optlen);
+
+	MAKE_IMPORT(int, connect, SOCKET s, const sockaddr* name, int namelen)
+		PASS_PARAMETERS(s, name, namelen);
+
+	MAKE_IMPORT(SOCKET, accept, SOCKET s, sockaddr* addr, int* addrlen)
+		PASS_PARAMETERS(s, addr, addrlen);
 	IMPORT_END
 }
