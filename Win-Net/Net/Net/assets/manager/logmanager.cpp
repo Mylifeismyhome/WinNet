@@ -1,5 +1,23 @@
 #include "logmanager.h"
 
+// Color codes
+CONSTEXPR auto BLACK = 0;
+CONSTEXPR auto BLUE = 1;
+CONSTEXPR auto GREEN = 2;
+CONSTEXPR auto CYAN = 3;
+CONSTEXPR auto RED = 4;
+CONSTEXPR auto MAGENTA = 5;
+CONSTEXPR auto BROWN = 6;
+CONSTEXPR auto LIGHTGRAY = 7;
+CONSTEXPR auto DARKGRAY = 8;
+CONSTEXPR auto LIGHTBLUE = 9;
+CONSTEXPR auto LIGHTGREEN = 10;
+CONSTEXPR auto LIGHTCYAN = 11;
+CONSTEXPR auto LIGHTRED = 12;
+CONSTEXPR auto LIGHTMAGENTA = 13;
+CONSTEXPR auto YELLOW = 14;
+CONSTEXPR auto WHITE = 15;
+
 // global override able callback
 static void (*OnLogA)(int state, const char* buffer) = nullptr;
 static void (*OnLogW)(int state, const wchar_t* buffer) = nullptr;

@@ -38,7 +38,7 @@ std::map<std::string, long>LONG_Parameters;
 std::map<std::string, long long>LONGLONG_Parameters;
 std::map<std::string, float>FLOAT_Parameters;
 std::map<std::string, const char*>STRING_Parameters;
-std::vector<std::string> JSON_Parameters;
+std::string STRING_JSON;
 std::string GetParameters() const;
 
 bool ParseResult(byte*&);
@@ -84,7 +84,7 @@ void AddParam(const char*, long);
 void AddParam(const char*, long long);
 void AddParam(const char*, float);
 void AddParam(const char*, const char*);
-void AddJSON(const char*);
+void SetJSON(const char*);
 
 void AddHeader(const char*, char*, size_t = INVALID_SIZE);
 void AddHeader(const char*, const char*, size_t = INVALID_SIZE);

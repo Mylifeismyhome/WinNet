@@ -8,11 +8,11 @@
 
 #ifdef _WIN64
 typedef DWORD64 NET_THREAD_DWORD;
+#define NET_THREAD(fnc) NET_THREAD_DWORD WINAPI fnc(LPVOID parameter)
 #else
 typedef DWORD NET_THREAD_DWORD;
+#define NET_THREAD(fnc) NET_THREAD_DWORD WINAPIV fnc(LPVOID parameter)
 #endif
-
-#define NET_THREAD(fnc) NET_THREAD_DWORD WINAPI fnc(LPVOID parameter)
 
 namespace Net
 {

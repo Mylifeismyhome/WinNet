@@ -131,13 +131,15 @@ Package_t<double> Package::Double(const char* Key) const
 		return { false, Key, 0 };
 	}
 
-	if (!pkg.FindMember(Key)->value.IsDouble())
+	if (!pkg.FindMember(Key)->value.IsDouble()
+		&& !pkg.FindMember(Key)->value.IsFloat()
+		&& !pkg.FindMember(Key)->value.IsInt())
 	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a double"), Key);
+		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a double, float or integer"), Key);
 		return { false, Key, 0 };
 	}
 
-	return { true, Key, pkg.FindMember(Key)->value.GetDouble() };
+	return { true, Key, (pkg.FindMember(Key)->value.IsDouble() ? pkg.FindMember(Key)->value.GetDouble() : (pkg.FindMember(Key)->value.IsFloat() ? static_cast<double>(pkg.FindMember(Key)->value.GetFloat()) : static_cast<double>(pkg.FindMember(Key)->value.GetInt()))) };
 }
 
 Package_t<float> Package::Float(const char* Key) const
@@ -166,13 +168,14 @@ Package_t<float> Package::Float(const char* Key) const
 		return { false, Key, 0 };
 	}
 
-	if (!pkg.FindMember(Key)->value.IsFloat())
+	if (!pkg.FindMember(Key)->value.IsFloat()
+		&& !pkg.FindMember(Key)->value.IsInt())
 	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a float"), Key);
+		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a float or integer"), Key);
 		return { false, Key, 0 };
 	}
 
-	return { true, Key,  pkg.FindMember(Key)->value.GetFloat() };
+	return { true, Key,  (pkg.FindMember(Key)->value.IsFloat() ? pkg.FindMember(Key)->value.GetFloat() : static_cast<float>(pkg.FindMember(Key)->value.GetInt())) };
 }
 
 Package_t<__int64> Package::Int64(const char* Key) const

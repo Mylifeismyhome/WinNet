@@ -397,13 +397,16 @@ void Net::Web::Head::AddParam(const char* tag, const char* value)
 	STRING_Parameters.insert(std::make_pair(tag, value));
 }
 
-void Net::Web::Head::AddJSON(const char* json)
+void Net::Web::Head::SetJSON(const char* json)
 {
-	JSON_Parameters.emplace_back(json);
+	STRING_JSON = json;
 }
 
 std::string Net::Web::Head::GetParameters() const
 {
+	// we can only choose between sending JSON or regular HTTP Style POST/GET
+	if (!STRING_JSON.empty()) return STRING_JSON;
+
 	// Add all parameters
 	std::string params;
 	for (auto it = INT_Parameters.rbegin(); it != INT_Parameters.rend(); ++it)
@@ -455,9 +458,6 @@ std::string Net::Web::Head::GetParameters() const
 		params.append(value.str());
 		params.append(CSTRING("&"));
 	}
-
-	for(auto& entry : JSON_Parameters)
-		params.append(entry);
 
 	const auto deleteLastSplitPos = params.find_last_of(CSTRING("&"));
 	const auto fixedparams = params.substr(0, deleteLastSplitPos);
