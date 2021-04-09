@@ -1,4 +1,5 @@
 #include <Net/Protocol/NTP.h>
+#include <Net/Import/Ws2_32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)
@@ -29,7 +30,7 @@ bool NTPRes::valid() const
 char* ResolveHostname(const char* name)
 {
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
@@ -39,7 +40,7 @@ char* ResolveHostname(const char* name)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -50,11 +51,11 @@ char* ResolveHostname(const char* name)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	struct addrinfo* result = nullptr;
-	const auto dwRetval = getaddrinfo(name, nullptr, &hints, &result);
+	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
 	if (dwRetval != NULL) 
 	{
 		LOG_ERROR(CSTRING("[NTP] - Host look up has been failed with error %d"), dwRetval);
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -109,8 +110,8 @@ char* ResolveHostname(const char* name)
 
 	if (!psockaddrv4 && !psockaddrv6)
 	{
-		freeaddrinfo(result);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(result);
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -118,11 +119,11 @@ char* ResolveHostname(const char* name)
 	auto buf = ALLOC<char>(len);
 	memset(buf, NULL, len);
 
-	if(psockaddrv6) buf = (char*)inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
-	else buf = (char*)inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
+	if(psockaddrv6) buf = (char*)Ws2_32::inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
+	else buf = (char*)Ws2_32::inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
 
-	freeaddrinfo(result);
-	WSACleanup();
+	Ws2_32::freeaddrinfo(result);
+	Ws2_32::WSACleanup();
 
 	return buf;
 }
@@ -130,7 +131,7 @@ char* ResolveHostname(const char* name)
 static bool AddrIsV4(const char* addr)
 {
 	struct sockaddr_in sa;
-	if (inet_pton(AF_INET, addr, &(sa.sin_addr)))
+	if (Ws2_32::inet_pton(AF_INET, addr, &(sa.sin_addr)))
 		return true;
 
 	return false;
@@ -139,7 +140,7 @@ static bool AddrIsV4(const char* addr)
 static bool AddrIsV6(const char* addr)
 {
 	struct sockaddr_in6 sa;
-	if (inet_pton(AF_INET6, addr, &(sa.sin6_addr)))
+	if (Ws2_32::inet_pton(AF_INET6, addr, &(sa.sin6_addr)))
 		return true;
 
 	return false;
@@ -148,7 +149,7 @@ static bool AddrIsV6(const char* addr)
 static NTPRes PerformRequest(const char* addr, u_short port)
 {
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
@@ -158,7 +159,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return {};
 	}
 
@@ -167,15 +168,15 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	if (!v6 && !v4)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return {};
 	}
 
-	const auto con = socket(v6 ? AF_INET6 : AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	const auto con = Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (con == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), WSAGetLastError());
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return {};
 	}
 
@@ -186,8 +187,8 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		struct sockaddr_in sockaddr4;
 		memset((char*)&sockaddr4, 0, sizeof(sockaddr4));
 		sockaddr4.sin_family = AF_INET;
-		sockaddr4.sin_port = htons(port);
-		sockaddr4.sin_addr.S_un.S_addr = inet_addr(addr);
+		sockaddr4.sin_port = Ws2_32::htons(port);
+		sockaddr4.sin_addr.S_un.S_addr = Ws2_32::inet_addr(addr);
 		sockaddr = (struct sockaddr*)&sockaddr4;
 		slen = static_cast<int>(sizeof(struct sockaddr_in));
 	}
@@ -197,13 +198,13 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		struct sockaddr_in6 sockaddr6;
 		memset((char*)&sockaddr6, 0, sizeof(sockaddr6));
 		sockaddr6.sin6_family = AF_INET6;
-		sockaddr6.sin6_port = htons(port);
-		res = inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
+		sockaddr6.sin6_port = Ws2_32::htons(port);
+		res = Ws2_32::inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
 		if (res != 1)
 		{
 			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
-			closesocket(con);
-			WSACleanup();
+			Ws2_32::closesocket(con);
+			Ws2_32::WSACleanup();
 			return {};
 		}
 		sockaddr = (struct sockaddr*)&sockaddr6;
@@ -213,8 +214,8 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return {};
 	}
 	
@@ -222,30 +223,30 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	memset(&frame, NULL, sizeof(NTP_FRAME));
 	*((char*)&frame) = 0x1b;
 
-	res = sendto(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, slen);
+	res = Ws2_32::sendto(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, slen);
 	if (res == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return {};
 	}
 
-	res = recvfrom(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, &slen);
+	res = Ws2_32::recvfrom(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, &slen);
 	if (res == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), WSAGetLastError());
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return {};
 	}
 
-	closesocket(con);
-	WSACleanup();
+	Ws2_32::closesocket(con);
+	Ws2_32::WSACleanup();
 
 	// convert result back to big-endian
-	frame.txTm_s = ntohl(frame.txTm_s);
-	frame.txTm_f = ntohl(frame.txTm_f);
+	frame.txTm_s = Ws2_32::ntohl(frame.txTm_s);
+	frame.txTm_f = Ws2_32::ntohl(frame.txTm_f);
 	return { frame };
 }
 

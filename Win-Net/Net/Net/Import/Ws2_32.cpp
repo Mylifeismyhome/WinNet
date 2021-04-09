@@ -25,6 +25,19 @@ namespace Net
 	IMPORT_DEFINE(setsockopt);
 	IMPORT_DEFINE(connect);
 	IMPORT_DEFINE(accept);
+	IMPORT_DEFINE(inet_pton);
+	IMPORT_DEFINE(htons);
+	IMPORT_DEFINE(htonl);
+	IMPORT_DEFINE(WSARecvFrom);
+	IMPORT_DEFINE(WSAIoctl);
+	IMPORT_DEFINE(inet_ntop);
+	IMPORT_DEFINE(sendto);
+	IMPORT_DEFINE(WSAGetOverlappedResult);
+	IMPORT_DEFINE(WSAResetEvent);
+	IMPORT_DEFINE(getnameinfo);
+	IMPORT_DEFINE(ntohl);
+	IMPORT_DEFINE(recvfrom);
+	IMPORT_DEFINE(inet_addr);
 
 	IMPORT_INIT
 		NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\Ws2_32.dll"), NET_FILE_READ);
@@ -60,6 +73,19 @@ namespace Net
 	IMPORT_MPROCADDR(setsockopt);
 	IMPORT_MPROCADDR(connect);
 	IMPORT_MPROCADDR(accept);
+	IMPORT_MPROCADDR(inet_pton);
+	IMPORT_MPROCADDR(htons);
+	IMPORT_MPROCADDR(htonl);
+	IMPORT_MPROCADDR(WSARecvFrom);
+	IMPORT_MPROCADDR(WSAIoctl);
+	IMPORT_MPROCADDR(inet_ntop);
+	IMPORT_MPROCADDR(sendto);
+	IMPORT_MPROCADDR(WSAGetOverlappedResult);
+	IMPORT_MPROCADDR(WSAResetEvent);
+	IMPORT_MPROCADDR(getnameinfo);
+	IMPORT_MPROCADDR(ntohl);
+	IMPORT_MPROCADDR(recvfrom);
+	IMPORT_MPROCADDR(inet_addr);
 	return true;
 	IMPORT_END;
 
@@ -82,6 +108,19 @@ namespace Net
 	DELETE_IMPORT(setsockopt);
 	DELETE_IMPORT(connect);
 	DELETE_IMPORT(accept);
+	DELETE_IMPORT(inet_pton);
+	DELETE_IMPORT(htons);
+	DELETE_IMPORT(htonl);
+	DELETE_IMPORT(WSARecvFrom);
+	DELETE_IMPORT(WSAIoctl);
+	DELETE_IMPORT(inet_ntop);
+	DELETE_IMPORT(sendto);
+	DELETE_IMPORT(WSAGetOverlappedResult);
+	DELETE_IMPORT(WSAResetEvent);
+	DELETE_IMPORT(getnameinfo);
+	DELETE_IMPORT(ntohl);
+	DELETE_IMPORT(recvfrom);
+	DELETE_IMPORT(inet_addr);
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
@@ -131,5 +170,44 @@ namespace Net
 
 	MAKE_IMPORT(SOCKET, accept, SOCKET s, sockaddr* addr, int* addrlen)
 		PASS_PARAMETERS(s, addr, addrlen);
+
+	MAKE_IMPORT(INT, inet_pton, INT Family, PCSTR pszAddrString, PVOID pAddrBuf)
+		PASS_PARAMETERS(Family, pszAddrString, pAddrBuf);
+
+	MAKE_IMPORT(u_short, htons, u_short hostshort)
+		PASS_PARAMETERS(hostshort);
+
+	MAKE_IMPORT(u_short, htonl, u_short hostlong)
+		PASS_PARAMETERS(hostlong);
+
+	MAKE_IMPORT(int, WSARecvFrom, SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, sockaddr* lpFrom, LPINT lpFromlen, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
+		PASS_PARAMETERS(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpFrom, lpFromlen, lpOverlapped, lpCompletionRoutine);
+
+	MAKE_IMPORT(int, WSAIoctl, SOCKET s, DWORD dwIoControlCode, LPVOID lpvInBuffer, DWORD cbInBuffer, LPVOID lpvOutBuffer, DWORD cbOutBuffer, LPDWORD lpcbBytesReturned, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
+		PASS_PARAMETERS(s, dwIoControlCode, lpvInBuffer, cbInBuffer, lpvOutBuffer, cbOutBuffer, lpcbBytesReturned, lpOverlapped, lpCompletionRoutine);
+
+	MAKE_IMPORT(PCSTR, inet_ntop, INT Family, const VOID* pAddr, PSTR pStringBuf, size_t StringBufSize)
+		PASS_PARAMETERS(Family, pAddr, pStringBuf, StringBufSize);
+
+	MAKE_IMPORT(int, sendto, SOCKET s, const char* buf, int len, int flags, const sockaddr* to, int tolen)
+		PASS_PARAMETERS(s, buf, len, flags, to, tolen);
+
+	MAKE_IMPORT(BOOL, WSAGetOverlappedResult, SOCKET s, LPWSAOVERLAPPED lpOverlapped, LPDWORD lpcbTransfer, BOOL fWait, LPDWORD lpdwFlags)
+		PASS_PARAMETERS(s, lpOverlapped, lpcbTransfer, fWait, lpdwFlags);
+
+	MAKE_IMPORT(BOOL, WSAResetEvent, WSAEVENT hEvent)
+		PASS_PARAMETERS(hEvent);
+
+	MAKE_IMPORT(INT, getnameinfo, const SOCKADDR* pSockaddr, socklen_t SockaddrLength, PCHAR pNodeBuffer, DWORD NodeBufferSize, PCHAR pServiceBuffer, DWORD ServiceBufferSize, INT Flags)
+		PASS_PARAMETERS(pSockaddr, SockaddrLength, pNodeBuffer, NodeBufferSize, pServiceBuffer, ServiceBufferSize, Flags);
+
+	MAKE_IMPORT(u_long, ntohl, u_long netlong)
+		PASS_PARAMETERS(netlong);
+
+	MAKE_IMPORT(int, recvfrom, SOCKET s, char* buf, int len, int flags, sockaddr* from, int* fromlen)
+		PASS_PARAMETERS(s, buf, len, flags, from, fromlen);
+
+	MAKE_IMPORT(unsigned long, inet_addr, const char* cp)
+		PASS_PARAMETERS(cp);
 	IMPORT_END
 }

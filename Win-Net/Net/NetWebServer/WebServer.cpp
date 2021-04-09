@@ -542,8 +542,7 @@ bool Server::Run()
 	const auto Port = std::to_string(Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 	res = Ws2_32::getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
-	if (res != 0)
-	{
+	if (res != 0) {
 		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), SERVERNAME(this), res);
 		Ws2_32::WSACleanup();
 		return false;
@@ -552,8 +551,7 @@ bool Server::Run()
 	// Create a SOCKET for connecting to server
 	SetListenSocket(Ws2_32::socket(result->ai_family, result->ai_socktype, result->ai_protocol));
 
-	if (GetListenSocket() == INVALID_SOCKET)
-	{
+	if (GetListenSocket() == INVALID_SOCKET) {
 		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), Ws2_32::WSAGetLastError());
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::WSACleanup();
@@ -564,7 +562,8 @@ bool Server::Run()
 	u_long iMode = 1;
 	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
 
-	if (res == SOCKET_ERROR) {
+	if (res == SOCKET_ERROR)
+	{
 		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
 		Ws2_32::closesocket(GetListenSocket());
 		Ws2_32::WSACleanup();
@@ -572,10 +571,9 @@ bool Server::Run()
 	}
 
 	// Setup the TCP listening socket
-	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, (int)result->ai_addrlen);
+	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, static_cast<int>(result->ai_addrlen));
 
-	if (res == SOCKET_ERROR)
-	{
+	if (res == SOCKET_ERROR) {
 		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::closesocket(GetListenSocket());
@@ -596,12 +594,11 @@ bool Server::Run()
 		return false;
 	}
 
-	// Create all needed Threads
 	Thread::Create(TickThread, this);
 	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
-	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
+	LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), SERVERPORT(this));
 	return true;
 }
 
@@ -902,7 +899,7 @@ short Server::Handshake(NET_PEER peer)
 		// convert sha1 hash bytes to network byte order because this sha1
 		//  library works on ints rather than bytes
 		for (auto& entry : message_digest)
-			entry = htonl(entry);
+			entry = Ws2_32::htonl(entry);
 
 		// Encode Base64
 		size_t outlen = 20;
@@ -991,26 +988,16 @@ short Server::Handshake(NET_PEER peer)
 		// clear data
 		peer->network.clear();
 
-		const auto stringUpdate = CSTRING("Upgrade");
 		const auto stringHost = CSTRING("Host");
 		const auto stringOrigin = CSTRING("Origin");
 
 		/* Handshake Failed - Display Error Message */
 		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
 		{
-			if (!(strcmp(entries[stringUpdate].data(), CSTRING("websocket")) == 0 && strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0 && strcmp(entries[stringHost].data(), host) == 0 && strcmp(entries[stringOrigin].data(), origin.get()) == 0))
+			if (!(strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0 && strcmp(entries[stringHost].data(), host) == 0 && strcmp(entries[stringOrigin].data(), origin.get()) == 0))
 			{
 				origin.free();
-				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s\nHost: %s\nOrigin: %s"), SERVERNAME(this), peer->IPAddr().get(), entries[stringUpdate].data(), entries[stringHost].data(), entries[stringOrigin].data());
-				return WebServerHandshake::HandshakeRet_t::missmatch;
-			}
-		}
-		else
-		{
-			if (!(strcmp(entries[stringUpdate].data(), CSTRING("websocket")) == 0 && strcmp(reinterpret_cast<char*>(enc_Sec_Key), CSTRING("")) != 0))
-			{
-				origin.free();
-				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nUpgrade: %s"), SERVERNAME(this), peer->IPAddr().get(), entries[stringUpdate].data());
+				LOG_ERROR(CSTRING("[%s] - Handshake failed:\nReceived from Peer ('%s'):\nHost: %s\nOrigin: %s"), SERVERNAME(this), peer->IPAddr().get(), entries[stringHost].data(), entries[stringOrigin].data());
 				return WebServerHandshake::HandshakeRet_t::missmatch;
 			}
 		}
@@ -1135,7 +1122,7 @@ void Server::Acceptor()
 	// if client waiting, accept the connection and save the socket
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
-	SetAcceptSocket(accept(GetListenSocket(), (sockaddr*)&client_addr, &slen));
+	SetAcceptSocket(Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen));
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{

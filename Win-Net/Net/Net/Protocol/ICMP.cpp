@@ -1,4 +1,5 @@
 #include <Net/Protocol/ICMP.h>
+#include <Net/Import/Ws2_32.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)
@@ -6,7 +7,7 @@ NET_NAMESPACE_BEGIN(ICMP)
 static bool AddrIsV4(const char* addr)
 {
 	struct sockaddr_in sa;
-	if (inet_pton(AF_INET, addr, &(sa.sin_addr)))
+	if (Ws2_32::inet_pton(AF_INET, addr, &(sa.sin_addr)))
 		return true;
 
 	return false;
@@ -15,7 +16,7 @@ static bool AddrIsV4(const char* addr)
 static bool AddrIsV6(const char* addr)
 {
 	struct sockaddr_in6 sa;
-	if (inet_pton(AF_INET6, addr, &(sa.sin6_addr)))
+	if (Ws2_32::inet_pton(AF_INET6, addr, &(sa.sin6_addr)))
 		return true;
 
 	return false;
@@ -26,7 +27,7 @@ int PrintAddress(SOCKADDR* sa, const int salen)
 	char  host[NI_MAXHOST], serv[NI_MAXSERV];
 	int  hostlen = NI_MAXHOST, servlen = NI_MAXSERV, rc;
 
-	rc = getnameinfo(sa, salen, host, hostlen, serv, servlen, NI_NUMERICHOST | NI_NUMERICSERV);
+	rc = Ws2_32::getnameinfo(sa, salen, host, hostlen, serv, servlen, NI_NUMERICHOST | NI_NUMERICSERV);
 	if (rc != 0)
 		return rc;
 
@@ -52,7 +53,7 @@ static int SetTtl(const SOCKET s, int ttl, const int gAddressFamily)
 		rc = SOCKET_ERROR;
 
 	if (rc == NO_ERROR)
-		rc = setsockopt(s, optlevel, option, (char*)&ttl, sizeof(ttl));
+		rc = Ws2_32::setsockopt(s, optlevel, option, (char*)&ttl, sizeof(ttl));
 
 	return rc;
 }
@@ -131,10 +132,10 @@ static int PostRecvfrom(const SOCKET s, char* buf, const int buflen, SOCKADDR* f
 	wbuf.buf = buf;
 	wbuf.len = buflen;
 	flags = 0;
-	rc = WSARecvFrom(s, &wbuf, 1, &bytes, &flags, from, fromlen, ol, NULL);
+	rc = Ws2_32::WSARecvFrom(s, &wbuf, 1, &bytes, &flags, from, fromlen, ol, NULL);
 	if (rc == SOCKET_ERROR)
 	{
-		if (WSAGetLastError() != WSA_IO_PENDING)
+		if (Ws2_32::WSAGetLastError() != WSA_IO_PENDING)
 			return SOCKET_ERROR;
 	}
 
@@ -204,7 +205,7 @@ static USHORT ComputeIcmp6PseudoHeaderChecksum(const SOCKET s, char* icmppacket,
 	int rc, total, length, i;
 
 	// Find out which local interface for the destination
-	rc = WSAIoctl(s, SIO_ROUTING_INTERFACE_QUERY, dest, destlen,
+	rc = Ws2_32::WSAIoctl(s, SIO_ROUTING_INTERFACE_QUERY, dest, destlen,
 		(SOCKADDR*)&localif, sizeof(localif), &bytes, nullptr, nullptr);
 
 	if (rc == SOCKET_ERROR)
@@ -282,7 +283,7 @@ struct addrinfo* ResolveLocalAddress(const int af)
 	hints.ai_socktype = 0;
 	hints.ai_protocol = 0;
 
-	const auto 	rc = getaddrinfo(nullptr, (char*)CSTRING("0"), &hints, &res);
+	const auto 	rc = Ws2_32::getaddrinfo(nullptr, (char*)CSTRING("0"), &hints, &res);
 	if (rc != 0)
 		return nullptr;
 
@@ -292,7 +293,7 @@ struct addrinfo* ResolveLocalAddress(const int af)
 char* ResolveHostname(const char* name)
 {
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
@@ -302,7 +303,7 @@ char* ResolveHostname(const char* name)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -313,11 +314,11 @@ char* ResolveHostname(const char* name)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	struct addrinfo* result = nullptr;
-	const auto dwRetval = getaddrinfo(name, nullptr, &hints, &result);
+	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
 	if (dwRetval != NULL)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Host look up has been failed with error %d"), dwRetval);
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -375,8 +376,8 @@ char* ResolveHostname(const char* name)
 
 	if (!psockaddrv4 && !psockaddrv6)
 	{
-		freeaddrinfo(result);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(result);
+		Ws2_32::WSACleanup();
 		return nullptr;
 	}
 
@@ -384,11 +385,11 @@ char* ResolveHostname(const char* name)
 	auto buf = ALLOC<char>(len);
 	memset(buf, NULL, len);
 
-	if (psockaddrv6) buf = (char*)inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
-	else buf = (char*)inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
+	if (psockaddrv6) buf = (char*)Ws2_32::inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
+	else buf = (char*)Ws2_32::inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
 
-	freeaddrinfo(result);
-	WSACleanup();
+	Ws2_32::freeaddrinfo(result);
+	Ws2_32::WSACleanup();
 
 	return buf;
 }
@@ -396,7 +397,7 @@ char* ResolveHostname(const char* name)
 static lt PerformRequest(const char* addr, const bool bRecordRoute)
 {
 	WSADATA wsaData;
-	auto res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
@@ -406,7 +407,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -415,15 +416,15 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	if (!v6 && !v4)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Address is neather IPV4 nor IPV6 Protocol"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
-	auto con = socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, v4 ? IPPROTO_ICMP : IPPROTO_ICMP6);
+	auto con = Ws2_32::socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, v4 ? IPPROTO_ICMP : IPPROTO_ICMP6);
 	if (con == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Unable to create socket"));
-		WSACleanup();
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -440,7 +441,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 		struct sockaddr_in sockaddr4;
 		memset((char*)&sockaddr4, 0, sizeof(sockaddr4));
 		sockaddr4.sin_family = AF_INET;
-		sockaddr4.sin_port = htons(0);
+		sockaddr4.sin_port = Ws2_32::htons(0);
 		sockaddr4.sin_addr.S_un.S_addr = inet_addr(addr);
 		sockaddr = (struct sockaddr*)&sockaddr4;
 		slen = static_cast<int>(sizeof(struct sockaddr_in));
@@ -451,14 +452,14 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 		struct sockaddr_in6 sockaddr6;
 		memset((char*)&sockaddr6, 0, sizeof(sockaddr6));
 		sockaddr6.sin6_family = AF_INET6;
-		sockaddr6.sin6_port = htons(0);
-		res = inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
+		sockaddr6.sin6_port = Ws2_32::htons(0);
+		res = Ws2_32::inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
 		if (res != 1)
 		{
 			LOG_ERROR(CSTRING("[ICMP]  - Failure on setting IPV6 Address with error code %d"), res);
-			freeaddrinfo(localsockaddr);
-			closesocket(con);
-			WSACleanup();
+			Ws2_32::freeaddrinfo(localsockaddr);
+			Ws2_32::closesocket(con);
+			Ws2_32::WSACleanup();
 			return INVALID_SIZE;
 		}
 		sockaddr = (struct sockaddr*)&sockaddr6;
@@ -468,9 +469,9 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[ICMP]  - Socket is not being valid"));
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -498,9 +499,9 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	if (!icmpbuf)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Unable to allocate enough space for the buffer"));
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -515,13 +516,13 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 			ipopt.opt_ptr = 4;                 // point to the first addr offset
 			ipopt.opt_len = 39;              // length of option header
 
-			rc = setsockopt(con, IPPROTO_IP, IP_OPTIONS, (char*)&ipopt, sizeof(ipopt));
+			rc = Ws2_32::setsockopt(con, IPPROTO_IP, IP_OPTIONS, (char*)&ipopt, sizeof(ipopt));
 			if (rc == SOCKET_ERROR)
 			{
 				FREE(icmpbuf);
-				freeaddrinfo(localsockaddr);
-				closesocket(con);
-				WSACleanup();
+				Ws2_32::freeaddrinfo(localsockaddr);
+				Ws2_32::closesocket(con);
+				Ws2_32::WSACleanup();
 				return INVALID_SIZE;
 			}
 		}
@@ -531,14 +532,14 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	else if (v6)
 		InitIcmp6Header(icmpbuf, DEFAULT_DATA_SIZE);
 
-	rc = bind(con, localsockaddr->ai_addr, localsockaddr->ai_addrlen);
+	rc = Ws2_32::bind(con, localsockaddr->ai_addr, localsockaddr->ai_addrlen);
 	if (rc == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));
 		FREE(icmpbuf);
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -558,14 +559,14 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	time = GetTickCount();
 #endif
 
-	rc = sendto(con, icmpbuf, packetlen, 0, sockaddr, slen);
+	rc = Ws2_32::sendto(con, icmpbuf, packetlen, 0, sockaddr, slen);
 	if (rc == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[ICMP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
 		FREE(icmpbuf);
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -575,9 +576,9 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	{
 		LOG_ERROR(CSTRING("[ICMP]  - Waiting for single object failed with error: %d"), WSAGetLastError());
 		FREE(icmpbuf);
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
 
@@ -585,12 +586,12 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	{
 		LOG_ERROR(CSTRING("[ICMP]  - Timeout occured!"));
 		FREE(icmpbuf);
-		freeaddrinfo(localsockaddr);
-		closesocket(con);
-		WSACleanup();
+		Ws2_32::freeaddrinfo(localsockaddr);
+		Ws2_32::closesocket(con);
+		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
-	rc = WSAGetOverlappedResult(con, &recvol, &bytes, FALSE, &flags);
+	rc = Ws2_32::WSAGetOverlappedResult(con, &recvol, &bytes, FALSE, &flags);
 
 #ifdef _WIN64
 	time = GetTickCount64() - time;
@@ -598,7 +599,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	time = GetTickCount() - time;
 #endif
 
-	WSAResetEvent(recvol.hEvent);
+	Ws2_32::WSAResetEvent(recvol.hEvent);
 	PrintAddress((SOCKADDR*)&from, fromlen);
 
 	PrintPayload(recvbuf, bytes, v4 ? AF_INET : AF_INET6);
@@ -607,13 +608,13 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 
 	if (con != INVALID_SOCKET)
 	{
-		closesocket(con);
+		Ws2_32::closesocket(con);
 		con = INVALID_SOCKET;
 	}
 
 	FREE(icmpbuf);
-	freeaddrinfo(localsockaddr);
-	WSACleanup();
+	Ws2_32::freeaddrinfo(localsockaddr);
+	Ws2_32::WSACleanup();
 	return time;
 }
 
