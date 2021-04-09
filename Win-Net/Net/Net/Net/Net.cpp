@@ -15,9 +15,9 @@ void Net::load()
 
 void Net::unload()
 {
+	Ws2_32::Uninitialize();
 	Ntdll::Uninitialize();
 	Kernel32::Uninitialize();
-	Ws2_32::Uninitialize();
 }
 
 int Net::SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen)

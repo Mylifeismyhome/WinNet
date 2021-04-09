@@ -1,4 +1,4 @@
-#define MODULE_NAME CSTRING("Ntdll")
+#define MODULE_NAME CSTRING("Ws2_32")
 
 #include "Ws2_32.h"
 #include <Net/Cryption/PointerCryption.h>
@@ -52,7 +52,7 @@ namespace Net
 	handle.Set(new HMEMORYMODULE(MemoryLoadLibrary(module, size)));
 	if (!handle.valid())
 	{
-		LOG_DEBUG(CSTRING("[%s] - Unable to load ntdll"), MODULE_NAME);
+		LOG_DEBUG(CSTRING("[%s] - Unable to load Ws2_32"), MODULE_NAME);
 		return false;
 	}
 

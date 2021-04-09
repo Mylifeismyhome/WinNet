@@ -320,7 +320,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MTD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\MTD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -368,7 +369,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MTD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\MTD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -416,7 +418,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MDD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\MDD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -464,7 +467,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MDD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\MDD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -505,7 +509,8 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
@@ -554,7 +559,8 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
@@ -607,7 +613,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\MT\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -652,7 +659,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\MT\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -697,7 +705,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\MT\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -742,7 +751,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\MT\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -787,7 +797,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\MD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -832,7 +843,8 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\lib\x64\Release;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\MD\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -870,7 +882,8 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -916,7 +929,8 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>NetCore.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>

@@ -4,6 +4,9 @@
 #define IMPORT_DEFINE_FNC_WINAPI(type, name, ...) typedef type(WINAPI* DEF_##name)(__VA_ARGS__); \
 	type name(__VA_ARGS__);
 
+#define IMPORT_DEFINE_FNC_WSAAPI(type, name, ...) typedef type(WSAAPI* DEF_##name)(__VA_ARGS__); \
+	type name(__VA_ARGS__);
+
 #define IMPORT_DEFINE_FNC_NTAPI(type, name, ...) typedef type(NTAPI* DEF_##name)(__VA_ARGS__); \
 	type name(__VA_ARGS__);
 
