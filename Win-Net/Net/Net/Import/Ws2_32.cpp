@@ -1,6 +1,8 @@
 #define MODULE_NAME CSTRING("Ws2_32")
 
 #include "Ws2_32.h"
+
+#ifndef DISABLE_WS2_32_RESOLVE
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
 #include <Net/Import/MemoryModule.h>
@@ -38,6 +40,8 @@ namespace Net
 	IMPORT_DEFINE(ntohl);
 	IMPORT_DEFINE(recvfrom);
 	IMPORT_DEFINE(inet_addr);
+	IMPORT_DEFINE(ntohs);
+	IMPORT_DEFINE(ntohll);
 
 	IMPORT_INIT
 		NET_FILEMANAGER fmanager(CSTRING("C:\\Windows\\System32\\Ws2_32.dll"), NET_FILE_READ);
@@ -86,6 +90,9 @@ namespace Net
 	IMPORT_MPROCADDR(ntohl);
 	IMPORT_MPROCADDR(recvfrom);
 	IMPORT_MPROCADDR(inet_addr);
+	IMPORT_MPROCADDR(ntohs);
+	IMPORT_MPROCADDR(ntohll);
+
 	return true;
 	IMPORT_END;
 
@@ -121,6 +128,8 @@ namespace Net
 	DELETE_IMPORT(ntohl);
 	DELETE_IMPORT(recvfrom);
 	DELETE_IMPORT(inet_addr);
+	DELETE_IMPORT(ntohs);
+	DELETE_IMPORT(ntohll);
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
@@ -129,7 +138,7 @@ namespace Net
 	MAKE_IMPORT(int, send, SOCKET s, const char* buf, int len, int flags)
 		PASS_PARAMETERS(s, buf, len, flags);
 
-	MAKE_IMPORT(int, recv, SOCKET s, const char* buf, int len, int flags)
+	MAKE_IMPORT(int, recv, SOCKET s, char* buf, int len, int flags)
 		PASS_PARAMETERS(s, buf, len, flags);
 
 	MAKE_IMPORT(int, closesocket, SOCKET s)
@@ -209,5 +218,12 @@ namespace Net
 
 	MAKE_IMPORT(unsigned long, inet_addr, const char* cp)
 		PASS_PARAMETERS(cp);
+
+	MAKE_IMPORT(u_short, ntohs, u_short netshort)
+		PASS_PARAMETERS(netshort);
+
+	MAKE_IMPORT(unsigned __int64, ntohll, unsigned __int64 Value)
+		PASS_PARAMETERS(Value);
 	IMPORT_END
 }
+#endif

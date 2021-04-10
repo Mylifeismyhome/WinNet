@@ -1754,10 +1754,9 @@ void Server::Acceptor()
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, GetLastError());
 		}
 
-		auto peer = CreatePeer(client_addr, GetAcceptSocket());
 		const auto param = new Receive_t();
 		param->server = this;
-		param->peer = peer;
+		param->peer = CreatePeer(client_addr, GetAcceptSocket());;
 		Thread::Create(Receive, param);
 	}
 }

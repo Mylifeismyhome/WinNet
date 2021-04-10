@@ -29,6 +29,14 @@
 		return false; \
 	}
 
+#define DLIMPORT(name) _##name.Set(new DEF_##name((DEF_##name)GetProcAddress(*handle.get(), CSTRING(#name)))); \
+	if(!_##name.valid()) \
+	{ \
+		Uninitialize(); \
+		LOG_ERROR(CSTRING("[%s] - Unable to resolve %s"), MODULE_NAME, CSTRING(#name)); \
+		return false; \
+	}
+
 #define DELETE_IMPORT(pointer) delete _##pointer.get(); _##pointer = nullptr;
 #define DELETE_IMPORT_HANDLE(pointer) delete pointer.get(); pointer = nullptr;
 

@@ -10,12 +10,18 @@ void Net::load()
 {
 	Kernel32::Initialize();
 	Ntdll::Initialize();
+
+#ifndef DISABLE_WS2_32_RESOLVE
 	Ws2_32::Initialize();
+#endif
 }
 
 void Net::unload()
 {
+#ifndef DISABLE_WS2_32_RESOLVE
 	Ws2_32::Uninitialize();
+#endif
+
 	Ntdll::Uninitialize();
 	Kernel32::Uninitialize();
 }

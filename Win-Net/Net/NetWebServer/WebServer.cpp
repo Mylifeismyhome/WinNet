@@ -1134,10 +1134,9 @@ void Server::Acceptor()
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, GetLastError());
 		}
 
-		auto peer = CreatePeer(client_addr, GetAcceptSocket());
 		const auto param = new Receive_t();
 		param->server = this;
-		param->peer = peer;
+		param->peer = CreatePeer(client_addr, GetAcceptSocket());
 		Thread::Create(Receive, param);
 	}
 }
@@ -1158,7 +1157,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 	idValue.SetInt(id);
 	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
 
-	/* tmp buffer, later we cast to PBYTE */
+	/* Ws2_32::buffer, later we cast to PBYTE */
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
@@ -1779,7 +1778,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		const auto OffsetLen126 = (16 / 8);
 		byte tmpRead[OffsetLen126] = {};
 		memcpy(tmpRead, &peer->network.getData()[NextBits], OffsetLen126);
-		PayloadLength = (unsigned int)ntohs(*(u_short*)tmpRead);
+		PayloadLength = (unsigned int)Ws2_32::ntohs(*(u_short*)tmpRead);
 		NextBits += OffsetLen126;
 	}
 	else if (PayloadLength == 127)
@@ -1787,7 +1786,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		const auto OffsetLen127 = (64 / 8);
 		byte tmpRead[OffsetLen127] = {};
 		memcpy(tmpRead, &peer->network.getData()[NextBits], OffsetLen127);
-		PayloadLength = (unsigned int)ntohll(*(unsigned long long*)tmpRead);
+		PayloadLength = (unsigned int)Ws2_32::ntohll(*(unsigned long long*)tmpRead);
 		NextBits += OffsetLen127;
 
 		//// MSB (The most significant bit MUST be 0)
