@@ -251,11 +251,14 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	}
 	else
 		peer->ssl = nullptr;
-
-	const auto _DoCalcLatency = new DoCalcLatency_t();
-	_DoCalcLatency->server = this;
-	_DoCalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
+	
+	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
+	{
+		const auto _DoCalcLatency = new DoCalcLatency_t();
+		_DoCalcLatency->server = this;
+		_DoCalcLatency->peer = peer;
+		peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
+	}
 
 	IncreasePeersCounter();
 

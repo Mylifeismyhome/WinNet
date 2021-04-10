@@ -231,10 +231,13 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	tv.tv_usec = 0;
 	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-	const auto _CalcLatency = new CalcLatency_t();
-	_CalcLatency->server = this;
-	_CalcLatency->peer = peer;
-	peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
+	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
+	{
+		const auto _CalcLatency = new CalcLatency_t();
+		_CalcLatency->server = this;
+		_CalcLatency->peer = peer;
+		peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
+	}
 
 	if (CreateTOTPSecret(peer))
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created TOTP-Hash"), SERVERNAME(this), peer->IPAddr().get());
