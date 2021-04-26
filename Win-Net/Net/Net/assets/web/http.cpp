@@ -1,4 +1,20 @@
 #include "http.h"
+#include <Net/Import/Ws2_32.h>
+
+void Net::Web::Head::Network::AllocData(const size_t size)
+{
+	data = ALLOC<byte>(size + 1);
+	memset(data.get(), NULL, size);
+	data_size = 0;
+	data_full_size = 0;
+}
+
+void Net::Web::Head::Network::clearData()
+{
+	data.free();
+	data_size = 0;
+	data_full_size = 0;
+}
 
 Net::Web::HeaderData_t::HeaderData_t(const char* key, char* value, const size_t size)
 {
@@ -65,8 +81,6 @@ void Net::Web::HeaderData_t::free()
 
 Net::Web::Head::Head()
 {
-	BufferSize = 512; // default
-
 	protocol = std::string();
 	url = std::string();
 	path = std::string();
@@ -105,16 +119,6 @@ Net::Web::Head::~Head()
 SOCKET Net::Web::Head::GetSocket() const
 {
 	return connectSocket;
-}
-
-void Net::Web::Head::SetBufferSize(const int size)
-{
-	BufferSize = size;
-}
-
-int Net::Web::Head::GetBufferSize() const
-{
-	return BufferSize;
 }
 
 std::string& Net::Web::Head::GetProtocol()
@@ -464,15 +468,15 @@ std::string Net::Web::Head::GetParameters() const
 	return fixedparams;
 }
 
-bool Net::Web::Head::ParseResult(byte*& buffer)
+bool Net::Web::Head::ParseResult()
 {
-	if (!buffer)
+	if (!network.data.valid())
 	{
 		LOG_ERROR(CSTRING("[Head] - Failure on parsing result, buffer is nullptr"));
 		return false;
 	}
 
-	const std::string result = reinterpret_cast<char*>(buffer);
+	const std::string result = reinterpret_cast<char*>(network.data.get());
 	rawData = result;
 
 	// Get Header Content
@@ -717,184 +721,178 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 	return buffer.length();
 }
 
-size_t Net::Web::HTTP::DoReceive(byte*& buffer) const
+size_t Net::Web::HTTP::DoReceive()
 {
 	size_t data_size = 0;
-	auto result = 0;
 	do
 	{
-		auto tmpReceive = ALLOC<byte>(static_cast<size_t>(GetBufferSize()) + 1);
-		result = recv(GetSocket(), reinterpret_cast<char*>(tmpReceive), GetBufferSize(), 0);
-		if (result == SOCKET_ERROR)
+		if (network.data_full_size != 0 && network.data_size >= network.data_full_size)
+			break;
+
+		data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		if (data_size == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() == WSANOTINITIALISED)
+			switch (Ws2_32::WSAGetLastError())
 			{
-				FREE(tmpReceive);
+			case WSANOTINITIALISED:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAENETDOWN)
-			{
-				FREE(tmpReceive);
+
+			case WSAENETDOWN:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEFAULT)
-			{
-				FREE(tmpReceive);
+
+			case WSAEFAULT:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAENOTCONN)
-			{
-				FREE(tmpReceive);
+
+			case WSAENOTCONN:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEINTR)
-			{
-				FREE(tmpReceive);
+
+			case WSAEINTR:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The (blocking) call was canceled through WSACancelBlockingCall()"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEINPROGRESS)
-			{
-				FREE(tmpReceive);
+
+			case WSAEINPROGRESS:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAENETRESET)
-			{
-				FREE(tmpReceive);
+
+			case WSAENETRESET:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAENOTSOCK)
-			{
-				FREE(tmpReceive);
+
+			case WSAENOTSOCK:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEOPNOTSUPP)
-			{
-				FREE(tmpReceive);
+
+			case WSAEOPNOTSUPP:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAESHUTDOWN)
-			{
-				FREE(tmpReceive);
+
+			case WSAESHUTDOWN:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEWOULDBLOCK)
-			{
-				FREE(tmpReceive);
 
-				if (!buffer)
+			case WSAEWOULDBLOCK:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
+				// read until we have the Content-Length
+				if (network.data_full_size == 0)
 				{
-					result = 1;
-					continue;
+					if (!network.data.valid()) continue;
+					std::string tmpBuffer(reinterpret_cast<char*>(network.data.get()));
+					if (tmpBuffer.empty()) continue;
+
+					// get the header length
+					const auto headerLength = tmpBuffer.find(CSTRING("\r\n\r\n"));
+					if (headerLength != std::string::npos)
+						continue;
+
+					const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
+					if (cLPos == std::string::npos)
+						continue;
+
+					const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
+					if (breakPos == std::string::npos)
+						continue;
+
+					const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
+
+					if (!NET_STRING_IS_NUMBER(cLength))
+					{
+						LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+						return 0;
+					}
+
+					const auto contentLength = std::stoi(cLength);
+
+					// re-alloc
+					network.data_full_size = contentLength + headerLength;
+					const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+					memcpy(newBuffer, network.data.get(), network.data_size);
+					newBuffer[network.data_full_size] = '\0';
+					network.data = newBuffer;
 				}
 
-				std::string tmpBuffer = reinterpret_cast<char*>(buffer);
-				const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
-				if (cLPos == std::string::npos)
-				{
-					result = 1;
-					continue;
-				}
-
-				const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
-				if (breakPos == std::string::npos)
-				{
-					result = 1;
-					continue;
-				}
-
-				const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
-
-				if (!NET_STRING_IS_NUMBER(cLength))
-				{
-					LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
-					return 0;
-				}
-
-				const auto contentLength = std::stoi(cLength);
-				if (static_cast<int>(data_size) >= contentLength)
-					break;
-
-				result = 1;
 				continue;
-			}
-			if (WSAGetLastError() == WSAEMSGSIZE)
-			{
-				FREE(tmpReceive);
+
+			case WSAEMSGSIZE:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The message was too large to fit into the specified buffer and was truncated"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAEINVAL)
-			{
-				FREE(tmpReceive);
+
+			case WSAEINVAL:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAECONNABORTED)
-			{
-				FREE(tmpReceive);
+
+			case WSAECONNABORTED:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAETIMEDOUT)
-			{
-				FREE(tmpReceive);
+
+			case WSAETIMEDOUT:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
 				return 0;
-			}
-			if (WSAGetLastError() == WSAECONNRESET)
-			{
-				FREE(tmpReceive);
+
+			case WSAECONNRESET:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 				return 0;
-			}
 
-			LOG_PEER(CSTRING("[HTTP] - Something bad happen... on Receive"));
-			return 0;
-		}
-		tmpReceive[result] = '\0';
-
-		if (!buffer)
-		{
-			buffer = ALLOC<byte>(static_cast<size_t>(result) + 1);
-			if (!buffer)
+			default:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
-			
-			memcpy_s(buffer, result, tmpReceive, result);
-			buffer[result] = '\0';
-			data_size = result;
+			}
+		}
+
+		if (data_size == 0)
+		{
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			return network.data_size;
+		}
+
+		if (!network.data.valid())
+		{
+			network.AllocData(data_size);
+			memcpy(network.data.get(), network.dataReceive, data_size);
+			network.data.get()[data_size] = '\0';
+			network.data_size = data_size;
 		}
 		else
 		{
-			/* store incomming */
-			const auto newBuffer = ALLOC<BYTE>(data_size + result + 1);
-			if (!newBuffer)
+			if (network.data_full_size > 0
+				&& network.data_size + data_size < network.data_full_size)
 			{
-				FREE(buffer);
-				return 0;
+				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+				network.data_size += data_size;
 			}
-			
-			memcpy(newBuffer, buffer, data_size);
-			memcpy(&newBuffer[data_size], tmpReceive, result);
-			data_size += result;
-			newBuffer[data_size] = '\0';
-
-			FREE(buffer);
-			buffer = newBuffer;
+			else
+			{
+				/* store incomming */
+				const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
+				memcpy(newBuffer, network.data.get(), network.data_size);
+				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+				newBuffer[network.data_size + data_size] = '\0';
+				network.data = newBuffer; // pointer swap
+				network.data_size += data_size;
+			}
 		}
-
-		FREE(tmpReceive);
-	} while (result > 0);
-	return data_size;
+	} while (data_size > 0);
+	return network.data_size;
 }
 
 bool Net::Web::HTTP::Get()
@@ -955,16 +953,15 @@ bool Net::Web::HTTP::Get()
 		ShutdownSocket();
 
 		// Receive Response
-		byte* buffer = nullptr;
-		if (DoReceive(buffer) != 0)
+		if (DoReceive() != 0)
 		{
 			// Parse the result
-			const auto res = ParseResult(buffer);
-			FREE(buffer);
+			const auto res = ParseResult();
+			network.clearData();
 			return res;
 		}
 
-		FREE(buffer);
+		network.clearData();
 		return false;
 	}
 
@@ -1043,16 +1040,15 @@ bool Net::Web::HTTP::Post()
 		ShutdownSocket();
 
 		// Receive Response
-		byte* buffer = nullptr;
-		if (DoReceive(buffer) != 0)
+		if (DoReceive() != 0)
 		{
 			// Parse the result
-			const auto res = ParseResult(buffer);
-			FREE(buffer);
+			const auto res = ParseResult();
+			network.clearData();
 			return res;
 		}
 
-		FREE(buffer);
+		network.clearData();
 		return false;
 	}
 
@@ -1236,92 +1232,127 @@ size_t Net::Web::HTTPS::DoSend(std::string& buffer) const
 	return buffer.length();
 }
 
-size_t Net::Web::HTTPS::DoReceive(byte*& buffer) const
+size_t Net::Web::HTTPS::DoReceive()
 {
-	size_t data_size = 0;
 	for (;;)
 	{
-		auto tmpReceive = ALLOC<byte>(static_cast<size_t>(GetBufferSize()) + 1);
-		const auto result = SSL_read(ssl, tmpReceive, GetBufferSize());
-		if (result <= 0)
+		if (network.data_full_size != 0 && network.data_size >= network.data_full_size)
+			break;
+
+		const auto data_size = SSL_read(ssl, network.dataReceive, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		if (data_size <= 0)
 		{
-			const auto err = SSL_get_error(ssl, result);
+			const auto err = SSL_get_error(ssl, data_size);
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
 				break;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
 				return 0;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				LOG_PEER(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SSL)
 			{
 				/* Some servers did not close the connection properly */
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				break;
 			}
 			if (err == SSL_ERROR_WANT_READ)
 			{
-				FREE(tmpReceive);
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
+				// read until we have the Content-Length
+				if (network.data_full_size == 0)
+				{
+					if (!network.data.valid()) continue;
+					std::string tmpBuffer(reinterpret_cast<char*>(network.data.get()));
+					if (tmpBuffer.empty()) continue;
+
+					// get the header length
+					const auto headerLength = tmpBuffer.find(CSTRING("\r\n\r\n"));
+					if (headerLength != std::string::npos)
+						continue;
+
+					const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
+					if (cLPos == std::string::npos)
+						continue;
+
+					const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
+					if (breakPos == std::string::npos)
+						continue;
+
+					const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
+
+					if (!NET_STRING_IS_NUMBER(cLength))
+					{
+						LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+						return 0;
+					}
+
+					const auto contentLength = std::stoi(cLength);
+
+					// re-alloc
+					network.data_full_size = contentLength + headerLength;
+					const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+					memcpy(newBuffer, network.data.get(), network.data_size);
+					newBuffer[network.data_full_size] = '\0';
+					network.data = newBuffer;
+				}
+
 				continue;
 			}
 
-			FREE(tmpReceive);
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 			LOG_PEER(CSTRING("[HTTPS] - Something bad happen... on Receive"));
 			return 0;
 		}
 		ERR_clear_error();
-		tmpReceive[result] = '\0';
 
-		if (!buffer)
+		if (!network.data.valid())
 		{
-			buffer = ALLOC<byte>(static_cast<size_t>(result) + 1);
-			if (!buffer)
-				return 0;
-
-			memcpy_s(buffer, result, tmpReceive, result);
-			buffer[result] = '\0';
-			data_size = result;
+			network.AllocData(data_size);
+			memcpy(network.data.get(), network.dataReceive, data_size);
+			network.data.get()[data_size] = '\0';
+			network.data_size = data_size;
 		}
 		else
 		{
-			/* store incomming */
-			const auto newBuffer = ALLOC<BYTE>(data_size + result + 1);
-			if (!newBuffer)
+			if (network.data_full_size > 0
+				&& network.data_size + data_size < network.data_full_size)
 			{
-				FREE(buffer);
-				return 0;
+				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+				network.data_size += data_size;
 			}
-
-			memcpy(newBuffer, buffer, data_size);
-			memcpy(&newBuffer[data_size], tmpReceive, result);
-			data_size += result;
-			newBuffer[data_size] = '\0';
-
-			FREE(buffer);
-			buffer = newBuffer;
+			else
+			{
+				/* store incomming */
+				const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
+				memcpy(newBuffer, network.data.get(), network.data_size);
+				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+				newBuffer[network.data_size + data_size] = '\0';
+				network.data = newBuffer; // pointer swap
+				network.data_size += data_size;
+			}
 		}
-
-		FREE(tmpReceive);
 	}
 
-	return data_size;
+	return network.data_size;
 }
 
 bool Net::Web::HTTPS::Get()
@@ -1426,16 +1457,15 @@ bool Net::Web::HTTPS::Get()
 		} while (ret == 0);
 
 		// Receive Response
-		byte* buffer = nullptr;
-		if (DoReceive(buffer) != 0)
+		if (DoReceive() != 0)
 		{
 			// Parse the result
-			const auto res = ParseResult(buffer);
-			FREE(buffer);
+			const auto res = ParseResult();
+			network.clearData();
 			return res;
 		}
 
-		FREE(buffer);
+		network.clearData();
 		return false;
 	}
 
@@ -1558,16 +1588,15 @@ bool Net::Web::HTTPS::Post()
 		} while (ret == 0);
 
 		// Receive Response
-		byte* buffer = nullptr;
-		if (DoReceive(buffer) != 0)
+		if (DoReceive() != 0)
 		{
 			// Parse the result
-			const auto res = ParseResult(buffer);
-			FREE(buffer);
+			const auto res = ParseResult();
+			network.clearData();
 			return res;
 		}
 
-		FREE(buffer);
+		network.clearData();
 		return false;
 	}
 

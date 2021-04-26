@@ -22,12 +22,28 @@ void free();
 NET_STRUCT_END
 
 NET_CLASS_BEGIN(Head)
+NET_STRUCT_BEGIN(Network)
+byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+CPOINTER<byte> data;
+size_t data_size;
+size_t data_full_size;
+
+NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
+memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+data = nullptr;
+data_size = 0;
+data_full_size = 0;
+NET_STRUCT_END_CONTRUCTION
+
+void AllocData(size_t);
+void clearData();
+NET_STRUCT_END
 NET_CLASS_PROTECTED
 std::string protocol;
 std::string url;
 std::string path;
 short port;
-int BufferSize;
+Network network;
 std::vector<HeaderData_t> headerData;
 
 SOCKET connectSocket;
@@ -41,7 +57,7 @@ std::map<std::string, const char*>STRING_Parameters;
 std::string STRING_JSON;
 std::string GetParameters() const;
 
-bool ParseResult(byte*&);
+bool ParseResult();
 
 std::string rawData;
 std::string headContent;
@@ -60,9 +76,6 @@ SOCKET GetSocket() const;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(Head)
 NET_CLASS_DESTRUCTUR(Head)
-
-void SetBufferSize(int);
-int GetBufferSize() const;
 
 std::string& GetProtocol();
 std::string& GetURL();
@@ -98,7 +111,7 @@ bool Init(const char*);
 bool Inited;
 
 size_t DoSend(std::string&) const;
-size_t DoReceive(byte*&) const;
+size_t DoReceive();
 NET_CLASS_PUBLIC
 explicit NET_CLASS_CONSTRUCTUR(HTTP, const char*)
 NET_CLASS_DESTRUCTUR(HTTP)
@@ -120,7 +133,7 @@ bool Init(const char*, ssl::NET_SSL_METHOD);
 bool Inited;
 
 size_t DoSend(std::string&) const;
-size_t DoReceive(byte*&) const;
+size_t DoReceive();
 NET_CLASS_PUBLIC
 explicit NET_CLASS_CONSTRUCTUR(HTTPS, const char*, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS)
 NET_CLASS_DESTRUCTUR(HTTPS)

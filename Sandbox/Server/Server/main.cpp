@@ -1,6 +1,8 @@
 #include "config.h"
 #include "Server/Server.h"
+#include "Net/assets/web/http.h"
 
+#pragma comment(lib, "NetCore.lib")
 #pragma comment(lib, "NetServer.lib")
 
 void OnLogCallback(NET_ON_LOG_PARAMETERS)
@@ -11,6 +13,17 @@ void OnLogCallback(NET_ON_LOG_PARAMETERS)
 int main()
 {
 	Net::load();
+
+	Net::Web::HTTP http("http://144.91.101.219/ZAPI/site/client/profile.php?session=dd8870c3e6ed5dc9ee3157bc8c432e2e8d62c576cfb27b9e1a9cc59244811aa9");
+	if (!http.Get())
+	{
+		LOG("FUCK");
+		return getchar();
+	}
+
+	LOG(http.GetBodyContent().data());
+	return getchar();
+
 
 	BEGIN_LOG("test2/test/test");
 
