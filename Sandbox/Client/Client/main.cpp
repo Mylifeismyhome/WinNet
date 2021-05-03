@@ -4,8 +4,9 @@
 #include <Net/assets/web/http.h>
 #include <Net/Protocol/NTP.h>
 #include <Net/Coding/BASE32.h>
-#include <Net/Coding/2FA.h>
+#include <Net/Coding/TOTP.h>
 
+#pragma comment(lib, "NetCore.lib")
 #pragma comment(lib, "NetClient.lib")
 
 int main()

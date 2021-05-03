@@ -10,10 +10,11 @@
 ///		  FAST PACKAGE ID IMPLEMENTATION	    ///
 ///																	///
 //////////////////////////////////////////////////////////
-#define NET_DEFINE_PACKAGES(name, ...) \
+#define NET_DEFINE_PACKAGES(name, first, ...) \
 NET_NAMESPACE_BEGIN(name) \
 enum T##name \
 { \
+first = NET_LAST_PACKAGE_ID, \
 __VA_ARGS__ \
 }; \
 NET_NAMESPACE_END
