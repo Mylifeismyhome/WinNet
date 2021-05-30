@@ -1150,6 +1150,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 		return;
 	);
 
+	SOCKET_NOT_VALID(peer->pSocket) return;
+
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
@@ -1173,6 +1175,8 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	SOCKET_NOT_VALID(peer->pSocket) return;
 
 	/* ENCODE FRAME */
 	auto frameCount = static_cast<int>(ceil((float)frame_length / NET_OPT_DEFAULT_MAX_PACKET_SIZE));

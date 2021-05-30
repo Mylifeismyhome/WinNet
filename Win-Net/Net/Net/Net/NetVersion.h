@@ -13,7 +13,7 @@ namespace Net
 		short Major();
 		short Minor();
 		short Revision();
-		NetString Key();
-		NetString Version();
+		Net::String Key();
+		Net::String Version();
 	}
 }

@@ -34,7 +34,7 @@ void NetSetLogCallbackW(OnLogW_t callback)
 
 void SetFname(const char* name)
 {
-	NetString tmp(name);
+	Net::String tmp(name);
 	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
 		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
 		|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND

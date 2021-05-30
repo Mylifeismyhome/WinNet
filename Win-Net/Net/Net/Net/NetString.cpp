@@ -1,22 +1,45 @@
 #include <Net/Net/NetString.h>
 
-NetUniquePointer::NetUniquePointer(void* in)
+NET_NAMESPACE_BEGIN(Net)
+NET_NAMESPACE_BEGIN(Pointer)
+UniquePointer::UniquePointer(void* in)
 {
 	_pointer = in;
 }
 
-NetUniquePointer::~NetUniquePointer()
+UniquePointer::~UniquePointer()
 {
 	FREE(_pointer);
 }
+NET_NAMESPACE_END
 
-NetString::NetString()
+String::String()
 {
 	_string = nullptr;
 	_size = 0;
 }
 
-NetString::NetString(const char in, ...)
+String::String(const char in, ...)
+{
+	Construct(in);
+}
+
+String::String(const char* in, ...)
+{
+	Construct(in);
+}
+
+String::String(String& in)
+{
+	copy(in);
+}
+
+String::String(String&& in) NOEXPECT
+{
+	move((String&&)in);
+}
+
+void String::Construct(const char in, ...)
 {
 	std::vector<char> str(2);
 	str[0] = in;
@@ -26,7 +49,7 @@ NetString::NetString(const char in, ...)
 	_size = 1;
 }
 
-NetString::NetString(const char* in, ...)
+void String::Construct(const char* in, ...)
 {
 	va_list vaArgs;
 	va_start(vaArgs, in);
@@ -39,45 +62,35 @@ NetString::NetString(const char* in, ...)
 	_size = str.size();
 }
 
-NetString::NetString(NetString& in)
-{
-	copy(in);
-}
-
-NetString::NetString(NetString&& in) NOEXPECT
-{
-	move((NetString&&)in);
-}
-
-void NetString::copy(NetString& in)
+void String::copy(String& in)
 {
 	_string.free();
 	_string = RUNTIMEXOR(in.data().get());
 	_size = in.size();
 }
 
-void NetString::move(NetString&& in)
+void String::move(String&& in)
 {
 	_string = RUNTIMEXOR(in.data().get());
 	_size = in.size();
 }
 
-NetString::~NetString()
+String::~String()
 {
 	_string.free();
 }
 
-size_t NetString::size() const
+size_t String::size() const
 {
 	return _size;
 }
 
-size_t NetString::length() const
+size_t String::length() const
 {
 	return _size - 1;
 }
 
-void NetString::set(const char in, ...)
+void String::set(const char in, ...)
 {
 	std::vector<char> str(2);
 	str[0] = in;
@@ -88,13 +101,19 @@ void NetString::set(const char in, ...)
 	_size = 1;
 }
 
-void NetString::append(const char in)
+void String::append(const char in)
 {
+	if (size() <= 0)
+	{
+		Construct(in);
+		return;
+	}
+
 	CPOINTER<byte> data(ALLOC<byte>(_size + 1));
 	memcpy(&data.get()[0], _string.Revert().get(), _size - 1);
 	memcpy(&data.get()[_size - 1], &in, 1);
 	data.get()[_size] = '\0';
-	
+
 	_string.free();
 	_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
 	_size = _size + 1;
@@ -102,7 +121,7 @@ void NetString::append(const char in)
 	data.free();
 }
 
-void NetString::set(const char* in, ...)
+void String::set(const char* in, ...)
 {
 	va_list vaArgs;
 	va_start(vaArgs, in);
@@ -116,8 +135,14 @@ void NetString::set(const char* in, ...)
 	_size = str.size();
 }
 
-void NetString::append(const char* in, ...)
+void String::append(const char* in, ...)
 {
+	if (size() <= 0)
+	{
+		Construct(in);
+		return;
+	}
+
 	va_list vaArgs;
 	va_start(vaArgs, in);
 	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
@@ -137,7 +162,7 @@ void NetString::append(const char* in, ...)
 	data.free();
 }
 
-void NetString::set(NetString& in, ...)
+void String::set(String& in, ...)
 {
 	va_list vaArgs;
 	va_start(vaArgs, in.get());
@@ -151,8 +176,14 @@ void NetString::set(NetString& in, ...)
 	_size = str.size();
 }
 
-void NetString::append(NetString& in, ...)
+void String::append(String& in, ...)
 {
+	if (size() <= 0)
+	{
+		copy(in);
+		return;
+	}
+
 	va_list vaArgs;
 	va_start(vaArgs, in.get());
 	const size_t size = std::vsnprintf(nullptr, 0, in.data().get(), vaArgs);
@@ -172,7 +203,7 @@ void NetString::append(NetString& in, ...)
 	data.free();
 }
 
-Net::Cryption::XOR_UNIQUEPOINTER NetString::str()
+Net::Cryption::XOR_UNIQUEPOINTER String::str()
 {
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
@@ -180,7 +211,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::str()
 	return _string.Revert();
 }
 
-Net::Cryption::XOR_UNIQUEPOINTER NetString::cstr()
+Net::Cryption::XOR_UNIQUEPOINTER String::cstr()
 {
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
@@ -188,15 +219,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::cstr()
 	return _string.Revert();
 }
 
-Net::Cryption::XOR_UNIQUEPOINTER NetString::get()
-{
-	if (size() <= 0)
-		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
-	
-	return _string.Revert();
-}
-
-Net::Cryption::XOR_UNIQUEPOINTER NetString::revert()
+Net::Cryption::XOR_UNIQUEPOINTER String::get()
 {
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
@@ -204,7 +227,7 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::revert()
 	return _string.Revert();
 }
 
-Net::Cryption::XOR_UNIQUEPOINTER NetString::data()
+Net::Cryption::XOR_UNIQUEPOINTER String::revert()
 {
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
@@ -212,14 +235,22 @@ Net::Cryption::XOR_UNIQUEPOINTER NetString::data()
 	return _string.Revert();
 }
 
-void NetString::clear()
+Net::Cryption::XOR_UNIQUEPOINTER String::data()
+{
+	if (size() <= 0)
+		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+
+	return _string.Revert();
+}
+
+void String::clear()
 {
 	_string.free();
 	_size = 0;
 }
 
 
-bool NetString::empty()
+bool String::empty()
 {
 	if (size() <= 0)
 		return true;
@@ -229,7 +260,7 @@ bool NetString::empty()
 	return e;
 }
 
-char NetString::at(const size_t i)
+char String::at(const size_t i)
 {
 	if (size() <= 0)
 		return '\0';
@@ -242,11 +273,11 @@ char NetString::at(const size_t i)
 	return ch;
 }
 
-char* NetString::substr(size_t length)
+char* String::substr(size_t length)
 {
 	if (size() <= 0)
 		return nullptr;
-	
+
 	if (length > size())
 		length = size();
 
@@ -262,7 +293,7 @@ char* NetString::substr(size_t length)
 	return sub;
 }
 
-char* NetString::substr(const size_t start, size_t length)
+char* String::substr(const size_t start, size_t length)
 {
 	if (size() <= 0)
 		return nullptr;
@@ -285,7 +316,7 @@ char* NetString::substr(const size_t start, size_t length)
 	return sub;
 }
 
-size_t NetString::find(char c)
+size_t String::find(char c)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -300,11 +331,11 @@ size_t NetString::find(char c)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const char c, const char type)
+size_t String::find(const char c, const char type)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
-	
+
 	for (size_t i = 0; i < size(); ++i)
 	{
 		const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
@@ -316,7 +347,7 @@ size_t NetString::find(const char c, const char type)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const char* pattern)
+size_t String::find(const char* pattern)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -341,7 +372,7 @@ size_t NetString::find(const char* pattern)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const char* pattern, const char type)
+size_t String::find(const char* pattern, const char type)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -379,7 +410,7 @@ size_t NetString::find(const char* pattern, const char type)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, const char pattern)
+size_t String::find(const size_t start, const char pattern)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -407,11 +438,11 @@ size_t NetString::find(const size_t start, const char pattern)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, char pattern, const char type)
+size_t String::find(const size_t start, char pattern, const char type)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
-	
+
 	if (start > length())
 		return NET_STRING_NOT_FOUND;
 
@@ -438,7 +469,7 @@ size_t NetString::find(const size_t start, char pattern, const char type)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, char* pattern)
+size_t String::find(const size_t start, char* pattern)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -466,7 +497,7 @@ size_t NetString::find(const size_t start, char* pattern)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, char* pattern, const char type)
+size_t String::find(const size_t start, char* pattern, const char type)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -507,7 +538,7 @@ size_t NetString::find(const size_t start, char* pattern, const char type)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, const char* pattern)
+size_t String::find(const size_t start, const char* pattern)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -535,7 +566,7 @@ size_t NetString::find(const size_t start, const char* pattern)
 	return NET_STRING_NOT_FOUND;
 }
 
-size_t NetString::find(const size_t start, const char* pattern, const char type)
+size_t String::find(const size_t start, const char* pattern, const char type)
 {
 	if (size() <= 0)
 		return NET_STRING_NOT_FOUND;
@@ -576,13 +607,13 @@ size_t NetString::find(const size_t start, const char* pattern, const char type)
 	return NET_STRING_NOT_FOUND;
 }
 
-std::vector<size_t> NetString::findAll(const char c)
+std::vector<size_t> String::findAll(const char c)
 {
 	std::vector<size_t> tmp;
 
 	if (size() <= 0)
 		return tmp;
-	
+
 	for (size_t i = 0; i < size(); ++i)
 	{
 		const auto res = find(i, c);
@@ -593,7 +624,7 @@ std::vector<size_t> NetString::findAll(const char c)
 	return tmp;
 }
 
-std::vector<size_t> NetString::findAll(const char c, const char type)
+std::vector<size_t> String::findAll(const char c, const char type)
 {
 	std::vector<size_t> tmp;
 
@@ -610,7 +641,7 @@ std::vector<size_t> NetString::findAll(const char c, const char type)
 	return tmp;
 }
 
-std::vector<size_t> NetString::findAll(const char* pattern)
+std::vector<size_t> String::findAll(const char* pattern)
 {
 	std::vector<size_t> tmp;
 
@@ -627,7 +658,7 @@ std::vector<size_t> NetString::findAll(const char* pattern)
 	return tmp;
 }
 
-std::vector<size_t> NetString::findAll(const char* pattern, const char type)
+std::vector<size_t> String::findAll(const char* pattern, const char type)
 {
 	std::vector<size_t> tmp;
 
@@ -644,7 +675,107 @@ std::vector<size_t> NetString::findAll(const char* pattern, const char type)
 	return tmp;
 }
 
-bool NetString::compare(const char match)
+size_t String::findLastOf(char c)
+{
+	if (size() <= 0)
+		return NET_STRING_NOT_FOUND;
+
+	for (size_t i = size() - 1; i > 0; --i)
+	{
+		const auto tmp = at(i);
+		if (!memcmp(&tmp, &c, 1))
+			return i;
+	}
+
+	return NET_STRING_NOT_FOUND;
+}
+
+size_t String::findLastOf(const char c, const char type)
+{
+	if (size() <= 0)
+		return NET_STRING_NOT_FOUND;
+
+	for (size_t i = size() - 1; i > 0; --i)
+	{
+		const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
+		const auto comp = type & NOT_CASE_SENS ? (char)tolower((int)c) : c;
+		if (!memcmp(&tmp, &comp, 1))
+			return i;
+	}
+
+	return NET_STRING_NOT_FOUND;
+}
+
+size_t String::findLastOf(const char* pattern)
+{
+	if (size() <= 0)
+		return NET_STRING_NOT_FOUND;
+
+	const auto patternLen = strlen(pattern);
+
+	size_t it = patternLen - 1;
+	for (size_t i = size() - 1; i > 0; --i)
+	{
+		const auto tmp = at(i);
+		if (!memcmp(&tmp, &pattern[it], 1))
+		{
+			if (it == 0)
+				it = INVALID_SIZE;
+			else
+				it--;
+
+			if (it == INVALID_SIZE)
+				return i;
+		}
+		else
+			it = patternLen - 1;
+	}
+
+	return NET_STRING_NOT_FOUND;
+}
+
+size_t String::findLastOf(const char* pattern, const char type)
+{
+	if (size() <= 0)
+		return NET_STRING_NOT_FOUND;
+
+	const auto patternLen = strlen(pattern);
+
+	auto tmpMatch = ALLOC<char>(patternLen + 1);
+	memset(tmpMatch, NULL, patternLen);
+	if (type & NOT_CASE_SENS)
+	{
+		for (size_t i = 0; i < patternLen; ++i)
+			tmpMatch[i] = (char)tolower((int)pattern[i]);
+	}
+	tmpMatch[patternLen] = '\0';
+
+	size_t it = patternLen - 1;
+	for (size_t i = size() - 1; i > 0; --i)
+	{
+		const auto tmp = (char)tolower((int)at(i));
+		if (!memcmp(&tmp, type & NOT_CASE_SENS ? &tmpMatch[it] : &pattern[it], 1))
+		{
+			if (it == 0)
+				it = INVALID_SIZE;
+			else
+				it--;
+
+			if (it == INVALID_SIZE)
+			{
+				FREE(tmpMatch);
+				return i;
+			}
+		}
+		else
+			it = patternLen - 1;
+	}
+
+	FREE(tmpMatch);
+	return NET_STRING_NOT_FOUND;
+}
+
+bool String::compare(const char match)
 {
 	if (size() <= 0)
 		return false;
@@ -654,7 +785,7 @@ bool NetString::compare(const char match)
 	return cmp;
 }
 
-bool NetString::compare(char match, const char type)
+bool String::compare(char match, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -682,7 +813,7 @@ bool NetString::compare(char match, const char type)
 	return cmp;
 }
 
-bool NetString::compare(const char* match)
+bool String::compare(const char* match)
 {
 	if (size() <= 0)
 		return false;
@@ -692,7 +823,7 @@ bool NetString::compare(const char* match)
 	return cmp;
 }
 
-bool NetString::compare(const char* match, const char type)
+bool String::compare(const char* match, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -726,7 +857,7 @@ bool NetString::compare(const char* match, const char type)
 	return res;
 }
 
-bool NetString::compare(char* match)
+bool String::compare(char* match)
 {
 	if (size() <= 0)
 		return false;
@@ -736,7 +867,7 @@ bool NetString::compare(char* match)
 	return cmp;
 }
 
-bool NetString::compare(char* match, const char type)
+bool String::compare(char* match, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -765,7 +896,7 @@ bool NetString::compare(char* match, const char type)
 	return cmp;
 }
 
-bool NetString::erase(const size_t len)
+bool String::erase(const size_t len)
 {
 	if (size() <= 0)
 		return false;
@@ -790,7 +921,7 @@ bool NetString::erase(const size_t len)
 	return true;
 }
 
-bool NetString::erase(const size_t start, size_t len)
+bool String::erase(const size_t start, size_t len)
 {
 	if (size() <= 0)
 		return false;
@@ -817,7 +948,7 @@ bool NetString::erase(const size_t start, size_t len)
 	return true;
 }
 
-bool NetString::erase(const char c, const size_t start)
+bool String::erase(const char c, const size_t start)
 {
 	if (size() <= 0)
 		return false;
@@ -829,7 +960,7 @@ bool NetString::erase(const char c, const size_t start)
 	return erase(it, 0);
 }
 
-bool NetString::erase(const char c, const char type)
+bool String::erase(const char c, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -841,7 +972,7 @@ bool NetString::erase(const char c, const char type)
 	return erase(it, 0);
 }
 
-bool NetString::erase(const char c, const size_t start, const char type)
+bool String::erase(const char c, const size_t start, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -853,7 +984,7 @@ bool NetString::erase(const char c, const size_t start, const char type)
 	return erase(it, 0);
 }
 
-bool NetString::erase(const char* pattern, const size_t start)
+bool String::erase(const char* pattern, const size_t start)
 {
 	if (size() <= 0)
 		return false;
@@ -865,7 +996,7 @@ bool NetString::erase(const char* pattern, const size_t start)
 	return erase(it, strlen(pattern));
 }
 
-bool NetString::erase(const char* pattern, const char type)
+bool String::erase(const char* pattern, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -877,7 +1008,7 @@ bool NetString::erase(const char* pattern, const char type)
 	return erase(it, strlen(pattern));
 }
 
-bool NetString::erase(const char* pattern, const size_t start, const char type)
+bool String::erase(const char* pattern, const size_t start, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -890,7 +1021,7 @@ bool NetString::erase(const char* pattern, const size_t start, const char type)
 }
 
 
-bool NetString::erase(NetString& pattern, const size_t start)
+bool String::erase(String& pattern, const size_t start)
 {
 	if (size() <= 0)
 		return false;
@@ -902,7 +1033,7 @@ bool NetString::erase(NetString& pattern, const size_t start)
 	return erase(it, pattern.length());
 }
 
-bool NetString::erase(NetString& pattern, const char type)
+bool String::erase(String& pattern, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -914,7 +1045,7 @@ bool NetString::erase(NetString& pattern, const char type)
 	return erase(it, pattern.length());
 }
 
-bool NetString::erase(NetString& pattern, const size_t start, const char type)
+bool String::erase(String& pattern, const size_t start, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -926,7 +1057,7 @@ bool NetString::erase(NetString& pattern, const size_t start, const char type)
 	return erase(it, pattern.length());
 }
 
-bool NetString::eraseAll(const char c)
+bool String::eraseAll(const char c)
 {
 	if (size() <= 0)
 		return false;
@@ -975,7 +1106,7 @@ bool NetString::eraseAll(const char c)
 	return true;
 }
 
-bool NetString::eraseAll(const char c, const char type)
+bool String::eraseAll(const char c, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -1024,7 +1155,7 @@ bool NetString::eraseAll(const char c, const char type)
 	return true;
 }
 
-bool NetString::eraseAll(const char* pattern)
+bool String::eraseAll(const char* pattern)
 {
 	if (size() <= 0)
 		return false;
@@ -1067,14 +1198,14 @@ bool NetString::eraseAll(const char* pattern)
 		memcpy(&replace[j], &ch, 1);
 		++j;
 	}
-	
+
 	_string.free();
 	_string = RUNTIMEXOR(replace);
 	_size = replaceSize;
 	return true;
 }
 
-bool NetString::eraseAll(const char* pattern, const char type)
+bool String::eraseAll(const char* pattern, const char type)
 {
 	if (size() <= 0)
 		return false;
@@ -1124,7 +1255,7 @@ bool NetString::eraseAll(const char* pattern, const char type)
 	return true;
 }
 
-bool NetString::replace(const char c, const char r, const size_t start)
+bool String::replace(const char c, const char r, const size_t start)
 {
 	const auto i = find(start, c);
 	if (i == NET_STRING_NOT_FOUND)
@@ -1135,7 +1266,7 @@ bool NetString::replace(const char c, const char r, const size_t start)
 	return true;
 }
 
-bool NetString::replace(const char c, const char* r, const size_t start)
+bool String::replace(const char c, const char* r, const size_t start)
 {
 	const auto i = find(start, c);
 	if (i == NET_STRING_NOT_FOUND)
@@ -1155,7 +1286,7 @@ bool NetString::replace(const char c, const char* r, const size_t start)
 	return true;
 }
 
-bool NetString::replace(const char* pattern, const char r, const size_t start)
+bool String::replace(const char* pattern, const char r, const size_t start)
 {
 	const auto i = find(start, pattern);
 	if (i == NET_STRING_NOT_FOUND)
@@ -1192,7 +1323,7 @@ bool NetString::replace(const char* pattern, const char r, const size_t start)
 	return true;
 }
 
-bool NetString::replace(const char* pattern, const char* r, const size_t start)
+bool String::replace(const char* pattern, const char* r, const size_t start)
 {
 	const auto i = find(start, pattern);
 	if (i == NET_STRING_NOT_FOUND)
@@ -1234,7 +1365,7 @@ bool NetString::replace(const char* pattern, const char* r, const size_t start)
 	return true;
 }
 
-bool NetString::replaceAll(const char c, const char r)
+bool String::replaceAll(const char c, const char r)
 {
 	const auto found = findAll(c);
 	if (found.empty())
@@ -1247,7 +1378,7 @@ bool NetString::replaceAll(const char c, const char r)
 	return true;
 }
 
-bool NetString::replaceAll(const char c, const char* r)
+bool String::replaceAll(const char c, const char* r)
 {
 	const auto found = findAll(c);
 	if (found.empty())
@@ -1264,7 +1395,7 @@ bool NetString::replaceAll(const char c, const char* r)
 	return affectedOnce;
 }
 
-bool NetString::replaceAll(const char* pattern, const char r)
+bool String::replaceAll(const char* pattern, const char r)
 {
 	const auto found = findAll(pattern);
 	if (found.empty())
@@ -1281,7 +1412,7 @@ bool NetString::replaceAll(const char* pattern, const char r)
 	return affectedOnce;
 }
 
-bool NetString::replaceAll(const char* pattern, const char* r)
+bool String::replaceAll(const char* pattern, const char* r)
 {
 	const auto found = findAll(pattern);
 	if (found.empty())
@@ -1297,3 +1428,4 @@ bool NetString::replaceAll(const char* pattern, const char* r)
 
 	return affectedOnce;
 }
+NET_NAMESPACE_END

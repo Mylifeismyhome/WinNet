@@ -6,12 +6,14 @@
 
 NET_DSA_BEGIN
 
-NET_CLASS_BEGIN(NetUniquePointer)
+NET_NAMESPACE_BEGIN(Net)
+NET_NAMESPACE_BEGIN(Pointer)
+NET_CLASS_BEGIN(UniquePointer)
 void* _pointer;
 
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(NetUniquePointer, void*);
-NET_CLASS_DESTRUCTUR(NetUniquePointer);
+NET_CLASS_CONSTRUCTUR(UniquePointer, void*);
+NET_CLASS_DESTRUCTUR(UniquePointer);
 
 template<typename T>
 T get() const
@@ -31,19 +33,23 @@ T data() const
 	return (T)_pointer;
 }
 NET_CLASS_END
+NET_NAMESPACE_END
 
-NET_CLASS_BEGIN(NetString)
+NET_CLASS_BEGIN(String)
 RUNTIMEXOR _string;
 size_t _size;
 Net::Cryption::XOR_UNIQUEPOINTER revert();
 
+void Construct(const char, ...);
+void Construct(const char*, ...);
+
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(NetString);
-NET_CLASS_CONSTRUCTUR(NetString, char, ...);
-NET_CLASS_CONSTRUCTUR(NetString, const char*, ...);
-NET_CLASS_CONSTRUCTUR(NetString, NetString&);
-NET_CLASS_CONSTRUCTUR_NOEXCEPT(NetString, NetString&&);
-NET_CLASS_DESTRUCTUR(NetString);
+NET_CLASS_CONSTRUCTUR(String);
+NET_CLASS_CONSTRUCTUR(String, char, ...);
+NET_CLASS_CONSTRUCTUR(String, const char*, ...);
+NET_CLASS_CONSTRUCTUR(String, String&);
+NET_CLASS_CONSTRUCTUR_NOEXCEPT(String, String&&);
+NET_CLASS_DESTRUCTUR(String);
 
 enum type
 {
@@ -67,7 +73,7 @@ void operator=(const char in)
 	set(in);
 }
 
-void operator=(NetString in)
+void operator=(String in)
 {
 	copy(in);
 }
@@ -96,7 +102,7 @@ void operator+=(const char in)
 		set(in);
 }
 
-void operator+=(NetString& in)
+void operator+=(String& in)
 {
 	if (size() > 0)
 		append(in);
@@ -119,7 +125,7 @@ void operator-=(const char in)
 	erase(in);
 }
 
-void operator-=(NetString& in)
+void operator-=(String& in)
 {
 	erase(in);
 }
@@ -130,10 +136,10 @@ void set(char, ...);
 void append(char);
 void set(const char*, ...);
 void append(const char*, ...);
-void set(NetString&, ...);
-void append(NetString&, ...);
-void copy(NetString&);
-void move(NetString&&);
+void set(String&, ...);
+void append(String&, ...);
+void copy(String&);
+void move(String&&);
 Net::Cryption::XOR_UNIQUEPOINTER str();
 Net::Cryption::XOR_UNIQUEPOINTER cstr();
 Net::Cryption::XOR_UNIQUEPOINTER get();
@@ -157,6 +163,10 @@ std::vector<size_t> findAll(char);
 std::vector<size_t> findAll(char, char);
 std::vector<size_t> findAll(const char*);
 std::vector<size_t> findAll(const char*, char);
+size_t findLastOf(char);
+size_t findLastOf(char, char);
+size_t findLastOf(const char*);
+size_t findLastOf(const char*, char);
 bool compare(char);
 bool compare(char, char = NONE);
 bool compare(const char*);
@@ -171,9 +181,9 @@ bool erase(char, size_t, char);
 bool erase(const char*, size_t = 0);
 bool erase(const char*, char);
 bool erase(const char*, size_t, char);
-bool erase(NetString&, size_t = 0);
-bool erase(NetString&, char);
-bool erase(NetString&, size_t, char);
+bool erase(String&, size_t = 0);
+bool erase(String&, char);
+bool erase(String&, size_t, char);
 bool eraseAll(char);
 bool eraseAll(char, char);
 bool eraseAll(const char*);
@@ -187,5 +197,5 @@ bool replaceAll(char, const char*);
 bool replaceAll(const char*, char);
 bool replaceAll(const char*, const char*);
 NET_CLASS_END
-
+NET_NAMESPACE_END
 NET_DSA_END

@@ -15,12 +15,12 @@ short Net::Version::Revision()
 	return NetRevision;
 }
 
-NetString Net::Version::Key()
+Net::String Net::Version::Key()
 {
-	return NetString(NetKey);
+	return Net::String(NetKey);
 }
 
-NetString Net::Version::Version()
+Net::String Net::Version::Version()
 {
-	return NetString(CSTRING("%i.%i.%i-%s"), Major(), Minor(), Revision(), Key().data().data());
+	return Net::String(CSTRING("%i.%i.%i-%s"), Major(), Minor(), Revision(), Key().data().data());
 }
