@@ -40,12 +40,12 @@ RUNTIMEXOR _string;
 size_t _size;
 Net::Cryption::XOR_UNIQUEPOINTER revert();
 
-void Construct(const char, ...);
+void Construct(const char);
 void Construct(const char*, ...);
 
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(String);
-NET_CLASS_CONSTRUCTUR(String, char, ...);
+NET_CLASS_CONSTRUCTUR(String, char);
 NET_CLASS_CONSTRUCTUR(String, const char*, ...);
 NET_CLASS_CONSTRUCTUR(String, String&);
 NET_CLASS_CONSTRUCTUR_NOEXCEPT(String, String&&);

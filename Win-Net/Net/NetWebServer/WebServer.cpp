@@ -1157,20 +1157,55 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
 	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
 	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
+	rapidjson::Value bRaw(CSTRING("RAW"), JsonBuffer.GetAllocator());
 
 	rapidjson::Value idValue;
 	idValue.SetInt(id);
 	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
+	JsonBuffer.AddMember(bRaw, false, JsonBuffer.GetAllocator());
 
 	/* Ws2_32::buffer, later we cast to PBYTE */
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
 
-	EncodeFrame(buffer.GetString(), buffer.GetSize(), peer, opc);
+	EncodeFrame((BYTE*)buffer.GetString(), buffer.GetSize(), peer, opc);
 }
 
-void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
+void Server::DoSendRaw(NET_PEER peer, const int id, BYTE* data, size_t size, const unsigned char opc)
+{
+	PEER_NOT_VALID(peer,
+		return;
+	);
+
+	SOCKET_NOT_VALID(peer->pSocket) return;
+
+	rapidjson::Document JsonBuffer;
+	JsonBuffer.SetObject();
+	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
+	rapidjson::Value bRaw(CSTRING("RAW"), JsonBuffer.GetAllocator());
+
+	rapidjson::Value idValue;
+	idValue.SetInt(id);
+	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
+	JsonBuffer.AddMember(bRaw, true, JsonBuffer.GetAllocator());
+
+	/* Ws2_32::buffer, later we cast to PBYTE */
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	JsonBuffer.Accept(writer);
+
+	auto newBuffer = ALLOC<BYTE>(buffer.GetSize() + size + 1);
+	memcpy(newBuffer, buffer.GetString(), buffer.GetSize());
+	memcpy(&newBuffer[buffer.GetSize()], data, size);
+	newBuffer[buffer.GetSize() + size] = '\0';
+
+	EncodeFrame(newBuffer, buffer.GetSize() + size, peer, opc);
+
+	FREE(newBuffer);
+}
+
+void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1186,6 +1221,7 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 	const auto maxFrame = frameCount - 1;
 	const int lastFrameBufferLength = (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : 0);
 
+	size_t in_frame_offset = NULL;
 	for (auto i = 0; i < frameCount; i++)
 	{
 		const unsigned char fin = i != maxFrame ? 0 : NET_WS_FIN;
@@ -1201,7 +1237,8 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			buf = ALLOC<char>(totalLength);
 			buf.get()[0] = fin | opcode;
 			buf.get()[1] = (char)bufferLength;
-			memcpy(buf.get() + 2, in_frame, frame_length);
+			memcpy(buf.get() + 2, &in_frame[in_frame_offset], bufferLength);
+			in_frame_offset += bufferLength;
 		}
 		else if (bufferLength <= 65535)
 		{
@@ -1211,7 +1248,8 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			buf.get()[1] = NET_WS_PAYLOAD_LENGTH_16;
 			buf.get()[2] = (bufferLength >> 8) & 0xFF;
 			buf.get()[3] = (bufferLength) & 0xFF;
-			memcpy(buf.get() + 4, in_frame, frame_length);
+			memcpy(buf.get() + 4, &in_frame[in_frame_offset], bufferLength);
+			in_frame_offset += bufferLength;
 		}
 		else
 		{
@@ -1227,7 +1265,8 @@ void Server::EncodeFrame(const char* in_frame, const size_t frame_length, NET_PE
 			buf.get()[7] = (bufferLength >> 16) & 0xFF;
 			buf.get()[8] = (bufferLength >> 8) & 0xFF;
 			buf.get()[9] = (bufferLength) & 0xFF;
-			memcpy(buf.get() + 10, in_frame, frame_length);
+			memcpy(buf.get() + 10, &in_frame[in_frame_offset], bufferLength);
+			in_frame_offset += bufferLength;
 		}
 
 		if (!buf.valid())

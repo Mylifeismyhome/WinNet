@@ -290,6 +290,7 @@ NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
 void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
+void DoSendRaw(NET_PEER, int, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
 size_t getCountPeers() const;
 
@@ -301,7 +302,7 @@ NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 
 NET_CLASS_PRIVATE
 void DecodeFrame(NET_PEER);
-void EncodeFrame(const char*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
+void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
 bool ProcessPackage(NET_PEER, BYTE*, size_t);
 
 NET_CLASS_PROTECTED

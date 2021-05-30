@@ -19,14 +19,21 @@ String::String()
 	_size = 0;
 }
 
-String::String(const char in, ...)
+String::String(const char in)
 {
 	Construct(in);
 }
 
 String::String(const char* in, ...)
 {
-	Construct(in);
+	va_list vaArgs;
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
+
+	Construct(str.data());
 }
 
 String::String(String& in)
@@ -39,7 +46,7 @@ String::String(String&& in) NOEXPECT
 	move((String&&)in);
 }
 
-void String::Construct(const char in, ...)
+void String::Construct(const char in)
 {
 	std::vector<char> str(2);
 	str[0] = in;
