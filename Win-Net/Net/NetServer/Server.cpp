@@ -125,6 +125,16 @@ byte* Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
+
+void Server::network_t::lockSend()
+{
+	_mutex_send.lock();
+}
+
+void Server::network_t::unlockSend()
+{
+	_mutex_send.unlock();
+}
 #pragma endregion
 
 #pragma region Cryption Structure
@@ -1151,6 +1161,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		return;
 	);
 
+	peer->network.lockSend();
+
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 			sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
@@ -1203,6 +1215,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			IV.free();
 
 			LOG_ERROR(CSTRING("RSA Object has no instance"));
+			peer->network.unlockSend();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
 			return;
 		}
@@ -1213,6 +1226,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("Failed Key to encrypt and encode to base64"));
+			peer->network.unlockSend();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64);
 			return;
 		}
@@ -1223,6 +1237,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("Failed IV to encrypt and encode to base64"));
+			peer->network.unlockSend();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptIVBase64);
 			return;
 		}
@@ -1439,6 +1454,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Footer */
 		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
+
+	peer->network.unlockSend();
 }
 
 short Server::Handshake(NET_PEER peer)

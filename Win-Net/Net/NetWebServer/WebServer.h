@@ -83,6 +83,7 @@ CPOINTER<byte> _data;
 size_t _data_size;
 CPOINTER<byte> _dataFragment;
 size_t _data_sizeFragment;
+std::mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(network_t)
 reset();
@@ -114,6 +115,9 @@ bool dataValid() const;
 bool dataFragmentValid() const;
 
 byte* getDataReceive();
+
+void lockSend();
+void unlockSend();
 NET_STRUCT_END
 #pragma endregion
 
@@ -289,8 +293,8 @@ bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
 NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
-void DoSend(NET_PEER, int, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
-void DoSendRaw(NET_PEER, int, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
+void DoSend(NET_PEER, uint32_t, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
+void DoSendRaw(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
 size_t getCountPeers() const;
 

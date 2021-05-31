@@ -66,6 +66,8 @@ time_t curTime;
 NET_HANDLE_TIMER hSyncClockNTP;
 NET_HANDLE_TIMER hReSyncClockNTP;
 
+std::mutex _mutex_send;
+
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 data = nullptr;
@@ -93,6 +95,9 @@ void clearData();
 void createNewRSAKeys(size_t);
 void deleteRSAKeys();
 typeLatency getLatency() const;
+
+void lockSend();
+void unlockSend();
 NET_STRUCT_END
 NET_CLASS_PUBLIC
 Network network;

@@ -142,6 +142,16 @@ byte* Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
+
+void Server::network_t::lockSend()
+{
+	_mutex_send.lock();
+}
+
+void Server::network_t::unlockSend()
+{
+	_mutex_send.unlock();
+}
 #pragma endregion
 
 void Server::IncreasePeersCounter()
@@ -1144,13 +1154,15 @@ void Server::Acceptor()
 	}
 }
 
-void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned char opc)
+void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
 	);
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
+
+	peer->network.lockSend();
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1170,9 +1182,11 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg, const unsigned
 	JsonBuffer.Accept(writer);
 
 	EncodeFrame((BYTE*)buffer.GetString(), buffer.GetSize(), peer, opc);
+
+	peer->network.unlockSend();
 }
 
-void Server::DoSendRaw(NET_PEER peer, const int id, BYTE* data, size_t size, const unsigned char opc)
+void Server::DoSendRaw(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1180,29 +1194,22 @@ void Server::DoSendRaw(NET_PEER peer, const int id, BYTE* data, size_t size, con
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	rapidjson::Document JsonBuffer;
-	JsonBuffer.SetObject();
-	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
-	rapidjson::Value bRaw(CSTRING("RAW"), JsonBuffer.GetAllocator());
+	peer->network.lockSend();
 
-	rapidjson::Value idValue;
-	idValue.SetInt(id);
-	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(bRaw, true, JsonBuffer.GetAllocator());
+	// write package id as big endian
+	auto newBuffer = ALLOC<BYTE>(size + 5);
+	newBuffer[0] = (id >> 24) & 0xFF; 
+	newBuffer[1] = (id >> 16) & 0xFF;
+	newBuffer[2] = (id >> 8) & 0xFF;
+	newBuffer[3] = (id) & 0xFF;
+	memcpy(&newBuffer[4], data, size);
+	newBuffer[size + 1] = '\0';
 
-	/* Ws2_32::buffer, later we cast to PBYTE */
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	JsonBuffer.Accept(writer);
-
-	auto newBuffer = ALLOC<BYTE>(buffer.GetSize() + size + 1);
-	memcpy(newBuffer, buffer.GetString(), buffer.GetSize());
-	memcpy(&newBuffer[buffer.GetSize()], data, size);
-	newBuffer[buffer.GetSize() + size] = '\0';
-
-	EncodeFrame(newBuffer, buffer.GetSize() + size, peer, opc);
+	EncodeFrame(newBuffer, size + 1, peer, opc);
 
 	FREE(newBuffer);
+
+	peer->network.unlockSend();
 }
 
 void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
@@ -1218,16 +1225,15 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 	if (frameCount == 0)
 		frameCount = 1;
 
-	const auto maxFrame = frameCount - 1;
 	const int lastFrameBufferLength = (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : 0);
 
 	size_t in_frame_offset = NULL;
 	for (auto i = 0; i < frameCount; i++)
 	{
-		const unsigned char fin = i != maxFrame ? 0 : NET_WS_FIN;
-		const unsigned char opcode = i != 0 ? NET_OPCODE_CONTINUE : opc;
+		const unsigned char fin = (i != (frameCount - 1) ? 0 : NET_WS_FIN);
+		const unsigned char opcode = (i != 0 ? NET_OPCODE_CONTINUE : opc);
 
-		const size_t bufferLength = i != maxFrame ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength;
+		const size_t bufferLength = (i != (frameCount - 1) ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength);
 		CPOINTER<char> buf;
 		size_t totalLength;
 

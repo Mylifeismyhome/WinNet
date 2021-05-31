@@ -67,6 +67,7 @@ CPOINTER<byte> _data;
 size_t _data_size;
 size_t _data_full_size;
 size_t _data_offset;
+std::mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(network_t)
 reset();
@@ -95,6 +96,9 @@ size_t getDataOffset() const;
 bool dataValid() const;
 
 byte* getDataReceive();
+
+void lockSend();
+void unlockSend();
 NET_STRUCT_END
 #pragma endregion
 

@@ -574,6 +574,16 @@ typeLatency Client::Network::getLatency() const
 	return latency;
 }
 
+void Client::Network::lockSend()
+{
+	_mutex_send.lock();
+}
+
+void Client::Network::unlockSend()
+{
+	_mutex_send.unlock();
+}
+
 void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!GetSocket())
@@ -1088,6 +1098,8 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 {
 	if (!IsConnected())
 		return;
+
+	network.lockSend();
 	
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1131,6 +1143,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			IV.free();
 
 			LOG_ERROR(CSTRING("[NET] - Failed to Init AES [0]"));
+			network.unlockSend();
 			Disconnect();
 			return;
 		}
@@ -1141,6 +1154,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			IV.free();
 
 			LOG_ERROR(CSTRING("[NET] - RSA Object has no instance"));
+			network.unlockSend();
 			Disconnect();
 			return;
 		}
@@ -1151,6 +1165,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("[NET] - Failed Key to encrypt and encode to base64"));
+			network.unlockSend();
 			Disconnect();
 			return;
 		}
@@ -1161,6 +1176,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("[NET] - Failed IV to encrypt and encode to base64"));
+			network.unlockSend();
 			Disconnect();
 			return;
 		}
@@ -1380,6 +1396,8 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		/* Append Package Footer */
 		SingleSend(NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
+
+	network.unlockSend();
 }
 
 /*
