@@ -1,25 +1,6 @@
 "use strict";
 var Socket;
 
-class raw_t
-{
-	constructor(data, data_size)
-	{
-		this.data = data;
-		this.data_size = data_size;
-	}
-	
-	get src()
-	{
-		return this.data;
-	}
-	
-	get size()
-	{
-		return this.data_size;
-	}
-}
-
 function Connect(connect)
 {
     Socket = new WebSocket(connect);
