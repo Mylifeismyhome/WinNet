@@ -115,7 +115,7 @@ static int timing_safe_strcmp(const char *str1, const char *str2)
 int bcrypt_gensalt(int factor, char salt[BCRYPT_HASHSIZE])
 {
 	int fd;
-	char input[RANDBYTES];
+	char input[RANDBYTES] = { 0 };
 	int workf;
 	char *aux;
 
@@ -129,7 +129,7 @@ int bcrypt_gensalt(int factor, char salt[BCRYPT_HASHSIZE])
 		return 1;
 	}
 
-	if (CryptGenRandom(p, RANDBYTES, (BYTE*)input) == FALSE) {
+	if (CryptGenRandom(p, RANDBYTES, &input) == FALSE) {
 		return 2;
 	}
 

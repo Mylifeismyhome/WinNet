@@ -71,7 +71,7 @@ static void InitIcmpHeader(char* buf, const int datasize)
 	icmp_hdr->icmp_sequence = 0;
 
 #ifdef _WIN64
-	icmp_hdr->icmp_timestamp = GetTickCount64();
+	icmp_hdr->icmp_timestamp = static_cast<DWORD>(GetTickCount64());
 #else
 	icmp_hdr->icmp_timestamp = GetTickCount();
 #endif
@@ -176,7 +176,7 @@ static void SetIcmpSequence(char* buf, const int gAddressFamily)
 {
 	DWORD sequence = 0;
 #ifdef _WIN64
-	sequence = GetTickCount64();
+	sequence = static_cast<DWORD>(GetTickCount64());
 #else
 	sequence = GetTickCount();
 #endif
@@ -532,7 +532,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	else if (v6)
 		InitIcmp6Header(icmpbuf, DEFAULT_DATA_SIZE);
 
-	rc = Ws2_32::bind(con, localsockaddr->ai_addr, localsockaddr->ai_addrlen);
+	rc = Ws2_32::bind(con, localsockaddr->ai_addr, static_cast<int>(localsockaddr->ai_addrlen));
 	if (rc == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));

@@ -347,7 +347,9 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	// if we use NTP execute the needed code
 	if (CreateTOTPSecret())
+	{
 		LOG_DEBUG(CSTRING("[NET] - Successfully created TOTP-Hash"));
+	}
 
 	// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
 	if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)

@@ -1,4 +1,7 @@
 #pragma once
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+
 #define NET_SERVER Net::Server::Server
 
 #define NET_IPEER peerInfo

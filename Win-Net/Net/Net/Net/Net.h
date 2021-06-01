@@ -3,6 +3,12 @@
 #pragma warning(disable: 4996)
 #pragma warning(disable: 4006)
 #pragma warning(disable: 4081)
+#pragma warning(disable: 4311)
+#pragma warning(disable: 4530)
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4996)
+#pragma warning(disable: 4267)
+#pragma warning(disable: 4005)
 #define _WINSOCKET_DEPRECATED_NO_WARNINGS
 
 #undef NET_TEST_MEMORY_LEAKS

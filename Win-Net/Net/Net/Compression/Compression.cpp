@@ -19,11 +19,11 @@ int ZLib::Compress(BYTE*& data, size_t& size, const CompressionLevel level)
 	stream.next_out = out;
 	stream.avail_out = max;
 	stream.next_in = (z_const Bytef*)data;
-	stream.avail_in = size;
+	stream.avail_in = static_cast<uInt>(size);
 
 	do {
 		stream.avail_out = max;
-		stream.avail_in = size;
+		stream.avail_in = static_cast<uInt>(size);
 		err = deflate(&stream, Z_FINISH);
 	} while (err == Z_OK);
 
@@ -53,12 +53,12 @@ int ZLib::Decompress(BYTE*& data, size_t& size)
 	stream.next_out = out;
 	stream.avail_out = NULL;
 	stream.next_in = (z_const Bytef*)data;
-	stream.avail_in = size;
+	stream.avail_in = static_cast<uInt>(size);
 
 	do {
 		stream.next_out = out;
 		stream.avail_out = chunk;
-		stream.avail_in = size;
+		stream.avail_in = static_cast<uInt>(size);
 		err = inflate(&stream, Z_NO_FLUSH);
 
 		if (err == Z_OK

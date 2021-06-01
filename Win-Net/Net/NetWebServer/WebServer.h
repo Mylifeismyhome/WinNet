@@ -1,4 +1,7 @@
 #pragma once
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+
 #define NET_WEB_SERVER Net::WebServer::Server
 
 #define NET_IPEER peerInfo
@@ -294,7 +297,7 @@ NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
 void DoSend(NET_PEER, uint32_t, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
-void DoSendRaw(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
+void DoSend(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
 size_t getCountPeers() const;
 

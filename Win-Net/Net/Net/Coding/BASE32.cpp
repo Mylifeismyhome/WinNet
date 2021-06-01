@@ -156,12 +156,12 @@ bool Base32::Unmap32(unsigned char* inout32, int inout32Len, unsigned char* alph
 bool Base32::base32_encode(byte*& buffer, size_t& len)
 {
 	// create a new buffer
-	size_t encodeLength = (size_t)GetEncode32Length(len);
+	size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
 	byte* data32 = new byte[encodeLength + 1];
 	data32[encodeLength] = '\0';
-	if (Encode32(buffer, len, data32))
+	if (Encode32(buffer, static_cast<int>(len), data32))
 	{
-		if (Map32(data32, encodeLength, NET_BASE32_PATTERN))
+		if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
 		{
 			delete[] buffer;
 			buffer = data32;
@@ -178,12 +178,12 @@ bool Base32::base32_encode(byte*& buffer, size_t& len)
 bool Base32::base32_decode(byte*& buffer, size_t& len)
 {
 	// create a new buffer
-	size_t decodedLength = (size_t)GetDecode32Length(len);
+	size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
 	byte* data256 = new byte[decodedLength + 1];
 	data256[decodedLength] = '\0';
-	if (Unmap32(buffer, len, NET_BASE32_PATTERN))
+	if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
 	{
-		if (Decode32(buffer, len, data256))
+		if (Decode32(buffer, static_cast<int>(len), data256))
 		{
 			delete[] buffer;
 			buffer = data256;

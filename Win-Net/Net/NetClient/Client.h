@@ -1,4 +1,7 @@
 #pragma once
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+
 #define NET_CLIENT Net::Client::Client
 
 #define PKG pkg

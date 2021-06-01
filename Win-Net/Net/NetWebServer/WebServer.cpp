@@ -1186,7 +1186,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 	peer->network.unlockSend();
 }
 
-void Server::DoSendRaw(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
+void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
