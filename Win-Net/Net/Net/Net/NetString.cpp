@@ -313,7 +313,7 @@ char* String::substr(const size_t start, size_t length)
 
 	const auto sub = ALLOC<char>(length + 1);
 	memset(sub, NULL, length);
-	for (size_t i = start, j = 0; i < length; ++i, ++j)
+	for (size_t i = start, j = 0; i < (start + length); ++i, ++j)
 	{
 		const auto tmp = at(i);
 		memcpy(&sub[j], &tmp, 1);
