@@ -67,8 +67,6 @@ Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:       C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -190,3 +188,8 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/lhash.h
 Note: including file:     D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/bio.h
+crypto\bio\bss_bio.c(188): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\bio\bss_bio.c(337): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\bio\bss_bio.c(479): warning C4267: '=': conversion from 'size_t' to 'long', possible loss of data
+crypto\bio\bss_bio.c(700): warning C4267: 'function': conversion from 'size_t' to 'long', possible loss of data
+crypto\bio\bss_bio.c(705): warning C4267: 'function': conversion from 'size_t' to 'long', possible loss of data

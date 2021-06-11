@@ -101,8 +101,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -198,3 +196,14 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/constant_time.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\evp_local.h
+crypto\evp\e_aes_cbc_hmac_sha1.c(124): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(125): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(447): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(448): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(470): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(532): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(544): warning C4267: 'function': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(548): warning C4267: '=': conversion from 'size_t' to 'unsigned char', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(549): warning C4267: '=': conversion from 'size_t' to 'unsigned char', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(590): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+crypto\evp\e_aes_cbc_hmac_sha1.c(867): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data

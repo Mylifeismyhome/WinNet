@@ -79,3 +79,12 @@ Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\in
 Note: including file:    D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/buffererr.h
 Note: including file:    C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\sys/types.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/numbers.h
+crypto\ec\ec_asn1.c(335): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(336): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(342): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(343): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(429): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(1027): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(1055): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(1149): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\ec\ec_asn1.c(1169): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
