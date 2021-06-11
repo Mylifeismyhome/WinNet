@@ -51,5 +51,3 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/lhash.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\errno.h
-crypto\asn1\bio_ndef.c(129): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
-crypto\asn1\bio_ndef.c(201): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data

@@ -34,6 +34,8 @@ Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
+Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
+Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:     C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -127,7 +129,3 @@ Note: including file:   C:\Program Files (x86)\Windows Kits\10\include\10.0.1904
 Note: including file:  C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\corecrt_wstdlib.h
 Note: including file:  C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\limits.h
 Note: including file: C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\malloc.h
-apps\lib\win32_init.c(162): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-apps\lib\win32_init.c(216): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
-apps\lib\win32_init.c(226): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
-apps\lib\win32_init.c(251): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
