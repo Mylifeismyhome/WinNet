@@ -15,4 +15,3 @@ xcopy "%pathMSBuild%\Win32\Output\Debug\cryptlib.pdb" "%pathMSBuild%..\lib\debug
 echo -------------------------------------------
 echo Done compiling in Debug Mode (x86)
 echo -------------------------------------------
-pause
