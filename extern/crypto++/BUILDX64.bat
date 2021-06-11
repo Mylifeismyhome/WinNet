@@ -2,7 +2,7 @@
 title Compiling CryptoPP x64 [RELEASE] - [%date% %time%] - [4/4]
 
 set /p TOOL=<../../Config/BUILDTOOLS_PATH
-call "%TOOL%\vcbuildtools_msbuild.bat"
+call "%TOOL%\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 set pathMSBuild=%CD%\src\
 cd %pathMSBuild%   

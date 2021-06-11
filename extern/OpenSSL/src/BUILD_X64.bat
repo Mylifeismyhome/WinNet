@@ -5,13 +5,10 @@ set CURPARTITION=%CD:~0,2%
 set CURDIR=%CD%
 
 set /p TOOL=<../../../Config/BUILDTOOLS_PATH
-call "%TOOL%\vcbuildtools.bat" amd64
+call "%TOOL%\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 %CURPARTITION%
 cd %CURDIR%
-
-REM Nasm.exe
-set /p NASM=<../../../Config/NASM_PATH
 
 REM Perl.exe
 set /p PERL=<../../../Config/PERL_PATH
@@ -19,20 +16,20 @@ set /p PERL=<../../../Config/PERL_PATH
 cd openssl-master
 
 nmake clean
-%PERL%\perl.exe Configure VC-WIN64A --debug --prefix=%CD%\..\BIN\DLL\x64\Debug --openssldir=%CD%\..\BIN\SSL
+%PERL%\perl\bin\perl.exe Configure VC-WIN64A --debug --prefix=%CD%\..\BIN\DLL\x64\Debug --openssldir=%CD%\..\BIN\SSL
 nmake
 nmake install_sw
 
-%PERL%\perl.exe Configure VC-WIN64A --prefix=%CD%\..\BIN\DLL\x64\Release --openssldir=%CD%\..\BIN\SSL
+%PERL%\perl\bin\perl.exe Configure VC-WIN64A --prefix=%CD%\..\BIN\DLL\x64\Release --openssldir=%CD%\..\BIN\SSL
 nmake
 nmake install_sw
 
 nmake clean
-%PERL%\perl.exe Configure VC-WIN64A --debug --prefix=%CD%\..\BIN\Lib\x64\Debug --openssldir=%CD%\..\BIN\SSL no-shared
+%PERL%\perl\bin\perl.exe Configure VC-WIN64A --debug --prefix=%CD%\..\BIN\Lib\x64\Debug --openssldir=%CD%\..\BIN\SSL no-shared
 nmake
 nmake install_sw
 
-%PERL%\perl.exe Configure VC-WIN64A --prefix=%CD%\..\BIN\Lib\x64\Release --openssldir=%CD%\..\BIN\SSL no-shared
+%PERL%\perl\bin\perl.exe Configure VC-WIN64A --prefix=%CD%\..\BIN\Lib\x64\Release --openssldir=%CD%\..\BIN\SSL no-shared
 nmake
 nmake install_sw
 
