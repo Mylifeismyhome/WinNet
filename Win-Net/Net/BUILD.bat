@@ -1,5 +1,7 @@
 @echo off
 
+title Compile WinNet
+
 REM Select Mode
 echo Mode:
 echo 	1. DEBUG_DLL

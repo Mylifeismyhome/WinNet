@@ -1,5 +1,7 @@
 @echo off
 
+title Compile WinNet Sandbox
+
 REM Select Mode
 echo Mode:
 echo 	1. Debug
