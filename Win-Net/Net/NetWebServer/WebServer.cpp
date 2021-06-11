@@ -1041,11 +1041,19 @@ NET_THREAD(Receive)
 	auto peer = param->peer;
 	const auto server = param->server;
 
+	PEER_NOT_VALID_EX(peer, server,
+		return NULL;
+	);
+
 	/* Handshake */
 	if (!(server->Isset(NET_OPT_WS_NO_HANDSHAKE) ? server->GetOption<bool>(NET_OPT_WS_NO_HANDSHAKE) : NET_OPT_DEFAULT_WS_NO_HANDSHAKE))
 	{
 		do
 		{
+			PEER_NOT_VALID_EX(peer, server,
+				return NULL;
+			);
+
 			peer->setAsync(true);
 			const auto res = server->Handshake(peer);
 			if (res == WebServerHandshake::peer_not_valid)
