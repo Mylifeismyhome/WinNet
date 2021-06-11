@@ -54,8 +54,6 @@ echo -------------------------------------------
 set /p TOOL=<../../Config/BUILDTOOLS_PATH
 call "%TOOL%\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-set pathMSBuild=%CD%\src\
-cd %pathMSBuild%   
 msbuild.exe Net.sln /property:Configuration=%MODE% /property:Platform=%PLATFORM%
 
 echo -------------------------------------------

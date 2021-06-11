@@ -5,53 +5,35 @@ NET_CLIENT_BEGIN_DATA_PACKAGE(Client)
 NET_CLIENT_DEFINE_PACKAGE(Test, Packages::PKG_TEST)
 NET_CLIENT_END_DATA_PACKAGE
 
-NET_THREAD(Test)
+NET_TIMER(Test)
 {
-	const auto client = (Client*)parameter;
-	if (!client) return NULL;
+	const auto client = (Client*)param;
+	if (!client) NET_STOP_TIMER;
 
-	while (true)
-	{
-		Net::Package pkg;
-		client->DoSend(Packages::PKG_TEST, pkg);
+	Net::Package pkg;
+	client->DoSend(Packages::PKG_TEST, pkg);
 
-		Sleep(1000);
-	}
+	NET_CONTINUE_TIMER;
 }
 
-void Client::OnConnected()
-{
-}
+void Client::OnConnected() {}
 
 void Client::OnConnectionEstabilished()
 {
-	Net::Thread::Create(Test, this);
+	hTimer = Net::Timer::Create(Test, 1000, this);
 }
 
-void Client::OnDisconnected()
+void Client::OnDisconnected() 
 {
+	Net::Timer::Clear(hTimer);
 }
 
-void Client::OnForcedDisconnect(int)
-{
-}
-
-void Client::OnKeysFailed()
-{
-}
-
-void Client::OnKeysReceived()
-{
-}
-
-void Client::OnTimeout()
-{
-}
-
-void Client::OnVersionMismatch()
-{
-}
+void Client::OnForcedDisconnect(int) {}
+void Client::OnKeysFailed() {}
+void Client::OnKeysReceived() {}
+void Client::OnTimeout() {}
+void Client::OnVersionMismatch() {}
 
 NET_BEGIN_FNC_PKG(Client, Test)
-LOG("A");
+LOG("Received Package from Server");
 NET_END_FNC_PKG
