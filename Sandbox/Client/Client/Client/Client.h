@@ -15,5 +15,7 @@ NET_INHERITANCE(Client, NET_CLIENT)
 	NET_CALLBACK(void, OnVersionMismatch);
 	NET_CALLBACK(bool, CheckData, int, NET_PACKAGE);
 
+	NET_HANDLE_TIMER hTimer;
+
 	NET_DEF_FNC_PKG(Test);
 };

@@ -291,6 +291,12 @@ static void Free(T*& data)
 		stuff \
 	}
 
+#define PEER_NOT_VALID_EX(peer, server, stuff) if(!peer) \
+	{ \
+		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(server)); \
+		stuff \
+	}
+
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
 ////////////////////////////////////////////////////
