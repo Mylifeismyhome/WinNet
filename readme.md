@@ -3,9 +3,9 @@ Author: Tobias Staack
 */
 
 Requires:
-	nasm
-	perl
-	vc build tools
+		nasm
+		perl
+		vc build tools
 	
 	MYSQL:
 		download mysql c++ connector dependencies and place all files in:
