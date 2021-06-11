@@ -38,7 +38,7 @@ set /p PERL_PATH=[+] Enter PERL Path:
 echo %PERL_PATH%>%CD%\Config\PERL_PATH
 
 REM Add NASM to Environment Scope
-set /p NASM_PATH=[+] Enter NASM Path:
+set /p NASM_PATH=[+] Enter NASM Path: 
 setx /M "PATH" "%PATH%;%NASM_PATH%"
 REM --------------------------------------------------
 
