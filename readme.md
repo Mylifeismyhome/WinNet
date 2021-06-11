@@ -2,7 +2,7 @@
 Author: Tobias Staack
 */
 
-Requires:
+	Requires:
 		nasm
 		perl
 		vc build tools
