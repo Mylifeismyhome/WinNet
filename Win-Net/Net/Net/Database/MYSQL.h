@@ -1,4 +1,5 @@
 #pragma once
+#ifdef NET_USE_MYSQL_SUPPORT
 #ifndef VS13
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
@@ -192,4 +193,5 @@ static char* SQLString(const char* string, ...)
 }
 
 NET_DSA_END
+#endif
 #endif

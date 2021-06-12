@@ -1,3 +1,4 @@
+#ifdef NET_USE_MYSQL_SUPPORT
 #ifndef VS13
 #include "MYSQL.h"
 
@@ -539,4 +540,5 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 	unlock();
 	return {};
 }
+#endif
 #endif
