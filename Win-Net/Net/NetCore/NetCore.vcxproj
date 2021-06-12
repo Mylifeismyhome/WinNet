@@ -369,7 +369,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MTD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -469,7 +469,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MDD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
@@ -561,7 +561,7 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
@@ -708,7 +708,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -847,7 +847,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -933,7 +933,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -1039,6 +1039,8 @@
     <ClInclude Include="..\Net\Import\Ws2_32.h" />
     <ClInclude Include="..\Net\Net\NativePackages.h" />
     <ClInclude Include="..\Net\Net\Net.h" />
+    <ClInclude Include="..\Net\Net\NetBuild.h" />
+    <ClInclude Include="..\Net\Net\NetBuildConfig.h" />
     <ClInclude Include="..\Net\Net\NetCodes.h" />
     <ClInclude Include="..\Net\Net\NetString.h" />
     <ClInclude Include="..\Net\Net\NetVersion.h" />

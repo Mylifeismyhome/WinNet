@@ -13,7 +13,7 @@
 
 #undef NET_TEST_MEMORY_LEAKS
 
-#include "NetBuildConfig.h"
+#include "NetBuild.h"
 
 #include <cstdio>
 #include <iostream>

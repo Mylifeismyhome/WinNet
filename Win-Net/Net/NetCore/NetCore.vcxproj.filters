@@ -290,6 +290,12 @@
     <ClInclude Include="..\Net\Import\Ws2_32.h">
       <Filter>Import</Filter>
     </ClInclude>
+    <ClInclude Include="..\Net\Net\NetBuildConfig.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Net\NetBuild.h">
+      <Filter>Net</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S">
