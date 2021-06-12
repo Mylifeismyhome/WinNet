@@ -367,3 +367,6 @@ extern/OpenSSL/src/openssl-master/test/
 
 # ignore compiled CryptoPP
 extern/crypto++/lib/
+
+# ignore further changes in this path from now
+extern/OpenSSL/src/openssl-master/
