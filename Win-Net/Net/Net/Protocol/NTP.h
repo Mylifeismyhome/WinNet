@@ -5,12 +5,11 @@
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
 
-NET_DSA_BEGIN
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)
 NET_NAMESPACE_BEGIN(NTP)
-typedef struct
+NET_DSA_BEGIN
+struct NTP_FRAME
 {
 	uint8_t li_vn_mode; // Eight bits. li, vn, and mode.
 							 // li.   Two bits.   Leap indicator.
@@ -36,7 +35,8 @@ typedef struct
 
 	uint32_t txTm_s;         // 32 bits and the most important field the client cares about. Transmit time-stamp seconds.
 	uint32_t txTm_f;         // 32 bits. Transmit time-stamp fraction of a second.
-} NTP_FRAME; // Total: 384 bits or 48 bytes.
+}; // Total: 384 bits or 48 bytes.
+NET_DSA_END
 
 NET_CLASS_BEGIN(NTPRes)
 NTP_FRAME nframe;
@@ -44,8 +44,8 @@ bool bvalid;
 
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(NTPRes)
-NET_CLASS_CONSTRUCTUR(NTPRes, NTP_FRAME)
-NTP_FRAME frame() const;
+NET_CLASS_CONSTRUCTUR(NTPRes, NTP_FRAME&)
+NTP_FRAME& frame();
 bool valid() const;
 NET_CLASS_END
 
@@ -56,5 +56,3 @@ NTPRes Run(const char*, u_short = NTP_DEFAULT_PORT);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
-
-NET_DSA_END

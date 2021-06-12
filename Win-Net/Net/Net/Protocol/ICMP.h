@@ -26,11 +26,10 @@
 #include <Net/Net/NetString.h>
 #include <Net/assets/manager/logmanager.h>
 
-NET_DSA_BEGIN
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)
 NET_NAMESPACE_BEGIN(ICMP)
+NET_DSA_BEGIN
 // IPv4 header
 typedef struct ip_hdr
 
@@ -111,6 +110,7 @@ typedef struct udp_hdr
 	unsigned short udp_length;       // Udp packet length
 	unsigned short udp_checksum;     // Udp checksum (optional)
 } UDP_HDR, * PUDP_HDR;
+NET_DSA_END
 
 #ifdef _WIN64
 typedef DWORD64 lt;
@@ -125,5 +125,3 @@ lt Run(const char*, bool = false);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
-
-NET_DSA_END

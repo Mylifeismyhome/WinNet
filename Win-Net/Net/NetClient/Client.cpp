@@ -56,7 +56,7 @@ NET_TIMER(NTPReSyncClock)
 
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
-	const auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+	auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 		client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
@@ -2191,7 +2191,7 @@ bool Client::CreateTOTPSecret()
 	network.curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
-		const auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 		if (!time.valid())

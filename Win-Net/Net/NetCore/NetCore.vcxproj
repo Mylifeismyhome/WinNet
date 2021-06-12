@@ -1004,10 +1004,7 @@
     <ClCompile Include="..\Net\Net\NetVersion.cpp" />
     <ClCompile Include="..\Net\Net\Package.cpp" />
     <ClCompile Include="..\Net\Protocol\ICMP.cpp" />
-    <ClCompile Include="..\Net\Protocol\NTP.cpp">
-      <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MD|x64'">false</MultiProcessorCompilation>
-    </ClCompile>
-    <ClCompile Include="..\Net\Protocol\NTP.h" />
+    <ClCompile Include="..\Net\Protocol\NTP.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\assets\assets.h" />
@@ -1046,6 +1043,7 @@
     <ClInclude Include="..\Net\Net\NetVersion.h" />
     <ClInclude Include="..\Net\Net\Package.h" />
     <ClInclude Include="..\Net\Protocol\ICMP.h" />
+    <ClInclude Include="..\Net\Protocol\NTP.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S" />

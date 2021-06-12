@@ -10,14 +10,14 @@ NTPRes::NTPRes()
 	bvalid = false;
 }
 
-NTPRes::NTPRes(NTP_FRAME frame)
+NTPRes::NTPRes(NTP_FRAME& frame)
 {
 	memset(&nframe, NULL, sizeof(NTP_FRAME));
 	memcpy_s(&nframe, sizeof(NTP_FRAME), &frame, sizeof(NTP_FRAME));
 	bvalid = true;
 }
 
-NTP_FRAME  NTPRes::frame() const
+NTP_FRAME&  NTPRes::frame()
 {
 	return nframe;
 }
