@@ -83,8 +83,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -192,3 +190,12 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/modes.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\evp_local.h
+crypto\evp\e_aria.c(424): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(438): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(472): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(661): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(668): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(701): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(707): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(725): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aria.c(735): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data

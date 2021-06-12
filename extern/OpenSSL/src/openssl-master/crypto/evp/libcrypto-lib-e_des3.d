@@ -85,8 +85,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -194,3 +192,8 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\evp_local.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/sha.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/macros.h
+crypto\evp\e_des3.c(327): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_des3.c(354): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_des3.c(370): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_des3.c(386): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_des3.c(400): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

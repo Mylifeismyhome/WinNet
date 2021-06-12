@@ -83,8 +83,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -210,3 +208,4 @@ Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\incl
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/refcount.h
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/ecx.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\evp_local.h
+crypto\evp\evp_pbe.c(109): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data

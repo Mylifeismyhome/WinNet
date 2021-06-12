@@ -35,8 +35,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h

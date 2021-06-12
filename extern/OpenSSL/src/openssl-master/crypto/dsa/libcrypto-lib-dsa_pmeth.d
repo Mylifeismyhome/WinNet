@@ -85,8 +85,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -214,3 +212,6 @@ Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypt
 Note: including file:  D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/ffc.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\openssl/param_build.h
 Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\internal/sizes.h
+crypto\dsa\dsa_pmeth.c(89): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\dsa\dsa_pmeth.c(108): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\dsa\dsa_pmeth.c(108): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data

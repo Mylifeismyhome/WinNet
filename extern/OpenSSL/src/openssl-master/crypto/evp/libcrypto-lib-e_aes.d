@@ -106,8 +106,6 @@ Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.1
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
-Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack4.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\poppack.h
 Note: including file:      C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared\pshpack2.h
@@ -200,3 +198,19 @@ Note: including file:   D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\inc
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/siv.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\include\crypto/aes_platform.h
 Note: including file: D:\Projects\WinNet\extern\OpenSSL\src\openssl-master\crypto\evp\evp_local.h
+crypto\evp\e_aes.c(2830): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(2875): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3032): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3422): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3430): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3463): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3469): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3488): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3498): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3570): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3580): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3587): warning C4267: 'return': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3874): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3890): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3937): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+crypto\evp\e_aes.c(3944): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
