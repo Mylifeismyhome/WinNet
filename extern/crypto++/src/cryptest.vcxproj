@@ -115,7 +115,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -132,7 +132,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -195,7 +195,10 @@
   <!-- The rule copies cryptest.exe to the project   -->
   <!-- root directory so it can be executed in place -->
   <Target Name="CopyCryptestToRoot">
-    <Exec Command="copy $(Platform)\Output\$(Configuration)\cryptest.exe $(SolutionDir)" />
+    <Exec Command="copy &quot;$(Platform)\Output\$(Configuration)\cryptest.exe&quot; &quot;$(SolutionDir)&quot;" />
+  </Target>
+  <Target Name="CopyToRoot">
+    <Exec Command="copy &quot;$(Platform)\Output\$(Configuration)\cryptest.exe&quot; &quot;$(SolutionDir)&quot;" />
   </Target>
   <!-- Source Files -->
   <ItemGroup>

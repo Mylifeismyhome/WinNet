@@ -17,6 +17,9 @@
     <ClCompile Include="algparam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="allocate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="asn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cryptlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="darn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="des.cpp">
@@ -188,6 +194,9 @@
     <ClCompile Include="strciphr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="trdlocal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aes.h">
@@ -197,6 +206,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="algparam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="allocate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="argnames.h">
@@ -226,10 +238,43 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="config_align.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_asm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_cxx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_dll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_misc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_ns.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_os.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="config_ver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="cpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cryptlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="darn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="des.h">
@@ -385,6 +430,9 @@
     <ClInclude Include="trap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="trdlocal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="words.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -393,5 +441,10 @@
     <ResourceCompile Include="cryptopp.rc">
       <Filter>Source Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="x64dll.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
