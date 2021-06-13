@@ -369,7 +369,7 @@ extern/OpenSSL/src/openssl-master/test/
 extern/crypto++/lib/
 
 # ignore further changes in this path from now
-extern/OpenSSL/src/openssl-master/
+# extern/OpenSSL/src/openssl-master/
 
 # ignore all folders including the name bin
 **/bin/
