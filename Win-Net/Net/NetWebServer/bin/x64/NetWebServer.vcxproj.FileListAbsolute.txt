@@ -1,2 +1,0 @@
-C:\Personal\Win-Net\Net\NetWebServer\bin\x64\NetWebServer.vcxprojAssemblyReference.cache
-D:\Projects\Personal\Win-Net\Net\NetWebServer\bin\x64\NetWebServer.vcxprojAssemblyReference.cache
