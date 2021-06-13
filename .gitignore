@@ -373,5 +373,3 @@ extern/OpenSSL/src/openssl-master/
 
 # ignore all folders including the name bin
 **/bin/
-
-Win-Net/Net/NetCore/bin/*
