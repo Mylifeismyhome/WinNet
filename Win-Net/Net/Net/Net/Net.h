@@ -48,7 +48,7 @@
 #endif
 
 #ifndef BUILD_LINUX
-#include <OpenSSL/ssl.h>
+#include <OpenSSL/ssl3.h>
 #endif
 
 #ifdef BUILD_LINUX
