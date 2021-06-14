@@ -1,5 +1,5 @@
 @echo off
-title Compiling OpenSSL x86 - [%date% %time%] - [8/8]
+title Compiling OpenSSL x86 Debug - [%date% %time%] - [7/8]
 
 set CURPARTITION=%CD:~0,2%
 set CURDIR=%CD%
@@ -18,7 +18,7 @@ cd openssl-master
 REM USE ALL CPU CORES
 set CL=/MP
 
-%PERL%\perl\bin\perl.exe Configure VC-WIN32 --prefix=%CD%\..\BIN\Lib\x86\Release --openssldir=%CD%\..\BIN\SSL no-shared
+%PERL%\perl\bin\perl.exe Configure VC-WIN32 --debug --prefix=%CD%\..\BIN\Lib\x86\Debug --openssldir=%CD%\..\BIN\SSL no-shared
 nmake
 nmake install_sw
 
