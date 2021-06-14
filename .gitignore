@@ -373,3 +373,8 @@ extern/crypto++/lib/
 
 # ignore all folders including the name bin
 **/bin/
+
+*.so
+*.so.*
+*.a
+*.o
