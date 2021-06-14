@@ -1,12 +1,18 @@
 #pragma once
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
+
+#ifndef BUILD_LINUX
 #include <list>
 #ifndef VS13
+#ifndef BUILD_LINUX
 #include <corecrt_io.h>
 #endif
+#endif
 
+#ifndef BUILD_LINUX
 #include <direct.h>
+#endif
 
 NET_DSA_BEGIN
 
@@ -131,3 +137,4 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
+#endif

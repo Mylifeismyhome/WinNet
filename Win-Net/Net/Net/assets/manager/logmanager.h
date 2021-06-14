@@ -1,4 +1,9 @@
 #pragma once
+#include <Net/Net/Net.h>
+
+#ifdef BUILD_LINUX
+#define LOG_ERROR(...)
+#else
 #define NET_ON_LOG_PARAMETERS_A int state, const char* buffer
 #define NET_ON_LOG_PARAMETERS_W int state, const wchar_t* buffer
 
@@ -10,7 +15,6 @@
 #define NET_ON_LOG NetSetLogCallbackA
 #endif
 
-#include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
 #include <Net/assets/assets.h>
 #include <Net/assets/manager/filemanager.h>
@@ -266,3 +270,4 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
+#endif

@@ -27,11 +27,16 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+
+#ifndef BUILD_LINUX
 #include <intrin.h>
+#endif
+
 #include <cstdlib>
 #include <cstring>
 #include <sys/types.h>
 
+#ifndef BUILD_LINUX
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 #pragma comment (lib, "Ws2_32.lib")
@@ -40,8 +45,20 @@
 
 #include <Windows.h>
 #include <wincrypt.h>
+#endif
 
+#ifndef BUILD_LINUX
 #include <OpenSSL/ssl.h>
+#endif
+
+#ifdef BUILD_LINUX
+typedef unsigned long DWORD;
+typedef unsigned char byte;
+typedef unsigned char BYTE;
+typedef unsigned long SOCKET;
+#define __forceinline inline
+#define MAX_PATH 260
+#endif
 
 ///////////////////////////////////
 //    SECTION - DEFINES     //
@@ -156,10 +173,15 @@ return true; \
 #define NET_WEBSERVER_CLASS(NAME) NET_INHERITANCE(##NAME, NET_WEB_SERVER)
 
 /* DATA STRUCTURE ALIGNEMNT */
+#ifndef BUILD_LINUX
 #define NET_DSA_BEGIN __pragma("pack(push)") \
- __pragma("pack(1)") \
-
+ __pragma("pack(1)")
 #define NET_DSA_END __pragma("pack(pop)")
+#else
+#define NET_DSA_BEGIN _Pragma("pack(push)") \
+ _Pragma("pack(1)") 
+#define NET_DSA_END _Pragma("pack(pop)")
+#endif
 
 #define ALLOC Alloc
 #define FREE(data) Free(data)
@@ -307,6 +329,7 @@ namespace Net
 	void load();
 	void unload();
 
+#ifndef BUILD_LINUX
 	int SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen);
 
 	namespace ssl
@@ -517,6 +540,7 @@ namespace Net
 
 		std::string GET_SSL_METHOD_NAME(const int method);
 	}
+#endif
 }
 
 ////////////////////////////////////
@@ -559,6 +583,7 @@ enum HandshakeRet_t
 };
 NET_NAMESPACE_END
 
+#ifndef BUILD_LINUX
 template <class T>
 NET_STRUCT_BEGIN(SocketOption_t)
 DWORD opt;
@@ -589,6 +614,7 @@ static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt
 
 	return result;
 }
+#endif
 
 template <class T>
 NET_STRUCT_BEGIN(Option_t)

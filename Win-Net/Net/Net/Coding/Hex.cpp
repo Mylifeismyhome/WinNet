@@ -1,4 +1,4 @@
-#include "HEX.h"
+#include <Net/Coding/Hex.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Coding)

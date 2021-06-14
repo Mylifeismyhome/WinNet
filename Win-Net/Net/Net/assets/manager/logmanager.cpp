@@ -1,5 +1,7 @@
 #include "logmanager.h"
+#ifdef BUILD_LINUX
 
+#else
 // Color codes
 CONSTEXPR auto BLACK = 0;
 CONSTEXPR auto BLUE = 1;
@@ -518,3 +520,4 @@ bool Log::WriteToFile(const wchar_t* msg) const
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
+#endif

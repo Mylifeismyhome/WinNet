@@ -1,4 +1,6 @@
 #pragma once
+#ifdef BUILD_LINUX
+#else
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
 
@@ -129,3 +131,4 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
+#endif
