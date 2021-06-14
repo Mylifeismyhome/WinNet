@@ -5,8 +5,9 @@ if NOT %ERRORLEVEL% EQU 0 goto NotAdmin
 set /p TOOLS_PATH=[+] Enter Microsoft Visual Studio Build Tools Path: 
 echo %TOOLS_PATH%>%CD%\Config\BUILDTOOLS_PATH
 
+REM Add PERL to Environment Scope
 set /p PERL_PATH=[+] Enter PERL Path: 
-echo %PERL_PATH%>%CD%\Config\PERL_PATH
+setx /M PATH "%PATH%;%PERL_PATH%"
 
 REM Add NASM to Environment Scope
 set /p NASM_PATH=[+] Enter NASM Path: 
