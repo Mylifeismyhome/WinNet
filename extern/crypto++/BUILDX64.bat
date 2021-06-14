@@ -15,3 +15,5 @@ xcopy "%pathMSBuild%\x64\Output\Release\cryptlib.pdb" "%pathMSBuild%..\lib\relea
 echo -------------------------------------------
 echo Done compiling in Release Mode (x64)
 echo -------------------------------------------
+
+exit
