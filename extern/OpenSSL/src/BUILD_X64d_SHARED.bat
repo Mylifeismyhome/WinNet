@@ -20,4 +20,4 @@ perl Configure VC-WIN64A --debug --prefix=%CD%\..\BIN\DLL\x64\Debug --openssldir
 nmake
 nmake install_sw
 
-pause
+exit
