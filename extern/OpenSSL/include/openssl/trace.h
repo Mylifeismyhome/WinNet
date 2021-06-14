@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -9,7 +9,6 @@
 
 #ifndef OPENSSL_TRACE_H
 # define OPENSSL_TRACE_H
-# pragma once
 
 # include <stdarg.h>
 
@@ -54,11 +53,7 @@ extern "C" {
 # define OSSL_TRACE_CATEGORY_BN_CTX             12
 # define OSSL_TRACE_CATEGORY_CMP                13
 # define OSSL_TRACE_CATEGORY_STORE              14
-# define OSSL_TRACE_CATEGORY_DECODER            15
-# define OSSL_TRACE_CATEGORY_ENCODER            16
-# define OSSL_TRACE_CATEGORY_REF_COUNT          17
-/* Count of available categories. */
-# define OSSL_TRACE_CATEGORY_NUM                18
+# define OSSL_TRACE_CATEGORY_NUM                15
 
 /* Returns the trace category number for the given |name| */
 int OSSL_trace_get_category_num(const char *name);
@@ -198,7 +193,7 @@ void OSSL_trace_end(int category, BIO *channel);
  * call OSSL_TRACE_CANCEL(category).
  */
 
-# if !defined OPENSSL_NO_TRACE && !defined FIPS_MODULE
+# ifndef OPENSSL_NO_TRACE
 
 #  define OSSL_TRACE_BEGIN(category) \
     do { \
@@ -237,7 +232,7 @@ void OSSL_trace_end(int category, BIO *channel);
  *         ...
  *     }
  */
-# if !defined OPENSSL_NO_TRACE && !defined FIPS_MODULE
+# ifndef OPENSSL_NO_TRACE
 
 #  define OSSL_TRACE_ENABLED(category) \
     OSSL_trace_enabled(OSSL_TRACE_CATEGORY_##category)

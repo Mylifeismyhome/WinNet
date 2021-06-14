@@ -53,7 +53,6 @@ CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
 #include <Net/Coding/SHA1.h>
 #include <Net/Compression/Compression.h>
 
-#include <OpenSSL/ssl3.h>
 #include <OpenSSL/err.h>
 
 #include <Net/Protocol/ICMP.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -102,11 +102,11 @@ extern "C" {
 # endif
 
 /* ------------------------------- OpenVMS -------------------------------- */
-# if defined(__VMS) || defined(VMS)
+# if defined(__VMS) || defined(VMS) || defined(OPENSSL_SYS_VMS)
 #  if !defined(OPENSSL_SYS_VMS)
 #   undef OPENSSL_SYS_UNIX
-#   define OPENSSL_SYS_VMS
 #  endif
+#  define OPENSSL_SYS_VMS
 #  if defined(__DECC)
 #   define OPENSSL_SYS_VMS_DECC
 #  elif defined(__DECCXX)
@@ -136,21 +136,6 @@ extern "C" {
 #  ifdef __IA32__
 #   define OPENSSL_SYS_VOS_IA32
 #  endif
-# endif
-
-/* ---------------------------- HP NonStop -------------------------------- */
-# ifdef __TANDEM
-#  ifdef _STRING
-#   include <strings.h>
-#  endif
-# define OPENSSL_USE_BUILD_DATE
-# if defined(OPENSSL_THREADS) && defined(_SPT_MODEL_)
-#  define  SPT_THREAD_SIGNAL 1
-#  define  SPT_THREAD_AWARE 1
-#  include <spthread.h>
-# elif defined(OPENSSL_THREADS) && defined(_PUT_MODEL_)
-#  include <pthread.h>
-# endif
 # endif
 
 /**
@@ -210,7 +195,7 @@ extern "C" {
 #  endif
 # endif
 
-# if defined(UNUSEDRESULT_DEBUG)
+# ifdef DEBUG_UNUSED
 #  define __owur __attribute__((__warn_unused_result__))
 # else
 #  define __owur
@@ -274,8 +259,7 @@ typedef unsigned __int64 uint64_t;
 #  define ossl_inline inline
 # endif
 
-# if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && \
-     !defined(__cplusplus) 
+# if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #  define ossl_noreturn _Noreturn
 # elif defined(__GNUC__) && __GNUC__ >= 2
 #  define ossl_noreturn __attribute__((noreturn))
