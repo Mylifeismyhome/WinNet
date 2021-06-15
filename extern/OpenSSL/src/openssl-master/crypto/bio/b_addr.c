@@ -1,7 +1,7 @@
 /*
- * Copyright 2016-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -10,16 +10,6 @@
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
 #endif
-
-/*
- * VC configurations may define UNICODE, to indicate to the C RTL that
- * WCHAR functions are preferred.
- * This affects functions like gai_strerror(), which is implemented as
- * an alias macro for gai_strerrorA() (which returns a const char *) or
- * gai_strerrorW() (which returns a const WCHAR *).  This source file
- * assumes POSIX declarations, so prefer the non-UNICODE definitions.
- */
-#undef UNICODE
 
 #include <assert.h>
 #include <string.h>
@@ -54,7 +44,7 @@ BIO_ADDR *BIO_ADDR_new(void)
     BIO_ADDR *ret = OPENSSL_zalloc(sizeof(*ret));
 
     if (ret == NULL) {
-        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+        BIOerr(BIO_F_BIO_ADDR_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -221,12 +211,13 @@ static int addr_strings(const BIO_ADDR *ap, int numeric,
                                flags)) != 0) {
 # ifdef EAI_SYSTEM
             if (ret == EAI_SYSTEM) {
-                ERR_raise_data(ERR_LIB_SYS, get_last_socket_error(),
-                               "calling getnameinfo()");
+                SYSerr(SYS_F_GETNAMEINFO, get_last_socket_error());
+                BIOerr(BIO_F_ADDR_STRINGS, ERR_R_SYS_LIB);
             } else
 # endif
             {
-                ERR_raise_data(ERR_LIB_BIO, ERR_R_SYS_LIB, gai_strerror(ret));
+                BIOerr(BIO_F_ADDR_STRINGS, ERR_R_SYS_LIB);
+                ERR_add_error_data(1, gai_strerror(ret));
             }
             return 0;
         }
@@ -267,7 +258,7 @@ static int addr_strings(const BIO_ADDR *ap, int numeric,
             OPENSSL_free(*service);
             *service = NULL;
         }
-        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+        BIOerr(BIO_F_ADDR_STRINGS, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -554,13 +545,13 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
 
     return 1;
  amb_err:
-    ERR_raise(ERR_LIB_BIO, BIO_R_AMBIGUOUS_HOST_OR_SERVICE);
+    BIOerr(BIO_F_BIO_PARSE_HOSTSERV, BIO_R_AMBIGUOUS_HOST_OR_SERVICE);
     return 0;
  spec_err:
-    ERR_raise(ERR_LIB_BIO, BIO_R_MALFORMED_HOST_OR_SERVICE);
+    BIOerr(BIO_F_BIO_PARSE_HOSTSERV, BIO_R_MALFORMED_HOST_OR_SERVICE);
     return 0;
  memerr:
-    ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+    BIOerr(BIO_F_BIO_PARSE_HOSTSERV, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -579,7 +570,7 @@ static int addrinfo_wrap(int family, int socktype,
                          BIO_ADDRINFO **bai)
 {
     if ((*bai = OPENSSL_zalloc(sizeof(**bai))) == NULL) {
-        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+        BIOerr(BIO_F_ADDRINFO_WRAP, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -616,6 +607,8 @@ static int addrinfo_wrap(int family, int socktype,
 
 DEFINE_RUN_ONCE_STATIC(do_bio_lookup_init)
 {
+    if (!OPENSSL_init_crypto(0, NULL))
+        return 0;
     bio_lookup_lock = CRYPTO_THREAD_lock_new();
     return bio_lookup_lock != NULL;
 }
@@ -628,8 +621,8 @@ int BIO_lookup(const char *host, const char *service,
 }
 
 /*-
- * BIO_lookup_ex - look up the host and service you want to connect to.
- * @host: the host (or node, in case family == AF_UNIX) you want to connect to.
+ * BIO_lookup_ex - look up the node and service you want to connect to.
+ * @node: the node you want to connect to.
  * @service: the service you want to connect to.
  * @lookup_type: declare intent with the result, client or server.
  * @family: the address family you want to use.  Use AF_UNSPEC for any, or
@@ -642,7 +635,7 @@ int BIO_lookup(const char *host, const char *service,
  *            with 0 for the protocol)
  * @res: Storage place for the resulting list of returned addresses
  *
- * This will do a lookup of the host and service that you want to connect to.
+ * This will do a lookup of the node and service that you want to connect to.
  * It returns a linked list of different addresses you can try to connect to.
  *
  * When no longer needed you should call BIO_ADDRINFO_free() to free the result.
@@ -667,7 +660,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 #endif
         break;
     default:
-        ERR_raise(ERR_LIB_BIO, BIO_R_UNSUPPORTED_PROTOCOL_FAMILY);
+        BIOerr(BIO_F_BIO_LOOKUP_EX, BIO_R_UNSUPPORTED_PROTOCOL_FAMILY);
         return 0;
     }
 
@@ -676,7 +669,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
         if (addrinfo_wrap(family, socktype, host, strlen(host), 0, res))
             return 1;
         else
-            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+            BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 #endif
@@ -713,14 +706,13 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
         switch ((gai_ret = getaddrinfo(host, service, &hints, res))) {
 # ifdef EAI_SYSTEM
         case EAI_SYSTEM:
-            ERR_raise_data(ERR_LIB_SYS, get_last_socket_error(),
-                           "calling getaddrinfo()");
-            ERR_raise(ERR_LIB_BIO, ERR_R_SYS_LIB);
+            SYSerr(SYS_F_GETADDRINFO, get_last_socket_error());
+            BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_SYS_LIB);
             break;
 # endif
 # ifdef EAI_MEMORY
         case EAI_MEMORY:
-            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+            BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
             break;
 # endif
         case 0:
@@ -735,8 +727,8 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
                 goto retry;
             }
 # endif
-            ERR_raise_data(ERR_LIB_BIO, ERR_R_SYS_LIB,
-                           gai_strerror(old_ret ? old_ret : gai_ret));
+            BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_SYS_LIB);
+            ERR_add_error_data(1, gai_strerror(old_ret ? old_ret : gai_ret));
             break;
         }
     } else {
@@ -777,15 +769,12 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 #endif
 
         if (!RUN_ONCE(&bio_lookup_init, do_bio_lookup_init)) {
-            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+            BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
             ret = 0;
             goto err;
         }
 
-        if (!CRYPTO_THREAD_write_lock(bio_lookup_lock)) {
-            ret = 0;
-            goto err;
-        }
+        CRYPTO_THREAD_write_lock(bio_lookup_lock);
         he_fallback_address = INADDR_ANY;
         if (host == NULL) {
             he = &he_fallback;
@@ -799,7 +788,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
             default:
                 /* We forgot to handle a lookup type! */
                 assert("We forgot to handle a lookup type!" == NULL);
-                ERR_raise(ERR_LIB_BIO, ERR_R_INTERNAL_ERROR);
+                BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_INTERNAL_ERROR);
                 ret = 0;
                 goto err;
             }
@@ -821,15 +810,12 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
                  */
 # if defined(OPENSSL_SYS_VXWORKS)
                 /* h_errno doesn't exist on VxWorks */
-                ERR_raise_data(ERR_LIB_SYS, 1000,
-                               "calling gethostbyname()");
+                SYSerr(SYS_F_GETHOSTBYNAME, 1000 );
 # else
-                ERR_raise_data(ERR_LIB_SYS, 1000 + h_errno,
-                               "calling gethostbyname()");
+                SYSerr(SYS_F_GETHOSTBYNAME, 1000 + h_errno);
 # endif
 #else
-                ERR_raise_data(ERR_LIB_SYS, get_last_socket_error(),
-                               "calling gethostbyname()");
+                SYSerr(SYS_F_GETHOSTBYNAME, WSAGetLastError());
 #endif
                 ret = 0;
                 goto err;
@@ -875,12 +861,15 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
                 se = getservbyname(service, proto);
 
                 if (se == NULL) {
-                    ERR_raise_data(ERR_LIB_SYS, get_last_socket_error(),
-                                   "calling getservbyname()");
+#ifndef OPENSSL_SYS_WINDOWS
+                    SYSerr(SYS_F_GETSERVBYNAME, errno);
+#else
+                    SYSerr(SYS_F_GETSERVBYNAME, WSAGetLastError());
+#endif
                     goto err;
                 }
             } else {
-                ERR_raise(ERR_LIB_BIO, BIO_R_MALFORMED_HOST_OR_SERVICE);
+                BIOerr(BIO_F_BIO_LOOKUP_EX, BIO_R_MALFORMED_HOST_OR_SERVICE);
                 goto err;
             }
         }
@@ -922,7 +911,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
              addrinfo_malloc_err:
                 BIO_ADDRINFO_free(*res);
                 *res = NULL;
-                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
+                BIOerr(BIO_F_BIO_LOOKUP_EX, ERR_R_MALLOC_FAILURE);
                 ret = 0;
                 goto err;
             }
