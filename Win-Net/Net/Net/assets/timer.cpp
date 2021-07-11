@@ -10,9 +10,15 @@ NET_THREAD(NetTimerThread)
 	auto timer = (Net::Timer::Timer_t*)parameter;
 	if (!timer->func)
 	{
-		timer->finished = true;
 		NET_UNUSED_PARAM(timer->param);
-		timer = nullptr;
+
+		if (timer->async)
+		{
+			NET_UNUSED(timer);
+			return NULL;
+		}
+
+		timer->finished = true;
 		return NULL;
 	}
 
@@ -22,9 +28,15 @@ NET_THREAD(NetTimerThread)
 	{
 		if (timer->clear)
 		{
-			timer->finished = true;
 			NET_UNUSED_PARAM(timer->param);
-			timer = nullptr;
+
+			if (timer->async)
+			{
+				NET_UNUSED(timer);
+				return NULL;
+			}
+
+			timer->finished = true;
 			return NULL;
 		}
 		
@@ -32,9 +44,15 @@ NET_THREAD(NetTimerThread)
 		{
 			if (!(*timer->func)(timer->param))
 			{
-				timer->finished = true;
 				NET_UNUSED_PARAM(timer->param);
-				timer = nullptr;
+
+				if (timer->async)
+				{
+					NET_UNUSED(timer);
+					return NULL;
+				}
+
+				timer->finished = true;
 				return NULL;
 			}
 
@@ -54,6 +72,7 @@ NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double tim
 	timer_t->clear = false;
 	timer_t->finished = false;
 	timer_t->bdelete = bdelete;
+	timer_t->async = false;
 	Thread::Create(NetTimerThread, timer_t);
 	return timer_t;
 }
@@ -63,8 +82,8 @@ void Net::Timer::Clear(NET_HANDLE_TIMER handle)
 	if (!handle)
 		return;
 
+	handle->async = true;
 	handle->clear = true;
-	handle = nullptr;
 }
 
 void Net::Timer::WaitSingleObjectStopped(NET_HANDLE_TIMER handle)
@@ -72,9 +91,10 @@ void Net::Timer::WaitSingleObjectStopped(NET_HANDLE_TIMER handle)
 	if (!handle)
 		return;
 
+	handle->async = false;
 	handle->clear = true;
 	while (!handle->finished) {};
-	handle = nullptr;
+	NET_UNUSED(handle);
 }
 
 void Net::Timer::SetTime(NET_HANDLE_TIMER handle, const double timer)
