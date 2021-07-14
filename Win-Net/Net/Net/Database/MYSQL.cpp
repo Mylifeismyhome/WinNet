@@ -3,9 +3,6 @@
 #ifdef NET_USE_MYSQL_SUPPORT
 #ifndef VS13
 
-#pragma comment(lib, "mysqlcppconn.lib")
-#pragma comment(lib, "mysqlcppconn-static.lib")
-
 MYSQL_CON::MYSQL_CON()
 {
 	sprintf_s(conIP, CSTRING(""));
