@@ -1,7 +1,7 @@
+#include "MYSQL.h"
+
 #ifdef NET_USE_MYSQL_SUPPORT
 #ifndef VS13
-
-#include "MYSQL.h"
 
 #pragma comment(lib, "mysqlcppconn.lib")
 #pragma comment(lib, "mysqlcppconn-static.lib")

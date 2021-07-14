@@ -1,7 +1,9 @@
 #pragma once
+#include <Net/Net/Net.h>
+
 #ifdef NET_USE_MYSQL_SUPPORT
 #ifndef VS13
-#include <Net/Net/Net.h>
+
 #include <Net/Net/NetString.h>
 #include <Net/assets/manager/logmanager.h>
 #include <mutex>
