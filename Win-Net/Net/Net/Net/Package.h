@@ -34,9 +34,8 @@ NET_NAMESPACE_END
 
 NET_DSA_BEGIN
 
-CONSTEXPR auto RawDataKeySize_t = 32;
 NET_CLASS_BEGIN(Package_RawData_t)
-char _key[RawDataKeySize_t];
+char* _key;
 size_t _keyLength;
 byte* _data;
 size_t _size;
@@ -44,8 +43,7 @@ bool _valid;
 
 NET_CLASS_PUBLIC
 NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t)
-memset(this->_key, NULL, RawDataKeySize_t);
-strcpy_s(this->_key, CSTRING(""));
+this->_key = nullptr;
 this->_keyLength = NULL;
 this->_data = nullptr;
 this->_size = NULL;
@@ -53,9 +51,10 @@ this->_valid = false;
 NET_CLASS_END_CONTRUCTION
 
 NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t, const char* name, byte* pointer, const size_t size)
-memset(this->_key, NULL, RawDataKeySize_t);
-strcpy_s(this->_key, name);
-this->_keyLength = strlen(this->_key);
+this->_keyLength = strlen(name);
+this->_key = ALLOC<char>(this->_keyLength + 1);
+memcpy(this->_key, name, this->_keyLength);
+this->_key[this->_keyLength] = '\0';
 this->_data = pointer;
 this->_size = size;
 this->_valid = true;
@@ -88,6 +87,7 @@ size_t& size()
 
 const char* key() const
 {
+	if (_key == nullptr) return CSTRING("");
 	return _key;
 }
 
@@ -104,6 +104,8 @@ size_t keylength() const
 
 void free()
 {
+	FREE(_key);
+	_keyLength = NULL;
 	FREE(_data);
 }
 NET_CLASS_END
