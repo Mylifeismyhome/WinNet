@@ -79,13 +79,13 @@ all:
 	$(call crypto++)
 	$(call openssl)
 
-configure_openssl:
+openssl-configure:
 	$(call configure_openssl)
 
-build_openssl:
+openssl-build:
 	$(call build_openssl)
 
-install_openssl:
+openssl-install:
 	$(call install_openssl)
 
 cryptopp:
@@ -94,10 +94,13 @@ cryptopp:
 crypto++:
 	$(call crypto++)
 
-clean_crypto++:
+cryptopp-clean:
 	$(call clean_crypto++)
 
-clean_openssl:
+crypto++-clean:
+	$(call clean_crypto++)
+
+openssl-clean:
 	$(call clean_openssl)
 
 clean:
