@@ -10,6 +10,8 @@ build:
 install:
 	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/
 	mkdir ../bin/
+	mkdir ../bin/include/
+	cp -R openssl-master/include ../bin/
 	cp *.a ../bin/
 	cp *.map ../bin/
 	cp *.pc ../bin/
