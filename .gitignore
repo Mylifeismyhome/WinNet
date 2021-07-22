@@ -1,4 +1,4 @@
-
+                          
 # Created by https://www.gitignore.io/api/visualstudio
 # Edit at https://www.gitignore.io/?templates=visualstudio
 
@@ -11,7 +11,7 @@
 # User-specific files
 *.rsuser
 *.suo
-*.user
+*.user                                 
 *.userosscache
 *.sln.docstates
 
@@ -385,3 +385,10 @@ Config/
 # ignore openssl specific files after building using make
 extern/OpenSSL/src/Makefile
 extern/OpenSSL/src/configdata.pm
+extern/OpenSSL/src/apps/
+extern/OpenSSL/src/crypto/
+extern/OpenSSL/src/engines/
+extern/OpenSSL/src/include/
+extern/OpenSSL/src/*.map
+extern/OpenSSL/src/*.pc
+extern/OpenSSL/src/ssl/

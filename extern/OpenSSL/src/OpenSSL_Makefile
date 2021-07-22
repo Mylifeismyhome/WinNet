@@ -7,4 +7,4 @@ build:
 	${MAKE}
 
 install:
-	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/ -C ${ROOT_DIR}/openssl-master/
+	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/
