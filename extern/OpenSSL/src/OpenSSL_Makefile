@@ -1,3 +1,4 @@
+
 export ROOT_DIR=${PWD}/extern/OpenSSL/src
 
 configure:
@@ -8,3 +9,9 @@ build:
 
 install:
 	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/
+	mkdir ../bin/
+	cp *.a ../bin/
+	cp *.map ../bin/
+	cp *.pc ../bin/
+	cp *.so ../bin/
+	cp *.so.* ../bin/

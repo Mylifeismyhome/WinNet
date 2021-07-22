@@ -36,13 +36,13 @@ endef
 # build openssl
 define build_openssl
 	$(call out, ********** BUILDING OPENSSL **********)
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile build
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile -i -k build
 endef
 
 # install openssl
 define install_openssl
 	$(call out, ********** INSTALLING OPENSSL **********)
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile install
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile -i -k install
 endef
 
 # clean openssl

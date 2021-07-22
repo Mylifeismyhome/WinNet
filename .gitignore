@@ -392,3 +392,6 @@ extern/OpenSSL/src/include/
 extern/OpenSSL/src/*.map
 extern/OpenSSL/src/*.pc
 extern/OpenSSL/src/ssl/
+extern/OpenSSL/src/fuzz/
+extern/OpenSSL/src/tools/
+extern/OpenSSL/src/util/
