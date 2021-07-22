@@ -27,6 +27,12 @@ define clean_crypto++
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.out
 endef
 
+# configure openssl
+define configure_openssl
+	$(call out, ********** CONFIGURING OPENSSL **********)
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile configure
+endef
+
 # build openssl
 define openssl
 	$(call out, ********** BUILDING OPENSSL **********)
@@ -72,6 +78,9 @@ endef
 all:
 	$(call crypto++)
 	$(call openssl)
+
+configure_openssl:
+	$(call configure_openssl)
 
 openssl:
 	$(call openssl)
