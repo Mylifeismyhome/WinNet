@@ -40,6 +40,12 @@ define openssl
 	cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.a ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.a
 endef
 
+# clean all
+define clean_all
+	$(call out, ********** CLEANING ALL **********)
+	$(call clean_crypto++)
+endef
+
 # run task
 all:
 	$(call crypto++)
@@ -56,4 +62,7 @@ crypto++:
 
 clean_crypto++:
 	$(call clean_crypto++)
+
+clean:
+	$(call clean_all)
 # end
