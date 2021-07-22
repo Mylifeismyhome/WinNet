@@ -9,11 +9,13 @@ endef
 
 # build crypto++
 define crypto++
+	$(call out, ********** BUILDING CRYPTO++ **********)
 	${MAKE} static dynamic -C ${ROOT_DIR}/extern/crypto++/src/
 endef
 
 # build openssl
 define openssl
+	$(call out, ********** BUILDING OPENSSL **********)
 	${ROOT_DIR}/extern/OpenSSL/src/openssl-master/config -fPIC shared --prefix=/usr --openssldir=/etc/ssl
 	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
 	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/extern/OpenSSL/src/BIN/ -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
@@ -26,11 +28,17 @@ endef
 
 # run task
 all:
-	$(call out, ********** RUNNING BUILD **********)
 	$(call crypto++)
 	$(call openssl)
-	$(call end)
+
+openssl:
+	$(call openssl)
+
+cryptopp:
+	$(call crypto++)
+
+crypto++:
+	$(call crypto++)
 
 # end
-define end
-endef
+U
