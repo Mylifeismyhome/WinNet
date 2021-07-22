@@ -63,6 +63,8 @@ define clean_openssl
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.pc
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.map
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so.*
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/Makefile
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/configdata.pm
 endef
 
 # clean all
