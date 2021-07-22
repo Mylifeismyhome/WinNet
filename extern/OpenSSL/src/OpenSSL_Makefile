@@ -1,0 +1,10 @@
+export ROOT_DIR=${PWD}
+
+configure:
+	${ROOT_DIR}/openssl-master/config/ -fPIC shared --prefix=/usr --openssldir=/etc/ssl
+
+build:
+	${MAKE} -C ${ROOT_DIR}/openssl-master/
+
+install:
+	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/ -C ${ROOT_DIR}/openssl-master/
