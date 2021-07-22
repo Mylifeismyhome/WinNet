@@ -11,6 +11,20 @@ endef
 define crypto++
 	$(call out, ********** BUILDING CRYPTO++ **********)
 	${MAKE} static dynamic -C ${ROOT_DIR}/extern/crypto++/src/
+	mkdir ${ROOT_DIR}/extern/crypto++/bin/
+	mkdir ${ROOT_DIR}/extern/crypto++/bin/include/
+	cp ${ROOT_DIR}/extern/crypto++/src/*.h ${ROOT_DIR}/extern/crypto++/bin/include/
+	cp ${ROOT_DIR}/extern/crypto++/src/libcryptopp.so ${ROOT_DIR}/extern/crypto++/bin/libcryptopp.so
+endef
+
+# clean crypto++
+define clean_crypto++
+	$(call out, ********** DELETING FILES CREATED BY CRYPTO++ **********)
+	rm -f ${ROOT_DIR}/extern/crypto++/src/*.o
+	rm -f ${ROOT_DIR}/extern/crypto++/src/*.so
+	rm -f ${ROOT_DIR}/extern/crypto++/src/*.so.*
+	rm -f ${ROOT_DIR}/extern/crypto++/src/*.a
+	rm -f ${ROOT_DIR}/extern/crypto++/src/*.out
 endef
 
 # build openssl
@@ -40,4 +54,6 @@ cryptopp:
 crypto++:
 	$(call crypto++)
 
+clean_crypto++:
+	$(call clean_crypto++)
 # end
