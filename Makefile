@@ -43,6 +43,7 @@ endef
 
 # clean openssl
 define clean_openssl
+	$(call out, ********** DELETING FILES CREATED BY OPENSSL **********)
 	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/crypto/
 	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/include/
 	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/tools/
@@ -64,6 +65,7 @@ endef
 define clean_all
 	$(call out, ********** CLEANING ALL **********)
 	$(call clean_crypto++)
+	$(call clean_openssl)
 endef
 
 # run task
