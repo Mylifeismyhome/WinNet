@@ -41,6 +41,25 @@ define openssl
 	# cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.a ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.a
 endef
 
+# clean openssl
+define clean_openssl
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/crypto/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/include/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/tools/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/engines/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/ms/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/ssl/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/util/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/fuzz/
+	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/apps/
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.a
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.pm
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.pc
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.map
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so.*
+endef
+
 # clean all
 define clean_all
 	$(call out, ********** CLEANING ALL **********)
@@ -63,6 +82,9 @@ crypto++:
 
 clean_crypto++:
 	$(call clean_crypto++)
+
+clean_openssl:
+	$(call clean_openssl)
 
 clean:
 	$(call clean_all)
