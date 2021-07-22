@@ -381,3 +381,7 @@ extern/crypto++/lib/
 
 # ignore compiling config folder
 Config/
+
+# ignore openssl specific files after building using make
+extern/OpenSSL/src/Makefile
+extern/OpenSSL/src/configdata.pm
