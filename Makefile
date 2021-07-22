@@ -30,14 +30,15 @@ endef
 # build openssl
 define openssl
 	$(call out, ********** BUILDING OPENSSL **********)
-	${ROOT_DIR}/extern/OpenSSL/src/openssl-master/config -fPIC shared --prefix=/usr --openssldir=/etc/ssl
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
-	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/extern/OpenSSL/src/BIN/ -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
-	mkdir ${ROOT_DIR}/extern/OpenSSL/lib/
-	cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libssl.so ${ROOT_DIR}/extern/OpenSSL/lib/libssl.so
-	cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libssl.a ${ROOT_DIR}/extern/OpenSSL/lib/libssl.a
-	cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.so ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.so
-	cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.a ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.a
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/
+	# ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/config -fPIC shared --prefix=/usr --openssldir=/etc/ssl
+	# ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
+	# ${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/extern/OpenSSL/src/BIN/ -C ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/
+	# mkdir ${ROOT_DIR}/extern/OpenSSL/lib/
+	# cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libssl.so ${ROOT_DIR}/extern/OpenSSL/lib/libssl.so
+	# cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libssl.a ${ROOT_DIR}/extern/OpenSSL/lib/libssl.a
+	# cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.so ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.so
+	# cp ${ROOT_DIR}/extern/OpenSSL/src/openssl-master/libcrypto.a ${ROOT_DIR}/extern/OpenSSL/lib/libcrypto.a
 endef
 
 # clean all
