@@ -1,6 +1,8 @@
 #define MODULE_NAME CSTRING("Kernel32")
 
 #include "Kernel32.h"
+
+#ifndef NET_DISABLE_IMPORT_KERNEL32
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
 #include <Net/Import/MemoryModule.h>
@@ -212,3 +214,4 @@ namespace Net
 		NO_PARAMETERS;
 	IMPORT_END
 }
+#endif

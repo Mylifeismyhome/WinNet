@@ -1,5 +1,9 @@
 #pragma once
 #include <Net/Net/Net.h>
+
+#ifdef NET_DISABLE_IMPORT_KERNEL32
+#define Kernel32
+#else
 #include <Net/Import/Definition.hpp>
 
 namespace Net
@@ -35,3 +39,4 @@ namespace Net
 	IMPORT_DEFINE_FNC_WINAPI(HANDLE, GetCurrentThread);
 	IMPORT_END
 };
+#endif

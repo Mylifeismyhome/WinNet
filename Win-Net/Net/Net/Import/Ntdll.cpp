@@ -1,6 +1,8 @@
 #define MODULE_NAME CSTRING("Ntdll")
 
 #include "Ntdll.h"
+
+#ifndef NET_DISABLE_IMPORT_NTDLL
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
 #include <Net/Import/MemoryModule.h>
@@ -55,3 +57,4 @@ namespace Net
 		PASS_PARAMETERS(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength, ReturnLength);
 	IMPORT_END
 }
+#endif

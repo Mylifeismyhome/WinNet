@@ -1,11 +1,9 @@
 #pragma once
-#define DISABLE_WS2_32_RESOLVE
-#ifdef DISABLE_WS2_32_RESOLVE
-#define Ws2_32
-#endif
-
-#ifndef DISABLE_WS2_32_RESOLVE
 #include <Net/Net/Net.h>
+
+#ifdef NET_DISABLE_IMPORT_WS2_32
+#define Ws2_32
+#else
 #include <Net/Import/Definition.hpp>
 #include <winternl.h>
 

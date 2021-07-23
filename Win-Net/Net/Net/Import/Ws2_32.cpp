@@ -2,7 +2,7 @@
 
 #include "Ws2_32.h"
 
-#ifndef DISABLE_WS2_32_RESOLVE
+#ifndef NET_DISABLE_IMPORT_WS2_32
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/assets/manager/logmanager.h>
 #include <Net/Import/MemoryModule.h>

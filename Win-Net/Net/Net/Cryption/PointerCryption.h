@@ -2,6 +2,7 @@
 #undef DISABLE_POINTERCRYPTION
 #define CPOINTER PointerCryption
 
+#include <Net/Net/Net.h>
 #include <random>
 
 NET_DSA_BEGIN
