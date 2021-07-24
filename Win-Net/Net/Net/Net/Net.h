@@ -47,9 +47,7 @@
 #include <wincrypt.h>
 #endif
 
-#ifndef BUILD_LINUX
-#include <OpenSSL/ssl.h>
-#endif
+#include <openssl/ssl.h>
 
 #ifdef BUILD_LINUX
 typedef unsigned long DWORD;
@@ -329,7 +327,6 @@ namespace Net
 	void load();
 	void unload();
 
-#ifndef BUILD_LINUX
 	int SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen);
 
 	namespace ssl
@@ -540,7 +537,6 @@ namespace Net
 
 		std::string GET_SSL_METHOD_NAME(const int method);
 	}
-#endif
 }
 
 ////////////////////////////////////

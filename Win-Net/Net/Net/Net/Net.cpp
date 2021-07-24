@@ -8,27 +8,41 @@
 
 void Net::load()
 {
+#ifndef NET_DISABLE_IMPORT_KERNEL32
 	Kernel32::Initialize();
-	Ntdll::Initialize();
+#endif
 
-#ifndef DISABLE_WS2_32_RESOLVE
+#ifndef NET_DISABLE_IMPORT_NTDLL
+	Ntdll::Initialize();
+#endif
+
+#ifndef NET_DISABLE_IMPORT_WS2_32
 	Ws2_32::Initialize();
 #endif
 }
 
 void Net::unload()
 {
-#ifndef DISABLE_WS2_32_RESOLVE
+#ifndef NET_DISABLE_IMPORT_WS2_32
 	Ws2_32::Uninitialize();
 #endif
 
+#ifndef NET_DISABLE_IMPORT_NTDLL
 	Ntdll::Uninitialize();
+#endif
+
+#ifndef NET_DISABLE_IMPORT_KERNEL32
 	Kernel32::Uninitialize();
+#endif
 }
 
 int Net::SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen)
 {
+#ifndef NET_DISABLE_IMPORT_WS2_32
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
+#else
+	return 0;
+#endif
 }
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
