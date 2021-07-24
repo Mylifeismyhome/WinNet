@@ -3,15 +3,20 @@ export ROOT_DIR=$(PWD)
 
 # Net/Net/
 define PATH_NET
-	g++ -I ../ -I ../../../../extern/OpenSSL/include -w -c ../Net/Net/Net.cpp
-	g++ -I ../ -c -w ../Net/Net/NetCodes.cpp
-	g++ -I ../ -c -w ../Net/Net/NetVersion.cpp
-	g++ -I ../ -c -w ../Net/Net/NetString.cpp
+	g++ -w -I ../ -I ../../../../extern/OpenSSL/include -c ../Net/Net/Net.cpp
+	g++ -w -I ../ -c ../Net/Net/NetCodes.cpp
+	g++ -w -I ../ -c ../Net/Net/NetVersion.cpp
+	g++ -w -I ../ -c ../Net/Net/NetString.cpp
+endef
+
+# Net/Cryption/
+define PATH_CRYPTION
+	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp
 endef
 
 # link Library
 define LINK
-	ar rvs NetCore.a Net.o NetCodes.o NetVersion.o NetString.o
+	ar rvs NetCore.a Net.o NetCodes.o NetVersion.o NetString.o XOR.o
 endef
 
 # copy Files
@@ -19,6 +24,7 @@ define COPY
 	mkdir -p ../../bin/
 	cp NetCore.a ../../bin/
 
+	rm -r ../../bin/include/
 	mkdir -p ../../bin/include/
 	cp -r ../Net/**/*.h --parents ../../bin/include/
 	mv ../../bin/Net ../../bin/include
@@ -32,6 +38,7 @@ endef
 
 all:
 	$(call PATH_NET)
+	$(call PATH_CRYPTION)
 	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h
 	$(call LINK)
 	$(call COPY)
