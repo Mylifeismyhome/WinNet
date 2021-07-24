@@ -13,7 +13,7 @@ endef
 define PATH_CRYPTION
 	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp
 	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h
-	g++ -I ../ -I ../../../extern -w -c ../Net/Cryption/AES.cpp
+	g++ -I ../ -I ../../../extern -L ../../../extern/crypto++/bin/ -w -c ../Net/Cryption/AES.cpp -l:libcryptopp.so
 	g++ -I ../ -I ../../../extern/OpenSSL/include -I ../../../extern -w -c ../Net/Cryption/RSA.cpp
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/bcrypt.c
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_blowfish.c
@@ -23,7 +23,7 @@ endef
 
 # link Library
 define LINK
-	ar rvs NetCore.a Net.o NetCodes.o NetVersion.o NetString.o XOR.o AES.o RSA.o bcrypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o
+	ar rvs NetCore.a ../../../extern/crypto++/bin/libcryptopp.so Net.o NetCodes.o NetVersion.o NetString.o XOR.o AES.o RSA.o bcrypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o
 endef
 
 # copy Files
