@@ -32,7 +32,7 @@ define COPY
 	mkdir -p ../../bin/
 	cp NetCore.a ../../bin/
 
-	rm -r ../../bin/include/
+	rm -r -f ../../bin/include/
 	mkdir -p ../../bin/include/
 	cp -r ../Net/ ../../bin/include/
 	find ../../bin/include/ ! -name '*.h' -type f -exec rm -f {} +
