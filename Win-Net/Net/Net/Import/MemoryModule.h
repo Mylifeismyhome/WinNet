@@ -1,3 +1,6 @@
+#include <Net/Net/Net.h>
+
+#ifndef NET_DISABLE_MEMORY_IMPORT_DLL
 /*
  * Memory DLL loading code
  * Version 0.0.4
@@ -166,3 +169,4 @@ void MemoryDefaultFreeLibrary(HCUSTOMMODULE, void *);
 #endif
 
 #endif  // __MEMORY_MODULE_HEADER
+#endif // NET_DISABLE_MEMORY_IMPORT_DLL

@@ -1,3 +1,6 @@
+#include "MemoryModule.h"
+
+#ifndef NET_DISABLE_MEMORY_IMPORT_DLL
 /*
  * Memory DLL loading code
  * Version 0.0.4
@@ -59,8 +62,6 @@
 #else
 #define HOST_MACHINE IMAGE_FILE_MACHINE_I386
 #endif
-
-#include "MemoryModule.h"
 
 struct ExportNameEntry {
     LPCSTR name;
@@ -1199,4 +1200,5 @@ BOOL MemoryModuleTestsuite() {
     }
     return success;
 }
+#endif
 #endif
