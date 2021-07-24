@@ -1,3 +1,7 @@
 all: 
+	rm -r -f include
+	cp -r ../Win-Net/bin/include/ .
+	cp ../Win-Net/bin/NetCore.a NetCore.a
+
 	mkdir -p bin
-	g++ -I ./include -I ../extern/ -w main.cpp NetCore.a -o bin/test
+	g++ -I ./include -w main.cpp NetCore.a -o bin/test

@@ -395,3 +395,6 @@ extern/OpenSSL/src/ssl/
 extern/OpenSSL/src/fuzz/
 extern/OpenSSL/src/tools/
 extern/OpenSSL/src/util/
+
+# ignore include path for test linux
+TestLinux/include

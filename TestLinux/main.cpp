@@ -9,15 +9,16 @@ int main()
 	printf(str.get().get());
 
 	NET_AES aes;
-	aes.init("TEST", "HUAN");
+	aes.Init((char*)"TEST", (char*)"HUAN");
 
 	BYTE* enc = ALLOC<BYTE>(strlen("TEST") + 1);
-	memcpy(enc, "TEST", strlen("TEST");
+	memcpy(enc, "TEST", strlen("TEST"));
 	enc[strlen("TEST")] = '\0';
 
-	aes.encrypt(enc);
+	size_t size = strlen("TEST");
+	aes.encrypt(enc, size);
 
-	printf(enc);
+	printf("%s", enc);
 
 	FREE(enc);
 	return 0;
