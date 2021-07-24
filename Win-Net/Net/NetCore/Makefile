@@ -14,6 +14,16 @@ define LINK
 	ar rvs NetCore.a Net.o NetCodes.o NetVersion.o NetString.o
 endef
 
+# copy Files
+define COPY
+	mkdir -p ../../bin/
+	cp NetCore.a ../../bin/
+
+	mkdir -p ../../bin/include/
+	cp -r ../Net/**/*.h --parents ../../bin/include/
+	mv ../../bin/Net ../../bin/include
+endef
+
 # clean build
 define CLEAN
 	rm *.o
@@ -24,4 +34,5 @@ all:
 	$(call PATH_NET)
 	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h
 	$(call LINK)
+	$(call COPY)
 	$(call CLEAN)
