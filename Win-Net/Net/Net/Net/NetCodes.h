@@ -22,7 +22,7 @@ namespace Net
 	namespace Codes
 	{
 		NET_DSA_BEGIN
-		
+
 		struct NetErrorCode_T
 		{
 			int Code;
@@ -31,7 +31,7 @@ namespace Net
 			NetErrorCode_T(const int Code, const char* Message)
 			{
 				this->Code = Code;
-				strcpy_s(this->Message, Message);
+				strcpy(this->Message, Message);
 			}
 		};
 
@@ -57,13 +57,13 @@ namespace Net
 
 			LAST_NET_ERROR_CODE
 		};
-		
+
 		void NetDefineErrorMessage(int, const char*);
 		void NetLoadErrorCodes();
 		const char* NetGetErrorMessage(int);
 
 		NET_ERROR_OBJ;
-		
+
 		NET_DSA_END
 	}
 }

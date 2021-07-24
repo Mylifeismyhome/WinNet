@@ -203,10 +203,10 @@ static std::vector<void*> NET_TEST_MEMORY_LEAKS_POINTER_LIST;
 
 __forceinline void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
 {
-	printf("----- POINTER INSTANCE(s) -----\n");
+	printf(CSTRING("----- POINTER INSTANCE(s) -----\n"));
 	for (const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
-		printf("Allocated Instance: %p\n", entry);
-	printf("----------------------------------------\n");
+		printf(CSTRING("Allocated Instance: %p\n"), entry);
+	printf(CSTRING("----------------------------------------\n"));
 }
 #endif
 
@@ -219,7 +219,7 @@ T* NET_ALLOC_MEM(const size_t n)
 		if (pointer)
 		{
 #ifdef NET_TEST_MEMORY_LEAKS
-			printf("Allocated: %llu Byte(s) ; %p\n", n, pointer);
+			printf(CSTRING("Allocated: %llu Byte(s) ; %p\n"), n, pointer);
 			NET_TEST_MEMORY_LEAKS_POINTER_LIST.emplace_back(pointer);
 #endif
 
@@ -241,7 +241,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 		return;
 
 #ifdef NET_TEST_MEMORY_LEAKS
-	printf("Deallocated: %p\n", pointer);
+	printf(CSTRING("Deallocated: %p\n"), pointer);
 	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
 	{
 		if (*it == pointer)
