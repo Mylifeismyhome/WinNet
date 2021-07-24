@@ -1,8 +1,8 @@
 #pragma once
-#ifdef BUILD_LINUX
-#else
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
+
+typedef int errno_t;
 
 NET_DSA_BEGIN
 
@@ -131,4 +131,3 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
-#endif

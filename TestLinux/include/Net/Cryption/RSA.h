@@ -3,9 +3,9 @@
 
 #include <Net/Net/Net.h>
 
-#include <OpenSSL/rsa.h>
-#include <OpenSSL/pem.h>
-#include <OpenSSL/err.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/err.h>
 
 #include <crypto++/includes/rsa.h>
 #include <crypto++/includes/cryptlib.h>
@@ -19,6 +19,7 @@
 #include <Net/Coding/BASE64.h>
 #include <Net/Coding/Hex.h>
 
+#include <Net/assets/manager/logmanager.h>
 NET_DSA_BEGIN
 
 NET_NAMESPACE_BEGIN(Net)

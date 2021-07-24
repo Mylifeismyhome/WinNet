@@ -10,7 +10,7 @@
 #include <crypto++/includes/hex.h>
 
 #include <Net/Cryption/XOR.h>
-#include <Net/Coding/HEX.h>
+#include <Net/Coding/Hex.h>
 #include <Net/Coding/BASE64.h>
 #include <Net/assets/assets.h>
 

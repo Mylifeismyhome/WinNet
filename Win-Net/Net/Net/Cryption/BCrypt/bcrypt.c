@@ -21,9 +21,6 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
-#ifndef VS13
-#include <corecrt_io.h>
-#endif
 
 #ifdef _WIN32 || _WIN64
 // On windows we need to generate random bytes differently.

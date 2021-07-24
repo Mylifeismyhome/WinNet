@@ -1,9 +1,8 @@
 #pragma once
 #include <Net/Net/Net.h>
 
-#ifdef BUILD_LINUX
-#define LOG_ERROR(...)
-#else
+typedef uint16_t WORD;
+
 #define NET_ON_LOG_PARAMETERS_A int state, const char* buffer
 #define NET_ON_LOG_PARAMETERS_W int state, const wchar_t* buffer
 
@@ -270,4 +269,3 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
-#endif
