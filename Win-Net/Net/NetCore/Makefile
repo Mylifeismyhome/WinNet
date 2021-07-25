@@ -36,7 +36,7 @@ endef
 # Net/Coding
 define PATH_CODING
 	g++ -I ../ -w -c ../Net/Coding/BASE32.cpp
-	g++ -I ../ -I ../../../extern -L ../../../extern/crypto++/bin/ -w -c ../Net/Coding/BASE64.cpp -l:libcryptopp.so
+	g++ -I ../ -w -c ../Net/Coding/BASE64.cpp
 	g++ -I ../ -I ../../../extern -L ../../../extern/crypto++/bin/ -w -c ../Net/Coding/Hex.cpp -l:libcryptopp.so
 	g++ -I ../ -w -c ../Net/Coding/MD5.cpp
 	g++ -I ../ -w -c ../Net/Coding/SHA1.cpp

@@ -2,7 +2,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Coding)
-int Base32::GetEncode32Length(int bytes)
+static int GetEncode32Length(int bytes)
 {
 	int bits = bytes * 8;
 	int length = bits / 5;
@@ -13,7 +13,7 @@ int Base32::GetEncode32Length(int bytes)
 	return length;
 }
 
-int Base32::GetDecode32Length(int bytes)
+static int GetDecode32Length(int bytes)
 {
 	int bits = bytes * 5;
 	int length = bits / 8;
@@ -45,7 +45,7 @@ static bool Encode32Block(unsigned char* in5, unsigned char* out8)
 	return true;
 }
 
-bool Base32::Encode32(unsigned char* in, int inLen, unsigned char* out)
+static bool Encode32(unsigned char* in, int inLen, unsigned char* out)
 {
 	if ((in == 0) || (inLen <= 0) || (out == 0)) return false;
 
@@ -94,7 +94,7 @@ static bool Decode32Block(unsigned char* in8, unsigned char* out5)
 	return true;
 }
 
-bool Base32::Decode32(unsigned char* in, int inLen, unsigned char* out)
+static bool Decode32(unsigned char* in, int inLen, unsigned char* out)
 {
 	if ((in == 0) || (inLen <= 0) || (out == 0)) return false;
 
@@ -121,7 +121,7 @@ bool Base32::Decode32(unsigned char* in, int inLen, unsigned char* out)
 	return true;
 }
 
-bool Base32::Map32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
+static bool Map32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
 {
 	if ((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
 	for (int i = 0; i < inout32Len; i++)
@@ -141,7 +141,7 @@ static void ReverseMap(unsigned char* inAlpha32, unsigned char* outMap)
 	}
 }
 
-bool Base32::Unmap32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
+static bool Unmap32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
 {
 	if ((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
 	unsigned char rmap[256];
@@ -153,7 +153,7 @@ bool Base32::Unmap32(unsigned char* inout32, int inout32Len, unsigned char* alph
 	return true;
 }
 
-bool Base32::base32_encode(byte*& buffer, size_t& len)
+bool Base32::encode(byte*& buffer, size_t& len)
 {
 	// create a new buffer
 	size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
@@ -175,7 +175,29 @@ bool Base32::base32_encode(byte*& buffer, size_t& len)
 	return false;
 }
 
-bool Base32::base32_decode(byte*& buffer, size_t& len)
+bool Base32::encode(byte* buffer, byte*& out, size_t& len)
+{
+	// create a new buffer
+        size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
+        byte* data32 = new byte[encodeLength + 1];
+        data32[encodeLength] = '\0';
+        if (Encode32(buffer, static_cast<int>(len), data32))
+        {
+                if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
+                {
+                        if(out) delete[] out;
+                        out = data32;
+                        len = encodeLength;
+
+                        return true;
+                }
+        }
+
+        delete[] data32;
+        return false;
+}
+
+bool Base32::decode(byte*& buffer, size_t& len)
 {
 	// create a new buffer
 	size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
@@ -195,6 +217,28 @@ bool Base32::base32_decode(byte*& buffer, size_t& len)
 
 	delete[] data256;
 	return false;
+}
+
+bool Base32::decode(byte* buffer, byte*& out, size_t& len)
+{
+ 	// create a new buffer
+        size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
+        byte* data256 = new byte[decodedLength + 1];
+        data256[decodedLength] = '\0';
+        if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
+        {
+                if (Decode32(buffer, static_cast<int>(len), data256))
+                {
+			if(out) delete[] out;
+                        out = data256;
+                        len = decodedLength;
+
+                        return true;
+                }
+        }
+
+        delete[] data256;
+        return false;
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END

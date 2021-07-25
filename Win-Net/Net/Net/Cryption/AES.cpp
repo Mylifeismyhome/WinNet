@@ -19,7 +19,7 @@ bool AES::Init(char* in_Key, char* in_IV, const size_t in_KeyLength)
 {
 	if (!in_Key || !in_IV)
 		return false;
-	
+
 	Key = RUNTIMEXOR(in_Key);
 	IV = RUNTIMEXOR(in_IV);
 	KeyLength = in_KeyLength;
@@ -49,10 +49,7 @@ bool AES::encrypt(CryptoPP::byte* data, const size_t size)
 bool AES::encryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	if (encrypt(data, size))
-	{
-		const NET_HEX hex;
-		return hex.encode(data, out, size);
-	}
+		return NET_HEX::encode(data, out, size);
 
 	return true;
 }
@@ -60,10 +57,7 @@ bool AES::encryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 bool AES::encryptHex(CryptoPP::byte*& data, size_t& size)
 {
 	if (encrypt(data, size))
-	{
-		const NET_HEX hex;
-		return hex.encode(data, size);
-	}
+		return NET_HEX::encode(data, size);
 
 	return true;
 }
@@ -113,8 +107,7 @@ bool AES::decrypt(CryptoPP::byte* data, const size_t size)
 
 bool AES::decryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
-	const NET_HEX hex;
-	if (hex.decode(data, out, size))
+	if (NET_HEX::decode(data, out, size))
 	{
 		if (decrypt(out, size))
 			return true;
@@ -125,8 +118,7 @@ bool AES::decryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 
 bool AES::decryptHex(CryptoPP::byte*& data, size_t& size)
 {
-	const NET_HEX hex;
-	if (hex.decode(data, size))
+	if (NET_HEX::decode(data, size))
 	{
 		if (decrypt(data, size))
 			return true;

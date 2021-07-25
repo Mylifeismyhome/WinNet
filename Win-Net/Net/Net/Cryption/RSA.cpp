@@ -43,7 +43,7 @@ bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
 
 		PEM_write_bio_RSA_PUBKEY(bio, KeyPair);
 		const auto len = BIO_pending(bio);
-		
+
 		CPOINTER<char> key(ALLOC<char>(static_cast<size_t>(len) + 1));
 		BIO_read(bio, key.get(), len);
 		key.get()[len] = '\0';
@@ -66,7 +66,7 @@ bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
 
 		PEM_write_bio_RSAPrivateKey(bio, KeyPair, nullptr, nullptr, 0, nullptr, nullptr);
 		const auto len = BIO_pending(bio);
-		
+
 		CPOINTER<char> key(ALLOC<char>(static_cast<size_t>(len) + 1));
 		BIO_read(bio, key.get(), len);
 		key.get()[len] = '\0';
@@ -149,7 +149,7 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 	{
 		const auto publicKey = EVP_PKEY_get1_RSA(pkey);
 		EVP_PKEY_free(pkey);
-		
+
 		if (publicKey != nullptr)
 		{
 			const auto tmpEncSize = RSA_size((const RSA*)publicKey);
@@ -181,8 +181,7 @@ bool NETRSA::encryptHex(CryptoPP::byte*& data, size_t& size)
 {
 	if (encrypt(data, size))
 	{
-		const NET_HEX hex;
-		hex.encode(data, size);
+		NET_HEX::encode(data, size);
 		return true;
 	}
 
@@ -218,7 +217,7 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 	{
 		const auto privateKey = EVP_PKEY_get1_RSA(pkey);
 		EVP_PKEY_free(pkey);
-		
+
 		if (privateKey != nullptr)
 		{
 			const auto tmpDecSize = RSA_size((const RSA*)privateKey);
@@ -248,8 +247,7 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 
 bool NETRSA::decryptHex(CryptoPP::byte*& data, size_t& size)
 {
-	const NET_HEX hex;
-	hex.decode(data, size);
+	NET_HEX::decode(data, size);
 
 	if (decrypt(data, size))
 		return true;

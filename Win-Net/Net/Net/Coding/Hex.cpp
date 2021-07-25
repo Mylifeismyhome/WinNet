@@ -106,22 +106,22 @@ static bool ProcessDecode(CryptoPP::byte*& data, size_t& size)
 	}
 }
 
-bool HEX::encode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size) const
+bool Hex::encode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	return ProcessEncode(data, out, size);
 }
 
-bool HEX::encode(CryptoPP::byte*& data, size_t& size) const
+bool Hex::encode(CryptoPP::byte*& data, size_t& size)
 {
 	return ProcessEncode(data, size);
 }
 
-bool HEX::decode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size) const
+bool Hex::decode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 {
 	return ProcessDecode(data, out, size);
 }
 
-bool HEX::decode(CryptoPP::byte*& data, size_t& size) const
+bool Hex::decode(CryptoPP::byte*& data, size_t& size)
 {
 	return ProcessDecode(data, size);
 }

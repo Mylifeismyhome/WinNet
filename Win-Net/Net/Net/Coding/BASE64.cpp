@@ -153,8 +153,8 @@ static bool ProcessEncode(BYTE* data, BYTE*& out, size_t& size)
 	if (!encoded)
 		return false;
 
-	data = encoded; // pointer swap
-	data[size] = '\0';
+	out = encoded; // pointer swap
+	out[size] = '\0';
 
 	return true;
 }
@@ -177,8 +177,8 @@ static bool ProcessDecode(BYTE* data, BYTE*& out, size_t& size)
 	if (!decoded)
 		return false;
 
-	data = decoded; // pointer swap
-	data[size] = '\0';
+	out = decoded; // pointer swap
+	out[size] = '\0';
 
 	return true;
 }

@@ -3,9 +3,7 @@
 #define NET_BASE64 Net::Coding::Base64
 
 #include <Net/Net/Net.h>
-#include <crypto++/includes/base64.h>
 #include <Net/Cryption/XOR.h>
-#include <cstdio>
 #include <Net/assets/manager/logmanager.h>
 
 NET_DSA_BEGIN
