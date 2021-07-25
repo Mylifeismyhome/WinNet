@@ -62,7 +62,7 @@ typedef unsigned long SOCKET;
 //    SECTION - DEFINES     //
 //////////////////////////////////
 #ifdef DLL
-#define NET_API __declspec(dllexport)
+#define NET_API extern "C" __declspec(dllexport)
 #else
 #define NET_API
 #endif
@@ -701,6 +701,10 @@ NET_STRUCT_END
 #define NOEXPECT
 #define CONSTEXPR const
 #define FUNCNAME __FUNCTION__
+#endif
+
+#ifdef BUILD_LINUX
+#define __int64 long long
 #endif
 
 #define _NET

@@ -1,5 +1,6 @@
 #include "dirmanager.h"
 
+#ifndef BUILD_LINUX
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 // Return true if the folder exists, false otherwise
@@ -510,3 +511,4 @@ std::string Directory::currentFileNameA()
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
+#endif

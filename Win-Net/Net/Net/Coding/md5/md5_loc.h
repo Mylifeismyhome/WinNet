@@ -1,5 +1,4 @@
 #pragma once
-#include <Windows.h>
 #include <Net/Cryption/XOR.h>
 
 NET_DSA_BEGIN

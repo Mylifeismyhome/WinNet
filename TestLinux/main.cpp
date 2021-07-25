@@ -11,14 +11,19 @@ int main()
 	NET_AES aes;
 	aes.Init((char*)"TEST", (char*)"HUAN");
 
-	BYTE* enc = ALLOC<BYTE>(strlen("TEST") + 1);
-	memcpy(enc, "TEST", strlen("TEST"));
-	enc[strlen("TEST")] = '\0';
+	const char* word = "test du huan";
+	size_t size = strlen(word);
+	BYTE* enc = ALLOC<BYTE>(size + 1);
+	memcpy(enc, word, size);
+	enc[size] = '\0';
 
-	size_t size = strlen("TEST");
 	aes.encrypt(enc, size);
 
-	printf("%s", enc);
+	printf("\n%s", enc);
+
+	aes.decrypt(enc, size);
+
+	printf("\n\n%s", enc);
 
 	FREE(enc);
 	return 0;

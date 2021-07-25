@@ -1,5 +1,29 @@
 #include "filemanager.h"
 
+#ifdef BUILD_LINUX
+static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* Mode)
+{
+	char* fnameA = nullptr;
+	wcstombs(fnameA, fname, wcslen(fname));
+
+	char* ModeA = nullptr;
+	wcstombs(ModeA, Mode, wcslen(Mode));
+
+	FILE* f = fopen(fnameA, ModeA);
+
+	FREE(fnameA);
+	FREE(ModeA);
+
+	return f;
+}
+
+#define wOpenFile(fname, mode) __convertWfname2Afname__fopen(fname, mode)
+#define OpenFile(fname, mode) fopen(fname, mode)
+#else
+#define wOpenFile(fname, mode) _wfopen(fname, mode)
+#define OpenFile(fname, mode) fopen(fname, mode)
+#endif
+
 static const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
@@ -59,7 +83,11 @@ NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
 {
+#ifdef BUILD_LINUX
+	strerror_r((int)code, buffer, ERRORCODEDESC_LEN);
+#else
 	strerror_s(buffer, ERRORCODEDESC_LEN, (int)code);
+#endif
 }
 
 FileManagerErrorRef::~FileManagerErrorRef()
@@ -86,7 +114,7 @@ FileManagerW::FileManagerW(const wchar_t* fname, const uint8_t Mode)
 {
 	err = (errno_t)ErrorCodes::ERR_OK;
 	file = nullptr;
-	wcscpy_s(this->fname, fname);
+	wcscpy(this->fname, fname);
 	this->Mode = Mode;
 }
 
@@ -97,12 +125,14 @@ FileManagerW::~FileManagerW()
 
 bool FileManagerW::openFile()
 {
-	err = _wfopen_s(&file, fname, GetModeW(Mode));
+	file = wOpenFile(fname, GetModeW(Mode));
 	if(!file)
 	{
-		err = _wfopen_s(&file, fname, GetModeW(NET_FILE_WRITE));
+		err = errno;
+		file = wOpenFile(fname, GetModeW(NET_FILE_WRITE));
 		close();
-		err = _wfopen_s(&file, fname, GetModeW(Mode));
+		err = errno;
+		file = wOpenFile(fname, GetModeW(Mode));
 	}
 	return file != nullptr;
 }
@@ -118,7 +148,8 @@ void FileManagerW::closeFile()
 
 bool FileManagerW::CanOpenFile()
 {
-	err = _wfopen_s(&file, fname, GetModeW(NET_FILE_READ));
+	file = wOpenFile(fname, GetModeW(NET_FILE_READ));
+	err = errno;
 	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
 	closeFile();
 	return status;
@@ -156,7 +187,7 @@ bool FileManagerW::read(BYTE*& out_data, size_t& out_size)
 	{
 		if (!openFile())
 			return false;
-		
+
 		const auto ret =  getFileBuffer(out_data, out_size);
 		close();
 		return ret;
@@ -187,7 +218,7 @@ bool FileManagerW::write(BYTE* data, const size_t size)
 {
 	if (!openFile())
 		return false;
-	
+
 	const auto written = fwrite(data, 1, size, file);
 	close();
 	return written != NULL;
@@ -197,7 +228,7 @@ bool FileManagerW::write(const char* str)
 {
 	if (!openFile())
 		return false;
-	
+
 	const auto written = fwrite(str, 1, strlen(str), file);
 	close();
 	return written != NULL;
@@ -207,7 +238,7 @@ bool FileManagerW::write(const wchar_t* str)
 {
 	if (!openFile())
 		return false;
-	
+
 	const auto written = fwrite(str, 2, wcslen(str), file);
 	close();
 	return written != NULL;
@@ -253,7 +284,7 @@ FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
 {
 	err = (errno_t)ErrorCodes::ERR_OK;
 	file = nullptr;
-	strcpy_s(this->fname, fname);
+	strcpy(this->fname, fname);
 	this->Mode = Mode;
 }
 
@@ -264,12 +295,15 @@ FileManagerA::~FileManagerA()
 
 bool FileManagerA::openFile()
 {
-	err = fopen_s(&file, fname, GetModeA(Mode));
+	file = OpenFile(fname, GetModeA(Mode));
+	err = errno;
 	if (!file)
 	{
-		err = fopen_s(&file, fname, GetModeA(NET_FILE_WRITE));
+		file = OpenFile(fname, GetModeA(NET_FILE_WRITE));
+		err = errno;
 		close();
-		err = fopen_s(&file, fname, GetModeA(Mode));
+		file = OpenFile(fname, GetModeA(Mode));
+		err = errno;
 	}
 	return file != nullptr;
 }
@@ -285,7 +319,8 @@ void FileManagerA::closeFile()
 
 bool FileManagerA::CanOpenFile()
 {
-	err = fopen_s(&file, fname, GetModeA(NET_FILE_READ));
+	file = OpenFile(fname, GetModeA(NET_FILE_READ));
+	err = errno;
 	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
 	closeFile();
 	return status;
@@ -323,7 +358,7 @@ bool FileManagerA::read(BYTE*& out_data, size_t& out_size)
 	{
 		if (!openFile())
 			return false;
-		
+
 		const auto ret = getFileBuffer(out_data, out_size);
 		close();
 		return ret;

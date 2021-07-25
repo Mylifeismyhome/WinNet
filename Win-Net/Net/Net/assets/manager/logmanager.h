@@ -223,12 +223,10 @@ SetAreaInUse(true);
 #define END_LOG \
 SetAreaInUse(false);
 
-static char fname[MAX_PATH];
-static bool AreaInUse = false;
-extern "C" NET_API void SetFname(const char*);
-extern "C" NET_API char* GetFname();
-extern "C" NET_API void SetAreaInUse(bool);
-extern "C" NET_API bool IsAreaInUse();
+NET_API void SetFname(const char*);
+NET_API char* GetFname();
+NET_API void SetAreaInUse(bool);
+NET_API bool IsAreaInUse();
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Console)
@@ -242,15 +240,15 @@ enum class LogStates
 	peer
 };
 
-extern "C" NET_API tm TM_GetTime();
+NET_API tm TM_GetTime();
 std::string GetLogStatePrefix(LogStates);
 void Log(LogStates, const char*, const char*, ...);
 void Log(LogStates, const char*, const wchar_t*, ...);
-extern "C" NET_API void ChangeStdOutputColor(int);
+NET_API void ChangeStdOutputColor(int);
 
-extern "C" NET_API void SetPrintF(bool);
-extern "C" NET_API bool GetPrintFState();
-extern "C" NET_API WORD GetColorFromState(LogStates);
+NET_API void SetPrintF(bool);
+NET_API bool GetPrintFState();
+NET_API WORD GetColorFromState(LogStates);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Manager)

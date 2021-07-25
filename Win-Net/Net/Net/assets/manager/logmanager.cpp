@@ -1,7 +1,5 @@
 #include "logmanager.h"
-#ifdef BUILD_LINUX
 
-#else
 // Color codes
 CONSTEXPR auto BLACK = 0;
 CONSTEXPR auto BLUE = 1;
@@ -20,9 +18,19 @@ CONSTEXPR auto LIGHTMAGENTA = 13;
 CONSTEXPR auto YELLOW = 14;
 CONSTEXPR auto WHITE = 15;
 
+static char fname[MAX_PATH];
+static bool AreaInUse;
+
 // global override able callback
 static void (*OnLogA)(int state, const char* buffer) = nullptr;
 static void (*OnLogW)(int state, const wchar_t* buffer) = nullptr;
+
+static void SetConsoleOutputColor(const int color)
+{
+#ifndef BUILD_LINUX
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+#endif
+}
 
 void NetSetLogCallbackA(OnLogA_t callback)
 {
@@ -36,6 +44,7 @@ void NetSetLogCallbackW(OnLogW_t callback)
 
 void SetFname(const char* name)
 {
+#ifndef BUILD_LINUX
 	Net::String tmp(name);
 	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
 		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
@@ -44,23 +53,24 @@ void SetFname(const char* name)
 	{
 		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
 		{
-			strcpy_s(fname, name);
-			strcat_s(fname, CSTRING(".log"));
+			strcpy(fname, name);
+			strcat(fname, CSTRING(".log"));
 		}
 		else
 		{
-			strcpy_s(fname, Net::Manager::Directory::homeDir().data());
-			strcpy_s(fname, name);
-			strcat_s(fname, CSTRING(".log"));
+			strcpy(fname, Net::Manager::Directory::homeDir().data());
+			strcpy(fname, name);
+			strcat(fname, CSTRING(".log"));
 			NET_DIRMANAGER::createDir(fname);
 		}
 	}
 	else
 	{
-		strcpy_s(fname, Net::Manager::Directory::homeDir().data());
-		strcat_s(fname, name);
-		strcat_s(fname, CSTRING(".log"));
+		strcpy(fname, Net::Manager::Directory::homeDir().data());
+		strcat(fname, name);
+		strcat(fname, CSTRING(".log"));
 	}
+#endif
 }
 
 char* GetFname()
@@ -85,12 +95,18 @@ static bool DisablePrintF = false;
 tm TM_GetTime()
 {
 	auto timeinfo = tm();
+#ifdef BUILD_LINUX
+	time_t tm = time(nullptr);
+	auto p_timeinfo = localtime(&tm);
+	timeinfo = *p_timeinfo;
+#else
 #ifdef _WIN64
 	auto t = _time64(nullptr);   // get time now
 	_localtime64_s(&timeinfo, &t);
 #else
 	auto t = _time32(nullptr);   // get time now
 	_localtime32_s(&timeinfo, &t);
+#endif
 #endif
 	return timeinfo;
 }
@@ -139,7 +155,7 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 
 	// display date & time
 	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
-	sprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CSTRING("[%s][%s]"), date, time);
+	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
 	printf(buffer);
 	FREE(buffer);
@@ -147,11 +163,11 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	// display prefix in it specific color
 	const auto prefix = Console::GetLogStatePrefix(state);
 	buffer = ALLOC<char>(prefix.size() + 4);
-	sprintf_s(buffer, prefix.size() + 3, CSTRING("[%s]"), prefix.data());
+	sprintf(buffer, CSTRING("[%s]"), prefix.data());
 	buffer[prefix.size() + 3] = '\0';
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+		SetConsoleOutputColor(Console::GetColorFromState(state));
 
 	printf(buffer);
 
@@ -161,7 +177,7 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		SetConsoleOutputColor(WHITE);
 
 	// output functionname
 	if (strcmp(func, CSTRING("")) != 0)
@@ -199,7 +215,7 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 
 	// display date & time
 	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
-	swprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
+	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
 	wprintf(buffer);
 	FREE(buffer);
@@ -207,11 +223,11 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 	// display prefix in it specific color
 	const auto prefix = Console::GetLogStatePrefix(state);
 	buffer = ALLOC<wchar_t>(prefix.size() + 4);
-	swprintf_s(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
+	swprintf(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
 	buffer[prefix.size() + 3] = '\0';
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+		SetConsoleOutputColor(Console::GetColorFromState(state));
 
 	wprintf(buffer);
 
@@ -221,7 +237,7 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		SetConsoleOutputColor(WHITE);
 
 	// output functionname
 	if (wcscmp(func, CWSTRING("")) != 0)
@@ -230,11 +246,6 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 	wprintf(CWSTRING(" "));
 	wprintf(str.data());
 	wprintf(CWSTRING("\n"));
-}
-
-void ChangeStdOutputColor(const int Color)
-{
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Color);
 }
 
 void SetPrintF(const bool state)
@@ -310,7 +321,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 
 	// display date & time
 	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
-	sprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CSTRING("[%s][%s]"), date, time);
+	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
 	printf(buffer);
 	FREE(buffer);
@@ -318,17 +329,17 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 	// display prefix in it specific color
 	const auto prefix = Console::GetLogStatePrefix(state);
 	buffer = ALLOC<char>(prefix.size() + 4);
-	sprintf_s(buffer, prefix.size() + 3, CSTRING("[%s]"), prefix.data());
+	sprintf(buffer, CSTRING("[%s]"), prefix.data());
 	buffer[prefix.size() + 3] = '\0';
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+		SetConsoleOutputColor(Console::GetColorFromState(state));
 
 	printf(buffer);
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		SetConsoleOutputColor(WHITE);
 
 	// output functionname
 	if (strcmp(func, CSTRING("")) != 0)
@@ -345,7 +356,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			const auto prefix = Console::GetLogStatePrefix(state);
 			const auto bsize = str.size() + prefix.size() + 23;
 			buffer = ALLOC<char>(bsize + 1);
-			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+			sprintf(buffer, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogA)
@@ -354,9 +365,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				SetConsoleOutputColor(RED);
 				printf(CSTRING("[ERROR]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				SetConsoleOutputColor(WHITE);
 				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
 			}
 
@@ -367,7 +378,7 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			const auto prefix = Console::GetLogStatePrefix(state);
 			const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
 			auto buffer = ALLOC<char>(bsize + 1);
-			sprintf_s(buffer, bsize, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogA)
@@ -376,9 +387,9 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				SetConsoleOutputColor(RED);
 				printf(CSTRING("[ERROR]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				SetConsoleOutputColor(WHITE);
 				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
 			}
 
@@ -414,7 +425,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 
 	// display date & time
 	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
-	swprintf_s(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
+	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
 	wprintf(buffer);
 	FREE(buffer);
@@ -422,17 +433,17 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 	// display prefix in it specific color
 	const auto prefix = Console::GetLogStatePrefix(state);
 	buffer = ALLOC<wchar_t>(prefix.size() + 4);
-	swprintf_s(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
+	swprintf(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
 	buffer[prefix.size() + 3] = '\0';
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), Console::GetColorFromState(state));
+		SetConsoleOutputColor(Console::GetColorFromState(state));
 
 	wprintf(buffer);
 	FREE(buffer);
 
 	if (!Console::GetPrintFState())
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+		SetConsoleOutputColor(WHITE);
 
 	// output functionname
 	if (wcscmp(func, CWSTRING("")) != 0)
@@ -449,7 +460,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			const auto prefix = Console::GetLogStatePrefix(state);
 			const auto bsize = str.size() + prefix.size() + 23;
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
+			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogW)
@@ -458,9 +469,9 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				SetConsoleOutputColor(RED);
 				printf(CSTRING("[ERROR]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				SetConsoleOutputColor(WHITE);
 				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
 			}
 
@@ -471,7 +482,7 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			const auto prefix = Console::GetLogStatePrefix(state);
 			const auto bsize = str.size() + prefix.size() + wcslen(func) + 25;
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf_s(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
+			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogW)
@@ -480,9 +491,9 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			if (!WriteToFile(buffer))
 			{
 				printf(CSTRING("[NET]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RED);
+				SetConsoleOutputColor(RED);
 				printf(CSTRING("[ERROR]"));
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WHITE);
+				SetConsoleOutputColor(WHITE);
 				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
 			}
 
@@ -520,4 +531,3 @@ bool Log::WriteToFile(const wchar_t* msg) const
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
-#endif

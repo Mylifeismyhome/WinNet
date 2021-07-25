@@ -12,11 +12,13 @@ CONSTEXPR auto BASE_DATE = 1900;
 #define DATE_LENGTH 11
 #define DATE_LEN DATE_LENGTH
 
+#ifndef BUILD_LINUX
 // Messagebox
 #define SHOW_MESSAGEBOX(msg, ...) Net::ShowMessageBox("", msg, __VA_ARGS__);
 #define SHOW_MESSAGEBOX_ERROR(msg, ...) Net::ShowMessageBox(CSTRING("ERROR"), msg, __VA_ARGS__);
 #define SHOW_MESSAGEBOX_SUCCESS(msg, ...) Net::ShowMessageBox(CSTRING("SUCCESS"), msg, __VA_ARGS__);
 #define SHOW_MESSAGEBOX_DEBUG(msg, ...) Net::ShowMessageBox(CSTRING("DEBUG"), msg, __VA_ARGS__);
+#endif
 
 // Clock
 #define CURRENTCLOCKTIME Net::Clock::GetClockTime()
@@ -46,8 +48,10 @@ CONSTEXPR auto BASE_DATE = 1900;
 #define TIMETABLE struct tm
 
 NET_NAMESPACE_BEGIN(Net)
+#ifndef BUILD_LINUX
 void ShowMessageBox(const char*, const char*, ...);
 void ShowMessageBox(const wchar_t*, const wchar_t*, ...);
+#endif
 
 NET_NAMESPACE_BEGIN(Clock)
 double GetClockTime();

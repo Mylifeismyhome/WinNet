@@ -1,6 +1,7 @@
 #include "assets.h"
 
 NET_NAMESPACE_BEGIN(Net)
+#ifndef BUILD_LINUX
 void ShowMessageBox(const char* title, const char* msg, ...)
 {
 	va_list vaArgs;
@@ -9,7 +10,7 @@ void ShowMessageBox(const char* title, const char* msg, ...)
 	std::vector<char> str(size + 1);
 	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
-	
+
 	MessageBoxA(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
 
@@ -21,9 +22,10 @@ void ShowMessageBox(const wchar_t* title, const wchar_t* msg, ...)
 	std::vector<wchar_t> str(size + 1);
 	std::vswprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
-	
+
 	MessageBoxW(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
+#endif
 
 NET_NAMESPACE_BEGIN(Clock)
 double GetClockTime()
@@ -41,54 +43,54 @@ double AddTime(const double Time)
 void GetTimeW(wchar_t* time)
 {
 	if (Console::TM_GetTime().tm_hour < 10 && Console::TM_GetTime().tm_min < 10)
-		swprintf_s(time, TIME_LENGTH, CWSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		swprintf(time, TIME_LENGTH, CWSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_hour < 10)
-		swprintf_s(time, TIME_LENGTH, CWSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		swprintf(time, TIME_LENGTH, CWSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_min < 10)
-		swprintf_s(time, TIME_LENGTH, CWSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		swprintf(time, TIME_LENGTH, CWSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else
-		swprintf_s(time, TIME_LENGTH, CWSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		swprintf(time, TIME_LENGTH, CWSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 }
 
 void GetTimeA(char* time)
 {
 	if (Console::TM_GetTime().tm_hour < 10 && Console::TM_GetTime().tm_min < 10)
-		sprintf_s(time, TIME_LENGTH, CSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf(time, CSTRING("0%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_hour < 10)
-		sprintf_s(time, TIME_LENGTH, CSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf(time, CSTRING("0%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else if (Console::TM_GetTime().tm_min < 10)
-		sprintf_s(time, TIME_LENGTH, CSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf(time, CSTRING("%i:0%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 	else
-		sprintf_s(time, TIME_LENGTH, CSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
+		sprintf(time, CSTRING("%i:%i"), Console::TM_GetTime().tm_hour, Console::TM_GetTime().tm_min);
 }
 
 void GetDateW(wchar_t* date)
 {
 	if (Console::TM_GetTime().tm_mday < 9)
-		swprintf_s(date, DATE_LENGTH, CWSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		swprintf(date, DATE_LENGTH, CWSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else if (Console::TM_GetTime().tm_mon < 9)
-		swprintf_s(date, DATE_LENGTH, CWSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		swprintf(date, DATE_LENGTH, CWSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else if (Console::TM_GetTime().tm_mday < 9 && Console::TM_GetTime().tm_mon < 9)
-		swprintf_s(date, DATE_LENGTH, CWSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		swprintf(date, DATE_LENGTH, CWSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else
-		swprintf_s(date, DATE_LENGTH, CWSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		swprintf(date, DATE_LENGTH, CWSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 }
 
 void GetDateA(char* date)
 {
 	if (Console::TM_GetTime().tm_mday < 9)
-		sprintf_s(date, DATE_LENGTH, CSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		sprintf(date, CSTRING("0%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else if (Console::TM_GetTime().tm_mon < 9)
-		sprintf_s(date, DATE_LENGTH, CSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		sprintf(date, CSTRING("%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else if (Console::TM_GetTime().tm_mday < 9 && Console::TM_GetTime().tm_mon < 9)
-		sprintf_s(date, DATE_LENGTH, CSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		sprintf(date, CSTRING("0%i-0%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 	else
-		sprintf_s(date, DATE_LENGTH, CSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
+		sprintf(date, CSTRING("%i-%i-%i"), Console::TM_GetTime().tm_mday, Console::TM_GetTime().tm_mon + 1, Console::TM_GetTime().tm_year + BASE_DATE);
 }
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)
-#ifdef VS13
+#if defined(VS13) || defined(BUILD_LINUX)
 template <typename TYPE>
 TYPE GetRandNumber(TYPE min, TYPE max)
 {
