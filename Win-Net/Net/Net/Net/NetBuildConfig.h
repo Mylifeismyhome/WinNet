@@ -1,7 +1,13 @@
 #pragma once
 
+// need to implement
+/*
+mysqlcppconn.lib
+mysqlcppconn-static.lib
+*/
+
 #undef NET_USE_MYSQL_SUPPORT
-#define BUILD_LINUX
+#undef BUILD_LINUX
 
 // disable windows compitable code
 #ifdef BUILD_LINUX

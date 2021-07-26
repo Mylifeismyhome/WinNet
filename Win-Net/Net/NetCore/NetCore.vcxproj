@@ -63,7 +63,7 @@
     <ProjectGuid>{EFBB82EF-8979-483B-B926-AD76721839AE}</ProjectGuid>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
-    <RootNamespace>NetFeature</RootNamespace>
+    <RootNamespace>NetCore</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>NetCore</ProjectName>
   </PropertyGroup>
@@ -300,7 +300,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -321,7 +321,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MTD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -348,7 +348,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -369,7 +369,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MTD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -396,7 +396,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -417,7 +417,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MDD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
@@ -446,7 +446,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -469,7 +469,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MDD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
@@ -498,7 +498,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -512,7 +512,7 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
@@ -547,7 +547,7 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -561,7 +561,7 @@
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
@@ -591,7 +591,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -615,7 +615,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -637,7 +637,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -684,7 +684,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -708,7 +708,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MT\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -730,7 +730,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -777,7 +777,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -801,7 +801,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -823,7 +823,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -847,7 +847,7 @@
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MD\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -869,7 +869,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -886,7 +886,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -916,7 +916,7 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -933,7 +933,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn.lib;mysqlcppconn-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>

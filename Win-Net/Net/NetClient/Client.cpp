@@ -561,7 +561,7 @@ void Client::SetRecordingData(const bool status)
 void Client::Network::createNewRSAKeys(const size_t keySize)
 {
 	RSA = new NET_RSA();
-	RSA->GenerateKeys(keySize, 3);
+	RSA->generateKeys(keySize, 3);
 	RSAHandshake = false;
 }
 
@@ -1139,7 +1139,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-		if (!aes.Init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
+		if (!aes.init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
 		{
 			Key.free();
 			IV.free();
@@ -1860,7 +1860,7 @@ void Client::ExecutePackage()
 		}
 
 		NET_AES aes;
-		if (!aes.Init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
+		if (!aes.init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2217,7 +2217,7 @@ bool Client::CreateTOTPSecret()
 	network.totp_secret = ALLOC<byte>(network.totp_secret_len + 1);
 	memcpy(network.totp_secret, strTime, network.totp_secret_len);
 	network.totp_secret[network.totp_secret_len] = '\0';
-	Net::Coding::Base32::base32_encode(network.totp_secret, network.totp_secret_len);
+	Net::Coding::Base32::encode(network.totp_secret, network.totp_secret_len);
 
 	network.curToken = NULL;
 	network.lastToken = NULL;
@@ -2284,11 +2284,11 @@ if (!publicKey.valid())
 }
 
 // send our generated Public Key to the Server
-const auto PublicKeyRef = network.RSA->PublicKey();
+const auto PublicKeyRef = network.RSA->publicKey();
 pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), PublicKeyRef.get());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
 
-network.RSA->SetPublicKey((char*)publicKey.value());
+network.RSA->setPublicKey((char*)publicKey.value());
 
 // from now we use the Cryption, synced with Server
 network.RSAHandshake = true;

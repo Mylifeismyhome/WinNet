@@ -141,7 +141,7 @@ void Server::network_t::unlockSend()
 void Server::cryption_t::createKeyPair(const size_t size)
 {
 	RSA = new NET_RSA();
-	RSA->GenerateKeys(size, 3);
+	RSA->generateKeys(size, 3);
 	setHandshakeStatus(false);
 }
 
@@ -1199,7 +1199,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-		if (!aes.Init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
+		if (!aes.init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
 		{
 			Key.free();
 			IV.free();
@@ -1707,7 +1707,7 @@ NET_THREAD(Receive)
 		/* Create new RSA Key Pair */
 		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
 
-		const auto PublicKey = peer->cryption.RSA->PublicKey();
+		const auto PublicKey = peer->cryption.RSA->publicKey();
 
 		Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
@@ -2248,7 +2248,7 @@ void Server::ExecutePackage(NET_PEER peer)
 		}
 
 		NET_AES aes;
-		if (!aes.Init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
+		if (!aes.init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2627,7 +2627,7 @@ if (!publicKey.valid()) // empty
 	return;
 }
 
-peer->cryption.RSA->SetPublicKey((char*)publicKey.value());
+peer->cryption.RSA->setPublicKey((char*)publicKey.value());
 
 // from now we use the Cryption, synced with Server
 peer->cryption.setHandshakeStatus(true);
@@ -2723,7 +2723,7 @@ bool Server::CreateTOTPSecret(NET_PEER peer)
 	peer->totp_secret = ALLOC<byte>(peer->totp_secret_len + 1);
 	memcpy(peer->totp_secret, strTime, peer->totp_secret_len);
 	peer->totp_secret[peer->totp_secret_len] = '\0';
-	Net::Coding::Base32::base32_encode(peer->totp_secret, peer->totp_secret_len);
+	Net::Coding::Base32::encode(peer->totp_secret, peer->totp_secret_len);
 
 	peer->curToken = NULL;
 	peer->lastToken = NULL;
