@@ -1,8 +1,5 @@
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
-#include <Net/Cryption/AES.h>
-#include <Net/Coding/BASE64.h>
-#include <Net/Coding/BASE32.h>
 #include <Net/Coding/Hex.h>
 
 int main()
@@ -10,7 +7,7 @@ int main()
 	LOG_ERROR(CSTRING("TEST %i"), 50);
 
 
-	const char* word = "test du huan";
+	const char* word = "Ich glaube es funktioniert!";
 	size_t size = strlen(word);
 
 	BYTE* data = ALLOC<BYTE>(size + 1);
@@ -18,38 +15,15 @@ int main()
 	data[size] = '\0';
 
 	byte* out = nullptr;
-	Net::Coding::Base64::encode(data, out, size);
+	Net::Coding::Hex::encode(data, out, size);
 
 	printf("%s", out);
 
 
-	Net::Coding::Base64::decode(out, data, size);
+	Net::Coding::Hex::decode(out, data, size);
 
 	printf("\n%s", data);
 
 	FREE(data);
-	return 0;
-	// not used
-
-	Net::String str("Test");
-	str.append(" ES FUNKT!");
-	printf(str.get().get());
-
-	NET_AES aes;
-	aes.Init((char*)"TEST", (char*)"HUAN");
-
-	BYTE* enc = ALLOC<BYTE>(size + 1);
-	memcpy(enc, word, size);
-	enc[size] = '\0';
-
-	aes.encrypt(enc, size);
-
-	printf("\n%s", enc);
-
-	aes.decrypt(enc, size);
-
-	printf("\n\n%s", enc);
-
-	FREE(enc);
 	return 0;
 }

@@ -2,7 +2,7 @@
 #define NET_HEX Net::Coding::Hex
 
 #include <Net/Net/Net.h>
-#include <crypto++/includes/hex.h>
+#include <cryptopp/hex.h>
 #include <Net/Cryption/XOR.h>
 #include <Net/assets/assets.h>
 

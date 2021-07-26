@@ -10,16 +10,21 @@ endef
 # build crypto++
 define crypto++
 	$(call out, ********** BUILDING CRYPTO++ **********)
-	${MAKE} static dynamic -C ${ROOT_DIR}/extern/crypto++/src/
-	mkdir ${ROOT_DIR}/extern/crypto++/bin/
-	mkdir ${ROOT_DIR}/extern/crypto++/bin/include/
-	cp ${ROOT_DIR}/extern/crypto++/src/*.h ${ROOT_DIR}/extern/crypto++/bin/include/
-	cp ${ROOT_DIR}/extern/crypto++/src/libcryptopp.so ${ROOT_DIR}/extern/crypto++/bin/libcryptopp.so
+
+	${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ static dynamic cryptest.exe
+ 	${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ libcryptopp.a libcryptopp.so cryptest.exe
+
+	# create install directory
+	mkdir -p ${ROOT_DIR}/extern/crypto++/bin/
+
+	# install
+	sudo ${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ install PREFIX=${ROOT_DIR}/extern/crypto++/bin/
 endef
 
 # clean crypto++
 define clean_crypto++
 	$(call out, ********** DELETING FILES CREATED BY CRYPTO++ **********)
+
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.o
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.so
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.so.*

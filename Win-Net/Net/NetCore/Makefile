@@ -13,7 +13,7 @@ endef
 define PATH_CRYPTION
 	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp
 	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h
-	g++ -I ../ -I ../../../extern -L ../../../extern/crypto++/bin/ -w -c ../Net/Cryption/AES.cpp -l:libcryptopp.so
+	g++ -I ../ -I ../../../extern -w -c ../Net/Cryption/AES.cpp
 	g++ -I ../ -I ../../../extern/OpenSSL/include -I ../../../extern -w -c ../Net/Cryption/RSA.cpp
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/bcrypt.c
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_blowfish.c
@@ -37,7 +37,7 @@ endef
 define PATH_CODING
 	g++ -I ../ -w -c ../Net/Coding/BASE32.cpp
 	g++ -I ../ -w -c ../Net/Coding/BASE64.cpp
-	g++ -I ../ -I ../../../extern -L ../../../extern/crypto++/bin/ -w -c ../Net/Coding/Hex.cpp -l:libcryptopp.so
+	g++ -I ../ -I ../../../extern/crypto++/bin/include/ -w -c ../Net/Coding/Hex.cpp
 	g++ -I ../ -w -c ../Net/Coding/MD5.cpp
 	g++ -I ../ -w -c ../Net/Coding/SHA1.cpp
 	g++ -I ../ -w -c ../Net/Coding/TOTP.cpp
@@ -45,7 +45,7 @@ endef
 
 # link Library
 define LINK
-	ar rvs NetCore.a ../../../extern/crypto++/bin/libcryptopp.so Net.o NetCodes.o NetVersion.o NetString.o XOR.o AES.o RSA.o bcrypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o dirmanager.o filemanager.o logmanager.o assets.o BASE32.o BASE64.o Hex.o MD5.o SHA1.o TOTP.o
+	ar rvs NetCore.a ../../../extern/crypto++/bin/lib/libcryptopp.a Net.o NetCodes.o NetVersion.o NetString.o XOR.o AES.o RSA.o bcrypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o dirmanager.o filemanager.o logmanager.o assets.o BASE32.o BASE64.o Hex.o MD5.o SHA1.o TOTP.o
 endef
 
 # copy Files
