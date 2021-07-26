@@ -34,7 +34,7 @@ void hmac_sha1(const uint8_t* k,  /* secret key */
 	uint8_t key[SHA_DIGEST_LENGTH];
 	uint8_t buf[SHA_BLOCKSIZE];
 
-	if (lk > SHA_BLOCKSIZE) 
+	if (lk > SHA_BLOCKSIZE)
 	{
 		SHA_CTX tctx;
 

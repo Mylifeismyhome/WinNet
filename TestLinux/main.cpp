@@ -8,6 +8,9 @@
 #include <Net/Coding/Hex.h>
 #include <Net/Coding/BASE32.h>
 #include <Net/Coding/BASE64.h>
+#include <Net/Coding/MD5.h>
+#include <Net/Coding/SHA1.h>
+#include <Net/Coding/TOTP.h>
 
 TEST(Hex,
  	const char* word = "Ich versuche mich mal auf Hex";
@@ -75,11 +78,38 @@ TEST(Base64,
         FREE(data);
 );
 
+TEST(MD5,
+	auto buffer = NET_MD5::createHash((char*)CSTRING("Affe"), (char*)CSTRING("Pferd"), (char*)CSTRING("Maulwurf"));
+	LOG(CSTRING("MD5: %s"), buffer);
+	FREE(buffer);
+);
+
+TEST(SHA1,
+	std::string buffer(CSTRING("SHA1 ME!"));
+
+	NET_SHA1 sha1;
+	for(const auto& c : buffer)
+		sha1 << c;
+
+	unsigned int result;
+	sha1.Result(&result);
+
+	LOG(CSTRING("SHA1: %u"), result);
+);
+
+TEST(TOTP,
+	const auto result = NET_TOTP::generateToken((byte*)"test", 4, time(nullptr), 30);
+	LOG(CSTRING("TOTP: %llu"), result);
+);
+
 int main()
 {
 	RUN(Hex);
 	RUN(Base32);
 	RUN(Base64);
+	RUN(MD5);
+	RUN(SHA1);
+	RUN(TOTP);
 
 	return 0;
 }

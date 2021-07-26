@@ -1,5 +1,5 @@
 #pragma once
-#define NET_FA2 Net::Coding::FA2
+#define NET_TOTP Net::Coding::TOTP
 #define SHA_BLOCKSIZE 64
 
 #include <Net/Net/Net.h>
