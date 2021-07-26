@@ -139,7 +139,11 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 {
 	va_list vaArgs;
 	va_start(vaArgs, msg);
+#ifdef BUILD_LINUX
+	const size_t size = strlen(msg);
+#else
 	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+#endif
 	std::vector<char> str(size + 1);
 	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
@@ -196,7 +200,11 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 
 	va_list vaArgs;
 	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+#ifdef BUILD_LINUX
+        const size_t size = wcslen(msg);
+#else
+        const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+#endif
 	std::vector<wchar_t> str(size + 1);
 	std::vswprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
@@ -305,7 +313,11 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 {
 	va_list vaArgs;
 	va_start(vaArgs, msg);
-	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+#ifdef BUILD_LINUX
+        const size_t size = strlen(msg);
+#else
+        const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+#endif
 	std::vector<char> str(size + 1);
 	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
@@ -406,7 +418,11 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 
 	va_list vaArgs;
 	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+#ifdef BUILD_LINUX
+        const size_t size = wcslen(msg);
+#else
+        const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+#endif
 	std::vector<wchar_t> str(size + 1);
 	std::vswprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
