@@ -14,6 +14,7 @@
 
 // cryption
 #include <Net/Cryption/AES.h>
+#include <Net/Cryption/RSA.h>
 
 TEST(Hex,
  	const char* word = "Ich versuche mich mal auf Hex";
@@ -129,6 +130,30 @@ TEST(AES,
 	FREE(buffer);
 );
 
+TEST(rsa,
+ 	const char* plain = "Ich bin verschlüsselt wurden!";
+
+        size_t size = strlen(plain);
+        auto buffer = ALLOC<byte>(size + 1);
+        memcpy(buffer, plain, size);
+        buffer[size] = '\0';
+
+        LOG(CSTRING("Original: %s"), buffer);
+
+	NET_RSA rsa;
+        rsa.generateKeys(2048, 3);
+
+       	rsa.encryptHex(buffer, size);
+
+        LOG(CSTRING("Encrypted: %s"), buffer);
+
+        rsa.decryptHex(buffer, size);
+
+        LOG(CSTRING("Decrypted: %s"), buffer);
+
+        FREE(buffer);
+);
+
 int main()
 {
 	RUN(Hex);
@@ -138,6 +163,7 @@ int main()
 	RUN(SHA1);
 	RUN(TOTP);
 	RUN(AES);
+	RUN(rsa);
 
 	return 0;
 }

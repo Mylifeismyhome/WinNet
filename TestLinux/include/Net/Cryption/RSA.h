@@ -7,11 +7,10 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-#include <crypto++/includes/rsa.h>
-#include <crypto++/includes/cryptlib.h>
-#include <crypto++/includes/osrng.h>
-#include <crypto++/includes/base64.h>
-#include <crypto++/includes/pem.h>
+#include <cryptopp/rsa.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/base64.h>
 
 #include <Net/Cryption/XOR.h>
 #include <Net/assets/assets.h>
@@ -27,7 +26,7 @@ NET_NAMESPACE_BEGIN(Cryption)
 NET_CLASS_BEGIN(NETRSA)
 RSA* KeyPair;
 
-void GenerateKeyPair(size_t, int);
+void generateKeyPair(size_t, int);
 
 // KEYS
 RUNTIMEXOR _PublicKey;
@@ -38,19 +37,19 @@ NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(NETRSA)
 NET_CLASS_DESTRUCTUR(NETRSA)
 
-bool GenerateKeys(size_t, int);
+bool generateKeys(size_t, int);
 
-XOR_UNIQUEPOINTER PublicKey();
-XOR_UNIQUEPOINTER PrivateKey();
+XOR_UNIQUEPOINTER publicKey();
+XOR_UNIQUEPOINTER privateKey();
 
-void SetPublicKey(char*);
-void SetPrivateKey(char*);
+void setPublicKey(char*);
+void setPrivateKey(char*);
 
-void DeleteKeys();
+void deleteKeys();
 
-bool Init(const char*, const char*);
-bool Init(char*, char*);
-bool IsSet() const { return Set; }
+bool init(const char*, const char*);
+bool init(char*, char*);
+bool isSet() const { return Set; }
 
 bool encrypt(CryptoPP::byte*&, size_t&);
 bool encryptHex(CryptoPP::byte*&, size_t&);

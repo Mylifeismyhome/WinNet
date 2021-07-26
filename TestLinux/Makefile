@@ -4,4 +4,4 @@ all:
 	cp ../Win-Net/bin/NetCore.a NetCore.a
 
 	mkdir -p bin
-	g++ -I ./include -w main.cpp -o bin/test -L . -l:NetCore.a
+	g++ -I ./include -w main.cpp -o bin/test -L . -l:NetCore.a -pthread -ldl

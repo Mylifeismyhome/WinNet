@@ -21,15 +21,15 @@ NETRSA::~NETRSA()
 	_PrivateKey.free();
 }
 
-void NETRSA::GenerateKeyPair(const size_t num_bits, const int e)
+void NETRSA::generateKeyPair(const size_t num_bits, const int e)
 {
 	RSA_free(KeyPair);
 	KeyPair = RSA_generate_key(static_cast<int>(num_bits), e, nullptr, nullptr);
 }
 
-bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
+bool NETRSA::generateKeys(const size_t num_bits, const int e)
 {
-	GenerateKeyPair(num_bits, e);
+	generateKeyPair(num_bits, e);
 
 	// Obtain Public Key
 	{
@@ -80,34 +80,34 @@ bool NETRSA::GenerateKeys(const size_t num_bits, const int e)
 	return true;
 }
 
-XOR_UNIQUEPOINTER NETRSA::PublicKey()
+XOR_UNIQUEPOINTER NETRSA::publicKey()
 {
 	return _PublicKey.Revert();
 }
 
-XOR_UNIQUEPOINTER NETRSA::PrivateKey()
+XOR_UNIQUEPOINTER NETRSA::privateKey()
 {
 	return _PrivateKey.Revert();
 }
 
-void NETRSA::SetPublicKey(char* key)
+void NETRSA::setPublicKey(char* key)
 {
 	_PublicKey.Init(key);
 }
 
-void NETRSA::SetPrivateKey(char* key)
+void NETRSA::setPrivateKey(char* key)
 {
 	_PrivateKey.Init(key);
 }
 
-void NETRSA::DeleteKeys()
+void NETRSA::deleteKeys()
 {
 	RSA_free(KeyPair);
 	_PublicKey.free();
 	_PrivateKey.free();
 }
 
-bool NETRSA::Init(const char* in_PublicKey, const char* in_PrivateKey)
+bool NETRSA::init(const char* in_PublicKey, const char* in_PrivateKey)
 {
 	if (!in_PublicKey
 		|| !in_PrivateKey)
@@ -119,14 +119,14 @@ bool NETRSA::Init(const char* in_PublicKey, const char* in_PrivateKey)
 	return true;
 }
 
-bool NETRSA::Init(char* in_PublicKey, char* in_PrivateKey)
+bool NETRSA::init(char* in_PublicKey, char* in_PrivateKey)
 {
 	if (!in_PublicKey
 		|| !in_PrivateKey)
 		return false;
 
-	_PublicKey.Init((char*)in_PublicKey);
-	_PrivateKey.Init((char*)in_PrivateKey);
+	_PublicKey.Init(in_PublicKey);
+	_PrivateKey.Init(in_PrivateKey);
 	Set = true;
 	return true;
 }
@@ -140,8 +140,8 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 		return false;
 	}
 
-	const auto uniquePointer = PublicKey();
-	BIO_write(bio, uniquePointer.get(), static_cast<int>(PublicKey().length()));
+	const auto uniquePointer = publicKey();
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(publicKey().length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PUBKEY(bio, &pkey, nullptr, nullptr);
@@ -208,8 +208,8 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 		return false;
 	}
 
-	const auto uniquePointer = PrivateKey();
-	BIO_write(bio, uniquePointer.get(), static_cast<int>(PrivateKey().length()));
+	const auto uniquePointer = privateKey();
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(privateKey().length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);
