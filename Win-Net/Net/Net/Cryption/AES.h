@@ -3,11 +3,11 @@
 
 #define NET_AES Net::Cryption::AES
 
-#include <crypto++/includes/modes.h>
-#include <crypto++/includes/aes.h>
-#include <crypto++/includes/filters.h>
-#include <crypto++/includes/base64.h>
-#include <crypto++/includes/hex.h>
+#include <cryptopp/modes.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/base64.h>
+#include <cryptopp/hex.h>
 
 #include <Net/Cryption/XOR.h>
 #include <Net/Coding/Hex.h>
@@ -33,7 +33,7 @@ NET_CLASS_CONSTRUCTUR(AES)
 NET_CLASS_DESTRUCTUR(AES)
 
 /* FIRST INIT AES */
-bool Init(char*, char*, size_t = CryptoPP::AES::DEFAULT_KEYLENGTH);
+bool init(const char*, const char*, size_t = CryptoPP::AES::DEFAULT_KEYLENGTH);
 
 bool encrypt(CryptoPP::byte*, size_t);
 bool encryptHex(CryptoPP::byte*, CryptoPP::byte*&, size_t&);

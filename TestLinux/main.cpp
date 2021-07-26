@@ -12,6 +12,9 @@
 #include <Net/Coding/SHA1.h>
 #include <Net/Coding/TOTP.h>
 
+// cryption
+#include <Net/Cryption/AES.h>
+
 TEST(Hex,
  	const char* word = "Ich versuche mich mal auf Hex";
         size_t size = strlen(word);
@@ -102,6 +105,30 @@ TEST(TOTP,
 	LOG(CSTRING("TOTP: %llu"), result);
 );
 
+TEST(AES,
+	const char* plain = "Ich bin verschlüsselt wurden!";
+
+	size_t size = strlen(plain);
+	auto buffer = ALLOC<byte>(size + 1);
+	memcpy(buffer, plain, size);
+	buffer[size] = '\0';
+
+	LOG(CSTRING("Original: %s"), buffer);
+
+	NET_AES aes;
+	aes.init((char*)CSTRING("Affe Hund Bauer"), (char*)CSTRING("Baum"));
+
+	aes.encryptHex(buffer, size);
+
+	LOG(CSTRING("Encrypted: %s"), buffer);
+
+	aes.decryptHex(buffer, size);
+
+	LOG(CSTRING("Decrypted: %s"), buffer);
+
+	FREE(buffer);
+);
+
 int main()
 {
 	RUN(Hex);
@@ -110,6 +137,7 @@ int main()
 	RUN(MD5);
 	RUN(SHA1);
 	RUN(TOTP);
+	RUN(AES);
 
 	return 0;
 }

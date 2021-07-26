@@ -15,13 +15,13 @@ AES::~AES()
 	Key.free();
 }
 
-bool AES::Init(char* in_Key, char* in_IV, const size_t in_KeyLength)
+bool AES::init(const char* in_Key, const char* in_IV, const size_t in_KeyLength)
 {
 	if (!in_Key || !in_IV)
 		return false;
 
-	Key = RUNTIMEXOR(in_Key);
-	IV = RUNTIMEXOR(in_IV);
+	Key = RUNTIMEXOR((char*)in_Key);
+	IV = RUNTIMEXOR((char*)in_IV);
 	KeyLength = in_KeyLength;
 	return true;
 }

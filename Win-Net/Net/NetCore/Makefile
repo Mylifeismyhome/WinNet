@@ -13,7 +13,7 @@ endef
 define PATH_CRYPTION
 	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
 	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
-	g++ -I ../ -I ../../../extern -w -c ../Net/Cryption/AES.cpp -o bin/AES.o
+	g++ -I ../ -I ../../../extern/crypto++/bin/include/ -w -c ../Net/Cryption/AES.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/AES.o
 	g++ -I ../ -I ../../../extern/OpenSSL/include -I ../../../extern -w -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
