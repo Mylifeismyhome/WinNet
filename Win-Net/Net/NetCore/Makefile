@@ -43,9 +43,20 @@ define PATH_CODING
 	g++ -I ../ -w -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
+# extract files from crypto++
+define EXTRACT_CRYPTOPP
+	ar x ../../../extern/crypto++/bin/lib/libcryptopp.a --output bin/cryptopp/
+endef
+
+# extract files from openssl
+define EXTRACT_OPENSSL
+	ar x ../../../extern/OpenSSL/bin/bin/lib/libcrypto.a --output bin/openssl/libcrypto
+	ar x ../../../extern/OpenSSL/bin/bin/lib/libssl.a --output bin/openssl/libssl
+endef
+
 # link Library
 define LINK
-	ar rvs NetCore.a bin/*
+	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o
 endef
 
 # copy Files
@@ -75,12 +86,20 @@ endef
 
 all:
 	mkdir -p bin
+	mkdir -p bin/cryptopp
+	mkdir -p bin/openssl
+	mkdir -p bin/openssl/libcrypto
+	mkdir -p bin/openssl/libssl
 
 	$(call PATH_NET)
 	$(call PATH_MANAGER)
 	$(call PATH_ASSETS)
 	$(call PATH_CODING)
 	$(call PATH_CRYPTION)
+
+	$(call EXTRACT_CRYPTOPP)
+	$(call EXTRACT_OPENSSL)
+
 	$(call LINK)
 	$(call COPY)
 	$(call CLEAN)
