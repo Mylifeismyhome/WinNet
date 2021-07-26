@@ -26,6 +26,17 @@ bool AES::init(const char* in_Key, const char* in_IV, const size_t in_KeyLength)
 	return true;
 }
 
+bool AES::init(char* in_Key, char* in_IV, const size_t in_KeyLength)
+{
+        if (!in_Key || !in_IV)
+                return false;
+
+        Key = RUNTIMEXOR(in_Key);
+        IV = RUNTIMEXOR(in_IV);
+        KeyLength = in_KeyLength;
+        return true;
+}
+
 bool AES::encrypt(CryptoPP::byte* data, const size_t size, const char* key, const char* iv) const
 {
 	try
@@ -43,7 +54,7 @@ bool AES::encrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 
 bool AES::encrypt(CryptoPP::byte* data, const size_t size)
 {
-	return encrypt(data, size, Key.Revert().get(), IV.Revert().get());
+	return encrypt(data, size, Key.revert().get(), IV.revert().get());
 }
 
 bool AES::encryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
@@ -102,7 +113,7 @@ bool AES::decrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 
 bool AES::decrypt(CryptoPP::byte* data, const size_t size)
 {
-	return decrypt(data, size, Key.Revert().get(), IV.Revert().get());
+	return decrypt(data, size, Key.revert().get(), IV.revert().get());
 }
 
 bool AES::decryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)

@@ -117,7 +117,7 @@ void String::append(const char in)
 	}
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + 1));
-	memcpy(&data.get()[0], _string.Revert().get(), _size - 1);
+	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
 	memcpy(&data.get()[_size - 1], &in, 1);
 	data.get()[_size] = '\0';
 
@@ -158,7 +158,7 @@ void String::append(const char* in, ...)
 	va_end(vaArgs);
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
-	memcpy(&data.get()[0], _string.Revert().get(), _size - 1);
+	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
 	memcpy(&data.get()[_size - 1], str.data(), str.size());
 	data.get()[_size + str.size()] = '\0';
 
@@ -199,7 +199,7 @@ void String::append(String& in, ...)
 	va_end(vaArgs);
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
-	memcpy(&data.get()[0], _string.Revert().get(), _size - 1);
+	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
 	memcpy(&data.get()[_size - 1], str.data(), str.size());
 	data.get()[_size + str.size()] = '\0';
 
@@ -215,7 +215,7 @@ Net::Cryption::XOR_UNIQUEPOINTER String::str()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert();
+	return _string.revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER String::cstr()
@@ -223,7 +223,7 @@ Net::Cryption::XOR_UNIQUEPOINTER String::cstr()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert();
+	return _string.revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER String::get()
@@ -231,7 +231,7 @@ Net::Cryption::XOR_UNIQUEPOINTER String::get()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert();
+	return _string.revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER String::revert()
@@ -239,7 +239,7 @@ Net::Cryption::XOR_UNIQUEPOINTER String::revert()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert();
+	return _string.revert();
 }
 
 Net::Cryption::XOR_UNIQUEPOINTER String::data()
@@ -247,7 +247,7 @@ Net::Cryption::XOR_UNIQUEPOINTER String::data()
 	if (size() <= 0)
 		return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
-	return _string.Revert();
+	return _string.revert();
 }
 
 void String::clear()

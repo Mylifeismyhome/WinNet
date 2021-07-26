@@ -14,7 +14,7 @@ XOR_UNIQUEPOINTER::~XOR_UNIQUEPOINTER()
 {
 	if(this->bFree)
 		this->buffer.free();
-	
+
 	this->_length = NULL;
 }
 
@@ -57,10 +57,10 @@ XOR::XOR()
 
 XOR::XOR(char* str)
 {
-	Init(str);
+	init(str);
 }
 
-void XOR::Init(char* str)
+void XOR::init(char* str)
 {
 	if (!str)
 	{
@@ -76,10 +76,10 @@ void XOR::Init(char* str)
 	_buffer.get()[length()] = '\0';
 	_Key = nullptr;
 
-	Encrypt();
+	encrypt();
 }
 
-char* XOR::Encrypt()
+char* XOR::encrypt()
 {
 	if (length() == INVALID_SIZE)
 		return (char*)CSTRING("[ERROR] - Invalid length");
@@ -99,7 +99,7 @@ char* XOR::Encrypt()
 	return _buffer.get();
 }
 
-char* XOR::Decrypt() const
+char* XOR::decrypt() const
 {
 	if (length() == INVALID_SIZE)
 		return (char*)CSTRING("[ERROR] - Invalid length");
@@ -113,23 +113,23 @@ char* XOR::Decrypt() const
 	return _buffer.get();
 }
 
-XOR_UNIQUEPOINTER XOR::Revert(const bool free)
+XOR_UNIQUEPOINTER XOR::revert(const bool free)
 {
-	const auto pointer = Decrypt();
+	const auto pointer = decrypt();
 
 	// create a copy
 	const auto decrypted = ALLOC<char>(length() + 1);
 	memcpy(decrypted, pointer, length());
 	decrypted[length()] = '\0';
-	
-	Encrypt();
-	
+
+	encrypt();
+
 	return XOR_UNIQUEPOINTER(decrypted, length(), free);
 }
 
 size_t XOR::size() const
 {
-	return _length; 
+	return _length;
 }
 
 size_t XOR::length() const

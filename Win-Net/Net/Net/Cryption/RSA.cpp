@@ -48,7 +48,7 @@ bool NETRSA::generateKeys(const size_t num_bits, const int e)
 		BIO_read(bio, key.get(), len);
 		key.get()[len] = '\0';
 
-		_PublicKey.Init(key.get());
+		_PublicKey.init(key.get());
 		key.free();
 
 		BIO_free(bio);
@@ -71,7 +71,7 @@ bool NETRSA::generateKeys(const size_t num_bits, const int e)
 		BIO_read(bio, key.get(), len);
 		key.get()[len] = '\0';
 
-		_PrivateKey.Init(key.get());
+		_PrivateKey.init(key.get());
 		key.free();
 
 		BIO_free(bio);
@@ -82,22 +82,22 @@ bool NETRSA::generateKeys(const size_t num_bits, const int e)
 
 XOR_UNIQUEPOINTER NETRSA::publicKey()
 {
-	return _PublicKey.Revert();
+	return _PublicKey.revert();
 }
 
 XOR_UNIQUEPOINTER NETRSA::privateKey()
 {
-	return _PrivateKey.Revert();
+	return _PrivateKey.revert();
 }
 
 void NETRSA::setPublicKey(char* key)
 {
-	_PublicKey.Init(key);
+	_PublicKey.init(key);
 }
 
 void NETRSA::setPrivateKey(char* key)
 {
-	_PrivateKey.Init(key);
+	_PrivateKey.init(key);
 }
 
 void NETRSA::deleteKeys()
@@ -113,8 +113,8 @@ bool NETRSA::init(const char* in_PublicKey, const char* in_PrivateKey)
 		|| !in_PrivateKey)
 		return false;
 
-	_PublicKey.Init((char*)in_PublicKey);
-	_PrivateKey.Init((char*)in_PrivateKey);
+	_PublicKey.init((char*)in_PublicKey);
+	_PrivateKey.init((char*)in_PrivateKey);
 	Set = true;
 	return true;
 }
@@ -125,8 +125,8 @@ bool NETRSA::init(char* in_PublicKey, char* in_PrivateKey)
 		|| !in_PrivateKey)
 		return false;
 
-	_PublicKey.Init(in_PublicKey);
-	_PrivateKey.Init(in_PrivateKey);
+	_PublicKey.init(in_PublicKey);
+	_PrivateKey.init(in_PrivateKey);
 	Set = true;
 	return true;
 }

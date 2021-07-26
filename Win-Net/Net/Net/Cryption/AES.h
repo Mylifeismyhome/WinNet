@@ -34,6 +34,7 @@ NET_CLASS_DESTRUCTUR(AES)
 
 /* FIRST INIT AES */
 bool init(const char*, const char*, size_t = CryptoPP::AES::DEFAULT_KEYLENGTH);
+bool init(char*, char*, size_t = CryptoPP::AES::DEFAULT_KEYLENGTH);
 
 bool encrypt(CryptoPP::byte*, size_t);
 bool encryptHex(CryptoPP::byte*, CryptoPP::byte*&, size_t&);

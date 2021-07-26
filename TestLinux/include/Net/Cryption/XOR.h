@@ -49,15 +49,15 @@ CPOINTER<char> _buffer;
 size_t _length;
 CPOINTER<size_t> _Key;
 
-char* Encrypt();
-char* Decrypt() const;
+char* encrypt();
+char* decrypt() const;
 NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(XOR)
 NET_CLASS_CONSTRUCTUR(XOR, char*)
-void Init(char*);
+void init(char*);
 size_t size() const;
 size_t length() const;
-XOR_UNIQUEPOINTER Revert(bool = true);
+XOR_UNIQUEPOINTER revert(bool = true);
 void free();
 NET_CLASS_END
 
