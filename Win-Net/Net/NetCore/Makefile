@@ -68,15 +68,6 @@ define COPY
 	mkdir -p ../../bin/include/
 	cp -r ../Net/ ../../bin/include/
 	find ../../bin/include/ ! -name '*.h' -type f -exec rm -f {} +
-
-	# copy crypto++
-	rm -r -f ../../bin/include/crypto++/includes/
-	mkdir -p ../../bin/include/crypto++/includes/
-	cp -r ../../../extern/crypto++/includes/* ../../bin/include/crypto++/includes/
-
-	# copy openssl
-	rm -r -f ../../bin/include/openssl/
-	cp -r ../../../extern/OpenSSL/include/ ../../bin/
 endef
 
 # clean build
