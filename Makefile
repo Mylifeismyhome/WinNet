@@ -85,6 +85,11 @@ define clean_all
 	$(call clean_openssl)
 endef
 
+# build NetCore
+define NetCore
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetCore/
+endef
+
 # run task
 all:
 	$(call crypto++)
@@ -113,6 +118,9 @@ crypto++-clean:
 
 openssl-clean:
 	$(call clean_openssl)
+
+netcore:
+	$(call NetCore)
 
 clean:
 	$(call clean_all)
