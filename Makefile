@@ -11,10 +11,13 @@ endef
 define crypto++
 	$(call out, ********** BUILDING CRYPTO++ **********)
 
-	# configure
+	# build
 	${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ static dynamic cryptest.exe
 
-	# build
+	# validate
+	./extern/crypto++/src/cryptest.exe v
+	./extern/crypto++/src/cryptest.exe tv all
+
 	${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ libcryptopp.a libcryptopp.so cryptest.exe
 
 	# create install directory

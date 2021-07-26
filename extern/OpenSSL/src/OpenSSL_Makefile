@@ -2,7 +2,7 @@
 export ROOT_DIR=${PWD}/extern/OpenSSL/src
 
 configure:
-	${ROOT_DIR}/openssl-master/config -fPIC shared --prefix=/usr --openssldir=/etc/ssl
+	${ROOT_DIR}/openssl-master/config -fPIC shared --prefix=${ROOT_DIR}/../bin/bin/ --openssldir=${ROOT_DIR}/../bin/openssl/
 
 build:
 	${MAKE}
