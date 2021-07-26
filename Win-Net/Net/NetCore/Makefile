@@ -3,49 +3,49 @@ export ROOT_DIR=$(PWD)
 
 # Net/Net/
 define PATH_NET
-	g++ -w -I ../ -I ../../../extern/OpenSSL/include -c ../Net/Net/Net.cpp
-	g++ -w -I ../ -c ../Net/Net/NetCodes.cpp
-	g++ -w -I ../ -c ../Net/Net/NetVersion.cpp
-	g++ -w -I ../ -c ../Net/Net/NetString.cpp
+	g++ -w -I ../ -I ../../../extern/OpenSSL/include -c ../Net/Net/Net.cpp -o bin/Net.o
+	g++ -w -I ../ -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
+	g++ -w -I ../ -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
+	g++ -w -I ../ -c ../Net/Net/NetString.cpp -o bin/NetString.o
 endef
 
 # Net/Cryption/
 define PATH_CRYPTION
-	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp
-	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h
-	g++ -I ../ -I ../../../extern -w -c ../Net/Cryption/AES.cpp
-	g++ -I ../ -I ../../../extern/OpenSSL/include -I ../../../extern -w -c ../Net/Cryption/RSA.cpp
-	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/bcrypt.c
-	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_blowfish.c
-	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_gensalt.c
-	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/wrapper.c
+	g++ -w -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
+	g++ -I ../ -w -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
+	g++ -I ../ -I ../../../extern -w -c ../Net/Cryption/AES.cpp -o bin/AES.o
+	g++ -I ../ -I ../../../extern/OpenSSL/include -I ../../../extern -w -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
+	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
+	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
+	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
+	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
 endef
 
 # Net/assets/manager
 define PATH_MANAGER
-	g++ -I ../ -w -c ../Net/assets/manager/dirmanager.cpp
-	g++ -I ../ -w -c ../Net/assets/manager/filemanager.cpp
-	g++ -I ../ -w -c ../Net/assets/manager/logmanager.cpp
+	g++ -I ../ -w -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
+	g++ -I ../ -w -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
+	g++ -I ../ -w -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
 endef
 
 # Net/assets
 define PATH_ASSETS
-	g++ -I ../ -w -c ../Net/assets/assets.cpp
+	g++ -I ../ -w -c ../Net/assets/assets.cpp -o bin/assets.o
 endef
 
 # Net/Coding
 define PATH_CODING
-	g++ -I ../ -w -c ../Net/Coding/BASE32.cpp
-	g++ -I ../ -w -c ../Net/Coding/BASE64.cpp
-	g++ -I ../ -I ../../../extern/crypto++/bin/include/ -w -c ../Net/Coding/Hex.cpp
-	g++ -I ../ -w -c ../Net/Coding/MD5.cpp
-	g++ -I ../ -w -c ../Net/Coding/SHA1.cpp
-	g++ -I ../ -w -c ../Net/Coding/TOTP.cpp
+	g++ -I ../ -w -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
+	g++ -I ../ -w -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
+	g++ -I ../ -I ../../../extern/crypto++/bin/include/ -w -c ../Net/Coding/Hex.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/Hex.o
+	g++ -I ../ -w -c ../Net/Coding/MD5.cpp -o bin/MD5.o
+	g++ -I ../ -w -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
+	g++ -I ../ -w -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
 # link Library
 define LINK
-	ar rvs NetCore.a ../../../extern/crypto++/bin/lib/libcryptopp.a Net.o NetCodes.o NetVersion.o NetString.o XOR.o AES.o RSA.o bcrypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o dirmanager.o filemanager.o logmanager.o assets.o BASE32.o BASE64.o Hex.o MD5.o SHA1.o TOTP.o
+	ar rvs NetCore.a bin/*
 endef
 
 # copy Files
@@ -70,11 +70,12 @@ endef
 
 # clean build
 define CLEAN
-	rm *.o
-	find ../../ -type f -name '*.h.gch' -delete
+	rm -r bin/
 endef
 
 all:
+	mkdir -p bin
+
 	$(call PATH_NET)
 	$(call PATH_MANAGER)
 	$(call PATH_ASSETS)
