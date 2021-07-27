@@ -2,20 +2,24 @@
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
 
-#ifndef BUILD_LINUX
+#ifdef BUILD_LINUX
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <unistd.h>
+#else
 #include <list>
+
 #ifndef VS13
-#ifndef BUILD_LINUX
 #include <corecrt_io.h>
 #endif
-#endif
 
-#ifndef BUILD_LINUX
 #include <direct.h>
 #endif
 
 NET_DSA_BEGIN
 
+#ifndef BUILD_LINUX
 struct NET_FILE_ATTRW
 {
 	_WIN32_FIND_DATAW w32Data;
@@ -39,6 +43,7 @@ struct NET_FILE_ATTRA
 		strcpy_s(this->path, path);
 	}
 };
+#endif
 
 #ifdef UNICODE
 #define NET_FILE_ATTR_ NET_FILE_ATTRW
@@ -79,7 +84,7 @@ struct createDirResW_t
 
 	createDirResW_t(const wchar_t* entry, const createDirCodes code)
 	{
-		wcscpy_s(this->entry, entry);
+		wcscpy(this->entry, entry);
 		this->code = (int)code;
 	}
 };
@@ -103,7 +108,7 @@ struct createDirResA_t
 
 	createDirResA_t(const char* entry, const createDirCodes code)
 	{
-		strcpy_s(this->entry, entry);
+		strcpy(this->entry, entry);
 		this->code = (int)code;
 	}
 };
@@ -122,12 +127,14 @@ struct createDirResA
 
 bool folderExists(const wchar_t*);
 bool folderExists(const char*);
+#ifndef BUILD_LINUX
 createDirResW createDir(wchar_t*);
 createDirResA createDir(char*);
 bool deleteDir(wchar_t*, bool = true);
 bool deleteDir(char*, bool = true);
 void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);
 void scandir(char*, std::vector<NET_FILE_ATTRA>&);
+#endif
 std::wstring homeDirW();
 std::string homeDirA();
 std::wstring currentFileNameW();
@@ -137,4 +144,3 @@ NET_NAMESPACE_END
 NET_NAMESPACE_END
 
 NET_DSA_END
-#endif

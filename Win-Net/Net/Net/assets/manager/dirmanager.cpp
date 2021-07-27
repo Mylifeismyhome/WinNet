@@ -1,26 +1,48 @@
 #include "dirmanager.h"
 
-#ifndef BUILD_LINUX
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 // Return true if the folder exists, false otherwise
 bool Directory::folderExists(const wchar_t* folderName)
 {
+#ifdef BUILD_LINUX
+	char* folderNameA = nullptr;
+        wcstombs(folderNameA, folderName, wcslen(folderName));
+
+	auto actualPath = homeDirA();
+	actualPath += folderNameA;
+	FREE(folderNameA);
+
+ 	struct stat sb;
+	if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
+		return false;
+#else
+#ifndef VS13
 	if (_waccess(folderName, 0) == -1) {
 		//File not found
 		return false;
 	}
+#endif
 
 	if (!(GetFileAttributesW(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
 		return false;
 	}
+#endif
 
 	return true;
 }
 
 bool Directory::folderExists(const char* folderName)
 {
+#ifdef BUILD_LINUX
+ 	auto actualPath = homeDirA();
+        actualPath += folderName;
+
+	struct stat sb;
+        if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
+                return false;
+#else
 #ifndef VS13
 	if (_access(folderName, 0) == -1) {
 		//File not found
@@ -32,10 +54,12 @@ bool Directory::folderExists(const char* folderName)
 		// File is not a directory
 		return false;
 	}
+#endif
 
 	return true;
 }
 
+#ifndef BUILD_LINUX
 static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
 {
 	const auto len = wcslen(path);
@@ -425,9 +449,18 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 
 	memset(buf, NULL, MAX_PATH);
 }
+#endif
 
 std::wstring Directory::homeDirW()
 {
+#ifdef BUILD_LINUX
+	char result[PATH_MAX];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+        auto str = std::string(result, (count > 0) ? count : 0);
+        const auto it = str.find_last_of(CSTRING("/")) + 1;
+        str = str.substr(0, it);
+	return std::wstring(str.begin(), str.end());
+#else
 	do
 	{
 		wchar_t result[MAX_PATH];
@@ -445,10 +478,18 @@ std::wstring Directory::homeDirW()
 
 		return std::wstring(result, size);
 	} while (true);
+#endif
 }
 
 std::string Directory::homeDirA()
 {
+#ifdef BUILD_LINUX
+	char result[PATH_MAX];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+        auto str = std::string(result, (count > 0) ? count : 0);
+        const auto it = str.find_last_of(CSTRING("/")) + 1;
+        return str.substr(0, it);
+#else
 	do
 	{
 		char result[MAX_PATH];
@@ -466,10 +507,19 @@ std::string Directory::homeDirA()
 
 		return std::string(result, size);
 	} while (true);
+#endif
 }
 
 std::wstring Directory::currentFileNameW()
 {
+#ifdef BUILD_LINUX
+	char result[PATH_MAX];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+        auto str = std::string(result, (count > 0) ? count : 0);
+        const auto it = str.find_last_of(CSTRING("/")) + 1;
+        str = str.substr(it, str.size() - it);
+	return std::wstring(str.begin(), str.end());
+#else
 	do
 	{
 		wchar_t result[MAX_PATH];
@@ -487,10 +537,18 @@ std::wstring Directory::currentFileNameW()
 
 		return std::wstring(result, size);
 	} while (true);
+#endif
 }
 
 std::string Directory::currentFileNameA()
 {
+#ifdef BUILD_LINUX
+	char result[PATH_MAX];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+        auto str = std::string(result, (count > 0) ? count : 0);
+        const auto it = str.find_last_of(CSTRING("/")) + 1;
+        return str.substr(it, str.size() - it);
+#else
 	do
 	{
 		char result[MAX_PATH];
@@ -508,7 +566,7 @@ std::string Directory::currentFileNameA()
 
 		return std::string(result, size);
 	} while (true);
+#endif
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
-#endif

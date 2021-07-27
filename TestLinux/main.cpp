@@ -16,6 +16,12 @@
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
 
+// assets
+#include <Net/assets/manager/dirmanager.h>
+
+TEST(Basic,
+);
+
 TEST(Hex,
  	const char* word = "Ich versuche mich mal auf Hex";
         size_t size = strlen(word);
@@ -154,8 +160,20 @@ TEST(rsa,
         FREE(buffer);
 );
 
+TEST(Directory,
+	const char* dirname = CSTRING("testdir/test");
+	if(NET_DIRMANAGER::folderExists(dirname))
+	{
+		LOG(CSTRING("FOLDER '%s' DOES EXSITS!"), dirname);
+	}
+	else {
+		LOG(CSTRING("FOLDER '%s' DOES NOT EXSITS!"), dirname);
+	}
+);
+
 int main()
 {
+	RUN(Basic);
 	RUN(Hex);
 	RUN(Base32);
 	RUN(Base64);
@@ -164,6 +182,7 @@ int main()
 	RUN(TOTP);
 	RUN(AES);
 	RUN(rsa);
+	RUN(Directory);
 
 	return 0;
 }
