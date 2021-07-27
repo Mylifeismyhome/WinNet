@@ -317,9 +317,51 @@ Directory::createDirResA Directory::createDir(char* path)
 #endif
 }
 
-#ifndef BUILD_LINUX
-bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
+#ifdef BUILD_LINUX
+static int NET_LINUX_IS_DIRECTORY(const char* path)
 {
+    struct stat s_buf;
+
+    if (stat(path, &s_buf))
+        return 0;
+
+    return S_ISDIR(s_buf.st_mode);
+}
+#endif
+
+#ifdef BUILD_LINUX
+bool Directory::deleteDir(wchar_t* dirname)
+#else
+bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
+#endif
+{
+#ifdef BUILD_LINUX
+	std::string dirnameA(dirname[0], wcslen(dirname));
+	std::string tmpPath(dirnameA);
+        tmpPath = NET_LINUX_REPLACE_ESCAPE(tmpPath, CSTRING("\\"), CSTRING("/"));
+        tmpPath = NET_LINUX_REPLACE_ESCAPE(tmpPath, CSTRING("//"), CSTRING("/"));
+
+        std::vector<std::string> vPath;
+
+        bool bNeedInsertLastCase = true;
+        for(size_t i = 0; i < tmpPath.size(); ++i)
+        {
+                if(tmpPath[i] == '/')
+                {
+			if((i + 1) == tmpPath.size()) bNeedInsertLastCase = false;
+                        vPath.emplace_back(tmpPath.substr(0, i));
+                }
+        }
+
+        // last case
+        if(bNeedInsertLastCase) vPath.emplace_back(tmpPath);
+
+        for(auto it = vPath.rbegin(); it != vPath.rend(); it++)
+        {
+                std::string path(homeDirA() + (*it));
+                rmdir(path.c_str());
+        }
+#else
 	std::wstring     strFilePath;                 // Filepath
 	std::wstring     strPattern;                  // Pattern
 	WIN32_FIND_DATAW FileInformation;             // File information
@@ -382,11 +424,42 @@ bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 		}
 	}
 
+#endif
 	return true;
 }
 
+#ifdef BUILD_LINUX
+bool Directory::deleteDir(char* dirname)
+#else
 bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
+#endif
 {
+#ifdef BUILD_LINUX
+	std::string tmpPath(dirname);
+        tmpPath = NET_LINUX_REPLACE_ESCAPE(tmpPath, CSTRING("\\"), CSTRING("/"));
+	tmpPath = NET_LINUX_REPLACE_ESCAPE(tmpPath, CSTRING("//"), CSTRING("/"));
+
+        std::vector<std::string> vPath;
+
+        bool bNeedInsertLastCase = true;
+        for(size_t i = 0; i < tmpPath.size(); ++i)
+        {
+                if(tmpPath[i] == '/')
+                {
+                        if((i + 1) == tmpPath.size()) bNeedInsertLastCase = false;
+                        vPath.emplace_back(tmpPath.substr(0, i));
+                }
+        }
+
+        // last case
+        if(bNeedInsertLastCase) vPath.emplace_back(tmpPath);
+
+        for(auto it = vPath.rbegin(); it != vPath.rend(); it++)
+        {
+                std::string path(homeDirA() + (*it));
+                rmdir(path.c_str());
+        }
+#else
 	std::string     strFilePath;                 // Filepath
 	std::string     strPattern;                  // Pattern
 	WIN32_FIND_DATA FileInformation;             // File information
@@ -448,10 +521,12 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 			}
 		}
 	}
+#endif
 
 	return true;
 }
 
+#ifndef BUILD_LINUX
 void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
 	WIN32_FIND_DATAW ffblk;

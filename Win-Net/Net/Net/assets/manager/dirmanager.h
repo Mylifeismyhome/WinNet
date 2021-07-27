@@ -138,6 +138,7 @@ struct createDirResA
 
 bool folderExists(const wchar_t*);
 bool folderExists(const char*);
+
 #ifdef BUILD_LINUX
 createDirResW createDir(wchar_t*, __mode_t = NET_DEFAULT_MKDIR_MODE);
 createDirResA createDir(char*, __mode_t = NET_DEFAULT_MKDIR_MODE);
@@ -146,9 +147,15 @@ createDirResW createDir(wchar_t*);
 createDirResA createDir(char*);
 #endif
 
-#ifndef BUILD_LINUX
+#ifdef BUILD_LINUX
+bool deleteDir(wchar_t*);
+bool deleteDir(char*);
+#else
 bool deleteDir(wchar_t*, bool = true);
 bool deleteDir(char*, bool = true);
+#endif
+
+#ifndef BUILD_LINUX
 void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);
 void scandir(char*, std::vector<NET_FILE_ATTRA>&);
 #endif
