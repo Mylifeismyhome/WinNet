@@ -6,6 +6,12 @@ typedef int errno_t;
 
 NET_DSA_BEGIN
 
+#ifdef BUILD_LINUX
+#define NET_MAX_PATH PATH_MAX
+#else
+#define NET_MAX_PATH MAX_PATH
+#endif
+
 #ifdef UNICODE
 #define NET_FILEMANAGER Net::Manager::FileManagerW
 #else
@@ -78,7 +84,7 @@ char* str();
 NET_CLASS_END
 
 NET_CLASS_BEGIN(FileManagerW)
-wchar_t fname[MAX_PATH];
+wchar_t fname[NET_MAX_PATH];
 FILE* file;
 uint8_t Mode;
 errno_t err;
@@ -103,7 +109,7 @@ ErrorCodes getLastError() const;
 FileManagerErrorRef ErrorDescription(ErrorCodes) const;
 NET_CLASS_END
 NET_CLASS_BEGIN(FileManagerA)
-char fname[MAX_PATH];
+char fname[NET_MAX_PATH];
 FILE* file;
 uint8_t Mode;
 errno_t err;

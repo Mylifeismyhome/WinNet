@@ -36,6 +36,10 @@
 #include <cstring>
 #include <sys/types.h>
 
+#ifdef BUILD_LINUX
+#include <linux/limits.h>
+#endif
+
 #ifndef BUILD_LINUX
 #include <WS2tcpip.h>
 #include <WinSock2.h>

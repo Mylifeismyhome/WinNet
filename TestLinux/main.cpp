@@ -18,8 +18,13 @@
 
 // assets
 #include <Net/assets/manager/dirmanager.h>
+#include <Net/assets/manager/filemanager.h>
 
 TEST(Basic,
+	auto file = fopen(std::string(NET_DIRMANAGER::homeDirA() + "testdir/test.txt").c_str(), "rb");
+const auto status = (file != nullptr);
+if(status) { LOG("FILE OPENED!"); }
+	fclose(file);
 );
 
 TEST(Hex,
@@ -179,7 +184,27 @@ TEST(Directory,
 
         for(const auto& entry : sfiles)
         {
-                LOG("%s -- %llu", entry.name, entry.creationTime);
+                LOG("%s -- %llu", entry.fullPath, entry.creationTime);
+
+		NET_FILEMANAGERA fmanager(entry.fullPath, NET_FILE_READ);
+		if(fmanager.CanOpenFile())
+		{
+			LOG("CAN OPEN FILE!");
+		}
+
+		LOG("%i -> %s", fmanager.getLastError(), fmanager.ErrorDescription(fmanager.getLastError()).data());
+		continue;
+		byte* data = nullptr;
+		size_t size = NULL;
+		if(fmanager.read(data, size))
+		{
+			LOG_WARNING("%s", data);
+			FREE(data);
+		}
+		else
+		{
+			LOG(CSTRING("CANT READ FILE!"));
+		}
         }
 );
 

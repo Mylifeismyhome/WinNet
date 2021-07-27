@@ -27,51 +27,51 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 static const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return "wb";
+		return CSTRING("wb");
 	if (Mode == NET_FILE_READ)
-		return "rb";
+		return CSTRING("rb");
 	if (Mode == NET_FILE_APPAND)
-		return "ab";
+		return CSTRING("ab");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return "ab+";
+		return CSTRING("ab+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return "wb+";
+		return CSTRING("wb+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return "rb+";
+		return CSTRING("rb+");
 
-	return "rb";
+	return CSTRING("rb");
 }
 
 static const wchar_t* GetModeW(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return L"wb";
+		return CWSTRING("wb");
 	if (Mode == NET_FILE_READ)
-		return L"rb";
+		return CWSTRING("rb");
 	if (Mode == NET_FILE_APPAND)
-		return L"ab";
+		return CWSTRING("ab");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return L"ab+";
+		return CWSTRING("ab+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return L"wb+";
+		return CWSTRING("wb+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return L"rb+";
+		return CWSTRING("rb+");
 
-	return L"rb";
+	return CWSTRING("rb");
 }
 
 static Net::Manager::FileManagerErrorRef GetErrorDescription(const Net::Manager::ErrorCodes code)
@@ -321,7 +321,7 @@ bool FileManagerA::CanOpenFile()
 {
 	file = OpenFile(fname, GetModeA(NET_FILE_READ));
 	err = errno;
-	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
+	const auto status = ((file != nullptr) ? true : false);
 	closeFile();
 	return status;
 }
