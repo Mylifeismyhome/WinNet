@@ -19,32 +19,6 @@
 
 NET_DSA_BEGIN
 
-#ifndef BUILD_LINUX
-struct NET_FILE_ATTRW
-{
-	_WIN32_FIND_DATAW w32Data;
-	wchar_t path[MAX_PATH];
-
-	NET_FILE_ATTRW(const _WIN32_FIND_DATAW w32Data, const wchar_t* path)
-	{
-		this->w32Data = w32Data;
-		wcscpy_s(this->path, path);
-	}
-};
-
-struct NET_FILE_ATTRA
-{
-	_WIN32_FIND_DATAA w32Data;
-	char path[MAX_PATH];
-
-	NET_FILE_ATTRA(const _WIN32_FIND_DATAA w32Data, const char* path)
-	{
-		this->w32Data = w32Data;
-		strcpy_s(this->path, path);
-	}
-};
-#endif
-
 #ifdef UNICODE
 #define NET_FILE_ATTR_ NET_FILE_ATTRW
 
@@ -77,6 +51,42 @@ struct NET_FILE_ATTRA
 #define NET_MKDIR _mkdir
 #define NET_WMKDIR _wmkdir
 #endif
+
+struct NET_FILE_ATTRW
+{
+        wchar_t name[NET_MAX_PATH];
+        wchar_t path[NET_MAX_PATH];
+        wchar_t fullPath[NET_MAX_PATH];
+
+        size_t size;
+        time_t lastAccess;
+        time_t lastModification;
+        time_t creationTime;
+
+        #ifndef BUILD_LINUX
+        _WIN32_FIND_DATAW w32Data;
+
+        NET_FILE_ATTRW(_WIN32_FIND_DATAW, wchar_t*);
+        #endif
+};
+
+struct NET_FILE_ATTRA
+{
+        char name[NET_MAX_PATH];
+        char path[NET_MAX_PATH];
+        char fullPath[NET_MAX_PATH];
+
+        size_t size;
+        time_t lastAccess;
+        time_t lastModification;
+        time_t creationTime;
+
+        #ifndef BUILD_LINUX
+        _WIN32_FIND_DATAA w32Data;
+
+        NET_FILE_ATTRA(_WIN32_FIND_DATAA, char*);
+        #endif
+};
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)

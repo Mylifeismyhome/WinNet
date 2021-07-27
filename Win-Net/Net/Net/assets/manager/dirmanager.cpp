@@ -526,9 +526,46 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-#ifndef BUILD_LINUX
+#ifdef BUILD_LINUX
+#else
+static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.LowPart; ull.HighPart = ft.HighPart; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
+NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
+{
+	wcscpy(name, w32Data.cFileName);
+        wcscpy(path, path);
+        wcscpy(fullpath, std::wstring(path + name).c_str());
+
+        LARGE_INTEGER fsize;
+        fsize.HighPart = w32Data.nFileSizeHigh;
+        fsize.LowPart = w32Data.nFileSizeLow;
+        size = fsize.QuadPart;
+
+        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+        creationTime = filetime_to_timet(w32Data.ftCreationTime);
+}
+
+NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
+{
+	strcpy(name, w32Data.cFileName);
+	strcpy(path, path);
+	strcpy(fullpath, std::string(path + name).c_str());
+
+	LARGE_INTEGER fsize;
+	fsize.HighPart = w32Data.nFileSizeHigh;
+	fsize.LowPart = w32Data.nFileSizeLow;
+	size = fsize.QuadPart;
+
+	lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+	lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+	creationTime = filetime_to_timet(w32Data.ftCreationTime);
+}
+#endif
+
 void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
+#ifdef BUILD_LINUX
+#else
 	WIN32_FIND_DATAW ffblk;
 	wchar_t buf[NET_MAX_PATH];
 
@@ -565,10 +602,13 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 	FindClose(hFind);
 
 	memset(buf, NULL, MAX_PATH);
+#endif
 }
 
 void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 {
+#ifdef BUILD_LINUX
+#else
 	WIN32_FIND_DATA ffblk;
 	char buf[MAX_PATH];
 
@@ -605,8 +645,8 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 	FindClose(hFind);
 
 	memset(buf, NULL, MAX_PATH);
-}
 #endif
+}
 
 std::wstring Directory::homeDirW()
 {
