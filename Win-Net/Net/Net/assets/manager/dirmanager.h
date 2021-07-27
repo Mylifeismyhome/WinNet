@@ -67,6 +67,17 @@ struct NET_FILE_ATTRA
 #define NET_HOMEDIR Net::Manager::Directory::homeDir()
 #define NET_CURRENTFILENAME(x) Net::Manager::Directory::currentFileName(x)
 
+#ifdef BUILD_LINUX
+#define NET_MAX_PATH PATH_MAX
+#define NET_MKDIR mkdir
+#define NET_WMKDIR NET_MKDIR
+#define NET_DEFAULT_MKDIR_MODE (/*OWNER*/(S_IRUSR | S_IWUSR | S_IXUSR) | /*GROUP*/(S_IRGRP | S_IXGRP) | /*OTHER*/(S_IROTH | S_IXOTH))
+#else
+#define NET_MAX_PATH MAX_PATH
+#define NET_MKDIR _mkdir
+#define NET_WMKDIR _wmkdir
+#endif
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 NET_NAMESPACE_BEGIN(Directory)
@@ -79,7 +90,7 @@ enum class createDirCodes
 
 struct createDirResW_t
 {
-	wchar_t entry[MAX_PATH];
+	wchar_t entry[NET_MAX_PATH];
 	int code;
 
 	createDirResW_t(const wchar_t* entry, const createDirCodes code)
@@ -103,7 +114,7 @@ struct createDirResW
 
 struct createDirResA_t
 {
-	char entry[MAX_PATH];
+	char entry[NET_MAX_PATH];
 	int code;
 
 	createDirResA_t(const char* entry, const createDirCodes code)
@@ -127,9 +138,15 @@ struct createDirResA
 
 bool folderExists(const wchar_t*);
 bool folderExists(const char*);
-#ifndef BUILD_LINUX
+#ifdef BUILD_LINUX
+createDirResW createDir(wchar_t*, __mode_t = NET_DEFAULT_MKDIR_MODE);
+createDirResA createDir(char*, __mode_t = NET_DEFAULT_MKDIR_MODE);
+#else
 createDirResW createDir(wchar_t*);
 createDirResA createDir(char*);
+#endif
+
+#ifndef BUILD_LINUX
 bool deleteDir(wchar_t*, bool = true);
 bool deleteDir(char*, bool = true);
 void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);

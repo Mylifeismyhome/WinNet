@@ -169,6 +169,9 @@ TEST(Directory,
 	else {
 		LOG(CSTRING("FOLDER '%s' DOES NOT EXSITS!"), dirname);
 	}
+
+	const auto res = NET_DIRMANAGER::createDir((char*)CSTRING("duhuan\\teste\\mich\\bitte"));
+	if(res.error) LOG_ERROR(CSTRING("ERROR ON CREATING DIR!"));
 );
 
 int main()

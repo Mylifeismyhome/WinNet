@@ -59,8 +59,24 @@ bool Directory::folderExists(const char* folderName)
 	return true;
 }
 
-#ifndef BUILD_LINUX
+#ifdef BUILD_LINUX
+static std::string NET_LINUX_REPLACE_ESCAPE(std::string str, const std::string& from, const std::string& to) 
+{
+    	size_t start_pos = 0;
+   	while((start_pos = str.find(from, start_pos)) != std::string::npos) 
+	{
+        	str.replace(start_pos, from.length(), to);
+        	start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    	}
+    	return str;
+}
+#endif
+
+#ifdef BUILD_LINUX
+static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, __mode_t mode, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
+#else
 static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vector<wchar_t*> directories = std::vector<wchar_t*>(), size_t offset = NULL)
+#endif
 {
 	const auto len = wcslen(path);
 
@@ -69,21 +85,25 @@ static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vecto
 	{
 		if (!memcmp(&path[it], CSTRING("\\"), 1))
 		{
-			wchar_t directory[MAX_PATH];
-			wcscpy_s(directory, MAX_PATH, &path[0]);
+			wchar_t directory[NET_MAX_PATH];
+			wcscpy(directory, &path[0]);
 			directory[it] = '\0';
 
 			if (directory[0] != '\0')
 				directories.emplace_back(directory);
 
 			offset = it + 1;
+#ifdef BUILD_LINUX
+			return ProcessCreateDirectory(path, mode, directories, offset);
+#else
 			return ProcessCreateDirectory(path, directories, offset);
+#endif
 		}
 	}
 
 	// last entry
-	wchar_t directory[MAX_PATH];
-	wcscpy_s(directory, MAX_PATH, &path[0]);
+	wchar_t directory[NET_MAX_PATH];
+	wcscpy(directory, &path[0]);
 	directory[len] = '\0';
 
 	auto bDirectory = true;
@@ -104,6 +124,20 @@ static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vecto
 
 	for (auto entry : directories)
 	{
+#ifdef BUILD_LINUX
+		std::string actualPath(NET_DIRMANAGER::homeDirA() + std::string(entry[0], wcslen(entry)));
+		actualPath = NET_LINUX_REPLACE_ESCAPE(actualPath, std::string(CSTRING("\\")), std::string(CSTRING("/")));
+#endif
+
+#ifdef BUILD_LINUX
+		struct stat st = { 0 };
+                if (stat(actualPath.c_str(), &st) != -1)
+                {
+                        failures.emplace_back(entry, Directory::createDirCodes::ERR_EXISTS);
+                        bError = true;
+                        continue;
+                }
+#else
 		struct _stat st = { 0 };
 		if (_wstat(entry, &st) != -1)
 		{
@@ -111,8 +145,14 @@ static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vecto
 			bError = true;
 			continue;
 		}
+#endif
 
-		const auto ret = _wmkdir(entry);
+#ifdef BUILD_LINUX
+		const auto ret = NET_WMKDIR(actualPath.c_str(), mode);
+#else
+		const auto ret = NET_WMKDIR(entry);
+#endif
+
 		if (ret)
 		{
 			failures.emplace_back(entry, Directory::createDirCodes::ERR);
@@ -123,7 +163,11 @@ static Directory::createDirResW ProcessCreateDirectory(wchar_t* path, std::vecto
 	return Directory::createDirResW(bError, failures);
 }
 
+#ifdef BUILD_LINUX
+static Directory::createDirResA ProcessCreateDirectory(char* path, __mode_t mode, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
+#else
 static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<char*> directories = std::vector<char*>(), size_t offset = NULL)
+#endif
 {
 	const auto len = strlen(path);
 
@@ -132,21 +176,25 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 	{
 		if (!memcmp(&path[it], CSTRING("\\"), 1))
 		{
-			char directory[MAX_PATH];
-			strcpy_s(directory, MAX_PATH, &path[0]);
+			char directory[NET_MAX_PATH];
+			strcpy(directory, &path[0]);
 			directory[it] = '\0';
 
 			if (directory[0] != '\0')
 				directories.emplace_back(directory);
 
 			offset = it + 1;
+#ifdef BUILD_LINUX
+			return ProcessCreateDirectory(path, mode, directories, offset);
+#else
 			return ProcessCreateDirectory(path, directories, offset);
+#endif
 		}
 	}
 
 	// last entry
-	char directory[MAX_PATH];
-	strcpy_s(directory, MAX_PATH, &path[0]);
+	char directory[NET_MAX_PATH];
+	strcpy(directory, &path[0]);
 	directory[len] = '\0';
 
 	auto bDirectory = true;
@@ -167,9 +215,19 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 
 	for (auto entry : directories)
 	{
+#ifdef BUILD_LINUX
+		std::string actualPath(NET_DIRMANAGER::homeDirA() + entry);
+		actualPath = NET_LINUX_REPLACE_ESCAPE(actualPath, std::string(CSTRING("\\")), std::string(CSTRING("/")));
+#endif
+
 #ifndef VS13
 		struct stat st = { 0 };
+
+#ifdef BUILD_LINUX
+		if (stat(actualPath.c_str(), &st) != -1)
+#else
 		if (stat(entry, &st) != -1)
+#endif
 		{
 			failures.emplace_back(entry, Directory::createDirCodes::ERR_EXISTS);
 			bError = true;
@@ -177,7 +235,12 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 		}
 #endif
 
-		const auto ret = _mkdir(entry);
+#ifdef BUILD_LINUX
+                const auto ret = NET_WMKDIR(actualPath.c_str(), mode);
+#else
+                const auto ret = NET_WMKDIR(entry);
+#endif
+
 		if (ret)
 		{
 			failures.emplace_back(entry, Directory::createDirCodes::ERR);
@@ -188,11 +251,15 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 	return Directory::createDirResA(bError, failures);
 }
 
+#ifdef BUILD_LINUX
+Directory::createDirResW Directory::createDir(wchar_t* path, __mode_t mode)
+#else
 Directory::createDirResW Directory::createDir(wchar_t* path)
+#endif
 {
 	const auto len = wcslen(path);
 
-	wchar_t fixed[MAX_PATH];
+	wchar_t fixed[NET_MAX_PATH];
 	size_t flen = NULL;
 	for (size_t it = 0; it < len; ++it)
 	{
@@ -209,14 +276,23 @@ Directory::createDirResW Directory::createDir(wchar_t* path)
 			fixed[it] = '\\';
 	}
 	fixed[flen] = '\0';
+
+#ifdef BUILD_LINUX
+	return ProcessCreateDirectory(fixed, mode);
+#else
 	return ProcessCreateDirectory(fixed);
+#endif
 }
 
+#ifdef BUILD_LINUX
+Directory::createDirResA Directory::createDir(char* path, __mode_t mode)
+#else
 Directory::createDirResA Directory::createDir(char* path)
+#endif
 {
 	const auto len = strlen(path);
 
-	char fixed[MAX_PATH];
+	char fixed[NET_MAX_PATH];
 	size_t flen = NULL;
 	for (size_t it = 0; it < len; ++it)
 	{
@@ -233,9 +309,15 @@ Directory::createDirResA Directory::createDir(char* path)
 			fixed[it] = '\\';
 	}
 	fixed[flen] = '\0';
+
+#ifdef BUILD_LINUX
+	return ProcessCreateDirectory(fixed, mode);
+#else
 	return ProcessCreateDirectory(fixed);
+#endif
 }
 
+#ifndef BUILD_LINUX
 bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 {
 	std::wstring     strFilePath;                 // Filepath
@@ -373,7 +455,7 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
 	WIN32_FIND_DATAW ffblk;
-	wchar_t buf[MAX_PATH];
+	wchar_t buf[NET_MAX_PATH];
 
 	if (!Dirname)
 		swprintf_s(buf, CWSTRING("%s"), CWSTRING("*.*"));
@@ -454,8 +536,8 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 std::wstring Directory::homeDirW()
 {
 #ifdef BUILD_LINUX
-	char result[PATH_MAX];
-        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+	char result[NET_MAX_PATH];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, NET_MAX_PATH);
         auto str = std::string(result, (count > 0) ? count : 0);
         const auto it = str.find_last_of(CSTRING("/")) + 1;
         str = str.substr(0, it);
@@ -463,8 +545,8 @@ std::wstring Directory::homeDirW()
 #else
 	do
 	{
-		wchar_t result[MAX_PATH];
-		const auto size = GetModuleFileNameW(nullptr, result, MAX_PATH);
+		wchar_t result[NET_MAX_PATH];
+		const auto size = GetModuleFileNameW(nullptr, result, NET_MAX_PATH);
 		if (!size)
 			continue;
 
@@ -484,16 +566,16 @@ std::wstring Directory::homeDirW()
 std::string Directory::homeDirA()
 {
 #ifdef BUILD_LINUX
-	char result[PATH_MAX];
-        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+	char result[NET_MAX_PATH];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, NET_MAX_PATH);
         auto str = std::string(result, (count > 0) ? count : 0);
         const auto it = str.find_last_of(CSTRING("/")) + 1;
         return str.substr(0, it);
 #else
 	do
 	{
-		char result[MAX_PATH];
-		const auto size = GetModuleFileNameA(nullptr, result, MAX_PATH);
+		char result[NET_MAX_PATH];
+		const auto size = GetModuleFileNameA(nullptr, result, NET_MAX_PATH);
 		if (!size)
 			continue;
 
@@ -513,8 +595,8 @@ std::string Directory::homeDirA()
 std::wstring Directory::currentFileNameW()
 {
 #ifdef BUILD_LINUX
-	char result[PATH_MAX];
-        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+	char result[NET_MAX_PATH];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, NET_MAX_PATH);
         auto str = std::string(result, (count > 0) ? count : 0);
         const auto it = str.find_last_of(CSTRING("/")) + 1;
         str = str.substr(it, str.size() - it);
@@ -522,8 +604,8 @@ std::wstring Directory::currentFileNameW()
 #else
 	do
 	{
-		wchar_t result[MAX_PATH];
-		const auto size = GetModuleFileNameW(nullptr, result, MAX_PATH);
+		wchar_t result[NET_MAX_PATH];
+		const auto size = GetModuleFileNameW(nullptr, result, NET_MAX_PATH);
 		if (!size)
 			continue;
 
@@ -543,16 +625,16 @@ std::wstring Directory::currentFileNameW()
 std::string Directory::currentFileNameA()
 {
 #ifdef BUILD_LINUX
-	char result[PATH_MAX];
-        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, PATH_MAX);
+	char result[NET_MAX_PATH];
+        ssize_t count = readlink(CSTRING("/proc/self/exe"), result, NET_MAX_PATH);
         auto str = std::string(result, (count > 0) ? count : 0);
         const auto it = str.find_last_of(CSTRING("/")) + 1;
         return str.substr(it, str.size() - it);
 #else
 	do
 	{
-		char result[MAX_PATH];
-		const auto size = GetModuleFileNameA(nullptr, result, MAX_PATH);
+		char result[NET_MAX_PATH];
+		const auto size = GetModuleFileNameA(nullptr, result, NET_MAX_PATH);
 		if (!size)
 			continue;
 
