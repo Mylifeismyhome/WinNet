@@ -1,5 +1,87 @@
 #include "dirmanager.h"
 
+#ifdef BUILD_LINUX
+NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
+{
+        const size_t cSize = strlen(data->d_name) + 1;
+        wchar_t* w_d_name = new wchar_t[cSize];
+        mbstowcs (w_d_name, data->d_name, cSize);
+
+        wcscpy(name, w_d_name);
+
+        FREE(w_d_name);
+
+        wcscpy(this->path, path);
+
+        std::wstring fullPath(this->path);
+        fullPath += CWSTRING("/");
+        fullPath += name;
+        wcscpy(this->fullPath, fullPath.c_str());
+
+        std::string str_fullPath(this->fullPath[0], wcslen(this->fullPath));
+
+        struct stat stat_buf;
+        const auto rc = stat(str_fullPath.c_str(), &stat_buf);
+        size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
+
+        lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
+        lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
+        creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
+}
+
+NET_FILE_ATTRA::NET_FILE_ATTRA(struct dirent* data, char* path)
+{
+        strcpy(name, data->d_name);
+        strcpy(this->path, path);
+
+        std::string fullPath(this->path);
+        fullPath += CSTRING("/");
+        fullPath += data->d_name;
+        strcpy(this->fullPath, fullPath.c_str());
+
+        struct stat stat_buf;
+        const auto rc = stat(this->fullPath, &stat_buf);
+        size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
+
+        lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
+        lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
+        creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
+}
+#else
+static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.LowPart; ull.HighPart = ft.HighPart; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
+NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
+{
+        wcscpy(name, w32Data.cFileName);
+        wcscpy(path, path);
+        wcscpy(fullpath, std::wstring(path + name).c_str());
+
+        LARGE_INTEGER fsize;
+        fsize.HighPart = w32Data.nFileSizeHigh;
+        fsize.LowPart = w32Data.nFileSizeLow;
+        size = fsize.QuadPart;
+
+        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+        creationTime = filetime_to_timet(w32Data.ftCreationTime);
+}
+
+NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
+{
+        strcpy(name, w32Data.cFileName);
+        strcpy(path, path);
+        strcpy(fullpath, std::string(path + name).c_str());
+
+        LARGE_INTEGER fsize;
+        fsize.HighPart = w32Data.nFileSizeHigh;
+        fsize.LowPart = w32Data.nFileSizeLow;
+        size = fsize.QuadPart;
+
+        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+        creationTime = filetime_to_timet(w32Data.ftCreationTime);
+}
+#endif
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 // Return true if the folder exists, false otherwise
@@ -526,45 +608,40 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-#ifdef BUILD_LINUX
-#else
-static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.LowPart; ull.HighPart = ft.HighPart; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
-NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
-{
-	wcscpy(name, w32Data.cFileName);
-        wcscpy(path, path);
-        wcscpy(fullpath, std::wstring(path + name).c_str());
-
-        LARGE_INTEGER fsize;
-        fsize.HighPart = w32Data.nFileSizeHigh;
-        fsize.LowPart = w32Data.nFileSizeLow;
-        size = fsize.QuadPart;
-
-        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
-        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
-        creationTime = filetime_to_timet(w32Data.ftCreationTime);
-}
-
-NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
-{
-	strcpy(name, w32Data.cFileName);
-	strcpy(path, path);
-	strcpy(fullpath, std::string(path + name).c_str());
-
-	LARGE_INTEGER fsize;
-	fsize.HighPart = w32Data.nFileSizeHigh;
-	fsize.LowPart = w32Data.nFileSizeLow;
-	size = fsize.QuadPart;
-
-	lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
-	lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
-	creationTime = filetime_to_timet(w32Data.ftCreationTime);
-}
-#endif
-
 void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
 #ifdef BUILD_LINUX
+	std::string actualDirname(homeDirA() + std::string(Dirname[0], wcslen(Dirname)));
+	std::wstring WactualDirname(homeDirW() + Dirname);
+
+	const auto dir = opendir(actualDirname.c_str());
+        if(!dir) return;
+        struct dirent* entry;
+        while ((entry = readdir(dir)))
+        {
+                if(!strcmp(entry->d_name, CSTRING(".")) || !strcmp(entry->d_name, CSTRING(".."))) continue;
+
+                // iterate recursive
+                if(entry->d_type == DT_DIR)
+                {
+                        std::wstring nextDir(Dirname);
+                        nextDir += CWSTRING("/");
+
+ 			const size_t cSize = strlen(entry->d_name) + 1;
+        		wchar_t* w_d_name = new wchar_t[cSize];
+        		mbstowcs (w_d_name, entry->d_name, cSize);
+
+        		nextDir += w_d_name;
+
+       			FREE(w_d_name);
+
+                        scandir((wchar_t*)nextDir.c_str(), Vector);
+                        continue;
+                }
+
+                Vector.emplace_back(NET_FILE_ATTRW(entry, (wchar_t*)WactualDirname.c_str()));
+        }
+        closedir(dir);
 #else
 	WIN32_FIND_DATAW ffblk;
 	wchar_t buf[NET_MAX_PATH];
@@ -608,6 +685,27 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 {
 #ifdef BUILD_LINUX
+	const auto actualDirname(homeDirA() + Dirname);
+	const auto dir = opendir(actualDirname.c_str());
+        if(!dir) return;
+        struct dirent* entry;
+        while ((entry = readdir(dir)))
+        {
+                if(!strcmp(entry->d_name, CSTRING(".")) || !strcmp(entry->d_name, CSTRING(".."))) continue;
+
+                // iterate recursive
+                if(entry->d_type == DT_DIR)
+                {
+                        std::string nextDir(Dirname);
+                        nextDir += CSTRING("/");
+                        nextDir += entry->d_name;
+                        scandir((char*)nextDir.c_str(), Vector);
+                        continue;
+                }
+
+		Vector.emplace_back(NET_FILE_ATTRA(entry, (char*)actualDirname.c_str()));
+        }
+        closedir(dir);
 #else
 	WIN32_FIND_DATA ffblk;
 	char buf[MAX_PATH];

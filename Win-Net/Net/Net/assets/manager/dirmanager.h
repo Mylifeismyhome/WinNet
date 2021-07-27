@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <unistd.h>
+#include <dirent.h>
 #else
 #include <list>
 
@@ -63,7 +64,9 @@ struct NET_FILE_ATTRW
         time_t lastModification;
         time_t creationTime;
 
-        #ifndef BUILD_LINUX
+	#ifdef BUILD_LINUX
+	NET_FILE_ATTRW(struct dirent*, wchar_t*);
+	#else
         _WIN32_FIND_DATAW w32Data;
 
         NET_FILE_ATTRW(_WIN32_FIND_DATAW, wchar_t*);
@@ -81,8 +84,10 @@ struct NET_FILE_ATTRA
         time_t lastModification;
         time_t creationTime;
 
-        #ifndef BUILD_LINUX
-        _WIN32_FIND_DATAA w32Data;
+        #ifdef BUILD_LINUX
+	NET_FILE_ATTRA(struct dirent*, char*);
+	#else
+	_WIN32_FIND_DATAA w32Data;
 
         NET_FILE_ATTRA(_WIN32_FIND_DATAA, char*);
         #endif
@@ -165,10 +170,8 @@ bool deleteDir(wchar_t*, bool = true);
 bool deleteDir(char*, bool = true);
 #endif
 
-#ifndef BUILD_LINUX
 void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);
 void scandir(char*, std::vector<NET_FILE_ATTRA>&);
-#endif
 std::wstring homeDirW();
 std::string homeDirA();
 std::wstring currentFileNameW();

@@ -173,6 +173,14 @@ TEST(Directory,
 	const auto res = NET_DIRMANAGER::createDir((char*)CSTRING("duhuan\\teste\\mich\\bitte"));
 	if(res.error) LOG_ERROR(CSTRING("ERROR ON CREATING DIR!"));
 	NET_DIRMANAGER::deleteDir((char*)CSTRING("duhuan/teste/mich/bitte"));
+
+ 	NET_FILES sfiles;
+        NET_SCANDIR("testdir", sfiles);
+
+        for(const auto& entry : sfiles)
+        {
+                LOG("%s -- %llu", entry.name, entry.creationTime);
+        }
 );
 
 int main()
