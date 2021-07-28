@@ -1,5 +1,14 @@
 Author: Tobias Staack
 
+	Install under Linux:
+		make cryptopp
+		make openssl-configure
+		make openssl-build
+		make openssl-install
+		
+		# NetCore
+		make
+
 	Requires:
 		nasm
 		perl
