@@ -32,6 +32,14 @@ NET_NAMESPACE_END
 #include <iostream>
 #include <string>
 
+#ifdef BUILD_LINUX
+#define GetObjectA GetObject
+#else
+#define GetObjectA GetObjectA
+#endif
+
+#define GetObject GetObject
+
 NET_DSA_BEGIN
 
 NET_CLASS_BEGIN(Package_RawData_t)
@@ -120,7 +128,7 @@ NET_CLASS_PUBLIC
 Package_t(const bool _valid, const char* _name, TYPE _value)
 {
 	this->_valid = _valid;
-	strcpy_s(this->_name, _name);
+	strcpy(this->_name, _name);
 	this->_value = _value;
 }
 
@@ -149,7 +157,7 @@ NET_CLASS_PUBLIC
 Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
 {
 	this->_valid = _valid;
-	strcpy_s(this->_name, _name);
+	strcpy(this->_name, _name);
 	this->_value = _value;
 }
 
@@ -178,7 +186,7 @@ NET_CLASS_PUBLIC
 Package_t_Array(const bool _valid, const char* _name, rapidjson::Value _value)
 {
 	this->_valid = _valid;
-	strcpy_s(this->_name, _name);
+	strcpy(this->_name, _name);
 	this->_value = _value;
 }
 
@@ -353,9 +361,9 @@ Package_t<const char*> String(const char*) const;
 Package_t<int> Int(const char*) const;
 Package_t<double> Double(const char*) const;
 Package_t<float> Float(const char*) const;
-Package_t<__int64> Int64(const char*) const;
-Package_t<UINT> UINT(const char*) const;
-Package_t<UINT64> UINT64(const char*) const;
+Package_t<int64> Int64(const char*) const;
+Package_t<uint> UINT(const char*) const;
+Package_t<uint64> UINT64(const char*) const;
 Package_t<bool> Boolean(const char*) const;
 Package_t_Object Object(const char*);
 Package_t_Array Array(const char*);

@@ -7,6 +7,7 @@ define PATH_NET
 	g++ -w -I ../ -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
 	g++ -w -I ../ -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
 	g++ -w -I ../ -c ../Net/Net/NetString.cpp -o bin/NetString.o
+	g++ -w -I ../ -I ../../../extern/ -c ../Net/Net/Package.cpp -o bin/Package.o
 endef
 
 # Net/Cryption/
@@ -26,6 +27,7 @@ define PATH_MANAGER
 	g++ -I ../ -w -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
 	g++ -I ../ -w -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
 	g++ -I ../ -w -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
+	g++ -I ../ -I ../../../extern/ -w -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
 # Net/assets

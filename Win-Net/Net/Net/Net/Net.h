@@ -38,6 +38,7 @@
 
 #ifdef BUILD_LINUX
 #include <linux/limits.h>
+#include <inttypes.h>
 #endif
 
 #ifndef BUILD_LINUX
@@ -58,8 +59,15 @@ typedef unsigned long DWORD;
 typedef unsigned char byte;
 typedef unsigned char BYTE;
 typedef unsigned long SOCKET;
+typedef int64_t int64;
+typedef unsigned int uint;
+typedef uint64_t uint64;
 #define __forceinline inline
 #define MAX_PATH 260
+#else
+typedef __int64 int64;
+typedef unsigned int uint;
+typedef unsigned __int64 uint64;
 #endif
 
 ///////////////////////////////////

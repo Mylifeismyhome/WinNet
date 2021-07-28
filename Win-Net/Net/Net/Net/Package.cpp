@@ -178,7 +178,7 @@ Package_t<float> Package::Float(const char* Key) const
 	return { true, Key,  (pkg.FindMember(Key)->value.IsFloat() ? pkg.FindMember(Key)->value.GetFloat() : static_cast<float>(pkg.FindMember(Key)->value.GetInt())) };
 }
 
-Package_t<__int64> Package::Int64(const char* Key) const
+Package_t<int64> Package::Int64(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -213,7 +213,7 @@ Package_t<__int64> Package::Int64(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetInt64() };
 }
 
-Package_t<UINT> Package::UINT(const char* Key) const
+Package_t<uint> Package::UINT(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -248,7 +248,7 @@ Package_t<UINT> Package::UINT(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetUint() };
 }
 
-Package_t<UINT64> Package::UINT64(const char* Key) const
+Package_t<uint64> Package::UINT64(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
