@@ -19,6 +19,7 @@
 // assets
 #include <Net/assets/manager/dirmanager.h>
 #include <Net/assets/manager/filemanager.h>
+#include <Net/assets/web/http.h>
 
 TEST(Basic,
 );
@@ -198,6 +199,19 @@ TEST(Directory,
         }
 );
 
+TEST(HTTP,
+	NET_HTTP http(CSTRING("http://localhost/ZAPI/site/server/buyitem.php"));
+	if(http.Get())
+	{
+		LOG("GET WORKED!");
+		LOG(http.GetBodyContent().c_str());
+	}
+	else
+	{
+		LOG("GET FAILED!");
+	}
+);
+
 int main()
 {
 	RUN(Basic);
@@ -210,6 +224,7 @@ int main()
 	RUN(AES);
 	RUN(rsa);
 	RUN(Directory);
+	RUN(HTTP);
 
 	return 0;
 }

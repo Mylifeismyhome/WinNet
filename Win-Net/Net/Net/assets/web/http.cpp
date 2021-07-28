@@ -20,7 +20,7 @@ Net::Web::HeaderData_t::HeaderData_t(const char* key, char* value, const size_t 
 {
 	this->key = nullptr;
 	this->value = nullptr;
-	
+
 	const auto keyLen = strlen(key);
 	this->key = ALLOC<char>(keyLen + 1);
 	memcpy(this->key, key, keyLen);
@@ -39,7 +39,7 @@ Net::Web::HeaderData_t::HeaderData_t(const char* key, const char* value, const s
 {
 	this->key = nullptr;
 	this->value = nullptr;
-	
+
 	const auto keyLen = strlen(key);
 	this->key = ALLOC<char>(keyLen + 1);
 	memcpy(this->key, key, keyLen);
@@ -58,7 +58,7 @@ Net::Web::HeaderData_t::HeaderData_t(const char* key, unsigned char* value, cons
 {
 	this->key = nullptr;
 	this->value = nullptr;
-	
+
 	const auto keyLen = strlen(key);
 	this->key = ALLOC<char>(keyLen + 1);
 	memcpy(this->key, key, keyLen);
@@ -340,7 +340,7 @@ void Net::Web::Head::AddHeader(const char* key, char* value, const size_t size)
 			return;
 		}
 	}
-	
+
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
@@ -356,7 +356,7 @@ void Net::Web::Head::AddHeader(const char* key, const char* value, const size_t 
 			return;
 		}
 	}
-	
+
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
@@ -372,7 +372,7 @@ void Net::Web::Head::AddHeader(const char* key, unsigned char* value, const size
 			return;
 		}
 	}
-	
+
 	headerData.emplace_back(HeaderData_t(key, value, size));
 }
 
@@ -511,9 +511,11 @@ void Net::Web::Head::ShutdownSocket() const
 	const auto res = shutdown(GetSocket(), SD_SEND);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), LAST_ERROR);
 		closesocket(GetSocket());
+#ifndef BUILD_LINUX
 		WSACleanup();
+#endif
 	}
 }
 
@@ -525,7 +527,9 @@ Net::Web::HTTP::HTTP(const char* url)
 
 Net::Web::HTTP::~HTTP()
 {
+#ifndef BUILD_LINUX
 	WSACleanup();
+#endif
 
 	if (connectSocketAddr)
 	{
@@ -537,7 +541,7 @@ Net::Web::HTTP::~HTTP()
 bool Net::Web::HTTP::Init(const char* curl)
 {
 	const auto fullURL = std::string(curl);
-	
+
 	const auto protoclPos = fullURL.find(CSTRING("://"));
 	if (protoclPos == std::string::npos)
 	{
@@ -578,15 +582,15 @@ bool Net::Web::HTTP::Init(const char* curl)
 		port = static_cast<short>(std::stoi(tmpport));
 	}
 
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
-
 	const auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-
 	if (iResult != 0)
 	{
 		LOG_ERROR(CSTRING("[HTTP] - WSAStartup failed with error: %d"), iResult);
 		return false;
 	}
+#endif
 
 	struct addrinfo hints = {};
 	hints.ai_family = AF_INET;
@@ -594,7 +598,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	char port_str[16] = {};
-	sprintf_s(port_str, CSTRING("%hu"), GetPort());
+	sprintf(port_str, CSTRING("%hu"), GetPort());
 	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
 	if (host != 0)
 	{
@@ -615,9 +619,93 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 	auto size = buffer.length();
 	do
 	{
-		const auto res = send(GetSocket(), buffer.data(), static_cast<int>(buffer.length()), 0);
+		const auto res = Ws2_32::send(GetSocket(), buffer.data(), static_cast<int>(buffer.length()), 0);
 		if (res == SOCKET_ERROR)
 		{
+			#ifdef BUILD_LINUX
+			if(errno == EACCES)
+			{
+				LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast addressdress"));
+				return 0;
+			}
+			if(errno == EWOULDBLOCK)
+				continue;
+			if(errno == EALREADY)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+				return 0;
+			}
+			if(errno == EBADF)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EBADF"));
+				return 0;
+			}
+			if(errno == ECONNRESET)
+			{
+				LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+				return 0;
+			}
+			if(errno == EDESTADDRREQ)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+				return 0;
+			}
+			if(errno == EFAULT)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				return 0;
+			}
+			if(errno == EINTR)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				return 0;
+			}
+			if(errno == EINVAL)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				return 0;
+			}
+			if(errno == EISCONN)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+				return 0;
+			}
+			if(errno == EMSGSIZE)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+				return 0;
+			}
+			if(errno == ENOBUFS)
+			{
+				LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+				return 0;
+			}
+			if(errno == ENOMEM)
+			{
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				return 0;
+			}
+			if(errno == ENOTCONN)
+			{
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				return 0;
+			}
+			if(errno == ENOTSOCK)
+			{
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				return 0;
+			}
+			if(errno == EOPNOTSUPP)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+				return 0;
+			}
+			if(errno == EPIPE)
+			{
+				LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+				return 0;
+			}
+			#else
 			if (WSAGetLastError() == WSANOTINITIALISED)
 			{
 				LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
@@ -710,6 +798,7 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 				LOG_PEER(CSTRING("[HTTP] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				return 0;
 			}
+			#endif
 
 			LOG_PEER(CSTRING("[HTTP] - Something bad happen... on Send"));
 			return 0;
@@ -732,6 +821,93 @@ size_t Net::Web::HTTP::DoReceive()
 		data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
+			#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case EWOULDBLOCK:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
+                                // read until we have the Content-Length
+                                if (network.data_full_size == 0)
+                                {
+                                        if (!network.data.valid()) continue;
+                                        std::string tmpBuffer(reinterpret_cast<char*>(network.data.get()));
+                                        if (tmpBuffer.empty()) continue;
+
+                                        // get the header length
+                                        const auto headerLength = tmpBuffer.find(CSTRING("\r\n\r\n"));
+                                        if (headerLength != std::string::npos)
+                                                continue;
+
+                                        const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
+                                        if (cLPos == std::string::npos)
+                                                continue;
+
+                                        const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
+                                        if (breakPos == std::string::npos)
+                                                continue;
+
+                                        const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
+
+                                        if (!NET_STRING_IS_NUMBER(cLength))
+                                        {
+                                                LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+                                                return 0;
+                                        }
+
+                                        const auto contentLength = std::stoi(cLength);
+
+                                        // re-alloc
+                                        network.data_full_size = contentLength + headerLength;
+                                        const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+                                        memcpy(newBuffer, network.data.get(), network.data_size);
+                                        newBuffer[network.data_full_size] = '\0';
+                                        network.data = newBuffer;
+                                }
+
+                                continue;
+
+			case ECONNREFUSED:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+                                return 0;
+
+			case EFAULT:
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                                return 0;
+
+			case EINTR:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                                return 0;
+
+			case EINVAL:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                                return 0;
+
+			case ENOMEM:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                                return 0;
+
+			case ENOTCONN:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                                return 0;
+
+			case ENOTSOCK:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                                return 0;
+
+			default:
+                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+                                LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                                return 0;
+			}
+			#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -857,6 +1033,7 @@ size_t Net::Web::HTTP::DoReceive()
 				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
 			}
+			#endif
 		}
 
 		if (data_size == 0)
@@ -905,8 +1082,10 @@ bool Net::Web::HTTP::Get()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+#ifndef BUILD_LINUX
 			WSACleanup();
+#endif
 			return false;
 		}
 
@@ -978,8 +1157,10 @@ bool Net::Web::HTTP::Post()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+#ifndef BUILD_LINUX
 			WSACleanup();
+#endif
 			return false;
 		}
 
@@ -1067,7 +1248,9 @@ Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
 
 Net::Web::HTTPS::~HTTPS()
 {
+#ifndef BUILD_LINUX
 	WSACleanup();
+#endif
 
 	if (ssl)
 	{
@@ -1092,7 +1275,7 @@ Net::Web::HTTPS::~HTTPS()
 bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 {
 	const auto fullURL = std::string(curl);
-	
+
 	/* Initialize SSL */
 	SSL_library_init();
 	SSLeay_add_ssl_algorithms();
@@ -1149,21 +1332,23 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 		port = static_cast<short>(std::stoi(tmpport));
 	}
 
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
-
 	const auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-
 	if (iResult != 0)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - WSAStartup failed with error: %d"), iResult);
 		return false;
 	}
+#endif
 
 	connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - socket failed with error: %ld"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[HTTPS] - socket failed with error: %ld"), LAST_ERROR);
+#ifndef BUILD_LINUX
 		WSACleanup();
+#endif
 		return false;
 	}
 
@@ -1173,7 +1358,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	hints.ai_protocol = IPPROTO_TCP;
 
 	char port_str[16] = {};
-	sprintf_s(port_str, CSTRING("%hu"), GetPort());
+	sprintf(port_str, CSTRING("%hu"), GetPort());
 	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
 	if (host != 0)
 	{
@@ -1359,18 +1544,20 @@ bool Net::Web::HTTPS::Get()
 {
 	if (!IsInited())
 		return false;
-	
+
 	auto sslRet = 0;
 	for (auto addr = connectSocketAddr; addr != nullptr; addr = addr->ai_next)
 	{
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+#ifndef BUILD_LINUX
 			WSACleanup();
+#endif
 			return false;
 		}
-		
+
 		/* Connect to the server */
 		if (connect(connectSocket, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == -1)
 		{
@@ -1387,7 +1574,7 @@ bool Net::Web::HTTPS::Get()
 			LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
 			return false;
 		}
-		
+
 		/* Attach SSL to the socket */
 		SSL_set_fd(ssl, static_cast<int>(connectSocket));
 
@@ -1401,7 +1588,7 @@ bool Net::Web::HTTPS::Get()
 				SSL_free(ssl);
 				ssl = nullptr;
 			}
-			
+
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
 		}
@@ -1412,7 +1599,7 @@ bool Net::Web::HTTPS::Get()
 		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
-	
+
 	if(connectSocket == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
@@ -1483,8 +1670,10 @@ bool Net::Web::HTTPS::Post()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), WSAGetLastError());
+			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+#ifndef BUILD_LINUX
 			WSACleanup();
+#endif
 			return false;
 		}
 

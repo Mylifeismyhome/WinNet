@@ -39,6 +39,14 @@
 #ifdef BUILD_LINUX
 #include <linux/limits.h>
 #include <inttypes.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
 #endif
 
 #ifndef BUILD_LINUX
@@ -58,12 +66,17 @@
 typedef unsigned long DWORD;
 typedef unsigned char byte;
 typedef unsigned char BYTE;
-typedef unsigned long SOCKET;
+typedef int SOCKET;
 typedef int64_t int64;
 typedef unsigned int uint;
 typedef uint64_t uint64;
 #define __forceinline inline
 #define MAX_PATH 260
+#define closesocket close
+#define ioctlsocket ioctl
+#define SD_SEND SHUT_RDWR
+#define SOCKET_ERROR -1
+#define INVALID_SOCKET -1
 #else
 typedef __int64 int64;
 typedef unsigned int uint;
@@ -189,7 +202,7 @@ return true; \
 #define NET_DSA_END __pragma("pack(pop)")
 #else
 #define NET_DSA_BEGIN _Pragma("pack(push)") \
- _Pragma("pack(1)") 
+ _Pragma("pack(1)")
 #define NET_DSA_END _Pragma("pack(pop)")
 #endif
 

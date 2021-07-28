@@ -5,7 +5,13 @@
 
 #include <Net/Net/Net.h>
 #include <Net/assets/assets.h>
-#include <OpenSSL/err.h>
+#include <openssl/err.h>
+
+#ifdef BUILD_LINUX
+#define LAST_ERROR errno
+#else
+#define LAST_ERROR WSAGetLastError()
+#endif
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Web)

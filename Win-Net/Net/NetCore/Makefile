@@ -30,6 +30,11 @@ define PATH_MANAGER
 	g++ -I ../ -I ../../../extern/ -w -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
+# Net/assets/web
+define PATH_WEB
+	g++ -I ../ -I ../../../extern/OpenSSL/include/ -w -c ../Net/assets/web/http.cpp -o bin/http.o
+endef
+
 # Net/assets
 define PATH_ASSETS
 	g++ -I ../ -w -c ../Net/assets/assets.cpp -o bin/assets.o
@@ -87,6 +92,7 @@ all:
 
 	$(call PATH_NET)
 	$(call PATH_MANAGER)
+	$(call PATH_WEB)
 	$(call PATH_ASSETS)
 	$(call PATH_CODING)
 	$(call PATH_CRYPTION)
