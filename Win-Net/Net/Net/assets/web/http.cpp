@@ -1635,6 +1635,24 @@ bool Net::Web::HTTPS::Get()
 	{
 		ShutdownSocket(SOCKET_WR);
 
+		// Receive Response
+		if (DoReceive() != 0)
+		{
+			// Parse the result
+			const auto res = ParseResult();
+			network.clearData();
+			
+			auto ret = 0;
+			do
+			{
+				ret = SSL_shutdown(ssl);
+				if (ret < 0)
+					break;
+			} while (ret == 0);
+		
+			return res;
+		}
+		
 		auto ret = 0;
 		do
 		{
@@ -1642,15 +1660,6 @@ bool Net::Web::HTTPS::Get()
 			if (ret < 0)
 				break;
 		} while (ret == 0);
-
-		// Receive Response
-		if (DoReceive() != 0)
-		{
-			// Parse the result
-			const auto res = ParseResult();
-			network.clearData();
-			return res;
-		}
 
 		network.clearData();
 		return false;
@@ -1768,6 +1777,24 @@ bool Net::Web::HTTPS::Post()
 	{
 		ShutdownSocket(SOCKET_WR);
 
+		// Receive Response
+		if (DoReceive() != 0)
+		{
+			// Parse the result
+			const auto res = ParseResult();
+			network.clearData();
+			
+			auto ret = 0;
+			do
+			{
+				ret = SSL_shutdown(ssl);
+				if (ret < 0)
+					break;
+			} while (ret == 0);
+		
+			return res;
+		}
+
 		auto ret = 0;
 		do
 		{
@@ -1775,16 +1802,7 @@ bool Net::Web::HTTPS::Post()
 			if (ret < 0)
 				break;
 		} while (ret == 0);
-
-		// Receive Response
-		if (DoReceive() != 0)
-		{
-			// Parse the result
-			const auto res = ParseResult();
-			network.clearData();
-			return res;
-		}
-
+		
 		network.clearData();
 		return false;
 	}
