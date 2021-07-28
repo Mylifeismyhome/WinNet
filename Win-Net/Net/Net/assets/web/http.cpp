@@ -506,9 +506,9 @@ bool Net::Web::Head::ParseResult()
 	return GetResultCode() == 200;
 }
 
-void Net::Web::Head::ShutdownSocket() const
+void Net::Web::Head::ShutdownSocket(int how) const
 {
-	const auto res = shutdown(GetSocket(), SD_SEND);
+	const auto res = shutdown(GetSocket(), how);
 	if (res == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), LAST_ERROR);
@@ -1129,7 +1129,7 @@ bool Net::Web::HTTP::Get()
 	// Send Post Request
 	if (DoSend(req))
 	{
-		ShutdownSocket();
+		ShutdownSocket(SOCKET_WR);
 
 		// Receive Response
 		if (DoReceive() != 0)
@@ -1218,7 +1218,7 @@ bool Net::Web::HTTP::Post()
 	// Send Post Request
 	if (DoSend(req))
 	{
-		ShutdownSocket();
+		ShutdownSocket(SOCKET_WR);
 
 		// Receive Response
 		if (DoReceive() != 0)
@@ -1633,7 +1633,7 @@ bool Net::Web::HTTPS::Get()
 	// Send Get Request
 	if (DoSend(req))
 	{
-		ShutdownSocket();
+		ShutdownSocket(SOCKET_WR);
 
 		auto ret = 0;
 		do
@@ -1766,7 +1766,7 @@ bool Net::Web::HTTPS::Post()
 	// Send Post Request
 	if (DoSend(req))
 	{
-		ShutdownSocket();
+		ShutdownSocket(SOCKET_WR);
 
 		auto ret = 0;
 		do

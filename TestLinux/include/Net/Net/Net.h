@@ -74,13 +74,18 @@ typedef uint64_t uint64;
 #define MAX_PATH 260
 #define closesocket close
 #define ioctlsocket ioctl
-#define SD_SEND SHUT_RDWR
+#define SOCKET_RD SHUT_RD /* Disables further receive operations. */
+#define SOCKET_WR SHUT_WR /* Disables further send operations. */
+#define SOCKET_RDWR SHUT_RDWR /* Disables further send and receive operations. */
 #define SOCKET_ERROR -1
 #define INVALID_SOCKET -1
 #else
 typedef __int64 int64;
 typedef unsigned int uint;
 typedef unsigned __int64 uint64;
+#define SOCKET_RD SD_SEND
+#define SOCKET_WR SD_SEND
+#define SOCKET_RDWR SD_SEND
 #endif
 
 ///////////////////////////////////

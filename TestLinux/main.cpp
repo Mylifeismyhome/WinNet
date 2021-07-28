@@ -201,6 +201,8 @@ TEST(Directory,
 
 TEST(HTTP,
 	NET_HTTP http(CSTRING("http://localhost/ZAPI/site/server/buyitem.php"));
+	if(http.IsInited()) LOG("INITED!");
+
 	if(http.Get())
 	{
 		LOG("GET WORKED!");

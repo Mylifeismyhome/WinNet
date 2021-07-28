@@ -70,7 +70,7 @@ std::string headContent;
 std::string bodyContent;
 int resultCode;
 
-void ShutdownSocket() const;
+void ShutdownSocket(int = SOCKET_RDWR) const;
 
 void SetRawData(std::string);
 void SetHeaderContent(std::string);
