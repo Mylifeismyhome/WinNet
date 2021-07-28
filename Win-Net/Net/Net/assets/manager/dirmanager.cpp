@@ -48,12 +48,12 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(struct dirent* data, char* path)
         creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
 }
 #else
-static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.LowPart; ull.HighPart = ft.HighPart; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
+static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.dwLowDateTime; ull.HighPart = ft.dwHighDateTime; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
 NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
 {
         wcscpy(name, w32Data.cFileName);
         wcscpy(path, path);
-        wcscpy(fullpath, std::wstring(path + name).c_str());
+        wcscpy(fullPath, std::wstring(std::wstring(path) + std::wstring(name)).c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
@@ -69,7 +69,7 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
 {
         strcpy(name, w32Data.cFileName);
         strcpy(path, path);
-        strcpy(fullpath, std::string(path + name).c_str());
+        strcpy(fullPath, std::string(std::string(path) + std::string(name)).c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
@@ -318,9 +318,9 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 #endif
 
 #ifdef BUILD_LINUX
-                const auto ret = NET_WMKDIR(actualPath.c_str(), mode);
+                const auto ret = NET_MKDIR(actualPath.c_str(), mode);
 #else
-                const auto ret = NET_WMKDIR(entry);
+                const auto ret = NET_MKDIR(entry);
 #endif
 
 		if (ret)
