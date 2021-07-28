@@ -1641,24 +1641,9 @@ bool Net::Web::HTTPS::Get()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
-			
-			if (ssl)
-			{
-				SSL_shutdown(ssl);
-				SSL_free(ssl);
-				ssl = nullptr;
-			}
-		
 			return res;
 		}
 		
-		if (ssl)
-		{
-			SSL_shutdown(ssl);
-			SSL_free(ssl);
-			ssl = nullptr;
-		}
-
 		network.clearData();
 		return false;
 	}
@@ -1781,24 +1766,9 @@ bool Net::Web::HTTPS::Post()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
-			
-			if (ssl)
-			{
-				SSL_shutdown(ssl);
-				SSL_free(ssl);
-				ssl = nullptr;
-			}
-		
 			return res;
 		}
 
-		if (ssl)
-		{
-			SSL_shutdown(ssl);
-			SSL_free(ssl);
-			ssl = nullptr;
-		}
-		
 		network.clearData();
 		return false;
 	}
