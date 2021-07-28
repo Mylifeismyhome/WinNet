@@ -1633,6 +1633,8 @@ bool Net::Web::HTTPS::Get()
 	// Send Get Request
 	if (DoSend(req))
 	{
+		ShutdownSocket(SOCKET_WR);
+
 		// Receive Response
 		if (DoReceive() != 0)
 		{
@@ -1640,8 +1642,6 @@ bool Net::Web::HTTPS::Get()
 			const auto res = ParseResult();
 			network.clearData();
 			
-			ShutdownSocket();
-					
 			auto ret = 0;
 			do
 			{
@@ -1652,8 +1652,6 @@ bool Net::Web::HTTPS::Get()
 		
 			return res;
 		}
-		
-		ShutdownSocket();
 		
 		auto ret = 0;
 		do
@@ -1777,6 +1775,8 @@ bool Net::Web::HTTPS::Post()
 	// Send Post Request
 	if (DoSend(req))
 	{
+		ShutdownSocket(SOCKET_WR);
+
 		// Receive Response
 		if (DoReceive() != 0)
 		{
@@ -1784,8 +1784,6 @@ bool Net::Web::HTTPS::Post()
 			const auto res = ParseResult();
 			network.clearData();
 			
-			ShutdownSocket();
-					
 			auto ret = 0;
 			do
 			{
@@ -1797,8 +1795,6 @@ bool Net::Web::HTTPS::Post()
 			return res;
 		}
 
-		ShutdownSocket();
-		
 		auto ret = 0;
 		do
 		{
