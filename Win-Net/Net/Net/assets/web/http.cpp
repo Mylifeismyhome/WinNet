@@ -1642,24 +1642,22 @@ bool Net::Web::HTTPS::Get()
 			const auto res = ParseResult();
 			network.clearData();
 			
-			auto ret = 0;
-			do
+			if (ssl)
 			{
-				ret = SSL_shutdown(ssl);
-				if (ret < 0)
-					break;
-			} while (ret == 0);
+				SSL_shutdown(ssl);
+				SSL_free(ssl);
+				ssl = nullptr;
+			}
 		
 			return res;
 		}
 		
-		auto ret = 0;
-		do
+		if (ssl)
 		{
-			ret = SSL_shutdown(ssl);
-			if (ret < 0)
-				break;
-		} while (ret == 0);
+			SSL_shutdown(ssl);
+			SSL_free(ssl);
+			ssl = nullptr;
+		}
 
 		network.clearData();
 		return false;
@@ -1784,24 +1782,22 @@ bool Net::Web::HTTPS::Post()
 			const auto res = ParseResult();
 			network.clearData();
 			
-			auto ret = 0;
-			do
+			if (ssl)
 			{
-				ret = SSL_shutdown(ssl);
-				if (ret < 0)
-					break;
-			} while (ret == 0);
+				SSL_shutdown(ssl);
+				SSL_free(ssl);
+				ssl = nullptr;
+			}
 		
 			return res;
 		}
 
-		auto ret = 0;
-		do
+		if (ssl)
 		{
-			ret = SSL_shutdown(ssl);
-			if (ret < 0)
-				break;
-		} while (ret == 0);
+			SSL_shutdown(ssl);
+			SSL_free(ssl);
+			ssl = nullptr;
+		}
 		
 		network.clearData();
 		return false;
