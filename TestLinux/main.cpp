@@ -21,10 +21,6 @@
 #include <Net/assets/manager/filemanager.h>
 
 TEST(Basic,
-	auto file = fopen(std::string(NET_DIRMANAGER::homeDirA() + "testdir/test.txt").c_str(), "rb");
-const auto status = (file != nullptr);
-if(status) { LOG("FILE OPENED!"); }
-	fclose(file);
 );
 
 TEST(Hex,
@@ -187,13 +183,7 @@ TEST(Directory,
                 LOG("%s -- %llu", entry.fullPath, entry.creationTime);
 
 		NET_FILEMANAGERA fmanager(entry.fullPath, NET_FILE_READ);
-		if(fmanager.CanOpenFile())
-		{
-			LOG("CAN OPEN FILE!");
-		}
 
-		LOG("%i -> %s", fmanager.getLastError(), fmanager.ErrorDescription(fmanager.getLastError()).data());
-		continue;
 		byte* data = nullptr;
 		size_t size = NULL;
 		if(fmanager.read(data, size))

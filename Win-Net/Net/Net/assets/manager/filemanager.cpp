@@ -27,51 +27,51 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 static const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return CSTRING("wb");
+		return std::string(CSTRING("wb")).c_str();
 	if (Mode == NET_FILE_READ)
-		return CSTRING("rb");
+		return std::string(CSTRING("rb")).c_str();
 	if (Mode == NET_FILE_APPAND)
-		return CSTRING("ab");
+		return std::string(CSTRING("ab")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return CSTRING("ab+");
+		return std::string(CSTRING("ab+")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return CSTRING("wb+");
+		return std::string(CSTRING("wb+")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return CSTRING("rb+");
+		return std::string(CSTRING("rb+")).c_str();
 
-	return CSTRING("rb");
+	return std::string(CSTRING("rb")).c_str();
 }
 
 static const wchar_t* GetModeW(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return CWSTRING("wb");
+		return std::wstring(CWSTRING("wb")).c_str();
 	if (Mode == NET_FILE_READ)
-		return CWSTRING("rb");
+		return std::wstring(CWSTRING("rb")).c_str();
 	if (Mode == NET_FILE_APPAND)
-		return CWSTRING("ab");
+		return std::wstring(CWSTRING("ab")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return CWSTRING("ab+");
+		return std::wstring(CWSTRING("ab+")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return CWSTRING("wb+");
+		return std::wstring(CWSTRING("wb+")).c_str();
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return CWSTRING("rb+");
+		return std::wstring(CWSTRING("rb+")).c_str();
 
-	return CWSTRING("rb");
+	return std::wstring(CWSTRING("rb")).c_str();
 }
 
 static Net::Manager::FileManagerErrorRef GetErrorDescription(const Net::Manager::ErrorCodes code)
@@ -150,7 +150,7 @@ bool FileManagerW::CanOpenFile()
 {
 	file = wOpenFile(fname, GetModeW(NET_FILE_READ));
 	err = errno;
-	const auto status = getLastError() != ErrorCodes::ERR_NOENT;
+	const auto status = ((file != nullptr) ? true : false);
 	closeFile();
 	return status;
 }
@@ -188,7 +188,7 @@ bool FileManagerW::read(BYTE*& out_data, size_t& out_size)
 		if (!openFile())
 			return false;
 
-		const auto ret =  getFileBuffer(out_data, out_size);
+		const auto ret = getFileBuffer(out_data, out_size);
 		close();
 		return ret;
 	}
@@ -310,7 +310,7 @@ bool FileManagerA::openFile()
 
 void FileManagerA::closeFile()
 {
-	if (file)
+	if(file)
 	{
 		fclose(file);
 		file = nullptr;

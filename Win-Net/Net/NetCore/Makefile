@@ -57,6 +57,7 @@ endef
 # link Library
 define LINK
 	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o
+	ranlib NetCore.a
 endef
 
 # copy Files
