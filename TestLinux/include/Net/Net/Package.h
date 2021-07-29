@@ -34,11 +34,7 @@ NET_NAMESPACE_END
 
 #ifdef BUILD_LINUX
 #define GetObjectA GetObject
-#else
-#define GetObjectA GetObjectA
 #endif
-
-#define GetObject GetObject
 
 NET_DSA_BEGIN
 

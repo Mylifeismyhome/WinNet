@@ -38,6 +38,8 @@ endef
 # Net/assets
 define PATH_ASSETS
 	g++ -I ../ -w -c ../Net/assets/assets.cpp -o bin/assets.o
+	g++ -I ../ -w -c ../Net/assets/thread.cpp -o bin/thread.o
+	g++ -I ../ -w -c ../Net/assets/timer.cpp -o bin/timer.o
 endef
 
 # Net/Coding

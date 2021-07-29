@@ -20,6 +20,7 @@
 #include <Net/assets/manager/dirmanager.h>
 #include <Net/assets/manager/filemanager.h>
 #include <Net/assets/web/http.h>
+#include <Net/assets/timer.h>
 
 TEST(Basic,
 );
@@ -201,8 +202,6 @@ TEST(Directory,
 
 TEST(HTTP,
 	NET_HTTP http(CSTRING("http://localhost/ZAPI/site/server/buyitem.php"));
-	if(http.IsInited()) LOG("INITED!");
-
 	if(http.Get())
 	{
 		LOG("GET WORKED!");
@@ -212,6 +211,30 @@ TEST(HTTP,
 	{
 		LOG("GET FAILED!");
 	}
+);
+
+TEST(HTTPS,
+	NET_HTTPS https(CSTRING("https://bs.to/"));
+	if(https.Get())
+	{
+                LOG("GET WORKED!");
+        //        LOG(https.GetBodyContent().c_str());
+        }
+        else
+        {
+                LOG("GET FAILED!");
+        }
+);
+
+NET_TIMER(TestTimer)
+{
+	LOG("NET TIMER CALLED!");
+	NET_CONTINUE_TIMER;
+}
+
+TEST(TIMER,
+	const auto handle = Net::Timer::Create(TestTimer, 1000);
+	Net::Timer::WaitTimerFinished(handle); // infinite loop in our case
 );
 
 int main()
@@ -227,6 +250,8 @@ int main()
 	RUN(rsa);
 	RUN(Directory);
 	RUN(HTTP);
+	RUN(HTTPS);
+	RUN(TIMER);
 
 	return 0;
 }

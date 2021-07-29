@@ -1254,7 +1254,6 @@ Net::Web::HTTPS::~HTTPS()
 
 	if (ssl)
 	{
-		SSL_shutdown(ssl);
 		SSL_free(ssl);
 		ssl = nullptr;
 	}

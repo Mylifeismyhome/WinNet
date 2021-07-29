@@ -24,7 +24,7 @@ NET_THREAD(NetTimerThread)
 
 	timer->last = clock();
 
-	while (TRUE)
+	while (true)
 	{
 		if (timer->clear)
 		{
@@ -39,7 +39,7 @@ NET_THREAD(NetTimerThread)
 			timer->finished = true;
 			return NULL;
 		}
-		
+
 		if ((clock() - timer->last) > timer->timer)
 		{
 			if (!(*timer->func)(timer->param))
@@ -59,7 +59,11 @@ NET_THREAD(NetTimerThread)
 			timer->last += timer->timer;
 		}
 
+#ifdef BUILD_LINUX
+		sleep(1);
+#else
 		Net::Kernel32::Sleep(1);
+#endif
 	}
 }
 
@@ -79,28 +83,28 @@ NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double tim
 
 void Net::Timer::Clear(NET_HANDLE_TIMER handle)
 {
-	if (!handle)
-		return;
-
+	if (!handle) return;
 	handle->async = true;
 	handle->clear = true;
 }
 
 void Net::Timer::WaitSingleObjectStopped(NET_HANDLE_TIMER handle)
 {
-	if (!handle)
-		return;
-
+	if (!handle) return;
 	handle->async = false;
 	handle->clear = true;
-	while (!handle->finished) {};
+	WaitTimerFinished(handle);
 	NET_UNUSED(handle);
 }
 
 void Net::Timer::SetTime(NET_HANDLE_TIMER handle, const double timer)
 {
-	if (!handle)
-		return;
-
+	if (!handle) return;
 	handle->timer = timer;
+}
+
+void Net::Timer::WaitTimerFinished(NET_HANDLE_TIMER handle)
+{
+	if(!handle) return;
+	while (!handle->finished) {};
 }

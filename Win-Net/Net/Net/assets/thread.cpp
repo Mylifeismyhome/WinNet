@@ -3,6 +3,12 @@
 #include <Net/Import/Ntdll.h>
 #include <Net/assets/manager/logmanager.h>
 
+#ifdef BUILD_LINUX
+bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
+{
+	std::thread(StartRoutine, parameter).detach();
+}
+#else
 bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
 	auto handle = INVALID_HANDLE_VALUE;
@@ -44,3 +50,4 @@ bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const p
 
 	return true;
 }
+#endif
