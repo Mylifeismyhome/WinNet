@@ -5,22 +5,22 @@
 
 MYSQL_CON::MYSQL_CON()
 {
-	sprintf_s(conIP, CSTRING(""));
+	sprintf(conIP, CSTRING(""));
 	conPort = 0;
 
-	sprintf_s(conUsername, CSTRING(""));
-	sprintf_s(conPassword, CSTRING(""));
-	sprintf_s(conDB, CSTRING(""));
+	sprintf(conUsername, CSTRING(""));
+	sprintf(conPassword, CSTRING(""));
+	sprintf(conDB, CSTRING(""));
 }
 
 MYSQL_CON::MYSQL_CON(const char* ip, const short port, const char* username, const char* password, const char* db)
 {
-	sprintf_s(conIP, ip);
+	sprintf(conIP, ip);
 	conPort = port;
 
-	sprintf_s(conUsername, username);
-	sprintf_s(conPassword, password);
-	sprintf_s(conDB, db);
+	sprintf(conUsername, username);
+	sprintf(conPassword, password);
+	sprintf(conDB, db);
 }
 
 char* MYSQL_CON::getIP()
@@ -50,14 +50,14 @@ char* MYSQL_CON::getDB()
 
 MYSQL_RESULT::MYSQL_RESULT()
 {
-	sprintf_s(name, CSTRING(""));
+	sprintf(name, CSTRING(""));
 	result = nullptr;
 	valid = false;
 }
 
 MYSQL_RESULT::MYSQL_RESULT(const char* n, sql::ResultSet* res)
 {
-	sprintf_s(name, n);
+	sprintf(name, n);
 	result = res;
 	valid = true;
 }
@@ -89,13 +89,13 @@ sql::ResultSet* MYSQL_RESULT::Get() const
 
 MYSQL_QUERY::MYSQL_QUERY(const char* n, char* q)
 {
-	sprintf_s(name, n);
+	sprintf(name, n);
 	query = q;
 }
 
 MYSQL_QUERY::MYSQL_QUERY(char* q)
 {
-	sprintf_s(name, CSTRING(""));
+	sprintf(name, CSTRING(""));
 	query = q;
 }
 
@@ -178,7 +178,7 @@ MYSQL::~MYSQL()
 
 bool MYSQL::setup()
 {
-	msqldriver = get_driver_instance();
+	msqldriver = net_get_driver_instance();
 	if (!msqldriver)
 	{
 		LOG_ERROR(CSTRING("[MYSQL] - Mysql driver instance does not exists"));
@@ -193,12 +193,12 @@ bool MYSQL::connect()
 	try
 	{
 		char constr[128];
-		sprintf_s(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
+		sprintf(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
 
 		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
 		if (!msqlcon)
 			return false;
-		
+
 		msqlcon->setSchema(conConfig.getDB());
 		return msqlcon->isValid();
 	}
@@ -215,7 +215,7 @@ bool MYSQL::disconnect()
 {
 	if (!msqlcon)
 		return false;
-	
+
 	try
 	{
 		msqlcon->close();
@@ -274,7 +274,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 
 	if(retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
-	
+
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -345,7 +345,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 	catch (sql::SQLException& e)
 	{
 		FREESTRING(query);
-		
+
 		SetLastError(e.what());
 
 		if(memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
@@ -362,7 +362,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 
 	if (retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
-	
+
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -435,7 +435,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		query.Free();
 
 		SetLastError(e.what());
-	
+
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
 			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
@@ -450,7 +450,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 
 	if (retry)
 		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
-	
+
 	if (!msqldriver)
 	{
 		if (!retry)
@@ -464,7 +464,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 
 		for (auto& curquery : query.Get())
 			curquery.Free();
-		
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		unlock();
 		return {};
@@ -483,7 +483,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 
 		for (auto& curquery : query.Get())
 			curquery.Free();
-		
+
 		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		unlock();
 		return {};
@@ -533,7 +533,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 			curquery.Free();
 
 		SetLastError(e.what());
-		
+
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
 			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}

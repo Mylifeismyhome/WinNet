@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -516,6 +516,8 @@ public:
         the same as setting to `true`\n
     - `tls-versions=[...]` : see `SessionOption::TLS_VERSIONS`
     - `tls-ciphersuites=[...]` : see `SessionOption::TLS_CIPHERSUITES`
+    - `compression=...` : see `SessionOption::COMPRESSION`
+    - `compression-algorithms=[...]` : see `SessionOption::COMPRESSION_ALGORITHMS`
   */
 
   SessionSettings(const string &uri)

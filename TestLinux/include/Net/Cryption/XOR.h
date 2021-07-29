@@ -6,8 +6,16 @@ NET_DSA_BEGIN
 
 #define RUNTIMEXOR Net::Cryption::XOR
 #ifndef VS13
-#define COMPILETIME_XOR(string) []{ CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); CONSTEXPR Net::Cryption::CXOR<(sizeof(string)/sizeof(char)), char, COMPILETIME_XORKEY> expr(string); return expr; }().decrypt()
-#define WCOMPILETIME_XOR(string) []{ CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); CONSTEXPR Net::Cryption::CXOR<(sizeof(string)/sizeof(wchar_t)), wchar_t, COMPILETIME_XORKEY> expr(string); return expr; }().decrypt()
+#define COMPILETIME_XOR(string) [] \
+{ \
+	CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); \
+	return Net::Cryption::CXOR<(sizeof(string)/sizeof(char)), char, COMPILETIME_XORKEY>(string); \
+}().decrypt()
+#define WCOMPILETIME_XOR(string) [] \
+{ \
+	CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); \
+	return Net::Cryption::CXOR<(sizeof(string)/sizeof(wchar_t)), wchar_t, COMPILETIME_XORKEY>(string); \
+}().decrypt()
 #define CASTRING(string) COMPILETIME_XOR(string)
 #define CWSTRING(string) WCOMPILETIME_XOR(L##string)
 #endif
@@ -73,13 +81,13 @@ public:
 	const unsigned _numchars = (size - 1);
 	Char _string[size];
 
-	explicit CONSTEXPR CXOR(const Char* string) : _string{}
+	explicit CXOR(const Char* string) : _string{}
 	{
 		for (auto i = 0u; i < size; ++i)
 			_string[i] = string[i] ^ (static_cast<Char>(Key) + i);
 	}
 
-	const Char* decrypt() const
+	CONSTEXPR Char* decrypt() const
 	{
 		Char* string = const_cast<Char*>(_string);
 		for (unsigned t = 0; t < _numchars; t++) {

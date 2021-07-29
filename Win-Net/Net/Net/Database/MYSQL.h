@@ -56,6 +56,8 @@ NET_DSA_BEGIN
 #include <vector>
 #include <cstdarg>
 
+inline sql::Driver* net_get_driver_instance(){ return get_driver_instance(); }
+
 /*
 * Connetion config
 */

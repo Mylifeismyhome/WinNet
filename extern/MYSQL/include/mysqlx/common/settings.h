@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -228,6 +228,7 @@ protected:
     bool m_sock = false;  // set to true if socket connection was specified
     bool m_tls_vers = false;
     bool m_tls_ciphers = false;
+    bool m_compression_algorithms = false;
 
     void erase(int);
     void init_connection_attr();
@@ -339,6 +340,11 @@ bool Settings_impl::has_option(int opt) const
 
   case Session_option_impl::TLS_CIPHERSUITES:
     if (m_data.m_tls_ciphers)
+      return true;
+    break;
+
+  case Session_option_impl::COMPRESSION_ALGORITHMS:
+    if (m_data.m_compression_algorithms)
       return true;
     break;
 

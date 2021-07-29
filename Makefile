@@ -78,11 +78,35 @@ define clean_openssl
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/configdata.pm
 endef
 
+# download compressed (packaged) mysql library from the official website
+define download_mysql
+	wget -O ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz "https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.26-linux-glibc2.12-x86-64bit.tar.gz"
+endef
+
+# install mysql library
+define install_mysql
+	mkdir -p ${ROOT_DIR}/extern/MYSQL/tmp/
+	tar zxvf ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz -C ${ROOT_DIR}/extern/MYSQL/tmp/
+	cp -R ${ROOT_DIR}/extern/MYSQL/tmp/*/include/* ${ROOT_DIR}/extern/MYSQL/include/
+	mkdir -p ${ROOT_DIR}/extern/MYSQL/lib/
+	cp ${ROOT_DIR}/extern/MYSQL/tmp/*/lib64/libmysqlcppconn-static.a ${ROOT_DIR}/extern/MYSQL/lib/
+endef
+
+# clean mysql installation
+define clean_mysql
+	# installation completed, now delete tmp folder
+        rm -r ${ROOT_DIR}/extern/MYSQL/tmp/
+
+        # also get rid of the package
+        rm ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz
+endef
+
 # clean all
 define clean_all
 	$(call out, ********** CLEANING ALL **********)
 	$(call clean_crypto++)
 	$(call clean_openssl)
+	$(call clean_mysql)
 endef
 
 # build NetCore
@@ -118,6 +142,15 @@ crypto++-clean:
 
 openssl-clean:
 	$(call clean_openssl)
+
+mysql-download:
+	$(call download_mysql)
+
+mysql-install:
+	$(call install_mysql)
+
+mysql-clean:
+	$(call clean_mysql)
 
 netcore:
 	$(call NetCore)

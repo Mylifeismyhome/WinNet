@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -49,6 +49,7 @@ class Session;
 class Schema;
 class Table;
 class Collection;
+class CollectionOptions;
 
 namespace common {
   class Session_impl;
@@ -221,7 +222,11 @@ public:
 
 protected:
 
-  void  create_collection(const string &name, bool reuse);
+
+  void  create_collection(const mysqlx::string &name,
+                          CollectionOptions options);
+  void  modify_collection(const mysqlx::string &name,
+                         CollectionOptions options);
   void  drop_collection(const string &name);
 
   friend Collection_detail;

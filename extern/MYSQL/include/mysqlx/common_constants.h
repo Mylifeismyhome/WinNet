@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -133,7 +133,11 @@
     configuration (hostname, port, priority and weight) to connect.
   */                                                                        \
   OPT_BOOL(x, DNS_SRV, 16)                                                  \
-  OPT_ANY(x,COMPRESSION,17) /*!< enable or disable compression */
+  OPT_ANY(x,COMPRESSION,17) /*!< enable or disable compression */           \
+  /*!
+    Specify compression algorithms in order of preference
+  */                                                                        \
+  OPT_STR(x,COMPRESSION_ALGORITHMS,18)                                      \
   END_LIST
 
 
@@ -155,6 +159,7 @@
   X("tls-versions", TLS_VERSIONS) \
   X("tls-ciphersuites", TLS_CIPHERSUITES) \
   X("compression", COMPRESSION) \
+  X("compression-algorithms", COMPRESSION_ALGORITHMS) \
   END_LIST
 
 
@@ -277,13 +282,47 @@
 #define COMPRESSION_MODE_LIST(x) \
   x(DISABLED,1)        /*!< Disables the compression.  */ \
   x(PREFERRED,2)       /*!< Request compression, but not return error
-                         if compression is requested, but could not be 
+                         if compression is requested, but could not be
                          used */ \
   x(REQUIRED,3)        /*!< Request compression and return error if
                          compression is not supported by the server */ \
   END_LIST
 
 // ----------------------------------------------------------------------------
+
+
+#define COLLECTION_OPTIONS_OPTION(X)\
+  X(REUSE,1) /*!< Use existing collection. Expects boolean value
+                  @anchor OPT_COLLECTION_REUSE */ \
+  X(VALIDATION,2) /*!< Collection validation options. Expects
+                       CollectionValidation or a json string.*/ \
+  END_LIST
+
+#define COLLECTION_VALIDATION_OPTION(X)\
+  X(SCHEMA,1) /*!< Collection validation schema, as defined by
+                    https://dev.mysql.com/doc/refman/8.0/en/json-validation-functions.html#function_json-schema-valid
+                */ \
+  X(LEVEL,2) /*!< Defines level of validation on the collection, see
+                  \ref CollectionValidation_Level "CollectionValidation::Level".
+                  In plain C code the value should be
+                  \ref opt_collection_validation_level "mysqlx_collection_validation_level_t".
+                  */ \
+  END_LIST
+
+
+  // Schema Validation Level
+
+//Windows defines STRICT as a macro... undefine it
+#ifdef STRICT
+  #undef STRICT
+#endif
+
+#define COLLECTION_VALIDATION_LEVEL(X)\
+  X(OFF,1) /*!< No validation will be done on the collection. */ \
+  X(STRICT,2) /*!< All collection documents have to comply to validation schema.
+               */ \
+  END_LIST
+
 
 
 #endif

@@ -57,6 +57,11 @@ define PATH_CODING
 	g++ -I ../ -w -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
+# Net/Database
+define PATH_DATABASE
+	g++ -std=c++11 -I ../ -I ../../../extern/ -w -c ../Net/Database/MYSQL.cpp -L ../../../extern/MYSQL/lib/ -l:libmysqlcppconn-static.a -o bin/MYSQL.o
+endef
+
 # extract files from crypto++
 define EXTRACT_CRYPTOPP
 	ar x ../../../extern/crypto++/bin/lib/libcryptopp.a --output bin/cryptopp/
@@ -68,9 +73,14 @@ define EXTRACT_OPENSSL
 	ar x ../../../extern/OpenSSL/bin/bin/lib/libssl.a --output bin/openssl/libssl
 endef
 
+# extract files from mysql
+define EXTRACT_MYSQL
+	ar x ../../../extern/MYSQL/lib/libmysqlcppconn-static.a --output bin/mysql
+endef
+
 # link Library
 define LINK
-	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o
+	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o bin/mysql/*.o
 	ranlib NetCore.a
 endef
 
@@ -96,17 +106,20 @@ all:
 	mkdir -p bin/openssl
 	mkdir -p bin/openssl/libcrypto
 	mkdir -p bin/openssl/libssl
+	mkdir -p bin/mysql
 
 	$(call PATH_NET)
 	$(call PATH_MANAGER)
 	$(call PATH_WEB)
 	$(call PATH_ASSETS)
 	$(call PATH_CODING)
+	$(call PATH_DATABASE)
 	$(call PATH_CRYPTION)
 	$(call PATH_COMPRESSION)
 
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)
+	$(call EXTRACT_MYSQL)
 
 	$(call LINK)
 	$(call COPY)

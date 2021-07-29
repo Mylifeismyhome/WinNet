@@ -170,6 +170,12 @@ protected:
   Storing another result in a `Result` instance overwrites
   the previous result.
 
+  @note A `Result` object should be used by at most one thread at a  time. It is
+  not safe to call its methods by several threads simultaneously. It is
+  responsibility of the user to ensure this using a synchronization mechanism
+  such as mutexes.
+
+
   @ingroup devapi_res
 */
 
@@ -225,6 +231,9 @@ private:
 /**
   Types that can be reported in result meta-data.
 
+  These correspond to MySQL server datatypes described [here]
+  (https://dev.mysql.com/doc/refman/8.0/en/data-types.html).
+
   @ingroup devapi_res
 */
 
@@ -235,6 +244,51 @@ enum class Type : unsigned short
 
   RESULT_TYPE_LIST(TYPE_ENUM)
 };
+
+/*
+  Note: Normally we would put these docs in the RESULT_TYPE_LIST macro
+  but it would pollute documentation of methods like typeName() below
+  that also use this macro.
+*/
+
+/// @var mysqlx::Type::BIT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/bit-type.html>
+/// @var Type::TINYINT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/integer-types.html>
+/// @var Type::SMALLINT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/integer-types.html>
+/// @var Type::MEDIUMINT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/integer-types.html>
+/// @var Type::INT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/integer-types.html>
+/// @var Type::BIGINT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/integer-types.html>
+/// @var Type::FLOAT
+///   See <https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html>
+/// @var Type::DECIMAL
+///   See <https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html>
+/// @var Type::DOUBLE
+///   See <https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html>
+/// @var Type::JSON
+///   See <https://dev.mysql.com/doc/refman/8.0/en/json.html>
+/// @var Type::STRING
+///   See <https://dev.mysql.com/doc/refman/8.0/en/string-types.html>
+/// @var Type::BYTES
+///   See <https://dev.mysql.com/doc/refman/8.0/en/string-types.html>
+/// @var Type::TIME
+///   See <https://dev.mysql.com/doc/refman/8.0/en/date-and-time-types.html>
+/// @var Type::DATE
+///   See <https://dev.mysql.com/doc/refman/8.0/en/date-and-time-types.html>
+/// @var Type::DATETIME
+///   See <https://dev.mysql.com/doc/refman/8.0/en/date-and-time-types.html>
+/// @var Type::TIMESTAMP
+///   See <https://dev.mysql.com/doc/refman/8.0/en/date-and-time-types.html>
+/// @var Type::SET
+///   See <https://dev.mysql.com/doc/refman/8.0/en/set.html>
+/// @var Type::ENUM
+///   See <https://dev.mysql.com/doc/refman/8.0/en/enum.html>
+/// @var Type::GEOMETRY
+///   See <https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html>
 
 
 /**
@@ -665,6 +719,11 @@ public:
   result in the sequence, if present. Methods of `RowResult` are used to access
   row data of the current result (if it contains data).
 
+  @note A `SqlResult` object should be used by at most one thread at a  time.
+  It is  not safe to call its methods by several threads simultaneously. It is
+  responsibility of the user to ensure this using a synchronization mechanism
+  such as mutexes.
+
   @ingroup devapi_res
 */
 
@@ -744,6 +803,11 @@ private:
   the result. It is possible to get the documents one-by-one, or fetch and store
   all of them at once. One can iterate over the documents using range loop:
   `for (DbDoc d : result) ...`.
+
+  @note A `DocResult` object should be used by at most one thread at a  time.
+  It is  not safe to call its methods by several threads simultaneously. It is
+  responsibility of the user to ensure this using a synchronization mechanism
+  such as mutexes.
 
   @ingroup devapi_res
 */

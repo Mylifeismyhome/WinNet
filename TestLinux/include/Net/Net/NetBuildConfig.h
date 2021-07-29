@@ -6,7 +6,7 @@ mysqlcppconn.lib
 mysqlcppconn-static.lib
 */
 
-#undef NET_USE_MYSQL_SUPPORT
+#define NET_USE_MYSQL_SUPPORT
 #define BUILD_LINUX
 
 // disable windows compitable code

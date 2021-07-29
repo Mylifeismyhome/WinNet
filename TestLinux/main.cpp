@@ -22,6 +22,9 @@
 #include <Net/assets/web/http.h>
 #include <Net/assets/timer.h>
 
+// database
+#include <Net/Database/MYSQL.h>
+
 TEST(Basic,
 );
 
@@ -237,6 +240,15 @@ TEST(TIMER,
 	Net::Timer::WaitTimerFinished(handle); // infinite loop in our case
 );
 
+TEST(DATABASE,
+	MYSQL_CON cfg("tcp://localhost", 3306, "root", "", "opldev");
+	MYSQL mysql(cfg);
+	if (mysql.connect())
+	{
+		LOG(CSTRING("MYSQL CONNECTED!"));
+	}
+);
+
 int main()
 {
 	RUN(Basic);
@@ -251,7 +263,8 @@ int main()
 	RUN(Directory);
 	RUN(HTTP);
 	RUN(HTTPS);
-	RUN(TIMER);
+	//RUN(TIMER);
+	RUN(DATABASE);
 
 	return 0;
 }
