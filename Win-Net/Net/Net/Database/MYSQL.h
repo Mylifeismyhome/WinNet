@@ -35,10 +35,10 @@ NET_DSA_BEGIN
 				} \
 			}
 
- /*
-  * MYSQL_ITER => Iterates through multi results
-  * MYSQL_NEXT => Iterates through result rows
-  */
+/*
+* MYSQL_ITER => Iterates through multi results
+* MYSQL_NEXT => Iterates through result rows
+*/
 #define MYSQL_ITER(x, y) for (auto x : y.Get())
 #define MYSQL_NEXT(x) while (x.result->next())
 
@@ -56,9 +56,9 @@ NET_DSA_BEGIN
 #include <vector>
 #include <cstdarg>
 
-  /*
-  * Connetion config
-  */
+/*
+* Connetion config
+*/
 NET_CLASS_BEGIN(MYSQL_CON)
 char conIP[40];
 short conPort;

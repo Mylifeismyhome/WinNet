@@ -17,7 +17,7 @@ NTPRes::NTPRes(NTP_FRAME& frame)
 	bvalid = true;
 }
 
-NTP_FRAME&  NTPRes::frame()
+NTP_FRAME& NTPRes::frame()
 {
 	return nframe;
 }
@@ -52,7 +52,7 @@ char* ResolveHostname(const char* name)
 
 	struct addrinfo* result = nullptr;
 	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
-	if (dwRetval != NULL) 
+	if (dwRetval != NULL)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Host look up has been failed with error %d"), dwRetval);
 		Ws2_32::WSACleanup();
@@ -65,7 +65,7 @@ char* ResolveHostname(const char* name)
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
 		bool v6 = false;
-		switch (ptr->ai_family) 
+		switch (ptr->ai_family)
 		{
 		case AF_INET:
 			break;
@@ -79,7 +79,7 @@ char* ResolveHostname(const char* name)
 			continue;
 		}
 
-		switch (ptr->ai_socktype) 
+		switch (ptr->ai_socktype)
 		{
 		case SOCK_STREAM:
 		case SOCK_DGRAM:
@@ -90,7 +90,7 @@ char* ResolveHostname(const char* name)
 			continue;
 		}
 
-		switch (ptr->ai_protocol) 
+		switch (ptr->ai_protocol)
 		{
 		case IPPROTO_TCP:
 		case IPPROTO_UDP:
@@ -218,7 +218,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		Ws2_32::WSACleanup();
 		return {};
 	}
-	
+
 	NTP_FRAME frame = {};
 	memset(&frame, NULL, sizeof(NTP_FRAME));
 	*((char*)&frame) = 0x1b;

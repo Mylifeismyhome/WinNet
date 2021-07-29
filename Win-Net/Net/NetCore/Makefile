@@ -22,6 +22,11 @@ define PATH_CRYPTION
 	g++ -I ../ -I ../../../extern/BCrypt -w -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
 endef
 
+# Net/Compression/
+define PATH_COMPRESSION
+	g++ -w -I ../ -I ../../../extern/ -c ../Net/Compression/Compression.cpp -o bin/Compression.o
+endef
+
 # Net/assets/manager
 define PATH_MANAGER
 	g++ -I ../ -w -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
@@ -98,6 +103,7 @@ all:
 	$(call PATH_ASSETS)
 	$(call PATH_CODING)
 	$(call PATH_CRYPTION)
+	$(call PATH_COMPRESSION)
 
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)
