@@ -1,5 +1,6 @@
 #include <Net/Net/NetString.h>
 
+NET_IGNORE_CONVERSION_NULL
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Pointer)
 UniquePointer::UniquePointer(void* in)
@@ -27,11 +28,14 @@ String::String(const char in)
 String::String(const char* in, ...)
 {
 	va_list vaArgs;
-	va_start(vaArgs, in);
-	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in, vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in);
+        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in);
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in, vaArgs);
+        va_end(vaArgs);
 
 	Construct(str.data());
 }
@@ -59,11 +63,14 @@ void String::Construct(const char in)
 void String::Construct(const char* in, ...)
 {
 	va_list vaArgs;
-	va_start(vaArgs, in);
-	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in, vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in);
+        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in);
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in, vaArgs);
+        va_end(vaArgs);
 
 	_string = RUNTIMEXOR(str.data());
 	_size = str.size();
@@ -131,11 +138,14 @@ void String::append(const char in)
 void String::set(const char* in, ...)
 {
 	va_list vaArgs;
-	va_start(vaArgs, in);
-	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in, vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in);
+        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in);
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in, vaArgs);
+        va_end(vaArgs);
 
 	_string.free();
 	_string = RUNTIMEXOR(str.data());
@@ -151,11 +161,14 @@ void String::append(const char* in, ...)
 	}
 
 	va_list vaArgs;
-	va_start(vaArgs, in);
-	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in, vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in);
+        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in);
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in, vaArgs);
+        va_end(vaArgs);
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
 	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
@@ -172,11 +185,14 @@ void String::append(const char* in, ...)
 void String::set(String& in, ...)
 {
 	va_list vaArgs;
-	va_start(vaArgs, in.get());
-	const size_t size = std::vsnprintf(nullptr, 0, in.data().get(), vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in.data().get(), vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in.get().get());
+        const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in.get().get());
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+        va_end(vaArgs);
 
 	_string.free();
 	_string = RUNTIMEXOR(str.data());
@@ -192,11 +208,14 @@ void String::append(String& in, ...)
 	}
 
 	va_list vaArgs;
-	va_start(vaArgs, in.get());
-	const size_t size = std::vsnprintf(nullptr, 0, in.data().get(), vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in.data().get(), vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, in.get().get());
+        const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, in.get().get());
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+        va_end(vaArgs);
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
 	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
@@ -1436,3 +1455,4 @@ bool String::replaceAll(const char* pattern, const char* r)
 	return affectedOnce;
 }
 NET_NAMESPACE_END
+NET_POP

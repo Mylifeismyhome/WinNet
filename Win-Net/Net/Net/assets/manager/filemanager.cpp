@@ -1,5 +1,6 @@
 #include "filemanager.h"
 
+NET_IGNORE_CONVERSION_NULL
 #ifdef BUILD_LINUX
 static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* Mode)
 {
@@ -452,3 +453,4 @@ FileManagerErrorRef FileManagerA::ErrorDescription(const ErrorCodes code) const
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
+NET_POP

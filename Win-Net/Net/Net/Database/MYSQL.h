@@ -184,11 +184,14 @@ NET_CLASS_END;
 static char* SQLString(const char* string, ...)
 {
 	va_list vaArgs;
-	va_start(vaArgs, string);
-	const size_t size = std::vsnprintf(nullptr, 0, string, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), string, vaArgs);
-	va_end(vaArgs);
+        va_start(vaArgs, string);
+        const size_t size = std::vsnprintf(nullptr, 0, string, vaArgs);
+        va_end(vaArgs);
+
+        va_start(vaArgs, string);
+        std::vector<char> str(size + 1);
+        std::vsnprintf(str.data(), str.size(), string, vaArgs);
+        va_end(vaArgs);
 
 	auto* res = new char[str.size() + 1];
 	memcpy(res, str.data(), str.size());

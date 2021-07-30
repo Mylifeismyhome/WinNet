@@ -1,5 +1,6 @@
 #include "dirmanager.h"
 
+NET_IGNORE_CONVERSION_NULL
 #ifdef BUILD_LINUX
 NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
 {
@@ -142,10 +143,10 @@ bool Directory::folderExists(const char* folderName)
 }
 
 #ifdef BUILD_LINUX
-static std::string NET_LINUX_REPLACE_ESCAPE(std::string str, const std::string& from, const std::string& to) 
+static std::string NET_LINUX_REPLACE_ESCAPE(std::string str, const std::string& from, const std::string& to)
 {
     	size_t start_pos = 0;
-   	while((start_pos = str.find(from, start_pos)) != std::string::npos) 
+   	while((start_pos = str.find(from, start_pos)) != std::string::npos)
 	{
         	str.replace(start_pos, from.length(), to);
         	start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
@@ -865,3 +866,4 @@ std::string Directory::currentFileNameA()
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
+NET_POP

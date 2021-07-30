@@ -1,6 +1,7 @@
 #include "http.h"
 #include <Net/Import/Ws2_32.h>
 
+NET_IGNORE_CONVERSION_NULL
 void Net::Web::Head::Network::AllocData(const size_t size)
 {
 	data = ALLOC<byte>(size + 1);
@@ -1642,7 +1643,7 @@ bool Net::Web::HTTPS::Get()
 			network.clearData();
 			return res;
 		}
-		
+
 		network.clearData();
 		return false;
 	}
@@ -1774,4 +1775,5 @@ bool Net::Web::HTTPS::Post()
 
 	return false;
 }
+NET_POP
 #endif

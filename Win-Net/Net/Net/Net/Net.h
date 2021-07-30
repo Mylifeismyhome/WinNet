@@ -1,5 +1,15 @@
 #pragma once
 #ifndef _NET
+#include "NetBuild.h"
+
+#ifdef BUILD_LINUX
+#define NET_IGNORE_CONVERSION_NULL \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wconversion-null\"")
+
+#define NET_POP \
+    _Pragma("GCC diagnostic pop")
+#else
 #pragma warning(disable: 4996)
 #pragma warning(disable: 4006)
 #pragma warning(disable: 4081)
@@ -11,9 +21,11 @@
 #pragma warning(disable: 4005)
 #define _WINSOCKET_DEPRECATED_NO_WARNINGS
 
-#undef NET_TEST_MEMORY_LEAKS
+#define NET_IGNORE_CONVERSION_NULL
+#define NET_POP
+#endif
 
-#include "NetBuild.h"
+#undef NET_TEST_MEMORY_LEAKS
 
 #include <cstdio>
 #include <iostream>
@@ -493,6 +505,8 @@ namespace Net
 						return SSLv3_client_method();
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #ifndef OPENSSL_NO_TLS1_METHOD
 					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1:
 						return TLSv1_method();
@@ -525,6 +539,7 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT:
 						return TLSv1_2_client_method();
 #endif
+#pragma GCC diagnostic pop
 
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS:
 						return DTLS_method();
@@ -535,6 +550,8 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT:
 						return DTLS_client_method();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #ifndef OPENSSL_NO_DTLS1_METHOD
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1:
 						return DTLSv1_method();
@@ -556,6 +573,7 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT:
 						return DTLSv1_2_client_method();
 #endif
+#pragma GCC diagnostic pop
 					default:
 						break;
 					}
