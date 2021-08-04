@@ -28,7 +28,11 @@ int main()
 	{
 		while (client.IsConnected())
 		{
+#ifdef BUILD_LINUX
+			sleep(1000);
+#else
 			Sleep(1000);
+#endif
 		}
 	}
 

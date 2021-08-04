@@ -28,7 +28,11 @@ int main()
 	while (server.IsRunning())
 	{
 		//SetConsoleTitle(Net::String("Peer(s): %d", server.getCountPeers()).get().get());
-		sleep(1000);
+#ifdef BUILD_LINUX
+			sleep(1000);
+#else
+			Sleep(1000);
+#endif
 	}
 
 	END_LOG;

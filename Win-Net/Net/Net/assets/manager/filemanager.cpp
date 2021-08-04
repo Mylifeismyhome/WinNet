@@ -25,54 +25,54 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 #define OpenFile(fname, mode) fopen(fname, mode)
 #endif
 
-static const char* GetModeA(const uint8_t Mode)
+constexpr const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return std::string(CSTRING("wb")).c_str();
+		return ("wb");
 	if (Mode == NET_FILE_READ)
-		return std::string(CSTRING("rb")).c_str();
+		return ("rb");
 	if (Mode == NET_FILE_APPAND)
-		return std::string(CSTRING("ab")).c_str();
+		return ("ab");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return std::string(CSTRING("ab+")).c_str();
+		return ("ab+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return std::string(CSTRING("wb+")).c_str();
+		return ("wb+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return std::string(CSTRING("rb+")).c_str();
+		return ("rb+");
 
-	return std::string(CSTRING("rb")).c_str();
+	return ("rb");
 }
 
-static const wchar_t* GetModeW(const uint8_t Mode)
+constexpr const wchar_t* GetModeW(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
-		return std::wstring(CWSTRING("wb")).c_str();
+		return (L"wb");
 	if (Mode == NET_FILE_READ)
-		return std::wstring(CWSTRING("rb")).c_str();
+		return (L"rb");
 	if (Mode == NET_FILE_APPAND)
-		return std::wstring(CWSTRING("ab")).c_str();
+		return (L"ab");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
-		return std::wstring(CWSTRING("ab+")).c_str();
+		return (L"ab+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_DISCARD)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD))
-		return std::wstring(CWSTRING("wb+")).c_str();
+		return (L"wb+");
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
-		return std::wstring(CWSTRING("rb+")).c_str();
+		return (L"rb+");
 
-	return std::wstring(CWSTRING("rb")).c_str();
+	return (L"rb");
 }
 
 static Net::Manager::FileManagerErrorRef GetErrorDescription(const Net::Manager::ErrorCodes code)

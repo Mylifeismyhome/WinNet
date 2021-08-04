@@ -235,22 +235,23 @@ void String::append(String& in, ...)
 		return;
 	}
 
-#ifdef BUILD_LINUX
+	char* ref = in.get().get();
 	va_list vaArgs;
-	va_start(vaArgs, in.get().get());
-	const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+
+#ifdef BUILD_LINUX
+	va_start(vaArgs, ref);
+	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
 	va_end(vaArgs);
 
-	va_start(vaArgs, in.get().get());
+	va_start(vaArgs, ref);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
 	va_end(vaArgs);
 #else
-	va_list vaArgs;
-//	va_start(vaArgs, in.get().get());
-	const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+	va_start(vaArgs, ref);
+	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
 	va_end(vaArgs);
 #endif
 
