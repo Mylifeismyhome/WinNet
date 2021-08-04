@@ -9,17 +9,15 @@
 
 int main()
 {
-	LOG_WARNING("TEST LOG");
-
-//	Net::load();
+	Net::load();
 
 	Server server;
-//	server.SetSocketOption<bool>({ TCP_NODELAY, true });
-//	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
-//	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
+	server.SetSocketOption<bool>({ TCP_NODELAY, true });
+	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
+	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 
 #ifdef _USE_CIPHER_
-//	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
+	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
 
 	LOG_WARNING("USING CIPHER");
 #endif
@@ -35,7 +33,7 @@ int main()
 
 	END_LOG;
 
-//	Net::unload();
+	Net::unload();
 
 	return 0;
 }
