@@ -36,12 +36,12 @@ void Net::unload()
 #endif
 }
 
-int Net::SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen)
+int Net::SocketOpt(SOCKET s, int level, int optname, const SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
 #else
-	return 0;
+	return setsockopt(s, level, optname, optval, optlen);
 #endif
 }
 

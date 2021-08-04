@@ -1,6 +1,8 @@
 #pragma once
+#ifndef BUILD_LINUX
 #pragma warning(disable: 4302)
 #pragma warning(disable: 4065)
+#endif
 
 #define NET_SERVER Net::Server::Server
 
@@ -21,7 +23,7 @@
 
 #define NET_SEND DoSend
 
-#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
+#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<SOCKET_OPT_TYPE>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
 #define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT
 #define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
@@ -46,6 +48,12 @@
 
 #include <mutex>
 
+#ifdef BUILD_LINUX
+#define LAST_ERROR errno
+#else
+#define LAST_ERROR Ws2_32::WSAGetLastError()
+#endif
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
 NET_DSA_BEGIN
@@ -53,10 +61,10 @@ NET_CLASS_BEGIN(IPRef)
 char* pointer;
 
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(IPRef, PCSTR)
+NET_CLASS_CONSTRUCTUR(IPRef, const char*)
 NET_CLASS_DESTRUCTUR(IPRef)
 
-PCSTR get() const;
+const char* get() const;
 NET_CLASS_END
 
 NET_ABSTRAC_CLASS_BEGIN(Server, Package)
@@ -208,10 +216,10 @@ size_t GetReceivedPackageSize(NET_PEER);
 float GetReceivedPackageSizeAsPerc(NET_PEER);
 
 DWORD optionBitFlag;
-std::vector<Option_t<char*>> option;
+std::vector<Option_t<SOCKET_OPT_TYPE>> option;
 
 DWORD socketOptionBitFlag;
-std::vector<SocketOption_t<char*>> socketoption;
+std::vector<SocketOption_t<SOCKET_OPT_TYPE>> socketoption;
 
 NET_CLASS_PUBLIC
 template <class T>
@@ -224,16 +232,16 @@ void SetOption(const Option_t<T> o)
 		for (auto& entry : option)
 			if (entry.opt == o.opt)
 			{
-				entry.type = reinterpret_cast<char*>(o.type);
+				entry.type = (SOCKET_OPT_TYPE)o.type;
 				entry.len = o.len;
 				return;
 			}
 	}
 
 	// save the option value
-	Option_t<char*> opt;
+	Option_t<SOCKET_OPT_TYPE> opt;
 	opt.opt = o.opt;
-	opt.type = reinterpret_cast<char*>(o.type);
+	opt.type = (SOCKET_OPT_TYPE)o.type;
 	opt.len = o.len;
 	option.emplace_back(opt);
 
@@ -250,7 +258,7 @@ T GetOption(const DWORD opt)
 	for (const auto& entry : option)
 		if (entry.opt == opt)
 		{
-			return reinterpret_cast<T>(entry.type);
+			return *((T*)(&entry.type));
 			break;
 		}
 
@@ -267,16 +275,16 @@ void SetSocketOption(const SocketOption_t<T> opt)
 		for (auto& entry : socketoption)
 			if (entry.opt == opt.opt)
 			{
-				entry.type = reinterpret_cast<char*>(opt.type);
+				entry.type = (SOCKET_OPT_TYPE)opt.type;
 				entry.len = opt.len;
 				return;
 			}
 	}
 
 	// save the option value
-	SocketOption_t<char*> option;
+	SocketOption_t<SOCKET_OPT_TYPE> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<char*>(opt.type);
+	option.type = (SOCKET_OPT_TYPE)opt.type;
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 

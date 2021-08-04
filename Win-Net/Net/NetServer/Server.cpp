@@ -4,7 +4,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Server)
-IPRef::IPRef(PCSTR const pointer)
+IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
 }
@@ -14,7 +14,7 @@ IPRef::~IPRef()
 	FREE(pointer);
 }
 
-PCSTR IPRef::get() const
+const char* IPRef::get() const
 {
 	return pointer;
 }
@@ -423,7 +423,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 
 	if (!skipNotify)
 	{
-		Package PKG;
+		Net::Package PKG;
 		PKG.Append(CSTRING("code"), code);
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
@@ -473,7 +473,11 @@ NET_THREAD(TickThread)
 	while (server->IsRunning())
 	{
 		server->Tick();
+#ifdef BUILD_LINUX
+		sleep(FREQUENZ(server));
+#else
 		Kernel32::Sleep(FREQUENZ(server));
+#endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
 	return NULL;
@@ -488,7 +492,11 @@ NET_THREAD(AcceptorThread)
 	while (server->IsRunning())
 	{
 		server->Acceptor();
-		Kernel32::Sleep(FREQUENZ(server));
+#ifdef BUILD_LINUX
+                sleep(FREQUENZ(server));
+#else
+                Kernel32::Sleep(FREQUENZ(server));
+#endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
 	return NULL;
@@ -499,8 +507,10 @@ bool Server::Run()
 	if (IsRunning())
 		return false;
 
+#ifndef BUILD_LINUX
 	// create WSADATA object
 	WSADATA wsaData;
+#endif
 
 	// our sockets for the server
 	SetListenSocket(INVALID_SOCKET);
@@ -508,18 +518,20 @@ bool Server::Run()
 
 	// address info for the server to listen to
 	addrinfo* result = nullptr;
-	auto hints = addrinfo();
+	int res = 0;
 
+#ifndef BUILD_LINUX
 	// Initialize Winsock
-	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
+	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != 0)
 	{
 		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), SERVERNAME(this), res);
 		return false;
 	}
+#endif
 
 	// set address information
-	ZeroMemory(&hints, sizeof(hints));
+	struct addrinfo hints = {};
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -530,7 +542,9 @@ bool Server::Run()
 
 	if (res != 0) {
 		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), SERVERNAME(this), res);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -538,21 +552,25 @@ bool Server::Run()
 	SetListenSocket(Ws2_32::socket(result->ai_family, result->ai_socktype, result->ai_protocol));
 
 	if (GetListenSocket() == INVALID_SOCKET) {
-		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
 	// Set the mode of the socket to be nonblocking
-	u_long iMode = 1;
+	unsigned long iMode = 1;
 	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -560,10 +578,12 @@ bool Server::Run()
 	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, static_cast<int>(result->ai_addrlen));
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -574,9 +594,11 @@ bool Server::Run()
 	res = Ws2_32::listen(GetListenSocket(), SOMAXCONN);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -640,7 +662,9 @@ bool Server::Close()
 	if (GetAcceptSocket())
 		Ws2_32::closesocket(GetAcceptSocket());
 
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	LOG_DEBUG(CSTRING("[%s] - Closed!"), SERVERNAME(this));
 	return true;
@@ -667,6 +691,115 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 		const auto res = Ws2_32::send(peer->pSocket, data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+                        #ifdef BUILD_LINUX
+                        switch (errno)
+                        {
+                        case EACCES:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EACCES"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EWOULDBLOCK:
+                                continue;
+
+                        case EALREADY:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EBADF:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EBADF"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ECONNRESET:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EDESTADDRREQ:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EFAULT:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINTR:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINVAL:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EISCONN:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EMSGSIZE:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOBUFS:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOMEM:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTCONN:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTSOCK:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EOPNOTSUPP:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EPIPE:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+                                ErasePeer(peer);
+                                return;
+
+                        default:
+                                bPreviousSentFailed = true;
+                                LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                                ErasePeer(peer);
+                                return;
+                        }
+                        #else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -786,6 +919,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 				ErasePeer(peer);
 				return;
 			}
+			#endif
 		}
 		if (res < 0)
 			break;
@@ -818,6 +952,132 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+                        #ifdef BUILD_LINUX
+                        switch (errno)
+                        {
+                        case EACCES:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EACCES"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EWOULDBLOCK:
+                                continue;
+
+                        case EALREADY:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EBADF:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EBADF"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ECONNRESET:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EDESTADDRREQ:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EFAULT:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINTR:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINVAL:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EISCONN:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EMSGSIZE:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOBUFS:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOMEM:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTCONN:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTSOCK:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EOPNOTSUPP:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EPIPE:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+                                ErasePeer(peer);
+                                return;
+
+                        default:
+                                bPreviousSentFailed = true;
+                                FREE(data);
+                                LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                                ErasePeer(peer);
+                                return;
+                        }
+                        #else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -956,6 +1216,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 				ErasePeer(peer);
 				return;
 			}
+			#endif
 		}
 		if (res < 0)
 			break;
@@ -990,6 +1251,132 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+                        #ifdef BUILD_LINUX
+                        switch (errno)
+                        {
+                        case EACCES:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EACCES"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EWOULDBLOCK:
+                                continue;
+
+                        case EALREADY:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EBADF:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EBADF"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ECONNRESET:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EDESTADDRREQ:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EFAULT:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINTR:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EINVAL:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EISCONN:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EMSGSIZE:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOBUFS:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOMEM:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTCONN:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                                ErasePeer(peer);
+                                return;
+
+                        case ENOTSOCK:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EOPNOTSUPP:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+                                ErasePeer(peer);
+                                return;
+
+                        case EPIPE:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+                                ErasePeer(peer);
+                                return;
+
+                        default:
+                                bPreviousSentFailed = true;
+                                data.free();
+                                LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                                ErasePeer(peer);
+                                return;
+                        }
+                        #else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -1128,6 +1515,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 				ErasePeer(peer);
 				return;
 			}
+			#endif
 		}
 		if (res < 0)
 			break;
@@ -1140,21 +1528,21 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 
 /*
 *							Visualisation of package structure in NET
-*	------------------------------------------------------------------------------------------
+*	---------------------------------------------------------------------------------------------------------------------------------
 *				CRYPTED VERSION					|		NON-CRYPTED VERSION
-*	------------------------------------------------------------------------------------------
+*	---------------------------------------------------------------------------------------------------------------------------------
 *	{KEYWORD}{SIZE}DATA
-*	------------------------------------------------------------------------------------------
+*	---------------------------------------------------------------------------------------------------------------------------------
 *	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
 *		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
 *			{KEY}{...}...						*						-
 *			{IV}{...}...						*						-
-*			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
+*			{RAW DATA KEY}{...}...					*				{RAW DATA KEY}{...}...
 *			{RAW DATA}{...}...					*				{RAW DATA}{...}...
 *			{DATA}{...}...						*				{DATA}{...}...
 *	{END PACKAGE}								*		{END PACKAGE}
 *
- */
+*/
 void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 {
 	PEER_NOT_VALID(peer,
@@ -1467,6 +1855,62 @@ short Server::Handshake(NET_PEER peer)
 	const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
+      		#ifdef BUILD_LINUX
+                switch (errno)
+                {
+                case EWOULDBLOCK:
+                        peer->network.reset();
+                        return ServerHandshake::would_block;
+
+               	case ECONNREFUSED:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+                        ErasePeer(peer);
+                        return ServerHandshake::error;
+
+             	case EFAULT:
+                        peer->network.reset();
+                       	LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                      	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+             	case EINTR:
+                        peer->network.reset();
+                    	LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                     	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+              	case EINVAL:
+                        peer->network.reset();
+                   	LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                   	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+            	case ENOMEM:
+                        peer->network.reset();
+                    	LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                     	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+             	case ENOTCONN:
+                        peer->network.reset();
+                   	LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                    	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+           	case ENOTSOCK:
+                        peer->network.reset();
+                      	LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                     	ErasePeer(peer);
+                        return ServerHandshake::error;
+
+                default:
+                        peer->network.reset();
+                       	LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                       	ErasePeer(peer);
+                        return ServerHandshake::error;
+                }
+                #else
 		switch (Ws2_32::WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
@@ -1569,6 +2013,7 @@ short Server::Handshake(NET_PEER peer)
 			ErasePeer(peer);
 			return ServerHandshake::error;
 		}
+		#endif
 	}
 	if (data_size == 0)
 	{
@@ -1740,11 +2185,22 @@ NET_THREAD(Receive)
 			break;
 		}
 
+#ifdef BUILD_LINUX
+		sleep(restTime);
+#else
 		Kernel32::Sleep(restTime);
+#endif
 	}
 
 	// wait until thread has finished
-	while (peer && peer->bLatency) Kernel32::Sleep(FREQUENZ(server));
+	while (peer && peer->bLatency)
+	{
+#ifdef BUILD_LINUX
+		sleep(FREQUENZ(server));
+#else
+		Kernel32::Sleep(FREQUENZ(server));
+#endif
+	}
 
 	// erase him
 	peer->setAsync(false);
@@ -1771,7 +2227,7 @@ void Server::Acceptor()
 		{
 			const auto res = _SetSocketOption(GetAcceptSocket(), entry);
 			if (res < 0)
-				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, GetLastError());
+				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
 
 		const auto param = new Receive_t();
@@ -1810,6 +2266,63 @@ DWORD Server::DoReceive(NET_PEER peer)
 	const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
+                #ifdef BUILD_LINUX
+                switch (errno)
+                {
+                case EWOULDBLOCK:
+                        ProcessPackages(peer);
+                        peer->network.reset();
+                        return FREQUENZ(this);
+
+                case ECONNREFUSED:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case EFAULT:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case EINTR:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case EINVAL:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case ENOMEM:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case ENOTCONN:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                case ENOTSOCK:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+
+                default:
+                        peer->network.reset();
+                        LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                        ErasePeer(peer);
+                        return FREQUENZ(this);
+                }
+                #else
 		switch (Ws2_32::WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
@@ -1913,6 +2426,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 			ErasePeer(peer);
 			return FREQUENZ(this);
 		}
+		#endif
 	}
 	if (data_size == 0)
 	{
@@ -2709,12 +3223,21 @@ bool Server::CreateTOTPSecret(NET_PEER peer)
 	if (!(Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP))
 		return false;
 
+#ifdef BUILD_LINUX
+        struct tm* tm = nullptr;
+        tm = gmtime(&curTime);
+        tm->tm_hour = Net::Util::roundUp(tm->tm_hour, 10);
+        tm->tm_min = Net::Util::roundUp(tm->tm_min, 10);
+        tm->tm_sec = 0;
+        const auto txTm = mktime(tm);
+#else
 	tm tm;
 	gmtime_s(&tm, &curTime);
 	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
 	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
 	tm.tm_sec = 0;
 	const auto txTm = mktime(&tm);
+#endif
 
 	const auto strTime = ctime(&txTm);
 	peer->totp_secret_len = strlen(strTime);

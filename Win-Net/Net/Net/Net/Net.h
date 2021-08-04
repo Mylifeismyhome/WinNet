@@ -91,6 +91,8 @@ typedef uint64_t uint64;
 #define SOCKET_RDWR SHUT_RDWR /* Disables further send and receive operations. */
 #define SOCKET_ERROR -1
 #define INVALID_SOCKET -1
+#define SOCKET_OPT_TYPE void*
+#define SOCKET_OPT_LEN socklen_t
 #else
 typedef __int64 int64;
 typedef unsigned int uint;
@@ -98,6 +100,8 @@ typedef unsigned __int64 uint64;
 #define SOCKET_RD SD_SEND
 #define SOCKET_WR SD_SEND
 #define SOCKET_RDWR SD_SEND
+#define SOCKET_OPT_TYPE char*
+#define SOCKET_OPT_LEN int
 #endif
 
 ///////////////////////////////////
@@ -369,7 +373,7 @@ namespace Net
 	void load();
 	void unload();
 
-	int SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen);
+	int SocketOpt(SOCKET s, int level, int optname, const SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen);
 
 	namespace ssl
 	{
@@ -627,7 +631,6 @@ enum HandshakeRet_t
 };
 NET_NAMESPACE_END
 
-#ifndef BUILD_LINUX
 template <class T>
 NET_STRUCT_BEGIN(SocketOption_t)
 DWORD opt;
@@ -648,17 +651,16 @@ SocketOption_t(const DWORD opt, const T type)
 }
 NET_STRUCT_END
 
-static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
+static int _SetSocketOption(const SOCKET socket, const SocketOption_t<SOCKET_OPT_TYPE> opt)
 {
 	const auto result = Net::SocketOpt(socket,
 		IPPROTO_TCP,
 		opt.opt,
-		(char*)&opt.type,
+		(SOCKET_OPT_TYPE)&opt.type,
 		static_cast<int>(opt.len));
 
 	return result;
 }
-#endif
 
 template <class T>
 NET_STRUCT_BEGIN(Option_t)
