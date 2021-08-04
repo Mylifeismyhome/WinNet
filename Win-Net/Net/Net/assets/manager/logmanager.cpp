@@ -84,15 +84,24 @@ std::string GetLogStatePrefix(LogStates state)
 
 void Log(const LogStates state, const char* func, const char* msg, ...)
 {
- 	va_list vaArgs;
-        va_start(vaArgs, msg);
-        const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-        va_end(vaArgs);
+	va_list vaArgs;
 
-        va_start(vaArgs, msg);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, msg);
+	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, msg);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, msg);
+	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	if (str.empty())
 		return;
@@ -144,15 +153,24 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
 	swprintf(func, lenfunc, CWSTRING("%s"), funcW);
 
- 	va_list vaArgs;
-        va_start(vaArgs, msg);
-        const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-        va_end(vaArgs);
+	va_list vaArgs;
 
-        va_start(vaArgs, msg);
-        std::vector<wchar_t> str(size + 1);
-        std::vswprintf(str.data(), str.size(), msg, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, msg);
+	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, msg);
+	std::vector<wchar_t> str(size + 1);
+	std::vswprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, msg);
+	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+	std::vector<wchar_t> str(size + 1);
+	std::vswprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	if (str.empty())
 	{
@@ -282,15 +300,24 @@ void SetLogCallbackW(OnLogW_t callback)
 
 void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 {
- 	va_list vaArgs;
-        va_start(vaArgs, msg);
-        const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-        va_end(vaArgs);
+	va_list vaArgs;
 
-        va_start(vaArgs, msg);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, msg);
+	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, msg);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, msg);
+	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	if (str.empty())
 		return;
@@ -380,15 +407,24 @@ void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, 
 	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
 	swprintf(func, lenfunc, CWSTRING("%s"), funcA);
 
- 	va_list vaArgs;
-        va_start(vaArgs, msg);
-        const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-        va_end(vaArgs);
+	va_list vaArgs;
 
-        va_start(vaArgs, msg);
-        std::vector<wchar_t> str(size + 1);
-        std::vswprintf(str.data(), str.size(), msg, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, msg);
+	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, msg);
+	std::vector<wchar_t> str(size + 1);
+	std::vswprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, msg);
+	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+	std::vector<wchar_t> str(size + 1);
+	std::vswprintf(str.data(), str.size(), msg, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	if (str.empty())
 	{

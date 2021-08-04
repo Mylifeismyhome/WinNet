@@ -7,7 +7,7 @@ mysqlcppconn-static.lib
 */
 
 #undef NET_USE_MYSQL_SUPPORT
-#define BUILD_LINUX
+#undef BUILD_LINUX
 
 #undef NET_TEST_MEMORY_LEAKS
 

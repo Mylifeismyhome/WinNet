@@ -548,8 +548,10 @@ namespace Net
 						return SSLv3_client_method();
 #endif
 
+#ifdef BUILD_LINUX
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #ifndef OPENSSL_NO_TLS1_METHOD
 					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1:
 						return TLSv1_method();
@@ -582,7 +584,9 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_TLSv1_2_CLIENT:
 						return TLSv1_2_client_method();
 #endif
+#ifdef BUILD_LINUX
 #pragma GCC diagnostic pop
+#endif
 
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS:
 						return DTLS_method();
@@ -593,8 +597,10 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLS_CLIENT:
 						return DTLS_client_method();
 
+#ifdef BUILD_LINUX
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #ifndef OPENSSL_NO_DTLS1_METHOD
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1:
 						return DTLSv1_method();
@@ -616,7 +622,9 @@ namespace Net
 					case NET_SSL_METHOD::NET_SSL_METHOD_DTLSv1_2_CLIENT:
 						return DTLSv1_2_client_method();
 #endif
+#ifdef BUILD_LINUX
 #pragma GCC diagnostic pop
+#endif
 					default:
 						break;
 					}

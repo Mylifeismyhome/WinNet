@@ -28,14 +28,14 @@ String::String(const char in)
 String::String(const char* in, ...)
 {
 	va_list vaArgs;
-        va_start(vaArgs, in);
-        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	va_end(vaArgs);
 
-        va_start(vaArgs, in);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in, vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
 
 	Construct(str.data());
 }
@@ -63,14 +63,14 @@ void String::Construct(const char in)
 void String::Construct(const char* in, ...)
 {
 	va_list vaArgs;
-        va_start(vaArgs, in);
-        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	va_end(vaArgs);
 
-        va_start(vaArgs, in);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in, vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
 
 	_string = RUNTIMEXOR(str.data());
 	_size = str.size();
@@ -138,14 +138,23 @@ void String::append(const char in)
 void String::set(const char* in, ...)
 {
 	va_list vaArgs;
-        va_start(vaArgs, in);
-        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-        va_end(vaArgs);
 
-        va_start(vaArgs, in);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, in);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	_string.free();
 	_string = RUNTIMEXOR(str.data());
@@ -161,14 +170,23 @@ void String::append(const char* in, ...)
 	}
 
 	va_list vaArgs;
-        va_start(vaArgs, in);
-        const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
-        va_end(vaArgs);
 
-        va_start(vaArgs, in);
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in, vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, in);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, in);
+	const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
 	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
@@ -184,15 +202,25 @@ void String::append(const char* in, ...)
 
 void String::set(String& in, ...)
 {
+	char* ref = in.get().get();
 	va_list vaArgs;
-        va_start(vaArgs, in.get().get());
-        const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
-        va_end(vaArgs);
 
-        va_start(vaArgs, in.get().get());
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
-        va_end(vaArgs);
+#ifdef BUILD_LINUX
+	va_start(vaArgs, ref);
+	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	va_end(vaArgs);
+
+	va_start(vaArgs, ref);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	va_end(vaArgs);
+#else
+	va_start(vaArgs, ref);
+	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	va_end(vaArgs);
+#endif
 
 	_string.free();
 	_string = RUNTIMEXOR(str.data());
@@ -207,15 +235,24 @@ void String::append(String& in, ...)
 		return;
 	}
 
+#ifdef BUILD_LINUX
 	va_list vaArgs;
-        va_start(vaArgs, in.get().get());
-        const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in.get().get());
+	const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+	va_end(vaArgs);
 
-        va_start(vaArgs, in.get().get());
-        std::vector<char> str(size + 1);
-        std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
-        va_end(vaArgs);
+	va_start(vaArgs, in.get().get());
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+	va_end(vaArgs);
+#else
+	va_list vaArgs;
+//	va_start(vaArgs, in.get().get());
+	const size_t size = std::vsnprintf(nullptr, 0, in.get().get(), vaArgs);
+	std::vector<char> str(size + 1);
+	std::vsnprintf(str.data(), str.size(), in.get().get(), vaArgs);
+	va_end(vaArgs);
+#endif
 
 	CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
 	memcpy(&data.get()[0], _string.revert().get(), _size - 1);
