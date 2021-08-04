@@ -36,13 +36,24 @@ void Net::unload()
 #endif
 }
 
-int Net::SocketOpt(SOCKET s, int level, int optname, const SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
+int Net::SocketOpt(SOCKET s, int level, DWORD optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
 #else
 	return setsockopt(s, level, optname, optval, optlen);
 #endif
+}
+
+int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
+{
+        const auto result = Net::SocketOpt(socket,
+                IPPROTO_TCP,
+                opt.opt,
+                (SOCKET_OPT_TYPE)&opt.type,
+                opt.len);
+
+        return result;
 }
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)

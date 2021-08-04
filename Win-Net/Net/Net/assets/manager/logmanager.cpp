@@ -18,8 +18,11 @@ CONSTEXPR auto LIGHTMAGENTA = 13;
 CONSTEXPR auto YELLOW = 14;
 CONSTEXPR auto WHITE = 15;
 
-static char fname[MAX_PATH];
-static bool AreaInUse;
+static char __net_output_fname[NET_MAX_PATH];
+static bool __net_output_used()
+{
+	return strcmp(__net_output_fname, CSTRING(""));
+}
 
 // global override able callback
 static void (*OnLogA)(int state, const char* buffer) = nullptr;
@@ -30,62 +33,6 @@ static void SetConsoleOutputColor(const int color)
 #ifndef BUILD_LINUX
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 #endif
-}
-
-void NetSetLogCallbackA(OnLogA_t callback)
-{
-	OnLogA = callback;
-}
-
-void NetSetLogCallbackW(OnLogW_t callback)
-{
-	OnLogW = callback;
-}
-
-void SetFname(const char* name)
-{
-#ifndef BUILD_LINUX
-	Net::String tmp(name);
-	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
-	{
-		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
-		{
-			strcpy(fname, name);
-			strcat(fname, CSTRING(".log"));
-		}
-		else
-		{
-			strcpy(fname, Net::Manager::Directory::homeDir().data());
-			strcpy(fname, name);
-			strcat(fname, CSTRING(".log"));
-			NET_DIRMANAGER::createDir(fname);
-		}
-	}
-	else
-	{
-		strcpy(fname, Net::Manager::Directory::homeDir().data());
-		strcat(fname, name);
-		strcat(fname, CSTRING(".log"));
-	}
-#endif
-}
-
-char* GetFname()
-{
-	return fname;
-}
-
-void SetAreaInUse(const bool status)
-{
-	AreaInUse = status;
-}
-
-bool IsAreaInUse()
-{
-	return AreaInUse;
 }
 
 NET_NAMESPACE_BEGIN(Net)
@@ -293,21 +240,47 @@ WORD GetColorFromState(const LogStates state)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Manager)
-Log::Log()
+NET_NAMESPACE_BEGIN(Log)
+void SetOutputName(const char* name)
 {
-	file = new NET_FILEMANAGER(GetFname(), NET_FILE_WRITE | NET_FILE_APPAND);
+	Net::String tmp(name);
+        if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
+                || tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
+                || tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
+                || tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+        {
+                if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+                {
+                        strcpy(__net_output_fname, name);
+                        strcat(__net_output_fname, CSTRING(".log"));
+                }
+                else
+                {
+                        strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+                        strcpy(__net_output_fname, name);
+                        strcat(__net_output_fname, CSTRING(".log"));
+                        NET_DIRMANAGER::createDir(__net_output_fname);
+                }
+        }
+        else
+        {
+                strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+                strcat(__net_output_fname, name);
+                strcat(__net_output_fname, CSTRING(".log"));
+        }
 }
 
-Log::~Log()
+void SetLogCallbackA(OnLogA_t callback)
 {
-	if (file)
-	{
-		delete file;
-		file = nullptr;
-	}
+	OnLogA = callback;
 }
 
-void Log::doLog(const Console::LogStates state, const char* func, const char* msg, ...) const
+void SetLogCallbackW(OnLogW_t callback)
+{
+	OnLogW = callback;
+}
+
+void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 {
  	va_list vaArgs;
         va_start(vaArgs, msg);
@@ -321,6 +294,12 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 
 	if (str.empty())
 		return;
+
+        if(!__net_output_used())
+        {
+                Net::Console::Log(state, func, str.data());
+                return;
+        }
 
 	char time[TIME_LENGTH];
 	Clock::GetTimeA(time);
@@ -371,14 +350,8 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			if (OnLogA)
 				(*OnLogA)((int)state, buffer);
 
-			if (!WriteToFile(buffer))
-			{
-				printf(CSTRING("[NET]"));
-				SetConsoleOutputColor(RED);
-				printf(CSTRING("[ERROR]"));
-				SetConsoleOutputColor(WHITE);
-				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
-			}
+                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+                        file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -393,21 +366,15 @@ void Log::doLog(const Console::LogStates state, const char* func, const char* ms
 			if (OnLogA)
 				(*OnLogA)((int)state, buffer);
 
-			if (!WriteToFile(buffer))
-			{
-				printf(CSTRING("[NET]"));
-				SetConsoleOutputColor(RED);
-				printf(CSTRING("[ERROR]"));
-				SetConsoleOutputColor(WHITE);
-				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
-			}
+                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+                        file.write(buffer);
 
 			FREE(buffer);
 		}
 	}
 }
 
-void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...) const
+void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
 {
 	const auto lenfunc = strlen(funcA);
 	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
@@ -426,6 +393,12 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 	if (str.empty())
 	{
 		FREE(func);
+		return;
+	}
+
+	if(!__net_output_used())
+	{
+		Net::Console::Log(state, funcA, str.data());
 		return;
 	}
 
@@ -478,14 +451,8 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			if (OnLogW)
 				(*OnLogW)((int)state, buffer);
 
-			if (!WriteToFile(buffer))
-			{
-				printf(CSTRING("[NET]"));
-				SetConsoleOutputColor(RED);
-				printf(CSTRING("[ERROR]"));
-				SetConsoleOutputColor(WHITE);
-				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
-			}
+                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+                        file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -500,14 +467,8 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 			if (OnLogW)
 				(*OnLogW)((int)state, buffer);
 
-			if (!WriteToFile(buffer))
-			{
-				printf(CSTRING("[NET]"));
-				SetConsoleOutputColor(RED);
-				printf(CSTRING("[ERROR]"));
-				SetConsoleOutputColor(WHITE);
-				printf(CSTRING("[FILE SYSTEM] - Unable writting file ('%s')\n"), GetFname());
-			}
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -515,31 +476,6 @@ void Log::doLog(const Console::LogStates state, const char* funcA, const wchar_t
 
 	FREE(func);
 }
-
-bool Log::WriteToFile(const char* msg) const
-{
-	size_t attemps = NULL;
-	while (!file->write(msg))
-	{
-		++attemps;
-		if (attemps == 1000)
-			return false;
-	}
-
-	return true;
-}
-
-bool Log::WriteToFile(const wchar_t* msg) const
-{
-	size_t attemps = NULL;
-	while (!file->write(msg))
-	{
-		++attemps;
-		if (attemps == 1000)
-			return false;
-	}
-
-	return true;
-}
+NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

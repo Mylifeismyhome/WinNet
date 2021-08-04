@@ -9,6 +9,8 @@ mysqlcppconn-static.lib
 #undef NET_USE_MYSQL_SUPPORT
 #define BUILD_LINUX
 
+#undef NET_TEST_MEMORY_LEAKS
+
 // disable windows compitable code
 #ifdef BUILD_LINUX
 #define NET_DISABLE_MEMORY_IMPORT_DLL

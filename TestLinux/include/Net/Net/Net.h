@@ -1,5 +1,4 @@
 #pragma once
-#ifndef _NET
 #include "NetBuild.h"
 
 #ifdef BUILD_LINUX
@@ -24,8 +23,6 @@
 #define NET_IGNORE_CONVERSION_NULL
 #define NET_POP
 #endif
-
-#undef NET_TEST_MEMORY_LEAKS
 
 #include <cstdio>
 #include <iostream>
@@ -55,6 +52,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -91,6 +89,8 @@ typedef uint64_t uint64;
 #define SOCKET_RDWR SHUT_RDWR /* Disables further send and receive operations. */
 #define SOCKET_ERROR -1
 #define INVALID_SOCKET -1
+#define SOCKET_OPT_TYPE void*
+#define SOCKET_OPT_LEN socklen_t
 #else
 typedef __int64 int64;
 typedef unsigned int uint;
@@ -98,6 +98,8 @@ typedef unsigned __int64 uint64;
 #define SOCKET_RD SD_SEND
 #define SOCKET_WR SD_SEND
 #define SOCKET_RDWR SD_SEND
+#define SOCKET_OPT_TYPE char*
+#define SOCKET_OPT_LEN int
 #endif
 
 ///////////////////////////////////
@@ -361,6 +363,46 @@ static void Free(T*& data)
 		stuff \
 	}
 
+template <class T>
+NET_STRUCT_BEGIN(SocketOption_t)
+DWORD opt;
+T type;
+SOCKET_OPT_LEN len;
+
+SocketOption_t()
+{
+        this->opt = NULL;
+        this->len = INVALID_SIZE;
+}
+
+SocketOption_t(const DWORD opt, const T type)
+{
+        this->opt = opt;
+        this->type = type;
+        this->len = sizeof(type);
+}
+NET_STRUCT_END
+
+template <class T>
+NET_STRUCT_BEGIN(Option_t)
+DWORD opt;
+T type;
+SOCKET_OPT_LEN len;
+
+Option_t()
+{
+        this->opt = NULL;
+        this->len = INVALID_SIZE;
+}
+
+Option_t(const DWORD opt, const T type)
+{
+        this->opt = opt;
+        this->type = type;
+        this->len = sizeof(type);
+}
+NET_STRUCT_END
+
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
 ////////////////////////////////////////////////////
@@ -369,7 +411,8 @@ namespace Net
 	void load();
 	void unload();
 
-	int SocketOpt(SOCKET s, int level, int optname, const char* optval, int optlen);
+	int SocketOpt(SOCKET, int, DWORD, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
+	int SetSocketOption(SOCKET, SocketOption_t<SOCKET_OPT_TYPE>);
 
 	namespace ssl
 	{
@@ -627,59 +670,6 @@ enum HandshakeRet_t
 };
 NET_NAMESPACE_END
 
-#ifndef BUILD_LINUX
-template <class T>
-NET_STRUCT_BEGIN(SocketOption_t)
-DWORD opt;
-T type;
-size_t len;
-
-SocketOption_t()
-{
-	this->opt = NULL;
-	this->len = INVALID_SIZE;
-}
-
-SocketOption_t(const DWORD opt, const T type)
-{
-	this->opt = opt;
-	this->type = type;
-	this->len = sizeof(type);
-}
-NET_STRUCT_END
-
-static int _SetSocketOption(const SOCKET socket, const SocketOption_t<char*> opt)
-{
-	const auto result = Net::SocketOpt(socket,
-		IPPROTO_TCP,
-		opt.opt,
-		(char*)&opt.type,
-		static_cast<int>(opt.len));
-
-	return result;
-}
-#endif
-
-template <class T>
-NET_STRUCT_BEGIN(Option_t)
-DWORD opt;
-T type;
-size_t len;
-
-Option_t()
-{
-	this->opt = NULL;
-	this->len = INVALID_SIZE;
-}
-
-Option_t(const DWORD opt, const T type)
-{
-	this->opt = opt;
-	this->type = type;
-	this->len = sizeof(type);
-}
-NET_STRUCT_END
-
 /* OPTION BIT FLAGS */
 #define NET_OPT_FREQUENZ (1 << 0)
 #define NET_OPT_MODE_BLOCKING (1 << 1)
@@ -753,7 +743,4 @@ NET_STRUCT_END
 
 #ifdef BUILD_LINUX
 #define __int64 long long
-#endif
-
-#define _NET
 #endif

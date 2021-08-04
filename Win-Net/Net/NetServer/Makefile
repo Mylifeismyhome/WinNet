@@ -25,7 +25,7 @@ endef
 all:
 	mkdir -p bin
 
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c Server.cpp -L ../../bin/ -l:NetCore.a -o bin/Server.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c Server.cpp -o bin/Server.o
 
 	$(call LINK)
 	$(call COPY)

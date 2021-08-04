@@ -1,5 +1,4 @@
 #pragma once
-#ifndef _NET
 #include "NetBuild.h"
 
 #ifdef BUILD_LINUX
@@ -24,8 +23,6 @@
 #define NET_IGNORE_CONVERSION_NULL
 #define NET_POP
 #endif
-
-#undef NET_TEST_MEMORY_LEAKS
 
 #include <cstdio>
 #include <iostream>
@@ -366,6 +363,46 @@ static void Free(T*& data)
 		stuff \
 	}
 
+template <class T>
+NET_STRUCT_BEGIN(SocketOption_t)
+DWORD opt;
+T type;
+SOCKET_OPT_LEN len;
+
+SocketOption_t()
+{
+        this->opt = NULL;
+        this->len = INVALID_SIZE;
+}
+
+SocketOption_t(const DWORD opt, const T type)
+{
+        this->opt = opt;
+        this->type = type;
+        this->len = sizeof(type);
+}
+NET_STRUCT_END
+
+template <class T>
+NET_STRUCT_BEGIN(Option_t)
+DWORD opt;
+T type;
+SOCKET_OPT_LEN len;
+
+Option_t()
+{
+        this->opt = NULL;
+        this->len = INVALID_SIZE;
+}
+
+Option_t(const DWORD opt, const T type)
+{
+        this->opt = opt;
+        this->type = type;
+        this->len = sizeof(type);
+}
+NET_STRUCT_END
+
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
 ////////////////////////////////////////////////////
@@ -374,7 +411,8 @@ namespace Net
 	void load();
 	void unload();
 
-	int SocketOpt(SOCKET s, int level, int optname, const SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen);
+	int SocketOpt(SOCKET, int, DWORD, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
+	int SetSocketOption(SOCKET, SocketOption_t<SOCKET_OPT_TYPE>);
 
 	namespace ssl
 	{
@@ -632,57 +670,6 @@ enum HandshakeRet_t
 };
 NET_NAMESPACE_END
 
-template <class T>
-NET_STRUCT_BEGIN(SocketOption_t)
-DWORD opt;
-T type;
-size_t len;
-
-SocketOption_t()
-{
-	this->opt = NULL;
-	this->len = INVALID_SIZE;
-}
-
-SocketOption_t(const DWORD opt, const T type)
-{
-	this->opt = opt;
-	this->type = type;
-	this->len = sizeof(type);
-}
-NET_STRUCT_END
-
-static int _SetSocketOption(const SOCKET socket, const SocketOption_t<SOCKET_OPT_TYPE> opt)
-{
-	const auto result = Net::SocketOpt(socket,
-		IPPROTO_TCP,
-		opt.opt,
-		(SOCKET_OPT_TYPE)&opt.type,
-		static_cast<int>(opt.len));
-
-	return result;
-}
-
-template <class T>
-NET_STRUCT_BEGIN(Option_t)
-DWORD opt;
-T type;
-size_t len;
-
-Option_t()
-{
-	this->opt = NULL;
-	this->len = INVALID_SIZE;
-}
-
-Option_t(const DWORD opt, const T type)
-{
-	this->opt = opt;
-	this->type = type;
-	this->len = sizeof(type);
-}
-NET_STRUCT_END
-
 /* OPTION BIT FLAGS */
 #define NET_OPT_FREQUENZ (1 << 0)
 #define NET_OPT_MODE_BLOCKING (1 << 1)
@@ -756,7 +743,4 @@ NET_STRUCT_END
 
 #ifdef BUILD_LINUX
 #define __int64 long long
-#endif
-
-#define _NET
 #endif

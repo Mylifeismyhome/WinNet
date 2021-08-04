@@ -109,11 +109,6 @@ define clean_all
 	$(call clean_mysql)
 endef
 
-# build NetCore
-define NetCore
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetCore/
-endef
-
 # run task
 all:
 	$(call crypto++)
@@ -153,7 +148,10 @@ mysql-clean:
 	$(call clean_mysql)
 
 netcore:
-	$(call NetCore)
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetCore/
+
+netserver:
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetServer/
 
 clean:
 	$(call clean_all)

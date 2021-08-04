@@ -1,7 +1,7 @@
 # build NetCore
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall -w
+CFLAGS=-std=c++11 -Wall -w -pthread -ldl -lresolv
 
 # Net/Net/
 define PATH_NET
@@ -16,8 +16,8 @@ endef
 define PATH_CRYPTION
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
-	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/AES.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -L ../../../extern/crypto++/bin/lib/ -L ../../../extern/OpenSSL/bin/bin/lib/ -l:libcryptopp.a -l:libcrypto.a -l:libssl.a -o bin/RSA.o -pthread -ldl
+	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -o bin/AES.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
@@ -34,7 +34,7 @@ define PATH_MANAGER
 	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
 	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
 	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -w -c ../Net/assets/manager/profile.hpp -o bin/profile.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
 # Net/assets/web
@@ -53,7 +53,7 @@ endef
 define PATH_CODING
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/Hex.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -o bin/Hex.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/MD5.cpp -o bin/MD5.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
@@ -61,7 +61,7 @@ endef
 
 # Net/Database
 define PATH_DATABASE
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -L ../../../extern/MYSQL/lib/ -l:libmysqlcppconn-static.a -o bin/MYSQL.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
 endef
 
 # extract files from crypto++

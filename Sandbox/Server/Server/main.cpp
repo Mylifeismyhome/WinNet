@@ -1,5 +1,6 @@
 #include "config.h"
 #include "Server/Server.h"
+#include <Net/assets/manager/logmanager.h>
 
 #ifndef BUILD_LINUX
 #pragma comment(lib, "NetCore.lib")
@@ -8,6 +9,8 @@
 
 int main()
 {
+	LOG_WARNING("TEST LOG");
+
 //	Net::load();
 
 	Server server;
@@ -32,7 +35,7 @@ int main()
 
 	END_LOG;
 
-	Net::unload();
+//	Net::unload();
 
 	return 0;
 }
