@@ -1,7 +1,7 @@
 # build NetCore
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall
+CFLAGS=-std=c++11 -Wall -w
 
 # Net/Net/
 define PATH_NET
@@ -16,52 +16,52 @@ endef
 define PATH_CRYPTION
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
-	g++ $(CLFAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/AES.o
-	g++ $(CLFAGS) -I ../ -I ../../../extern/OpenSSL/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -L ../../../extern/crypto++/bin/lib/ -L ../../../extern/OpenSSL/bin/bin/lib/ -l:libcryptopp.a -l:libcrypto.a -l:libssl.a -o bin/RSA.o -pthread -ldl
-	g++ $(CLFAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
-	g++ $(CLFAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
-	g++ $(CLFAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/AES.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -L ../../../extern/crypto++/bin/lib/ -L ../../../extern/OpenSSL/bin/bin/lib/ -l:libcryptopp.a -l:libcrypto.a -l:libssl.a -o bin/RSA.o -pthread -ldl
+	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
 endef
 
 # Net/Compression/
 define PATH_COMPRESSION
-	g++ $(CLFAGS) -I ../ -I ../../../extern/ -c ../Net/Compression/Compression.cpp -o bin/Compression.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Compression/Compression.cpp -o bin/Compression.o
 endef
 
 # Net/assets/manager
 define PATH_MANAGER
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
-	g++ $(CLFAGS) -I ../ -I ../../../extern/ -w -c ../Net/assets/manager/profile.hpp -o bin/profile.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -w -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
 # Net/assets/web
 define PATH_WEB
-	g++ $(CLFAGS) -I ../ -I ../../../extern/OpenSSL/include/ -c ../Net/assets/web/http.cpp -o bin/http.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -c ../Net/assets/web/http.cpp -o bin/http.o
 endef
 
 # Net/assets
 define PATH_ASSETS
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/assets.cpp -o bin/assets.o
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/thread.cpp -o bin/thread.o
-	g++ $(CLFAGS) -I ../ -c ../Net/assets/timer.cpp -o bin/timer.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/assets.cpp -o bin/assets.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/thread.cpp -o bin/thread.o
+	g++ $(CFLAGS) -I ../ -c ../Net/assets/timer.cpp -o bin/timer.o
 endef
 
 # Net/Coding
 define PATH_CODING
-	g++ $(CLFAGS) -I ../ -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
-	g++ $(CLFAGS) -I ../ -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
-	g++ $(CLFAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/Hex.o
-	g++ $(CLFAGS) -I ../ -c ../Net/Coding/MD5.cpp -o bin/MD5.o
-	g++ $(CLFAGS) -I ../ -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
-	g++ $(CLFAGS) -I ../ -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
+	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
+	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -L ../../../extern/crypto++/bin/lib/ -l:libcryptopp.a -o bin/Hex.o
+	g++ $(CFLAGS) -I ../ -c ../Net/Coding/MD5.cpp -o bin/MD5.o
+	g++ $(CFLAGS) -I ../ -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
+	g++ $(CFLAGS) -I ../ -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
 # Net/Database
 define PATH_DATABASE
-	g++ $(CLFAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -L ../../../extern/MYSQL/lib/ -l:libmysqlcppconn-static.a -o bin/MYSQL.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -L ../../../extern/MYSQL/lib/ -l:libmysqlcppconn-static.a -o bin/MYSQL.o
 endef
 
 # extract files from crypto++
@@ -94,7 +94,7 @@ define COPY
 	rm -r -f ../../bin/include/
 	mkdir -p ../../bin/include/
 	cp -r ../Net/ ../../bin/include/
-	find ../../bin/include/ ! -name '*.h' -type f -exec rm -f {} +
+	find ../../bin/include/ ! -name '*.h' ! -name '*.hpp' -type f -exec rm -f {} +
 endef
 
 # clean build

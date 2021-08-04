@@ -1,7 +1,7 @@
 # build NetServer
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall
+CFLAGS=-std=c++11 -Wall -w
 
 # link Library
 define LINK
@@ -12,6 +12,8 @@ endef
 # copy Files
 define COPY
         mkdir -p ../../bin/
+	mkdir -p ../../bin/include/NetServer/
+	cp Server.h ../../bin/include/NetServer/
         cp NetServer.a ../../bin/
 endef
 
@@ -23,7 +25,7 @@ endef
 all:
 	mkdir -p bin
 
-	g++ $(CLFAGS) -I ../ -I ../../../extern/ -c Server.cpp -L ../../bin/ -l:NetCore.a -o bin/Server.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c Server.cpp -L ../../bin/ -l:NetCore.a -o bin/Server.o
 
 	$(call LINK)
 	$(call COPY)
