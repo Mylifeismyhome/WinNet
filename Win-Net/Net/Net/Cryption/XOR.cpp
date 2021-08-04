@@ -79,6 +79,17 @@ void XOR::init(char* str)
 	encrypt();
 }
 
+void XOR::init(const char* str)
+{
+        _length = std::strlen(str);
+        _buffer = ALLOC<char>(length() + 1);
+        memcpy(_buffer.get(), str, length());
+        _buffer.get()[length()] = '\0';
+        _Key = nullptr;
+
+        encrypt();
+}
+
 char* XOR::encrypt()
 {
 	if (length() == INVALID_SIZE)

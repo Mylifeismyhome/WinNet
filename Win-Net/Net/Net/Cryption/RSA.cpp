@@ -92,12 +92,26 @@ XOR_UNIQUEPOINTER NETRSA::privateKey()
 
 void NETRSA::setPublicKey(char* key)
 {
+	_PublicKey.free();
 	_PublicKey.init(key);
+}
+
+void NETRSA::setPublicKey(const char* key)
+{
+        _PublicKey.free();
+        _PublicKey.init(key);
 }
 
 void NETRSA::setPrivateKey(char* key)
 {
+	_PrivateKey.free();
 	_PrivateKey.init(key);
+}
+
+void NETRSA::setPrivateKey(const char* key)
+{
+        _PrivateKey.free();
+        _PrivateKey.init(key);
 }
 
 void NETRSA::deleteKeys()

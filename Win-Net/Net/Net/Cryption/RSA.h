@@ -43,7 +43,9 @@ XOR_UNIQUEPOINTER publicKey();
 XOR_UNIQUEPOINTER privateKey();
 
 void setPublicKey(char*);
+void setPublicKey(const char*);
 void setPrivateKey(char*);
+void setPrivateKey(const char*);
 
 void deleteKeys();
 

@@ -163,6 +163,8 @@ TEST(rsa,
 
         LOG(CSTRING("Decrypted: %s"), buffer);
 
+	 const auto PublicKey = rsa.publicKey();
+	LOG(CSTRING("PKEY: %s"), PublicKey.get());
         FREE(buffer);
 );
 

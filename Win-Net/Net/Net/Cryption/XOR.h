@@ -63,6 +63,7 @@ NET_CLASS_PUBLIC
 NET_CLASS_CONSTRUCTUR(XOR)
 NET_CLASS_CONSTRUCTUR(XOR, char*)
 void init(char*);
+void init(const char*);
 size_t size() const;
 size_t length() const;
 XOR_UNIQUEPOINTER revert(bool = true);

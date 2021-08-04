@@ -314,8 +314,6 @@ NET_CLASS_VDESTRUCTUR(Server)
 bool Run();
 bool Close();
 
-short Handshake(NET_PEER);
-
 NET_CLASS_PUBLIC
 NET_DEFINE_CALLBACK(void, Tick) {}
 NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
