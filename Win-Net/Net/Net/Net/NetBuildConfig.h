@@ -7,7 +7,12 @@ mysqlcppconn-static.lib
 */
 
 #undef NET_USE_MYSQL_SUPPORT
-#define BUILD_LINUX
+#undef BUILD_LINUX
+
+/*
+	define this to build for visual studio 2013
+*/
+#undef VS13
 
 #undef NET_TEST_MEMORY_LEAKS
 
