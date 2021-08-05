@@ -382,21 +382,7 @@ extern/OpenSSL/src/openssl-master/
 # ignore compiling config folder
 Config/
 
-# ignore openssl specific files after building using make
-extern/OpenSSL/src/Makefile
-extern/OpenSSL/src/configdata.pm
-extern/OpenSSL/src/apps/
-extern/OpenSSL/src/crypto/
-extern/OpenSSL/src/engines/
-extern/OpenSSL/src/include/
-extern/OpenSSL/src/*.map
-extern/OpenSSL/src/*.pc
-extern/OpenSSL/src/ssl/
-extern/OpenSSL/src/fuzz/
-extern/OpenSSL/src/tools/
-extern/OpenSSL/src/util/
-extern/OpenSSL/include/
-extern/OpenSSL/lib/
+# ignore openssl source
 extern/OpenSSL/src/**/
 
 # ignore include path for test linux
