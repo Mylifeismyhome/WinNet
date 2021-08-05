@@ -5,7 +5,7 @@ download:
 	wget -O ${ROOT_DIR}/openssl-master.zip "https://github.com/openssl/openssl/archive/refs/heads/master.zip" 
 
 extract:
-	unzip ${ROOT_DIR}/openssl-master.zip -d ${ROOT_DIR}/
+	unzip -o ${ROOT_DIR}/openssl-master.zip -d ${ROOT_DIR}/
 
 configure:
 	${ROOT_DIR}/openssl-master/config -fPIC shared --prefix=${ROOT_DIR}/../bin/bin/ --openssldir=${ROOT_DIR}/../bin/openssl/
