@@ -16,7 +16,7 @@ REM USE ALL CPU CORES
 set CL=/MP
 
 nmake clean
-perl Configure VC-WIN32 --prefix=%CD%\..\BIN\DLL\x86\Release --openssldir=%CD%\..\BIN\SSL
+perl Configure VC-WIN32 --prefix=%CD%\..\..\bin\dll\x86\release --openssldir=%CD%\..\..\bin\ssl
 nmake
 nmake install_sw
 
