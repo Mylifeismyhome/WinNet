@@ -403,3 +403,6 @@ extern/OpenSSL/src/**/
 TestLinux/include
 
 *.exe.recipe
+*.tar.gz
+
+extern/MYSQL/tmp/

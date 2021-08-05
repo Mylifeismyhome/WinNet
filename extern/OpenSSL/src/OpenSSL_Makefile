@@ -6,7 +6,7 @@ download:
 	wget -O ${ROOT_DIR}/openssl-source.tar.gz "https://www.openssl.org/source/$(OPENSSL_SOURCE_DIRNAME).tar.gz" 
 
 extract:
-	rm -rf ${ROOT_DIR}/openssl-source
+	rm -rf ${ROOT_DIR}/$(OPENSSL_SOURCE_DIRNAME)
 	tar -xzf ${ROOT_DIR}/openssl-source.tar.gz
 
 configure:
