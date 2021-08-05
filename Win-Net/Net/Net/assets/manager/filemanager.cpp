@@ -25,7 +25,7 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 #define OpenFile(fname, mode) fopen(fname, mode)
 #endif
 
-constexpr const char* GetModeA(const uint8_t Mode)
+static const char* GetModeA(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
 		return ("wb");
@@ -50,7 +50,7 @@ constexpr const char* GetModeA(const uint8_t Mode)
 	return ("rb");
 }
 
-constexpr const wchar_t* GetModeW(const uint8_t Mode)
+static const wchar_t* GetModeW(const uint8_t Mode)
 {
 	if (Mode == NET_FILE_WRITE)
 		return (L"wb");

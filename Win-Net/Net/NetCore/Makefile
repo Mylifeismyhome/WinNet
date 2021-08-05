@@ -5,7 +5,7 @@ CFLAGS=-std=c++11 -Wall -w -pthread -ldl -lresolv
 
 # Net/Net/
 define PATH_NET
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include -c ../Net/Net/Net.cpp -o bin/Net.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include -c ../Net/Net/Net.cpp -o bin/Net.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetString.cpp -o bin/NetString.o
@@ -17,7 +17,7 @@ define PATH_CRYPTION
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
 	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
 	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -o bin/AES.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
 	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
@@ -39,7 +39,7 @@ endef
 
 # Net/assets/web
 define PATH_WEB
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/include/ -c ../Net/assets/web/http.cpp -o bin/http.o
+	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include -c ../Net/assets/web/http.cpp -o bin/http.o
 endef
 
 # Net/assets
