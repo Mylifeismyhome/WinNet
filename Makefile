@@ -70,24 +70,7 @@ endef
 
 # clean openssl
 define clean_openssl
-	$(call out, ********** DELETING FILES CREATED BY OPENSSL **********)
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/crypto/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/include/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/tools/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/engines/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/ms/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/ssl/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/util/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/fuzz/
-	rm -f -R -d ${ROOT_DIR}/extern/OpenSSL/src/apps/
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.a
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.pm
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.pc
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.map
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so.*
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/Makefile
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/configdata.pm
+	$(call out, ********** DELETING OPENSSL **********)
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-source.tar.gz
 endef
 
