@@ -2,6 +2,8 @@ Author: Tobias Staack
 
 	[LINUX]
 		make cryptopp
+		make openssl-download
+		make openssl-unpack
 		make openssl-configure
 		make openssl-build
 		make openssl-install
