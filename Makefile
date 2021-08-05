@@ -38,6 +38,18 @@ define clean_crypto++
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.out
 endef
 
+# download openssl
+define download_openssl
+        $(call out, ********** DOWNLOADING OPENSSL REPO FROM GITHUB **********)
+        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile download
+endef
+
+# extract openssl
+define extract_openssl
+        $(call out, ********** UNPACKING OPENSSL REPO **********)
+        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile extract
+endef
+
 # configure openssl
 define configure_openssl
 	$(call out, ********** CONFIGURING OPENSSL **********)
@@ -76,6 +88,7 @@ define clean_openssl
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so.*
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/Makefile
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/configdata.pm
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-master.zip
 endef
 
 # download compressed (packaged) mysql library from the official website
@@ -113,6 +126,12 @@ endef
 all:
 	$(call crypto++)
 	$(call openssl)
+
+openssl-download:
+	$(call download_openssl)
+
+openssl-unpack:
+	$(call extract_openssl)
 
 openssl-configure:
 	$(call configure_openssl)
