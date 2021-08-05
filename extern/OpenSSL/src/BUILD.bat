@@ -17,7 +17,7 @@ start /WAIT BUILD_X86d_SHARED.bat
 start /WAIT BUILD_X86_SHARED.bat
 start /WAIT BUILD_X86d.bat
 start /WAIT BUILD_X86.bat
-start /WAIT "COPY.bat"
+REM start /WAIT "COPY.bat"
 echo -------------------------------------------
 echo Done compiling OpenSSL :: %date% %time%
 echo -------------------------------------------
