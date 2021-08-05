@@ -1,4 +1,5 @@
 @echo off
 title Downloading OpenSSL from Github - [%date% %time%]
+set OPENSSL_SOURCE_DIRNAME=openssl-1.1.1k
 
-curl -L https://github.com/openssl/openssl/archive/refs/heads/master.zip --output openssl-master.zip
+curl -L https://www.openssl.org/source/%OPENSSL_SOURCE_DIRNAME%.tar.gz --output openssl-source.tar.gz
