@@ -88,7 +88,7 @@ define clean_openssl
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/*.so.*
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/Makefile
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/configdata.pm
-	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-master.zip
+	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-source.tar.gz
 endef
 
 # download compressed (packaged) mysql library from the official website

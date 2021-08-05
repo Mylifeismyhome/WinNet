@@ -1,17 +1,19 @@
 
 export ROOT_DIR=${PWD}/extern/OpenSSL/src
+OPENSSL_SOURCE_DIRNAME=openssl-1.1.1k
 
 download:
-	wget -O ${ROOT_DIR}/openssl-master.zip "https://github.com/openssl/openssl/archive/refs/heads/master.zip" 
+	wget -O ${ROOT_DIR}/openssl-source.tar.gz "https://www.openssl.org/source/openssl-1.1.1k.tar.gz" 
 
 extract:
-	unzip -o ${ROOT_DIR}/openssl-master.zip -d ${ROOT_DIR}/
+	rm -rf ${ROOT_DIR}/openssl-source
+	tar -xzf ${ROOT_DIR}/openssl-source.tar.gz
 
 configure:
-	${ROOT_DIR}/openssl-master/config -fPIC shared --prefix=${ROOT_DIR}/../bin/bin/ --openssldir=${ROOT_DIR}/../bin/openssl/
+	cd ${ROOT_DIR}/$(OPENSSL_SOURCE_DIRNAME) && ./config -fPIC shared --prefix=${ROOT_DIR}/../bin/bin/ --openssldir=${ROOT_DIR}/../bin/openssl/
 
 build:
-	${MAKE}
+	${MAKE} -C ${ROOT_DIR}/$(OPENSSL_SOURCE_DIRNAME)
 
 install:
-	${MAKE} install INSTALL_PREFIX=${ROOT_DIR}/bin/
+	${MAKE} -C ${ROOT_DIR}/$(OPENSSL_SOURCE_DIRNAME) install INSTALL_PREFIX=${ROOT_DIR}/bin/
