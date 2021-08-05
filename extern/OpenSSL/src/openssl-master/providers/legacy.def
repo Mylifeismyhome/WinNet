@@ -1,0 +1,8 @@
+;
+; Definition file for the DLL version of the  library from OpenSSL
+;
+
+LIBRARY         ""
+
+EXPORTS
+    OSSL_provider_init

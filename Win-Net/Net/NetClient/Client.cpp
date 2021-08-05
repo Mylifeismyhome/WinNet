@@ -2288,7 +2288,7 @@ const auto PublicKeyRef = network.RSA->publicKey();
 pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), PublicKeyRef.get());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
 
-network.RSA->setPublicKey((char*)publicKey.value());
+network.RSA->setPublicKey(publicKey.value());
 
 // from now we use the Cryption, synced with Server
 network.RSAHandshake = true;

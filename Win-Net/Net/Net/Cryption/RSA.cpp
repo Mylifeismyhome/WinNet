@@ -127,8 +127,8 @@ bool NETRSA::init(const char* in_PublicKey, const char* in_PrivateKey)
 		|| !in_PrivateKey)
 		return false;
 
-	_PublicKey.init((char*)in_PublicKey);
-	_PrivateKey.init((char*)in_PrivateKey);
+	_PublicKey.init(in_PublicKey);
+	_PrivateKey.init(in_PrivateKey);
 	Set = true;
 	return true;
 }
