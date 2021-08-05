@@ -10,7 +10,8 @@ call "%TOOL%\Community\VC\Auxiliary\Build\vcvars64.bat"
 %CURPARTITION%
 cd %CURDIR%
 
-cd openssl-master
+set /p OPENSSL_SOURCE_DIRNAME=<openssl-version
+cd %OPENSSL_SOURCE_DIRNAME%
 
 REM USE ALL CPU CORES
 set CL=/MP
