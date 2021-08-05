@@ -21,4 +21,4 @@ perl Configure VC-WIN64A --prefix=%CD%\..\..\bin\lib\x64\release --openssldir=%C
 nmake
 nmake install_sw
 
-REM exit
+exit
