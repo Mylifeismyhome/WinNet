@@ -41,31 +41,31 @@ endef
 # download openssl
 define download_openssl
         $(call out, ********** DOWNLOADING OPENSSL REPO FROM GITHUB **********)
-        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile download
+        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ download
 endef
 
 # extract openssl
 define extract_openssl
         $(call out, ********** UNPACKING OPENSSL REPO **********)
-        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile extract
+        ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ extract
 endef
 
 # configure openssl
 define configure_openssl
 	$(call out, ********** CONFIGURING OPENSSL **********)
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile configure
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ configure
 endef
 
 # build openssl
 define build_openssl
 	$(call out, ********** BUILDING OPENSSL **********)
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile -i -k build
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -i -k build
 endef
 
 # install openssl
 define install_openssl
 	$(call out, ********** INSTALLING OPENSSL **********)
-	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -f OpenSSL_Makefile -i -k install
+	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -i -k install
 endef
 
 # clean openssl
