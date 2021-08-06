@@ -1614,8 +1614,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			return;
 		}
 
-		LOG("pAES KEY: %s", Key.get());
-
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
 		if (!peer->cryption.RSA.encryptBase64(IV.reference().get(), IVSize))
 		{
