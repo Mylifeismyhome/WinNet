@@ -90,21 +90,11 @@ void GetDateA(char* date)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)
-#ifdef VS13
-template <typename TYPE>
-TYPE GetRandNumber(TYPE min, TYPE max)
+int GetRandNumber(int min, int max)
 {
-	return min + (rand() % static_cast<TYPE>(max - min + 1));
+	srand(time(NULL));
+	return rand() % max + min;
 }
-#else
-template <typename TYPE>
-TYPE GetRandNumber(TYPE min, TYPE max)
-{
-	thread_local static std::mt19937 mt(std::random_device{}());
-	thread_local static std::uniform_int_distribution<TYPE> pick;
-	return pick(mt, decltype(pick)::param_type{ min, max });
-}
-#endif
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
@@ -114,7 +104,7 @@ void GetRandString(char*& out, const size_t len)
 	out = ALLOC< char >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber<int>(0, 62)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 62)];
 
 	out[len] = '\0';
 }
@@ -125,14 +115,14 @@ void GetRandStringNew(BYTE*& out, const size_t len)
 	out = ALLOC< BYTE >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber<int>(0, 62)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 62)];
 
 	out[len] = '\0';
 }
 
-uintptr_t GetRandSeed()
+int GetRandSeed()
 {
-	return Net::Math::GetRandNumber<uintptr_t>(0, UINTPTR_MAX);
+	return Net::Math::GetRandNumber(0, INT_MAX);
 }
 NET_NAMESPACE_END
 

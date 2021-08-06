@@ -7,26 +7,7 @@
 
 NET_DSA_BEGIN
 
-#ifndef VS13
-template <typename TYPE>
-TYPE GetRandNumber()
-{
-	thread_local static std::mt19937 mt(std::random_device{}());
-	thread_local static std::uniform_int_distribution<TYPE> pick;
-	return pick(mt);
-}
-
-static uintptr_t GetRandSeed()
-{
-	return GetRandNumber<uintptr_t>();
-}
-#endif
-
-#ifdef VS13
-#define RAND_NUMBER NULL
-#else
-#define RAND_NUMBER GetRandSeed()
-#endif
+#define RAND_NUMBER static_cast<uintptr_t>(Net::Math::GetRandSeed())
 
 template <typename T>
 class PointerCryptionUniquePointer

@@ -63,14 +63,13 @@ void GetDateA(char*);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)
-template <typename TYPE>
-TYPE GetRandNumber(TYPE min, TYPE max);
+int GetRandNumber(int min, int max);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
 NET_API void GetRandString(char*& out, size_t len);
 NET_API void GetRandStringNew(BYTE * &out, size_t len);
-NET_API uintptr_t GetRandSeed();
+NET_API int GetRandSeed();
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Util)
