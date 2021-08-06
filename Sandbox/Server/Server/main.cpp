@@ -18,20 +18,19 @@ int main()
 
 #ifdef _USE_CIPHER_
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
-
-	LOG_WARNING("USING CIPHER");
+	LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
 	if (!server.Run())
-		return 0;
+		LOG_ERROR(CSTRING("UNABLE TO RUN SERVER"));
 
 	while (server.IsRunning())
 	{
-		//SetConsoleTitle(Net::String("Peer(s): %d", server.getCountPeers()).get().get());
 #ifdef BUILD_LINUX
-			sleep(1000);
+		usleep(1000);
 #else
-			Sleep(1000);
+		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d"), server.getCountPeers()).get().get());
+		Sleep(1000);
 #endif
 	}
 
