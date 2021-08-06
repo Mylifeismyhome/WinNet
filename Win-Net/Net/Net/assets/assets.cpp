@@ -94,7 +94,7 @@ NET_NAMESPACE_BEGIN(Math)
 template <typename TYPE>
 TYPE GetRandNumber(TYPE min, TYPE max)
 {
-	return NULL;
+	return min + (rand() % static_cast<TYPE>(max - min + 1));
 }
 #else
 template <typename TYPE>

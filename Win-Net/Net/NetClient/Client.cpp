@@ -1749,6 +1749,8 @@ void Client::ExecutePackage()
 	CPOINTER<BYTE> data;
 	std::vector<Package_RawData_t> rawData;
 
+	LOG("DATA: %s", network.data.get());
+
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
 	{
