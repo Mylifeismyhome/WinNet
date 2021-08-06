@@ -116,7 +116,12 @@ void NETRSA::setPrivateKey(const char* key)
 
 void NETRSA::deleteKeys()
 {
-	RSA_free(KeyPair);
+	if (KeyPair)
+	{
+		RSA_free(KeyPair);
+		KeyPair = nullptr;
+	}
+
 	_PublicKey.free();
 	_PrivateKey.free();
 }
