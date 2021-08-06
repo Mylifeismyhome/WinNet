@@ -1859,6 +1859,8 @@ NET_THREAD(Receive)
 	auto peer = param->peer;
 	const auto server = param->server;
 
+	LOG("SENT DU HUSO!");
+
 	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
 		/* Create new RSA Key Pair */
@@ -1869,8 +1871,6 @@ NET_THREAD(Receive)
 		Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
-
-		LOG("SENT DU HUSO!");
 	}
 	else
 	{
@@ -1878,6 +1878,8 @@ NET_THREAD(Receive)
 		Package PKG;
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
+
+	LOG("SENT DU HUSO2!");
 
 	while (peer)
 	{
