@@ -57,6 +57,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include <cmath>
 #endif
 
 #ifndef BUILD_LINUX
