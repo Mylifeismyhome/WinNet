@@ -12,7 +12,7 @@ static int __NET_POINTER_CRYPTION_RNDSEED(int min, int max)
 	return rand() % max + min;
 }
 
-#define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED())
+#define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED(0, INT_MAX))
 
 template <typename T>
 class PointerCryptionUniquePointer
