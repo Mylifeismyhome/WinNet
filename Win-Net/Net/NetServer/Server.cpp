@@ -1869,6 +1869,8 @@ NET_THREAD(Receive)
 		Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+
+		LOG("SENT DU HUSO!");
 	}
 	else
 	{
