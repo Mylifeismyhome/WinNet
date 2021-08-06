@@ -2838,6 +2838,7 @@ if (!publicKey.valid()) // empty
 	return;
 }
 
+LOG("PKEY: %s", publicKey.value());
 peer->cryption.RSA.setPublicKey(publicKey.value());
 
 // from now we use the Cryption, synced with Server
