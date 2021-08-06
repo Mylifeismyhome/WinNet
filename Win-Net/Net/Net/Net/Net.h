@@ -73,8 +73,6 @@
 
 #include <openssl/ssl.h>
 
-#define SOCKET_OPT_TYPE char*
-
 #ifdef BUILD_LINUX
 typedef unsigned long DWORD;
 typedef unsigned char byte;
@@ -92,7 +90,7 @@ typedef uint64_t uint64;
 #define SOCKET_RDWR SHUT_RDWR /* Disables further send and receive operations. */
 #define SOCKET_ERROR -1
 #define INVALID_SOCKET -1
-#define SET_SOCKET_OPT_TYPE void*
+#define SOCKET_OPT_TYPE void*
 #define SOCKET_OPT_LEN socklen_t
 #else
 typedef __int64 int64;
@@ -101,7 +99,7 @@ typedef unsigned __int64 uint64;
 #define SOCKET_RD SD_SEND
 #define SOCKET_WR SD_SEND
 #define SOCKET_RDWR SD_SEND
-#define SET_SOCKET_OPT_TYPE char*
+#define SOCKET_OPT_TYPE char*
 #define SOCKET_OPT_LEN int
 #endif
 
