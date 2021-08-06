@@ -3,11 +3,16 @@
 #define CPOINTER PointerCryption
 
 #include <Net/Net/Net.h>
-#include <Net/assets/assets.h>
 
 NET_DSA_BEGIN
 
-#define RAND_NUMBER static_cast<uintptr_t>(Net::Random::GetRandSeed())
+static int __NET_POINTER_CRYPTION_RNDSEED(int min, int max)
+{
+	srand(time(NULL));
+	return rand() % max + min;
+}
+
+#define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED())
 
 template <typename T>
 class PointerCryptionUniquePointer
