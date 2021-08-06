@@ -68,9 +68,9 @@ TYPE GetRandNumber(TYPE min, TYPE max);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
-extern "C" NET_API void GetRandString(char*& out, size_t len);
-extern "C" NET_API void GetRandStringNew(BYTE * &out, size_t len);
-extern "C" NET_API uintptr_t GetRandSeed();
+NET_API void GetRandString(char*& out, size_t len);
+NET_API void GetRandStringNew(BYTE * &out, size_t len);
+NET_API uintptr_t GetRandSeed();
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Util)
