@@ -257,7 +257,7 @@ T GetOption(const DWORD opt)
 	for (const auto& entry : option)
 		if (entry.opt == opt)
 		{
-			return *((T*)&entry.type);
+			return *(T*)&entry.type;
 			break;
 		}
 
