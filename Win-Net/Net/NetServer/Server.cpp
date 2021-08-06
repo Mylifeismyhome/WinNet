@@ -1582,7 +1582,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		NET_AES aes;
 
 		/* Generate new AES Keypair */
-		size_t aesKeySize = Isset(NET_OPT_CIPHER_AES_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE;
+		size_t aesKeySize = 32;
 		CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
