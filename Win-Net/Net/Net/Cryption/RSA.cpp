@@ -94,16 +94,12 @@ void NETRSA::setPublicKey(char* key)
 {
 	_PublicKey.free();
 	_PublicKey.init(key);
-
-	LOG("PPPPP: %s", publicKey().get());
 }
 
 void NETRSA::setPublicKey(const char* key)
 {
         _PublicKey.free();
         _PublicKey.init(key);
-
-		LOG("PPPPP: %s", publicKey().get());
 }
 
 void NETRSA::setPrivateKey(char* key)
@@ -164,7 +160,7 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 	}
 
 	const auto uniquePointer = publicKey();
-	BIO_write(bio, uniquePointer.get(), static_cast<int>(publicKey().length()));
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(uniquePointer.length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PUBKEY(bio, &pkey, nullptr, nullptr);
@@ -232,7 +228,7 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 	}
 
 	const auto uniquePointer = privateKey();
-	BIO_write(bio, uniquePointer.get(), static_cast<int>(privateKey().length()));
+	BIO_write(bio, uniquePointer.get(), static_cast<int>(uniquePointer.length()));
 
 	EVP_PKEY* pkey = nullptr;
 	PEM_read_bio_PrivateKey(bio, &pkey, nullptr, nullptr);

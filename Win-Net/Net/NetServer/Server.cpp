@@ -1587,6 +1587,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
 
+		LOG("AES KEY: %s", Key.get());
+
 		CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
@@ -1611,6 +1613,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64);
 			return;
 		}
+
+		LOG("pAES KEY: %s", Key.get());
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
 		if (!peer->cryption.RSA.encryptBase64(IV.reference().get(), IVSize))
@@ -2838,7 +2842,6 @@ if (!publicKey.valid()) // empty
 	return;
 }
 
-LOG("PKEY: %s", publicKey.value());
 peer->cryption.RSA.setPublicKey(publicKey.value());
 
 // from now we use the Cryption, synced with Server
