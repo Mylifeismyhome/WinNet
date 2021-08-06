@@ -140,14 +140,13 @@ void Server::network_t::unlockSend()
 #pragma region Cryption Structure
 void Server::cryption_t::createKeyPair(const size_t size)
 {
-	RSA = new NET_RSA();
-	RSA->generateKeys(size, 3);
+	RSA.generateKeys(size, 3);
 	setHandshakeStatus(false);
 }
 
 void Server::cryption_t::deleteKeyPair()
 {
-	delete RSA;
+	RSA.deleteKeys();
 	setHandshakeStatus(false);
 }
 
@@ -1602,19 +1601,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			return;
 		}
 
-		if (!peer->cryption.RSA)
-		{
-			Key.free();
-			IV.free();
-
-			LOG_ERROR(CSTRING("RSA Object has no instance"));
-			peer->network.unlockSend();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
-			return;
-		}
-
 		/* Encrypt AES Keypair using RSA */
-		if (!peer->cryption.RSA->encryptBase64(Key.reference().get(), aesKeySize))
+		if (!peer->cryption.RSA.encryptBase64(Key.reference().get(), aesKeySize))
 		{
 			Key.free();
 			IV.free();
@@ -1625,7 +1613,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-		if (!peer->cryption.RSA->encryptBase64(IV.reference().get(), IVSize))
+		if (!peer->cryption.RSA.encryptBase64(IV.reference().get(), IVSize))
 		{
 			Key.free();
 			IV.free();
@@ -1870,7 +1858,7 @@ NET_THREAD(Receive)
 		/* Create new RSA Key Pair */
 		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
 
-		const auto PublicKey = peer->cryption.RSA->publicKey();
+		const auto PublicKey = peer->cryption.RSA.publicKey();
 
 		Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
@@ -2452,16 +2440,7 @@ void Server::ExecutePackage(NET_PEER peer)
 			offset += AESIVSize;
 		}
 
-		if (!peer->cryption.RSA)
-		{
-			AESKey.free();
-			AESIV.free();
-
-			LOG_ERROR(CSTRING("[NET] - Failure on initializing RSA"));
-			return;
-		}
-
-		if (!peer->cryption.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
+		if (!peer->cryption.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2470,7 +2449,7 @@ void Server::ExecutePackage(NET_PEER peer)
 			return;
 		}
 
-		if (!peer->cryption.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
+		if (!peer->cryption.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2859,7 +2838,7 @@ if (!publicKey.valid()) // empty
 	return;
 }
 
-peer->cryption.RSA->setPublicKey(publicKey.value());
+peer->cryption.RSA.setPublicKey(publicKey.value());
 
 // from now we use the Cryption, synced with Server
 peer->cryption.setHandshakeStatus(true);

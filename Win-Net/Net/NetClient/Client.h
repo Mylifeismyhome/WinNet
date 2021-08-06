@@ -47,7 +47,7 @@ size_t data_size;
 size_t data_full_size;
 size_t data_offset;
 bool recordingData;
-NET_RSA* RSA;
+NET_RSA RSA;
 bool RSAHandshake; // set to true as soon as we have the public key from the Server
 
 bool estabilished;
@@ -78,7 +78,6 @@ data_size = 0;
 data_full_size = 0;
 data_offset = 0;
 recordingData = false;
-RSA = nullptr;
 RSAHandshake = false;
 estabilished = false;
 latency = -1;

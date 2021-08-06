@@ -560,14 +560,13 @@ void Client::SetRecordingData(const bool status)
 
 void Client::Network::createNewRSAKeys(const size_t keySize)
 {
-	RSA = new NET_RSA();
-	RSA->generateKeys(keySize, 3);
+	RSA.generateKeys(keySize, 3);
 	RSAHandshake = false;
 }
 
 void Client::Network::deleteRSAKeys()
 {
-	delete RSA;
+	RSA.deleteKeys();
 	RSAHandshake = false;
 }
 
@@ -1150,19 +1149,8 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 			return;
 		}
 
-		if (!network.RSA)
-		{
-			Key.free();
-			IV.free();
-
-			LOG_ERROR(CSTRING("[NET] - RSA Object has no instance"));
-			network.unlockSend();
-			Disconnect();
-			return;
-		}
-
 		/* Encrypt AES Keypair using RSA */
-		if (!network.RSA->encryptBase64(Key.reference().get(), aesKeySize))
+		if (!network.RSA.encryptBase64(Key.reference().get(), aesKeySize))
 		{
 			Key.free();
 			IV.free();
@@ -1173,7 +1161,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-		if (!network.RSA->encryptBase64(IV.reference().get(), IVSize))
+		if (!network.RSA.encryptBase64(IV.reference().get(), IVSize))
 		{
 			Key.free();
 			IV.free();
@@ -1832,16 +1820,7 @@ void Client::ExecutePackage()
 			offset += AESIVSize;
 		}
 
-		if (!network.RSA)
-		{
-			AESKey.free();
-			AESIV.free();
-
-			LOG_ERROR(CSTRING("[NET] - Failure on initializing RSA"));
-			return;
-		}
-
-		if (!network.RSA->decryptBase64(AESKey.reference().get(), AESKeySize))
+		if (!network.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1850,7 +1829,7 @@ void Client::ExecutePackage()
 			return;
 		}
 
-		if (!network.RSA->decryptBase64(AESIV.reference().get(), AESIVSize))
+		if (!network.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -2284,11 +2263,11 @@ if (!publicKey.valid())
 }
 
 // send our generated Public Key to the Server
-const auto PublicKeyRef = network.RSA->publicKey();
+const auto PublicKeyRef = network.RSA.publicKey();
 pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), PublicKeyRef.get());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
 
-network.RSA->setPublicKey(publicKey.value());
+network.RSA.setPublicKey(publicKey.value());
 
 // from now we use the Cryption, synced with Server
 network.RSAHandshake = true;

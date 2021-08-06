@@ -115,11 +115,10 @@ NET_STRUCT_END
 
 #pragma region Cryption Structure
 NET_STRUCT_BEGIN(cryption_t)
-NET_RSA* RSA;
+NET_RSA RSA;
 bool RSAHandshake; // set to true as soon as we have the public key from the Peer
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(cryption_t)
-RSA = nullptr;
 RSAHandshake = false;
 NET_STRUCT_END_CONTRUCTION
 
