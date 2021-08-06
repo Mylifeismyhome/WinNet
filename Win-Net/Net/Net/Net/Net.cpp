@@ -39,9 +39,9 @@ void Net::unload()
 int Net::SocketOpt(SOCKET s, int level, DWORD optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
-	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
+	return Ws2_32::setsockopt(s, level, optname, (SET_SOCKET_OPT_TYPE)optval, optlen);
 #else
-	return setsockopt(s, level, optname, optval, optlen);
+	return setsockopt(s, level, optname, (SET_SOCKET_OPT_TYPE)optval, optlen);
 #endif
 }
 
@@ -50,7 +50,7 @@ int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
         const auto result = Net::SocketOpt(socket,
                 IPPROTO_TCP,
                 opt.opt,
-                (SOCKET_OPT_TYPE)&opt.type,
+                opt.type,
                 opt.len);
 
         return result;
