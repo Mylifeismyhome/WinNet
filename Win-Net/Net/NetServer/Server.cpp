@@ -478,7 +478,7 @@ NET_THREAD(TickThread)
 	{
 		server->Tick();
 #ifdef BUILD_LINUX
-		sleep(FREQUENZ(server));
+		usleep(FREQUENZ(server));
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -497,7 +497,7 @@ NET_THREAD(AcceptorThread)
 	{
 		server->Acceptor();
 #ifdef BUILD_LINUX
-                sleep(FREQUENZ(server));
+				usleep(FREQUENZ(server));
 #else
                 Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -1898,7 +1898,7 @@ NET_THREAD(Receive)
 		}
 
 #ifdef BUILD_LINUX
-		sleep(restTime);
+		usleep(restTime);
 #else
 		Kernel32::Sleep(restTime);
 #endif
@@ -1908,7 +1908,7 @@ NET_THREAD(Receive)
 	while (peer && peer->bLatency)
 	{
 #ifdef BUILD_LINUX
-		sleep(FREQUENZ(server));
+		usleep(FREQUENZ(server));
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -1934,8 +1934,6 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		LOG("SENT DU HUSO!");
-
 		// Set socket options
 		for (const auto& entry : socketoption)
 		{
@@ -1943,8 +1941,6 @@ void Server::Acceptor()
 			if (res < 0)
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
-
-		LOG("SENT DU HUSO2!");
 
 		const auto param = new Receive_t();
 		param->server = this;
