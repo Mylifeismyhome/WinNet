@@ -29,6 +29,7 @@ Server::Server()
 	hSyncClockNTP = nullptr;
 	hReSyncClockNTP = nullptr;
 	optionBitFlag = NULL;
+	socketOptionBitFlag = NULL;
 }
 
 Server::~Server()
