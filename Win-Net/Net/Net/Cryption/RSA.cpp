@@ -102,6 +102,8 @@ void NETRSA::setPublicKey(const char* key)
 {
         _PublicKey.free();
         _PublicKey.init(key);
+
+		LOG("PPPPP: %s", publicKey().get());
 }
 
 void NETRSA::setPrivateKey(char* key)
