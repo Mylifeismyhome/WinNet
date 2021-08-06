@@ -28,6 +28,7 @@ Server::Server()
 	curTime = NULL;
 	hSyncClockNTP = nullptr;
 	hReSyncClockNTP = nullptr;
+	optionBitFlag = NULL;
 }
 
 Server::~Server()
