@@ -1587,7 +1587,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 		Key.get()[aesKeySize] = '\0';
 
-		LOG("AES KEY: %s", Key.get());
+		LOG("AES KEY: %llu | %s", aesKeySize, Key.get());
 
 		CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);

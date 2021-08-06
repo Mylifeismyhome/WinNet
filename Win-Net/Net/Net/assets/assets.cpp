@@ -90,7 +90,7 @@ void GetDateA(char* date)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Math)
-#if defined(VS13) || defined(BUILD_LINUX)
+#ifdef VS13
 template <typename TYPE>
 TYPE GetRandNumber(TYPE min, TYPE max)
 {
@@ -114,7 +114,7 @@ void GetRandString(char*& out, const size_t len)
 	out = ALLOC< char >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber< int >(0, 60)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber<int>(0, 62)];
 
 	out[len] = '\0';
 }
@@ -125,7 +125,7 @@ void GetRandStringNew(BYTE*& out, const size_t len)
 	out = ALLOC< BYTE >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber< int >(0, 60)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber<int>(0, 62)];
 
 	out[len] = '\0';
 }
