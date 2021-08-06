@@ -1859,8 +1859,6 @@ NET_THREAD(Receive)
 	auto peer = param->peer;
 	const auto server = param->server;
 
-	LOG("SENT DU HUSO!");
-
 	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
 		/* Create new RSA Key Pair */
@@ -1878,8 +1876,6 @@ NET_THREAD(Receive)
 		Package PKG;
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
-
-	LOG("SENT DU HUSO2!");
 
 	while (peer)
 	{
@@ -1938,6 +1934,8 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
+		LOG("SENT DU HUSO!");
+
 		// Set socket options
 		for (const auto& entry : socketoption)
 		{
@@ -1945,6 +1943,8 @@ void Server::Acceptor()
 			if (res < 0)
 				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
+
+		LOG("SENT DU HUSO2!");
 
 		const auto param = new Receive_t();
 		param->server = this;
