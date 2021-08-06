@@ -7,7 +7,7 @@
 
 NET_DSA_BEGIN
 
-#define RAND_NUMBER static_cast<uintptr_t>(Net::Math::GetRandSeed())
+#define RAND_NUMBER static_cast<uintptr_t>(Net::Random::GetRandSeed())
 
 template <typename T>
 class PointerCryptionUniquePointer
