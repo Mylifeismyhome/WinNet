@@ -158,10 +158,7 @@ T GetOption(const DWORD opt)
 	if (!Isset(opt)) return NULL;
 	for (const auto& entry : option)
 		if (entry.opt == opt)
-		{
-			return reinterpret_cast<T>(entry.type);
-			break;
-		}
+			return *(T*)&entry.type;
 
 	return NULL;
 }

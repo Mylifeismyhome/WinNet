@@ -300,7 +300,11 @@ bool Client::Connect(const char* Address, const u_short Port)
 		memset((char*)&sockaddr4, 0, sizeof(sockaddr4));
 		sockaddr4.sin_family = AF_INET;
 		sockaddr4.sin_port = htons(GetServerPort());
+#ifdef BUILD_LINUX
+		sockaddr4.sin_addr.s_addr = inet_addr(GetServerAddress());
+#else
 		sockaddr4.sin_addr.S_un.S_addr = inet_addr(GetServerAddress());
+#endif
 		sockaddr = (struct sockaddr*)&sockaddr4;
 		slen = static_cast<int>(sizeof(struct sockaddr_in));
 	}

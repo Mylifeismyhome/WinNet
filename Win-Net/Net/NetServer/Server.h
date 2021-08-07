@@ -256,10 +256,7 @@ T GetOption(const DWORD opt)
 	if (!Isset(opt)) return NULL;
 	for (const auto& entry : option)
 		if (entry.opt == opt)
-		{
 			return *(T*)&entry.type;
-			break;
-		}
 
 	return NULL;
 }
