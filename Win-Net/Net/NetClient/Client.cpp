@@ -133,7 +133,7 @@ bool Client::ChangeMode(const bool blocking)
 {
 	auto ret = true;
 	unsigned long non_blocking = (blocking ? 0 : 1);
-	ret = (NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking)) ? true : false;
+	ret = (NET_NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking)) ? true : false;
 	return ret;
 }
 
@@ -2643,12 +2643,21 @@ bool Client::CreateTOTPSecret()
 		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);*/
 	}
 
+#ifdef BUILD_LINUX
+	struct tm* tm = nullptr;
+	tm = gmtime(&network.curTime);
+	tm->tm_hour = Net::Util::roundUp(tm->tm_hour, 10);
+	tm->tm_min = Net::Util::roundUp(tm->tm_min, 10);
+	tm->tm_sec = 0;
+	const auto txTm = mktime(tm);
+#else
 	tm tm;
 	gmtime_s(&tm, &network.curTime);
 	tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
 	tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
 	tm.tm_sec = 0;
 	const auto txTm = mktime(&tm);
+#endif
 
 	const auto strTime = ctime(&txTm);
 	network.totp_secret_len = strlen(strTime);

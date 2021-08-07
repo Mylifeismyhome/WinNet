@@ -1,12 +1,15 @@
 #pragma once
+#ifndef BUILD_LINUX
 #pragma warning(disable: 4302)
 #pragma warning(disable: 4065)
+#endif
 
 #define NET_CLIENT Net::Client::Client
 
 #define PKG pkg
-#define FUNCTION_NAME CASTRING("On" __FUNCTION__)
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) {
+#define FUNCTION_NAME NET_FUNCTIONNAME
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) { \
+	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
@@ -38,8 +41,10 @@
 
 #ifdef BUILD_LINUX
 #define LAST_ERROR errno
+#define NET_NO_ERROR -1
 #else
 #define LAST_ERROR Ws2_32::WSAGetLastError()
+#define NET_NO_ERROR NO_ERROR
 #endif
 
 NET_NAMESPACE_BEGIN(Net)
