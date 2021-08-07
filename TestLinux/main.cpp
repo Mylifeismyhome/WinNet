@@ -1,5 +1,6 @@
 #define TEST(name, fnc) void name () { LOG(CSTRING("---------------------------------------")); LOG(CSTRING("Test Case: " #name)); LOG(CSTRING("----------------------------------------")); fnc LOG(CSTRING("----------------------------------------")); }
 #define RUN(name) name ();
+#define NTP_HOST "129.250.35.251"
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
@@ -24,6 +25,9 @@
 
 // database
 #include <Net/Database/MYSQL.h>
+
+// Protocol
+#include <Net/Protocol/NTP.h>
 
 TEST(Basic,
 );
@@ -251,6 +255,23 @@ TEST(DATABASE,
 //	}
 );
 
+TEST(NTP,
+	auto time = Net::Protocol::NTP::Exec(CSTRING(NTP_HOST));
+
+        if (!time.valid())
+        {
+                LOG_ERROR(CSTRING("critical failure on calling NTP host"));
+                return;
+        }
+
+        const auto curtime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+        const auto sTm = gmtime(&curtime);
+
+        char buff[20];
+        strftime(buff, sizeof(buff), CSTRING("%Y-%m-%d %H:%M:%S"), sTm);
+        LOG(buff);
+);
+
 int main()
 {
 	RUN(Basic);
@@ -267,6 +288,7 @@ int main()
 	RUN(HTTPS);
 	//RUN(TIMER);
 	RUN(DATABASE);
+	RUN(NTP);
 
 	return 0;
 }
