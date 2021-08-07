@@ -106,7 +106,7 @@ void GetRandString(char*& out, const size_t len)
 	out = ALLOC< char >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 62)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 60)];
 
 	out[len] = '\0';
 }
@@ -117,7 +117,7 @@ void GetRandStringNew(BYTE*& out, const size_t len)
 	out = ALLOC< BYTE >(len + 1);
 
 	for (size_t i = 0; i < len; i++)
-		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 62)];
+		out[i] = CSTRING("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")[Net::Math::GetRandNumber(0, 60)];
 
 	out[len] = '\0';
 }
