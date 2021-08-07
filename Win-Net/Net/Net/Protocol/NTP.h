@@ -5,6 +5,15 @@
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/logmanager.h>
 
+#ifdef BUILD_LINUX
+#define LAST_ERROR errno
+#define NTP_SOCKET_LEN socklen_t
+#else
+#define LAST_ERROR Ws2_32::WSAGetLastError()
+#define NTP_SOCKET_LEN int
+#endif
+
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)
 NET_NAMESPACE_BEGIN(NTP)

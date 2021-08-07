@@ -13,7 +13,7 @@ NTPRes::NTPRes()
 NTPRes::NTPRes(NTP_FRAME& frame)
 {
 	memset(&nframe, NULL, sizeof(NTP_FRAME));
-	memcpy_s(&nframe, sizeof(NTP_FRAME), &frame, sizeof(NTP_FRAME));
+	memcpy(&nframe, &frame, sizeof(NTP_FRAME));
 	bvalid = true;
 }
 
@@ -155,9 +155,11 @@ static bool AddrIsV6(const char* addr)
 
 static NTPRes PerformRequest(const char* addr, u_short port)
 {
+	int res = 0;
+
 #ifndef BUILD_LINUX
 	WSADATA wsaData;
-	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
+	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
@@ -186,7 +188,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	const auto con = Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (con == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), LAST_ERROR);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -194,14 +196,18 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	}
 
 	struct sockaddr* sockaddr = nullptr;
-	int slen = NULL;
+	NTP_SOCKET_LEN slen = NULL;
 	if (v4)
 	{
 		struct sockaddr_in sockaddr4;
 		memset((char*)&sockaddr4, 0, sizeof(sockaddr4));
 		sockaddr4.sin_family = AF_INET;
 		sockaddr4.sin_port = Ws2_32::htons(port);
-		sockaddr4.sin_addr.S_un.S_addr = Ws2_32::inet_addr(addr);
+#ifdef BUILD_LINUX
+		sockaddr4.sin_addr.s_addr = inet_addr(addr);
+#else
+		sockaddr4.sin_addr.S_un.S_addr = inet_addr(addr);
+#endif
 		sockaddr = (struct sockaddr*)&sockaddr4;
 		slen = static_cast<int>(sizeof(struct sockaddr_in));
 	}
@@ -243,7 +249,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	res = Ws2_32::sendto(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, slen);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), LAST_ERROR);
 		Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -254,7 +260,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	res = Ws2_32::recvfrom(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, &slen);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), WSAGetLastError());
+		LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), LAST_ERROR);
 		Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
