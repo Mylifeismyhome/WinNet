@@ -251,9 +251,11 @@ bool Client::Connect(const char* Address, const u_short Port)
 		return false;
 	}
 
+	int res = 0;
+
 #ifndef BUILD_LINUX
 	WSADATA wsaData;
-	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
+	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
 		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
@@ -367,7 +369,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	{
 		const auto res = Net::SetSocketOption(GetSocket(), entry);
 		if (res < 0)
-			LOG_ERROR(CSTRING("[Client] - Failure on settings socket option { 0x%ld : %i }"), entry.opt, GetLastError());
+			LOG_ERROR(CSTRING("[Client] - Failure on settings socket option { 0x%ld : %i }"), entry.opt, LAST_ERROR);
 	}
 
 	// clear the unused vector
