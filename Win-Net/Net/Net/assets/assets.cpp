@@ -1,4 +1,5 @@
 #include "assets.h"
+#include <random>
 
 NET_NAMESPACE_BEGIN(Net)
 #ifndef BUILD_LINUX
@@ -92,8 +93,9 @@ NET_NAMESPACE_END
 NET_NAMESPACE_BEGIN(Math)
 int GetRandNumber(int min, int max)
 {
-	srand(time(NULL));
-	return rand() % max + min;
+	std::mt19937 mt(std::random_device{}());
+	std::uniform_int_distribution<int> pick;
+	return pick(mt, decltype(pick)::param_type{ min, max });
 }
 NET_NAMESPACE_END
 
