@@ -94,10 +94,23 @@ NET_THREAD(Receive)
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 	while (client->IsConnected())
+	{
+#ifdef BUILD_LINUX
+		usleep(client->DoReceive());
+#else
 		Kernel32::Sleep(client->DoReceive());
+#endif
+	}
 
 	// wait until thread has finished
-	while (client && client->network.bLatency) Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+	while (client && client->network.bLatency)
+	{
+#ifdef BUILD_LINUX
+		usleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+#else
+		Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+#endif
+	}
 
 	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
@@ -119,8 +132,8 @@ bool Client::Isset_SocketOpt(const DWORD opt) const
 bool Client::ChangeMode(const bool blocking)
 {
 	auto ret = true;
-	u_long non_blocking = blocking ? 0 : 1;
-	ret = NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking);
+	unsigned long non_blocking = (blocking ? 0 : 1);
+	ret = (NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking)) ? true : false;
 	return ret;
 }
 
@@ -143,8 +156,7 @@ char* Client::ResolveHostname(const char* name)
 	}
 #endif
 
-	struct addrinfo hints;
-	ZeroMemory(&hints, sizeof(hints));
+	struct addrinfo hints = {};
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -304,7 +316,9 @@ bool Client::Connect(const char* Address, const u_short Port)
 		{
 			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
 			Ws2_32::closesocket(GetSocket());
+#ifndef BUILD_LINUX
 			Ws2_32::WSACleanup();
+#endif
 			return false;
 		}
 		sockaddr = (struct sockaddr*)&sockaddr6;

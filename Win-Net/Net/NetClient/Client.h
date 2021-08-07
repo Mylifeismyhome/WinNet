@@ -112,10 +112,10 @@ Network network;
 
 NET_CLASS_PRIVATE
 DWORD optionBitFlag;
-std::vector<Option_t<char*>> option;
+std::vector<Option_t<SOCKET_OPT_TYPE>> option;
 
 DWORD socketOptionBitFlag;
-std::vector<SocketOption_t<char*>> socketoption;
+std::vector<SocketOption_t<SOCKET_OPT_TYPE>> socketoption;
 
 NET_CLASS_PUBLIC
 template <class T>
@@ -128,16 +128,16 @@ void SetOption(const Option_t<T> o)
 		for (auto& entry : option)
 			if (entry.opt == o.opt)
 			{
-				entry.type = reinterpret_cast<char*>(o.type);
+				entry.type = (SOCKET_OPT_TYPE)o.type;
 				entry.len = o.len;
 				return;
 			}
 	}
 
 	// save the option value
-	Option_t<char*> opt;
+	Option_t<SOCKET_OPT_TYPE> opt;
 	opt.opt = o.opt;
-	opt.type = reinterpret_cast<char*>(o.type);
+	opt.type = (SOCKET_OPT_TYPE)o.type;
 	opt.len = o.len;
 	option.emplace_back(opt);
 
@@ -171,16 +171,16 @@ void SetSocketOption(const SocketOption_t<T> opt)
 		for (auto& entry : socketoption)
 			if (entry.opt == opt.opt)
 			{
-				entry.type = reinterpret_cast<char*>(opt.type);
+				entry.type = (SOCKET_OPT_TYPE)opt.type;
 				entry.len = opt.len;
 				return;
 			}
 	}
 
 	// save the option value
-	SocketOption_t<char*> option;
+	SocketOption_t<SOCKET_OPT_TYPE> option;
 	option.opt = opt.opt;
-	option.type = reinterpret_cast<char*>(opt.type);
+	option.type = (SOCKET_OPT_TYPE)opt.type;
 	option.len = opt.len;
 	socketoption.emplace_back(option);
 
