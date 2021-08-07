@@ -30,7 +30,8 @@ NET_TIMER(CalcLatency)
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
 	client->network.bLatency = true;
-	client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
+	// tmp disabled due to missing linux support
+	//client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
 	client->network.bLatency = false;
 
 	Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
@@ -56,7 +57,8 @@ NET_TIMER(NTPReSyncClock)
 
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
-	auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+	// tmp disabled due to missing linux support
+/*	auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 		client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
@@ -65,7 +67,7 @@ NET_TIMER(NTPReSyncClock)
 		NET_CONTINUE_TIMER;
 	}
 
-	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);*/
 	Timer::SetTime(client->network.hReSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
@@ -124,6 +126,7 @@ bool Client::ChangeMode(const bool blocking)
 
 char* Client::ResolveHostname(const char* name)
 {
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
@@ -138,6 +141,7 @@ char* Client::ResolveHostname(const char* name)
 		Ws2_32::WSACleanup();
 		return nullptr;
 	}
+#endif
 
 	struct addrinfo hints;
 	ZeroMemory(&hints, sizeof(hints));
@@ -150,7 +154,9 @@ char* Client::ResolveHostname(const char* name)
 	if (dwRetval != NULL)
 	{
 		LOG_ERROR(CSTRING("[NET] - Host look up has been failed with error %d"), dwRetval);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return nullptr;
 	}
 
@@ -204,7 +210,9 @@ char* Client::ResolveHostname(const char* name)
 	if (!psockaddrv4 && !psockaddrv6)
 	{
 		Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return nullptr;
 	}
 
@@ -216,7 +224,9 @@ char* Client::ResolveHostname(const char* name)
 	else buf = (char*)Ws2_32::inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
 
 	Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	return buf;
 }
@@ -229,6 +239,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 		return false;
 	}
 
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
@@ -243,6 +254,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 		Ws2_32::WSACleanup();
 		return false;
 	}
+#endif
 
 	SetServerAddress(Address);
 	SetServerPort(Port);
@@ -252,15 +264,19 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (!v6 && !v4)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
 	SetSocket(Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP));
 	if (GetSocket() == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), LAST_ERROR);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -299,15 +315,19 @@ bool Client::Connect(const char* Address, const u_short Port)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
 		Ws2_32::closesocket(GetSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
 	if (GetSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), LAST_ERROR);
 		Ws2_32::closesocket(GetSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -318,7 +338,9 @@ bool Client::Connect(const char* Address, const u_short Port)
 		SetSocket(INVALID_SOCKET);
 
 		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -443,7 +465,9 @@ void Client::Clear()
 		return;
 	}
 
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	network.clear();
 }
@@ -605,6 +629,115 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 		const auto res = Ws2_32::send(GetSocket(), data, static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case EACCES:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EACCES"));
+				Disconnect();
+				return;
+
+			case EWOULDBLOCK:
+				continue;
+
+			case EALREADY:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+				Disconnect();
+				return;
+
+			case EBADF:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EBADF"));
+				Disconnect();
+				return;
+
+			case ECONNRESET:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+				Disconnect();
+				return;
+
+			case EDESTADDRREQ:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+				Disconnect();
+				return;
+
+			case EFAULT:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				Disconnect();
+				return;
+
+			case EINTR:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				Disconnect();
+				return;
+
+			case EINVAL:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				Disconnect();
+				return;
+
+			case EISCONN:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+				Disconnect();
+				return;
+
+			case EMSGSIZE:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+				Disconnect();
+				return;
+
+			case ENOBUFS:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+				Disconnect();
+				return;
+
+			case ENOMEM:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				Disconnect();
+				return;
+
+			case ENOTCONN:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				Disconnect();
+				return;
+
+			case ENOTSOCK:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				Disconnect();
+				return;
+
+			case EOPNOTSUPP:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+				Disconnect();
+				return;
+
+			case EPIPE:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+				Disconnect();
+				return;
+
+			default:
+				bPreviousSentFailed = true;
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				Disconnect();
+				return;
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -724,6 +857,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 				Disconnect();
 				return;
 			}
+#endif
 		}
 		if (res < 0)
 			break;
@@ -757,6 +891,132 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case EACCES:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EACCES"));
+				Disconnect();
+				return;
+
+			case EWOULDBLOCK:
+				continue;
+
+			case EALREADY:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+				Disconnect();
+				return;
+
+			case EBADF:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EBADF"));
+				Disconnect();
+				return;
+
+			case ECONNRESET:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+				Disconnect();
+				return;
+
+			case EDESTADDRREQ:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+				Disconnect();
+				return;
+
+			case EFAULT:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				Disconnect();
+				return;
+
+			case EINTR:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				Disconnect();
+				return;
+
+			case EINVAL:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				Disconnect();
+				return;
+
+			case EISCONN:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+				Disconnect();
+				return;
+
+			case EMSGSIZE:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+				Disconnect();
+				return;
+
+			case ENOBUFS:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+				Disconnect();
+				return;
+
+			case ENOMEM:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				Disconnect();
+				return;
+
+			case ENOTCONN:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				Disconnect();
+				return;
+
+			case ENOTSOCK:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				Disconnect();
+				return;
+
+			case EOPNOTSUPP:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+				Disconnect();
+				return;
+
+			case EPIPE:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+				Disconnect();
+				return;
+
+			default:
+				bPreviousSentFailed = true;
+				FREE(data);
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				Disconnect();
+				return;
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -895,6 +1155,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				Disconnect();
 				return;
 			}
+#endif
 		}
 		if (res < 0)
 			break;
@@ -930,6 +1191,132 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
 		if (res == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case EACCES:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EACCES"));
+				Disconnect();
+				return;
+
+			case EWOULDBLOCK:
+				continue;
+
+			case EALREADY:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+				Disconnect();
+				return;
+
+			case EBADF:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EBADF"));
+				Disconnect();
+				return;
+
+			case ECONNRESET:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+				Disconnect();
+				return;
+
+			case EDESTADDRREQ:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+				Disconnect();
+				return;
+
+			case EFAULT:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				Disconnect();
+				return;
+
+			case EINTR:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				Disconnect();
+				return;
+
+			case EINVAL:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				Disconnect();
+				return;
+
+			case EISCONN:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+				Disconnect();
+				return;
+
+			case EMSGSIZE:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+				Disconnect();
+				return;
+
+			case ENOBUFS:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+				Disconnect();
+				return;
+
+			case ENOMEM:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				Disconnect();
+				return;
+
+			case ENOTCONN:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				Disconnect();
+				return;
+
+			case ENOTSOCK:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				Disconnect();
+				return;
+
+			case EOPNOTSUPP:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+				Disconnect();
+				return;
+
+			case EPIPE:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+				Disconnect();
+				return;
+
+			default:
+				bPreviousSentFailed = true;
+				data.free();
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				Disconnect();
+				return;
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -1068,6 +1455,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				Disconnect();
 				return;
 			}
+#endif
 		}
 		if (res < 0)
 			break;
@@ -1087,12 +1475,12 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 *	------------------------------------------------------------------------------------------
 *	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
 *		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
-*			{KEY}{...}...						*						-
-*			{IV}{...}...						*						-
+*			{KEY}{...}...								*						-
+*			{IV}{...}...									*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
-*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
-*			{DATA}{...}...						*				{DATA}{...}...
-*	{END PACKAGE}								*		{END PACKAGE}
+*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
+*			{DATA}{...}...								*				{DATA}{...}...
+*	{END PACKAGE}									*		{END PACKAGE}
 *
  */
 void Client::DoSend(const int id, NET_PACKAGE pkg)
@@ -1101,7 +1489,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		return;
 
 	network.lockSend();
-	
+
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
@@ -1399,12 +1787,12 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 *	------------------------------------------------------------------------------------------
 *	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
 *		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
-*			{KEY}{...}...						*						-
-*			{IV}{...}...						*						-
+*			{KEY}{...}...								*						-
+*			{IV}{...}...									*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
-*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
-*			{DATA}{...}...						*				{DATA}{...}...
-*	{END PACKAGE}								*		{END PACKAGE}
+*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
+*			{DATA}{...}...								*				{DATA}{...}...
+*	{END PACKAGE}									*		{END PACKAGE}
 *
  */
 DWORD Client::DoReceive()
@@ -1415,6 +1803,63 @@ DWORD Client::DoReceive()
 	const auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
 	{
+#ifdef BUILD_LINUX
+		switch (errno)
+		{
+		case EWOULDBLOCK:
+			ProcessPackages();
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			return FREQUENZ;
+
+		case ECONNREFUSED:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+			Disconnect();
+			return FREQUENZ;
+
+		case EFAULT:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+			Disconnect();
+			return FREQUENZ;
+
+		case EINTR:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - EINTR"));
+			Disconnect();
+			return FREQUENZ;
+
+		case EINVAL:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+			Disconnect();
+			return FREQUENZ;
+
+		case ENOMEM:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+			Disconnect();
+			return FREQUENZ;
+
+		case ENOTCONN:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+			Disconnect();
+			return FREQUENZ;
+
+		case ENOTSOCK:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+			Disconnect();
+			return FREQUENZ;
+
+		default:
+			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+			Disconnect();
+			return FREQUENZ;
+		}
+#else
 		switch (Ws2_32::WSAGetLastError())
 		{
 		case WSANOTINITIALISED:
@@ -1518,6 +1963,7 @@ DWORD Client::DoReceive()
 			Disconnect();
 			return FREQUENZ;
 		}
+#endif
 	}
 	if (data_size == 0)
 	{
@@ -2170,7 +2616,8 @@ bool Client::CreateTOTPSecret()
 	network.curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
-		auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		// tmp disabled due to missing linux support
+		/*auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 		if (!time.valid())
@@ -2179,7 +2626,7 @@ bool Client::CreateTOTPSecret()
 			return false;
 		}
 
-		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);*/
 	}
 
 	tm tm;

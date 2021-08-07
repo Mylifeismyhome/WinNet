@@ -30,11 +30,17 @@
 #include <Net/Coding/BASE32.h>
 #include <Net/Coding/TOTP.h>
 
-#include <Net/Protocol/ICMP.h>
-#include <Net/Protocol/NTP.h>
+//#include <Net/Protocol/ICMP.h>
+//#include <Net/Protocol/NTP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
+
+#ifdef BUILD_LINUX
+#define LAST_ERROR errno
+#else
+#define LAST_ERROR Ws2_32::WSAGetLastError()
+#endif
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
