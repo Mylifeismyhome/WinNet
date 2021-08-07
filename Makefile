@@ -155,6 +155,9 @@ netcore:
 netserver:
 	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetServer/
 
+netclient:
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetClient/
+
 clean:
 	$(call clean_all)
 # end

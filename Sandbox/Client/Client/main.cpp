@@ -6,8 +6,10 @@
 #include <Net/Coding/BASE32.h>
 #include <Net/Coding/TOTP.h>
 
+#ifndef BUILD_LINUX
 #pragma comment(lib, "NetCore.lib")
 #pragma comment(lib, "NetClient.lib")
+#endif
 
 int main()
 {
@@ -23,13 +25,15 @@ int main()
 #endif
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
-		MessageBoxA(nullptr, CSTRING("Connection timeout"), CSTRING("Network failure"), MB_OK | MB_ICONERROR);
+	{
+		LOG_ERROR(CSTRING("Connection timeout"));
+	}
 	else
 	{
 		while (client.IsConnected())
 		{
 #ifdef BUILD_LINUX
-			sleep(1000);
+			usleep(1000);
 #else
 			Sleep(1000);
 #endif
