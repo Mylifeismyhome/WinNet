@@ -34,7 +34,7 @@
 #include <Net/Coding/TOTP.h>
 
 //#include <Net/Protocol/ICMP.h>
-//#include <Net/Protocol/NTP.h>
+#include <Net/Protocol/NTP.h>
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>

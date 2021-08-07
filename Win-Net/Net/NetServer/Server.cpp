@@ -215,8 +215,7 @@ NET_TIMER(NTPReSyncClock)
 	const auto server = (Server*)param;
 	if (!server) NET_STOP_TIMER;
 
-	// tmp: disabled till linux support for ntp
-	/*auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+	auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 		server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
@@ -226,7 +225,7 @@ NET_TIMER(NTPReSyncClock)
 	}
 
 	server->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-	*/
+
 	Timer::SetTime(server->hReSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
@@ -613,8 +612,7 @@ bool Server::Run()
 		curTime = time(nullptr);
 		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 		{
-			// tmp: disabled till linux support for ntp
-			/*auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+			auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 				Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 			if (!time.valid())
@@ -624,7 +622,7 @@ bool Server::Run()
 			}
 
 			curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			*/
+
 			hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
 			hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
 		}

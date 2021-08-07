@@ -29,6 +29,7 @@ bool NTPRes::valid() const
 
 char* ResolveHostname(const char* name)
 {
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
@@ -43,9 +44,9 @@ char* ResolveHostname(const char* name)
 		Ws2_32::WSACleanup();
 		return nullptr;
 	}
+#endif
 
-	struct addrinfo hints;
-	ZeroMemory(&hints, sizeof(hints));
+	struct addrinfo hints = {};
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -55,7 +56,9 @@ char* ResolveHostname(const char* name)
 	if (dwRetval != NULL)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Host look up has been failed with error %d"), dwRetval);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return nullptr;
 	}
 
@@ -111,7 +114,9 @@ char* ResolveHostname(const char* name)
 	if (!psockaddrv4 && !psockaddrv6)
 	{
 		Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return nullptr;
 	}
 
@@ -123,7 +128,9 @@ char* ResolveHostname(const char* name)
 	else buf = (char*)Ws2_32::inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
 
 	Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	return buf;
 }
@@ -148,6 +155,7 @@ static bool AddrIsV6(const char* addr)
 
 static NTPRes PerformRequest(const char* addr, u_short port)
 {
+#ifndef BUILD_LINUX
 	WSADATA wsaData;
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
@@ -162,13 +170,16 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		Ws2_32::WSACleanup();
 		return {};
 	}
+#endif
 
 	auto v6 = AddrIsV6(addr);
 	auto v4 = AddrIsV4(addr);
 	if (!v6 && !v4)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return {};
 	}
 
@@ -176,7 +187,9 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	if (con == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), WSAGetLastError());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return {};
 	}
 
@@ -204,7 +217,9 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		{
 			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
 			Ws2_32::closesocket(con);
+#ifndef BUILD_LINUX
 			Ws2_32::WSACleanup();
+#endif
 			return {};
 		}
 		sockaddr = (struct sockaddr*)&sockaddr6;
@@ -215,7 +230,9 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
 		Ws2_32::closesocket(con);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return {};
 	}
 
@@ -228,7 +245,9 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
 		Ws2_32::closesocket(con);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return {};
 	}
 
@@ -237,12 +256,16 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), WSAGetLastError());
 		Ws2_32::closesocket(con);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return {};
 	}
 
 	Ws2_32::closesocket(con);
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	// convert result back to big-endian
 	frame.txTm_s = Ws2_32::ntohl(frame.txTm_s);

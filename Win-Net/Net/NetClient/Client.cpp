@@ -57,8 +57,7 @@ NET_TIMER(NTPReSyncClock)
 
 	if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
-	// tmp disabled due to missing linux support
-/*	auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+	auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 		client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 	if (!time.valid())
@@ -67,7 +66,7 @@ NET_TIMER(NTPReSyncClock)
 		NET_CONTINUE_TIMER;
 	}
 
-	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);*/
+	client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	Timer::SetTime(client->network.hReSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
@@ -2636,8 +2635,7 @@ bool Client::CreateTOTPSecret()
 	network.curTime = time(nullptr);
 	if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 	{
-		// tmp disabled due to missing linux support
-		/*auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
+		auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
 			Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 
 		if (!time.valid())
@@ -2646,7 +2644,7 @@ bool Client::CreateTOTPSecret()
 			return false;
 		}
 
-		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);*/
+		network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 	}
 
 #ifdef BUILD_LINUX
