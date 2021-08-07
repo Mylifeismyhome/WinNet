@@ -59,6 +59,11 @@ define PATH_CODING
 	g++ $(CFLAGS) -I ../ -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
+# Net/Protocol
+define PATH_PROTOCOL
+	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Protocol/NTP.cpp -o bin/NTP.o
+endef
+
 # Net/Database
 define PATH_DATABASE
 	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
@@ -118,6 +123,7 @@ all:
 	$(call PATH_DATABASE)
 	$(call PATH_CRYPTION)
 	$(call PATH_COMPRESSION)
+	$(call PATH_PROTOCOL)
 
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)
