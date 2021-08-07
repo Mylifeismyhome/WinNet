@@ -93,8 +93,8 @@ NET_NAMESPACE_END
 NET_NAMESPACE_BEGIN(Math)
 int GetRandNumber(int min, int max)
 {
-	std::mt19937 mt(std::random_device{}());
-	std::uniform_int_distribution<int> pick;
+	thread_local static std::mt19937 mt(std::random_device{}());
+	thread_local static std::uniform_int_distribution<int> pick;
 	return pick(mt, decltype(pick)::param_type{ min, max });
 }
 NET_NAMESPACE_END
