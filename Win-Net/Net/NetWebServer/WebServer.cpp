@@ -1268,7 +1268,7 @@ void Server::Acceptor()
 		{
 			const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
 			if (res < 0)
-				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, GetLastError());
+				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
 
 		const auto param = new Receive_t();
@@ -1731,7 +1731,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 #ifdef BUILD_LINUX
 			switch (errno)
 			{
-			case WSAEWOULDBLOCK:
+			case EWOULDBLOCK:
 				break;
 
 			case ECONNREFUSED:
@@ -1938,7 +1938,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 #ifdef BUILD_LINUX
 			switch (errno)
 			{
-			case WSAEWOULDBLOCK:
+			case EWOULDBLOCK:
 				peer->network.reset();
 				return FREQUENZ(this);
 
