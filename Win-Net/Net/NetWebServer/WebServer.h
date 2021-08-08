@@ -77,7 +77,7 @@ NET_CLASS_BEGIN(IPRef)
 char* pointer;
 
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(IPRef, PCSTR)
+NET_CLASS_CONSTRUCTUR(IPRef, const char*)
 NET_CLASS_DESTRUCTUR(IPRef)
 
 const char* get() const;

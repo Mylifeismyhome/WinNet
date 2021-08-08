@@ -228,7 +228,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		if (res == 0)
 		{
 			LOG_ERROR("[%s] - The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol", SERVERNAME(this));
-			return false;
+			return nullptr;
 		}
 		if (res < 0)
 		{
@@ -236,27 +236,27 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
 				LOG_DEBUG("[%s] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed", SERVERNAME(this));
-				return false;
+				return nullptr;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
 				LOG_DEBUG("[%s] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used", SERVERNAME(this));
-				return false;
+				return nullptr;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
 				LOG_DEBUG("[%s] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application", SERVERNAME(this));
-				return false;
+				return nullptr;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
 				LOG_DEBUG("[%s] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details", SERVERNAME(this));
-				return false;
+				return nullptr;
 			}
 			if (err == SSL_ERROR_SSL)
 			{
 				LOG_DEBUG("[%s] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called", SERVERNAME(this));
-				return false;
+				return nullptr;
 			}
 			ERR_clear_error();
 		}
@@ -791,7 +791,7 @@ short Server::Handshake(NET_PEER peer)
 #ifdef BUILD_LINUX
 			switch (errno)
 			{
-			case WSAEWOULDBLOCK:
+			case EWOULDBLOCK:
 				peer->network.reset();
 				return WebServerHandshake::HandshakeRet_t::would_block;
 
@@ -1227,7 +1227,7 @@ NET_THREAD(Receive)
 		}
 
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(restTime));
+		usleep(restTime);
 #else
 		Kernel32::Sleep(restTime);
 #endif
@@ -1274,6 +1274,7 @@ void Server::Acceptor()
 		const auto param = new Receive_t();
 		param->server = this;
 		param->peer = CreatePeer(client_addr, GetAcceptSocket());
+		if (!param->peer) return;
 		Thread::Create(Receive, param);
 	}
 }
