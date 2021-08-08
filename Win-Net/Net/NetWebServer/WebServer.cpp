@@ -175,7 +175,8 @@ NET_THREAD(LatencyTick)
 	if (!peer) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
-	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
+	// tmp disabled
+	//peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
 	peer->bLatency = false;
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
 	return NULL;
