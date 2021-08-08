@@ -1,7 +1,7 @@
 # build NetClient Sandbox
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall -w
+CFLAGS=-Wall -w
 LINKFLAGS=-pthread -ldl -lresolv
 
 all:

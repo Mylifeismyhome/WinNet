@@ -160,6 +160,15 @@ netclient:
 
 netwebserver:
 	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebServer/
+	
+sandboxserver:
+	${MAKE} -C ${ROOT_DIR}/Sandbox/Server/Server/
+	
+sandboxclient:
+	${MAKE} -C ${ROOT_DIR}/Sandbox/Client/Client/
+	
+sandboxwebserver:
+	${MAKE} -C ${ROOT_DIR}/Sandbox/WebServer/WebServer/
 
 clean:
 	$(call clean_all)

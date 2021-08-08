@@ -1,7 +1,7 @@
 # build NetCore
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-Wall -w -pthread -ldl -lresolv
+CFLAGS=-Wall -w
 
 # Net/Net/
 define PATH_NET

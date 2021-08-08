@@ -5,21 +5,21 @@ CFLAGS=-Wall -w
 
 # link Library
 define LINK
-        ar rvs NetWebServer.a bin/*.o
-        ranlib NetWebServer.a
+    ar rvs NetWebServer.a bin/*.o
+    ranlib NetWebServer.a
 endef
 
 # copy Files
 define COPY
-        mkdir -p ../../bin/
+    mkdir -p ../../bin/
 	mkdir -p ../../bin/include/NetWebServer/
 	cp WebServer.h ../../bin/include/NetWebServer/
-        cp NetWebServer.a ../../bin/
+    cp NetWebServer.a ../../bin/
 endef
 
 # clean build
 define CLEAN
-        rm -r bin/
+	rm -r bin/
 endef
 
 all:
