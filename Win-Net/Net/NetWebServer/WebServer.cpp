@@ -4,7 +4,7 @@
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
-IPRef::IPRef(PCSTR const pointer)
+IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
 }
@@ -677,6 +677,25 @@ short Server::Handshake(NET_PEER peer)
 		// check socket still open
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case ECONNRESET:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), SERVERNAME(this), peer->IPAddr().get());
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case ENOTCONN:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			default:
+				break;
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSAETIMEDOUT:
@@ -694,6 +713,7 @@ short Server::Handshake(NET_PEER peer)
 			default:
 				break;
 			}
+#endif
 		}
 
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -768,6 +788,62 @@ short Server::Handshake(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case WSAEWOULDBLOCK:
+				peer->network.reset();
+				return WebServerHandshake::HandshakeRet_t::would_block;
+
+			case ECONNREFUSED:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case EFAULT:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case EINTR:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case EINVAL:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOMEM:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case ENOTCONN:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			case ENOTSOCK:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+
+			default:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
+				ErasePeer(peer);
+				return WebServerHandshake::HandshakeRet_t::error;
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -870,6 +946,7 @@ short Server::Handshake(NET_PEER peer)
 				ErasePeer(peer);
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
+#endif
 		}
 		if (data_size == 0)
 		{
@@ -951,9 +1028,9 @@ short Server::Handshake(NET_PEER peer)
 
 		char host[15];
 		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
-			sprintf_s(host, CSTRING("%s:%i"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN, Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
+			sprintf(host, CSTRING("%s:%i"), Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN, Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 		else
-			sprintf_s(host, CSTRING("127.0.0.1:%i"), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
+			sprintf(host, CSTRING("127.0.0.1:%i"), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 
 		CPOINTER<char> origin;
 		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
@@ -1160,7 +1237,7 @@ NET_THREAD(Receive)
 	while (peer && peer->bLatency)
 	{
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(FREQUENZ(server)));
+		usleep(FREQUENZ(server));
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -2100,7 +2177,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		const auto OffsetLen127 = (64 / 8);
 		byte tmpRead[OffsetLen127] = {};
 		memcpy(tmpRead, &peer->network.getData()[NextBits], OffsetLen127);
-#ifdef BULD_LINUX
+#ifdef BUILD_LINUX
 		PayloadLength = (unsigned int)be64toh(*(unsigned long long*)tmpRead);
 #else
 		PayloadLength = (unsigned int)Ws2_32::ntohll(*(unsigned long long*)tmpRead);
