@@ -25,6 +25,8 @@ Server::Server()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
+	optionBitFlag = NULL;
+	socketOptionBitFlag = NULL;
 }
 
 Server::~Server()
@@ -261,7 +263,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	}
 	else
 		peer->ssl = nullptr;
-	
+
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
 	{
 		const auto _DoCalcLatency = new DoCalcLatency_t();
@@ -411,7 +413,11 @@ NET_THREAD(TickThread)
 	while (server->IsRunning())
 	{
 		server->Tick();
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(server));
+#else
 		Kernel32::Sleep(FREQUENZ(server));
+#endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
 	return NULL;
@@ -426,7 +432,11 @@ NET_THREAD(AcceptorThread)
 	while (server->IsRunning())
 	{
 		server->Acceptor();
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(server));
+#else
 		Kernel32::Sleep(FREQUENZ(server));
+#endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
 	return NULL;
@@ -526,27 +536,33 @@ bool Server::Run()
 		LOG_DEBUG(CSTRING("[%s] - Server is using method: %s"), SERVERNAME(this), Net::ssl::GET_SSL_METHOD_NAME(Isset(NET_OPT_SSL_METHOD) ? GetOption<int>(NET_OPT_SSL_METHOD) : NET_OPT_DEFAULT_SSL_METHOD).data());
 	}
 
-	// create WSADATA object
-	WSADATA wsaData;
-
 	// our sockets for the server
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 
 	// address info for the server to listen to
 	addrinfo* result = nullptr;
-	auto hints = addrinfo();
+	int res = 0;
 
-	// Initialize Winsock
-	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (res != 0)
+#ifndef BUILD_LINUX
+	WSADATA wsaData;
+	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), SERVERNAME(this), res);
+		LOG_ERROR(CSTRING("[%s] - WSAStartup has been failed with error: %d"), SERVERNAME(this), res);
 		return false;
 	}
 
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		LOG_ERROR(CSTRING("[%s] - Could not find a usable version of Winsock.dll"), SERVERNAME(this));
+		Ws2_32::WSACleanup();
+		return false;
+	}
+#endif
+
 	// set address information
-	ZeroMemory(&hints, sizeof(hints));
+	struct addrinfo hints = {};
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
@@ -557,7 +573,9 @@ bool Server::Run()
 
 	if (res != 0) {
 		LOG_ERROR(CSTRING("[%s] - getaddrinfo failed with error: %d"), SERVERNAME(this), res);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -565,9 +583,11 @@ bool Server::Run()
 	SetListenSocket(Ws2_32::socket(result->ai_family, result->ai_socktype, result->ai_protocol));
 
 	if (GetListenSocket() == INVALID_SOCKET) {
-		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -577,9 +597,11 @@ bool Server::Run()
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -587,10 +609,12 @@ bool Server::Run()
 	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, static_cast<int>(result->ai_addrlen));
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - bind failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -601,9 +625,11 @@ bool Server::Run()
 	res = Ws2_32::listen(GetListenSocket(), SOMAXCONN);
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), Ws2_32::WSAGetLastError());
+		LOG_ERROR(CSTRING("[%s] - listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
+#ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
+#endif
 		return false;
 	}
 
@@ -631,7 +657,9 @@ bool Server::Close()
 	if (GetAcceptSocket())
 		Ws2_32::closesocket(GetAcceptSocket());
 
+#ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
+#endif
 
 	LOG_DEBUG(CSTRING("[%s] - Closed!"), SERVERNAME(this));
 	return true;
@@ -1121,11 +1149,22 @@ NET_THREAD(Receive)
 			break;
 		}
 
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(restTime));
+#else
 		Kernel32::Sleep(restTime);
+#endif
 	}
 
 	// wait until thread has finished
-	while (peer && peer->bLatency) Kernel32::Sleep(FREQUENZ(server));
+	while (peer && peer->bLatency)
+	{
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(FREQUENZ(server)));
+#else
+		Kernel32::Sleep(FREQUENZ(server));
+#endif
+	}
 
 	// erase him
 	peer->setAsync(false);
@@ -1206,7 +1245,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 
 	// write package id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);
-	newBuffer[0] = (id >> 24) & 0xFF; 
+	newBuffer[0] = (id >> 24) & 0xFF;
 	newBuffer[1] = (id >> 16) & 0xFF;
 	newBuffer[2] = (id >> 8) & 0xFF;
 	newBuffer[3] = (id) & 0xFF;
@@ -1360,6 +1399,115 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
 				if (res == SOCKET_ERROR)
 				{
+#ifdef BUILD_LINUX
+					switch (errno)
+					{
+					case EACCES:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EACCES"));
+						ErasePeer(peer);
+						return;
+
+					case EWOULDBLOCK:
+						continue;
+
+					case EALREADY:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+						ErasePeer(peer);
+						return;
+
+					case EBADF:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EBADF"));
+						ErasePeer(peer);
+						return;
+
+					case ECONNRESET:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+						ErasePeer(peer);
+						return;
+
+					case EDESTADDRREQ:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+						ErasePeer(peer);
+						return;
+
+					case EFAULT:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+						ErasePeer(peer);
+						return;
+
+					case EINTR:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EINTR"));
+						ErasePeer(peer);
+						return;
+
+					case EINVAL:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+						ErasePeer(peer);
+						return;
+
+					case EISCONN:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+						ErasePeer(peer);
+						return;
+
+					case EMSGSIZE:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+						ErasePeer(peer);
+						return;
+
+					case ENOBUFS:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+						ErasePeer(peer);
+						return;
+
+					case ENOMEM:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+						ErasePeer(peer);
+						return;
+
+					case ENOTCONN:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+						ErasePeer(peer);
+						return;
+
+					case ENOTSOCK:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+						ErasePeer(peer);
+						return;
+
+					case EOPNOTSUPP:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+						ErasePeer(peer);
+						return;
+
+					case EPIPE:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+						ErasePeer(peer);
+						return;
+
+					default:
+						buf.free();
+						LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+						ErasePeer(peer);
+						return;
+					}
+#else
 					switch (Ws2_32::WSAGetLastError())
 					{
 					case WSANOTINITIALISED:
@@ -1479,6 +1627,7 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 						ErasePeer(peer);
 						return;
 					}
+#endif
 				}
 
 				sendSize -= res;

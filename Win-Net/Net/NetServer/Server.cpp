@@ -510,11 +510,6 @@ bool Server::Run()
 	if (IsRunning())
 		return false;
 
-#ifndef BUILD_LINUX
-	// create WSADATA object
-	WSADATA wsaData;
-#endif
-
 	// our sockets for the server
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
@@ -524,11 +519,18 @@ bool Server::Run()
 	int res = 0;
 
 #ifndef BUILD_LINUX
-	// Initialize Winsock
+	WSADATA wsaData;
 	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (res != 0)
+	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[%s] - WSAStartup failed with error: %d"), SERVERNAME(this), res);
+		LOG_ERROR(CSTRING("[%s] - WSAStartup has been failed with error: %d"), SERVERNAME(this), res);
+		return false;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+	{
+		LOG_ERROR(CSTRING("[%s] - Could not find a usable version of Winsock.dll"), SERVERNAME(this));
+		Ws2_32::WSACleanup();
 		return false;
 	}
 #endif
