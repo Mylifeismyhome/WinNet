@@ -1,7 +1,7 @@
 # build NetCore
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall -w -pthread -ldl -lresolv
+CFLAGS=-Wall -w -pthread -ldl -lresolv
 
 # Net/Net/
 define PATH_NET
@@ -66,7 +66,7 @@ endef
 
 # Net/Database
 define PATH_DATABASE
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
+	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
 endef
 
 # extract files from crypto++
@@ -120,10 +120,10 @@ all:
 	$(call PATH_WEB)
 	$(call PATH_ASSETS)
 	$(call PATH_CODING)
-	$(call PATH_DATABASE)
 	$(call PATH_CRYPTION)
 	$(call PATH_COMPRESSION)
 	$(call PATH_PROTOCOL)
+	$(call PATH_DATABASE)
 
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)

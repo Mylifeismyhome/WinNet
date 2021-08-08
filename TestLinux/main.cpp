@@ -214,7 +214,7 @@ TEST(HTTP,
 	if(http.Get())
 	{
 		LOG("GET WORKED!");
-		LOG(http.GetBodyContent().c_str());
+		//LOG(http.GetBodyContent().c_str());
 	}
 	else
 	{
@@ -227,7 +227,7 @@ TEST(HTTPS,
 	if(https.Get())
 	{
                 LOG("GET WORKED!");
-        //        LOG(https.GetBodyContent().c_str());
+               	LOG(https.GetBodyContent().c_str());
         }
         else
         {
@@ -247,12 +247,12 @@ TEST(TIMER,
 );
 
 TEST(DATABASE,
-//	MYSQL_CON cfg("tcp://localhost", 3306, "root", "", "opldev");
-//	MYSQL mysql(cfg);
-//	if (mysql.connect())
-//	{
-//		LOG(CSTRING("MYSQL CONNECTED!"));
-//	}
+	MYSQL_CON cfg("localhost", 3306, "root", "", "opldev");
+	MYSQL mysql(cfg);
+	if (mysql.connect())
+	{
+		LOG(CSTRING("MYSQL CONNECTED!"));
+	}
 );
 
 TEST(NTP,
