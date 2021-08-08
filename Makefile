@@ -158,6 +158,9 @@ netserver:
 netclient:
 	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetClient/
 
+netwebserver:
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebServer/
+
 clean:
 	$(call clean_all)
 # end

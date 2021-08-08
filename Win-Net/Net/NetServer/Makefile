@@ -1,7 +1,7 @@
 # build NetServer
 export ROOT_DIR=$(PWD)
 
-CFLAGS=-std=c++11 -Wall -w
+CFLAGS=-Wall -w
 
 # link Library
 define LINK

@@ -1,9 +1,4 @@
 #pragma once
-#ifndef BUILD_LINUX
-#pragma warning(disable: 4302)
-#pragma warning(disable: 4065)
-#endif
-
 #define NET_SERVER Net::Server::Server
 
 #define NET_IPEER peerInfo
@@ -47,6 +42,11 @@
 #include <Net/assets/timer.h>
 
 #include <mutex>
+
+#ifndef BUILD_LINUX
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+#endif
 
 #ifdef BUILD_LINUX
 #define LAST_ERROR errno

@@ -1,7 +1,4 @@
 #pragma once
-#pragma warning(disable: 4302)
-#pragma warning(disable: 4065)
-
 #define NET_WEB_SERVER Net::WebServer::Server
 
 #define NET_IPEER peerInfo
@@ -28,6 +25,11 @@
 #include <Net/Net/Net.h>
 #include <Net/Net/Package.h>
 #include <Net/Net/NetCodes.h>
+
+#ifndef BUILD_LINUX
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+#endif
 
 #ifdef BUILD_LINUX
 #define LAST_ERROR errno
@@ -59,7 +61,7 @@ CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
 #include <Net/Coding/SHA1.h>
 #include <Net/Compression/Compression.h>
 
-#include <OpenSSL/err.h>
+#include <openssl/err.h>
 
 #include <Net/Protocol/ICMP.h>
 

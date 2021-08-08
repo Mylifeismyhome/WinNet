@@ -1,9 +1,4 @@
 #pragma once
-#ifndef BUILD_LINUX
-#pragma warning(disable: 4302)
-#pragma warning(disable: 4065)
-#endif
-
 #define NET_CLIENT Net::Client::Client
 
 #define PKG pkg
@@ -38,6 +33,11 @@
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
+
+#ifndef BUILD_LINUX
+#pragma warning(disable: 4302)
+#pragma warning(disable: 4065)
+#endif
 
 #ifdef BUILD_LINUX
 #define LAST_ERROR errno
