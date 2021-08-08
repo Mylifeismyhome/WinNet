@@ -14,7 +14,7 @@ IPRef::~IPRef()
 	FREE(pointer);
 }
 
-PCSTR IPRef::get() const
+const char* IPRef::get() const
 {
 	return pointer;
 }
@@ -1650,6 +1650,53 @@ DWORD Server::DoReceive(NET_PEER peer)
 		// check socket still open
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case WSAEWOULDBLOCK:
+				break;
+
+			case ECONNREFUSED:
+				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EFAULT:
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EINTR:
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EINVAL:
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOMEM:
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOTCONN:
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOTSOCK:
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			default:
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -1735,6 +1782,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 				ErasePeer(peer);
 				return FREQUENZ(this);
 			}
+#endif
 		}
 
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -1809,6 +1857,62 @@ DWORD Server::DoReceive(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
+#ifdef BUILD_LINUX
+			switch (errno)
+			{
+			case WSAEWOULDBLOCK:
+				peer->network.reset();
+				return FREQUENZ(this);
+
+			case ECONNREFUSED:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EFAULT:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EINTR:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case EINVAL:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOMEM:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOTCONN:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			case ENOTSOCK:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+
+			default:
+				peer->network.reset();
+				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				ErasePeer(peer);
+				return FREQUENZ(this);
+			}
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -1911,6 +2015,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 				ErasePeer(peer);
 				return FREQUENZ(this);
 			}
+#endif
 		}
 		if (data_size == 0)
 		{
@@ -1995,7 +2100,11 @@ void Server::DecodeFrame(NET_PEER peer)
 		const auto OffsetLen127 = (64 / 8);
 		byte tmpRead[OffsetLen127] = {};
 		memcpy(tmpRead, &peer->network.getData()[NextBits], OffsetLen127);
+#ifdef BULD_LINUX
+		PayloadLength = (unsigned int)be64toh(*(unsigned long long*)tmpRead);
+#else
 		PayloadLength = (unsigned int)Ws2_32::ntohll(*(unsigned long long*)tmpRead);
+#endif
 		NextBits += OffsetLen127;
 
 		//// MSB (The most significant bit MUST be 0)
