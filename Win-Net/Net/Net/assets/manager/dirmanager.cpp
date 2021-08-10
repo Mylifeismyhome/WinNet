@@ -8,7 +8,7 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
         wchar_t* w_d_name = new wchar_t[cSize];
         mbstowcs (w_d_name, data->d_name, cSize);
 
-        wcscpy(name, w_d_name);
+        wcscpy(this->name, w_d_name);
 
         FREE(w_d_name);
 
@@ -23,16 +23,16 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
 
         struct stat stat_buf;
         const auto rc = stat(str_fullPath.c_str(), &stat_buf);
-        size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
+        this->size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
 
-        lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
-        lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
-        creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
+        this->lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
+        this->lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
+        this->creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
 }
 
 NET_FILE_ATTRA::NET_FILE_ATTRA(struct dirent* data, char* path)
 {
-        strcpy(name, data->d_name);
+        strcpy(this->name, data->d_name);
         strcpy(this->path, path);
 
         std::string fullPath(this->path);
@@ -42,44 +42,44 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(struct dirent* data, char* path)
 
         struct stat stat_buf;
         const auto rc = stat(this->fullPath, &stat_buf);
-        size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
+        this->size = (rc == 0 ? stat_buf.st_size : INVALID_SIZE);
 
-        lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
-        lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
-        creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
+        this->lastAccess = (rc == 0 ? stat_buf.st_atime : 0);
+        this->lastModification = (rc == 0 ? stat_buf.st_mtime : 0);
+        this->creationTime = (rc == 0 ? stat_buf.st_ctime : 0);
 }
 #else
 static time_t filetime_to_timet(const FILETIME& ft) { ULARGE_INTEGER ull; ull.LowPart = ft.dwLowDateTime; ull.HighPart = ft.dwHighDateTime; return ull.QuadPart / 10000000ULL - 11644473600ULL; }
 NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
 {
-        wcscpy(name, w32Data.cFileName);
-        wcscpy(path, path);
-        wcscpy(fullPath, std::wstring(std::wstring(path) + std::wstring(name)).c_str());
+        wcscpy(this->name, w32Data.cFileName);
+        wcscpy(this->path, path);
+        wcscpy(this->fullPath, std::wstring(std::wstring(path) + std::wstring(name)).c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
         fsize.LowPart = w32Data.nFileSizeLow;
-        size = fsize.QuadPart;
+        this->size = fsize.QuadPart;
 
-        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
-        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
-        creationTime = filetime_to_timet(w32Data.ftCreationTime);
+        this->lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+        this->lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+        this->creationTime = filetime_to_timet(w32Data.ftCreationTime);
 }
 
 NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
 {
-        strcpy(name, w32Data.cFileName);
-        strcpy(path, path);
-        strcpy(fullPath, std::string(std::string(path) + std::string(name)).c_str());
+        strcpy(this->name, w32Data.cFileName);
+        strcpy(this->path, path);
+        strcpy(this->fullPath, std::string(std::string(path) + std::string(name)).c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
         fsize.LowPart = w32Data.nFileSizeLow;
-        size = fsize.QuadPart;
+        this->size = fsize.QuadPart;
 
-        lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
-        lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
-        creationTime = filetime_to_timet(w32Data.ftCreationTime);
+        this->lastAccess = filetime_to_timet(w32Data.ftLastAccessTime);
+        this->lastModification = filetime_to_timet(w32Data.ftLastWriteTime);
+        this->creationTime = filetime_to_timet(w32Data.ftCreationTime);
 }
 #endif
 
