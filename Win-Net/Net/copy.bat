@@ -2,7 +2,7 @@
 echo ---------- NET XCOPY INCLUDE FILES ----------
 xcopy "..\..\..\extern\crypto++\include\" "..\..\extern\Net\include\" /s /i /q /y /c
 xcopy "..\..\..\extern\JSON\" "..\..\extern\Net\include\JSON\" /s /i /q /y /c
-xcopy "..\..\..\extern\MYSQL\include\" "..\..\extern\Net\include\MYSQL\" /s /i /q /y /c
+xcopy "..\..\..\extern\MYSQL\" "..\..\extern\Net\include\MYSQL\" /s /i /q /y /c
 
 REM Copy from any source available, all include headers are the same
 xcopy "..\..\..\extern\OpenSSL\bin\dll\x64\release\include" "..\..\extern\Net\include\" /s /i /q /y /c /d

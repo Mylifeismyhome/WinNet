@@ -3,13 +3,15 @@
 #define CPOINTER PointerCryption
 
 #include <Net/Net/Net.h>
+#include <random>
 
 NET_DSA_BEGIN
 
 static int __NET_POINTER_CRYPTION_RNDSEED(int min, int max)
 {
-	srand(time(NULL));
-	return rand() % max + min;
+	thread_local static std::mt19937 mt(std::random_device{}());
+	thread_local static std::uniform_int_distribution<int> pick;
+	return pick(mt, decltype(pick)::param_type{ min, max });
 }
 
 #define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED(0, INT_MAX))
