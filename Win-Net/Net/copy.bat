@@ -14,7 +14,7 @@ xcopy "..\..\..\extern\OpenSSL\bin\lib\x86\release\include" "..\..\extern\Net\in
 xcopy "..\..\..\extern\OpenSSL\bin\lib\x64\debug\include" "..\..\extern\Net\include\" /s /i /q /y /c /d
 xcopy "..\..\..\extern\OpenSSL\bin\lib\x86\debug\include" "..\..\extern\Net\include\" /s /i /q /y /c /d
 
-xcopy "..\..\..\extern\pugiXML\src\*.hpp" "..\..\extern\Net\include\pugiXML\" /s /i /q /y /c
+xcopy "..\..\..\extern\pugiXML\Windows\*.hpp" "..\..\extern\Net\include\pugiXML\" /s /i /q /y /c
 xcopy "..\..\..\extern\ZLib\*.h" "..\..\extern\Net\include\ZLib\" /s /i /q /y /c
 xcopy "..\..\..\extern\BCrypt\" "..\..\extern\Net\include\BCrypt\" /s /i /q /y /c
 xcopy "..\..\Net\*.h" "..\..\extern\Net\include\" /s /i /q /y /c
