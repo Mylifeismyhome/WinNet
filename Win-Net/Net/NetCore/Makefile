@@ -100,6 +100,16 @@ define COPY
 	mkdir -p ../../bin/include/
 	cp -r ../Net/ ../../bin/include/
 	find ../../bin/include/ ! -name '*.h' ! -name '*.hpp' -type f -exec rm -f {} +
+
+	cp -r ../../../extern/JSON/ ../../bin/include/
+ 	mkdir -p ../../bin/include/MYSQL
+	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/
+	cp -r ../../../extern/OpenSSL/bin/bin/include ../../bin/
+	cp -r ../../../extern/crypto++/bin/include/ ../../bin/
+	mkdir -p ../../bin/include/BCrypt
+	cp -r ../../../extern/BCrypt/* ../../bin/include/BCrypt/
+	mkdir -p ../../bin/include/pugiXML
+	cp -r ../../../extern/pugiXML/Unix/*.hpp ../../bin/include/pugiXML/
 endef
 
 # clean build

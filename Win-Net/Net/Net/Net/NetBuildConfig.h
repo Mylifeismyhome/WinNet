@@ -7,7 +7,7 @@ mysqlcppconn-static.lib
 */
 
 #define NET_USE_MYSQL_SUPPORT
-#undef BUILD_LINUX
+#define BUILD_LINUX
 
 /*
 	define this to build for visual studio 2013
