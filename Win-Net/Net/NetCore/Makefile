@@ -1,88 +1,92 @@
 # build NetCore
-export ROOT_DIR=$(PWD)
-
-CFLAGS=-Wall -w
+CFLAGS=-std=c++11 -Wall -w
+INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # Net/Net/
 define PATH_NET
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include -c ../Net/Net/Net.cpp -o bin/Net.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Net/NetString.cpp -o bin/NetString.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Net/Package.cpp -o bin/Package.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/Net.cpp -o bin/Net.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetString.cpp -o bin/NetString.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/Package.cpp -o bin/Package.o
 endef
 
 # Net/Cryption/
 define PATH_CRYPTION
-	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
-	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/AES.cpp -o bin/AES.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include/ -I ../../../extern/crypto++/bin/include/ -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/BCrypt -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/XOR.cpp -o bin/XOR.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/AES.cpp -o bin/AES.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
 endef
 
 # Net/Compression/
 define PATH_COMPRESSION
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Compression/Compression.cpp -o bin/Compression.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Compression/Compression.cpp -o bin/Compression.o
 endef
 
 # Net/assets/manager
 define PATH_MANAGER
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/assets/manager/profile.hpp -o bin/profile.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
+	g++ $(CFLAGS) -x c++ $(INCLUDE_PATH) -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
 # Net/assets/web
 define PATH_WEB
-	g++ $(CFLAGS) -I ../ -I ../../../extern/OpenSSL/bin/bin/include -c ../Net/assets/web/http.cpp -o bin/http.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/web/http.cpp -o bin/http.o
 endef
 
 # Net/assets
 define PATH_ASSETS
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/assets.cpp -o bin/assets.o
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/thread.cpp -o bin/thread.o
-	g++ $(CFLAGS) -I ../ -c ../Net/assets/timer.cpp -o bin/timer.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/assets.cpp -o bin/assets.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/thread.cpp -o bin/thread.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/timer.cpp -o bin/timer.o
 endef
 
 # Net/Coding
 define PATH_CODING
-	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
-	g++ $(CFLAGS) -I ../ -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -o bin/Hex.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Coding/MD5.cpp -o bin/MD5.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
-	g++ $(CFLAGS) -I ../ -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Coding/BASE32.cpp -o bin/BASE32.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Coding/BASE64.cpp -o bin/BASE64.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -I ../../../extern/crypto++/bin/include/ -c ../Net/Coding/Hex.cpp -o bin/Hex.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Coding/MD5.cpp -o bin/MD5.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Coding/SHA1.cpp -o bin/SHA1.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Coding/TOTP.cpp -o bin/TOTP.o
 endef
 
 # Net/Protocol
 define PATH_PROTOCOL
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c ../Net/Protocol/NTP.cpp -o bin/NTP.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Protocol/NTP.cpp -o bin/NTP.o
 endef
 
 # Net/Database
 define PATH_DATABASE
-	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
+	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 $(INCLUDE_PATH) -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
+endef
+
+# pugiXML
+define PUGIXML
+	g++ $(CFLAGS) -c ../../../extern/pugiXML/Unix/pugixml.cpp --output bin/pugixml.o
 endef
 
 # extract files from crypto++
 define EXTRACT_CRYPTOPP
-	ar x ../../../extern/crypto++/bin/lib/libcryptopp.a --output bin/cryptopp/
+	cd bin/cryptopp && ar x ../../../../../extern/crypto++/bin/lib/libcryptopp.a
 endef
 
 # extract files from openssl
 define EXTRACT_OPENSSL
-	ar x ../../../extern/OpenSSL/bin/bin/lib/libcrypto.a --output bin/openssl/libcrypto
-	ar x ../../../extern/OpenSSL/bin/bin/lib/libssl.a --output bin/openssl/libssl
+	cd bin/openssl/libcrypto && ar x ../../../../../../extern/OpenSSL/bin/bin/lib/libcrypto.a
+	cd bin/openssl/libssl && ar x ../../../../../../extern/OpenSSL/bin/bin/lib/libssl.a
 endef
 
 # extract files from mysql
 define EXTRACT_MYSQL
-	ar x ../../../extern/MYSQL/lib/libmysqlcppconn-static.a --output bin/mysql
+	cd bin/mysql && ar x ../../../../../extern/MYSQL/lib/libmysqlcppconn-static.a
 endef
 
 # link Library
@@ -110,6 +114,8 @@ define COPY
 	cp -r ../../../extern/BCrypt/* ../../bin/include/BCrypt/
 	mkdir -p ../../bin/include/pugiXML
 	cp -r ../../../extern/pugiXML/Unix/*.hpp ../../bin/include/pugiXML/
+	mkdir -p ../../bin/include/ZLib
+	cp -r ../../../extern/ZLib/*.h ../../bin/include/ZLib/
 endef
 
 # clean build
@@ -135,6 +141,8 @@ all:
 	$(call PATH_PROTOCOL)
 	$(call PATH_DATABASE)
 
+	$(call PUGIXML)
+
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)
 	$(call EXTRACT_MYSQL)
@@ -142,3 +150,4 @@ all:
 	$(call LINK)
 	$(call COPY)
 	$(call CLEAN)
+

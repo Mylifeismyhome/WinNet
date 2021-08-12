@@ -1,7 +1,6 @@
 # build NetClient
-export ROOT_DIR=$(PWD)
-
-CFLAGS=-Wall -w
+CFLAGS=-std=c++11 -Wall -w
+INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # link Library
 define LINK
@@ -25,7 +24,7 @@ endef
 all:
 	mkdir -p bin
 
-	g++ $(CFLAGS) -I ../ -I ../../../extern/ -c Client.cpp -o bin/Client.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c Client.cpp -o bin/Client.o
 
 	$(call LINK)
 	$(call COPY)
