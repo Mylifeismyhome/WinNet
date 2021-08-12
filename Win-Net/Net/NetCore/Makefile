@@ -69,6 +69,11 @@ define PATH_DATABASE
 	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 -I ../ -I ../../../extern/ -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
 endef
 
+# pugiXML
+define PUGIXML
+	g++ $(CFLAGS) -c ../../../extern/pugiXML/Unix/pugixml.cpp -o bin/pugixml.o
+endef
+
 # extract files from crypto++
 define EXTRACT_CRYPTOPP
 	ar x ../../../extern/crypto++/bin/lib/libcryptopp.a --output bin/cryptopp/
@@ -134,6 +139,8 @@ all:
 	$(call PATH_COMPRESSION)
 	$(call PATH_PROTOCOL)
 	$(call PATH_DATABASE)
+
+	$(call PUGIXML)
 
 	$(call EXTRACT_CRYPTOPP)
 	$(call EXTRACT_OPENSSL)
