@@ -40,6 +40,9 @@
     <Filter Include="Protocol">
       <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pugiXML">
+      <UniqueIdentifier>{3f17bf2a-0acc-4217-a3b5-a28b7340883d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
@@ -182,6 +185,9 @@
     </ClCompile>
     <ClCompile Include="..\Net\Protocol\NTP.cpp">
       <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
+      <Filter>pugiXML</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

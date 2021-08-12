@@ -826,6 +826,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp" />
     <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
     <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
     <ClCompile Include="..\..\..\extern\ZLib\crc32.c" />
