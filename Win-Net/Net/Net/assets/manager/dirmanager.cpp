@@ -449,7 +449,7 @@ bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 	std::wstring     strPattern;                  // Pattern
 	WIN32_FIND_DATAW FileInformation;             // File information
 
-	const std::wstring str(dirname);
+	const std::wstring str(homeDirW() + dirname);
 	strPattern = str + CWSTRING("\\*.*");
 	const auto hFile = ::FindFirstFileW(strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
@@ -547,7 +547,7 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	std::string     strPattern;                  // Pattern
 	WIN32_FIND_DATA FileInformation;             // File information
 
-	const std::string str(dirname);
+	const std::string str(homeDirA() + dirname);
 	strPattern = str + CSTRING("\\*.*");
 	const auto hFile = ::FindFirstFileA(strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
@@ -611,10 +611,10 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 
 void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 {
-#ifdef BUILD_LINUX
 	std::string actualDirname(homeDirA() + std::string(Dirname[0], wcslen(Dirname)));
 	std::wstring WactualDirname(homeDirW() + Dirname);
-
+	
+#ifdef BUILD_LINUX
 	const auto dir = opendir(actualDirname.c_str());
         if(!dir) return;
         struct dirent* entry;
@@ -647,10 +647,10 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 	WIN32_FIND_DATAW ffblk;
 	wchar_t buf[NET_MAX_PATH];
 
-	if (!Dirname)
+	if (WactualDirname.empty())
 		swprintf_s(buf, CWSTRING("%s"), CWSTRING("*.*"));
 	else
-		swprintf_s(buf, CWSTRING("%s\\%s"), Dirname, CWSTRING("*.*"));
+		swprintf_s(buf, CWSTRING("%s\\%s"), WactualDirname.c_str(), CWSTRING("*.*"));
 
 	const auto hFind = FindFirstFileW(buf, &ffblk);
 	if (hFind == INVALID_HANDLE_VALUE) {
@@ -659,7 +659,7 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 
 	do
 	{
-		if (!Dirname)
+		if (WactualDirname.empty())
 			swprintf_s(buf, CWSTRING("%s"), ffblk.cFileName);
 		else
 			swprintf_s(buf, CWSTRING("%s\\%s"), Dirname, ffblk.cFileName);
@@ -685,8 +685,8 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 
 void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 {
-#ifdef BUILD_LINUX
 	const auto actualDirname(homeDirA() + Dirname);
+#ifdef BUILD_LINUX
 	const auto dir = opendir(actualDirname.c_str());
         if(!dir) return;
         struct dirent* entry;
@@ -711,10 +711,10 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 	WIN32_FIND_DATA ffblk;
 	char buf[MAX_PATH];
 
-	if (!Dirname)
+	if (actualDirname.empty())
 		sprintf_s(buf, CSTRING("%s"), CSTRING("*.*"));
 	else
-		sprintf_s(buf, CSTRING("%s\\%s"), Dirname, CSTRING("*.*"));
+		sprintf_s(buf, CSTRING("%s\\%s"), actualDirname.c_str(), CSTRING("*.*"));
 
 	const auto hFind = FindFirstFile((LPCSTR)buf, &ffblk);
 	if (hFind == INVALID_HANDLE_VALUE) {
@@ -723,7 +723,7 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 
 	do
 	{
-		if (!Dirname)
+		if (actualDirname.empty())
 			sprintf_s(buf, CSTRING("%s"), ffblk.cFileName);
 		else
 			sprintf_s(buf, CSTRING("%s\\%s"), Dirname, ffblk.cFileName);
