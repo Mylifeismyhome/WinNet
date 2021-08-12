@@ -33,7 +33,7 @@ define PATH_MANAGER
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/dirmanager.cpp -o bin/dirmanager.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/filemanager.cpp -o bin/filemanager.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/logmanager.cpp -o bin/logmanager.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/assets/manager/profile.hpp -o bin/profile.o
+	g++ $(CFLAGS) -x c++ $(INCLUDE_PATH) -c ../Net/assets/manager/profile.hpp -o bin/profile.o
 endef
 
 # Net/assets/web
@@ -114,6 +114,8 @@ define COPY
 	cp -r ../../../extern/BCrypt/* ../../bin/include/BCrypt/
 	mkdir -p ../../bin/include/pugiXML
 	cp -r ../../../extern/pugiXML/Unix/*.hpp ../../bin/include/pugiXML/
+	mkdir -p ../../bin/include/ZLib
+	cp -r ../../../extern/ZLib/*.h ../../bin/include/ZLib/
 endef
 
 # clean build
@@ -148,3 +150,4 @@ all:
 	$(call LINK)
 	$(call COPY)
 	$(call CLEAN)
+
