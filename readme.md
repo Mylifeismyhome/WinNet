@@ -1,15 +1,34 @@
 Author: Tobias Staack
 
 	[LINUX]
+		# build dependencies
 		make cryptopp
 		make openssl-download
 		make openssl-unpack
 		make openssl-configure
 		make openssl-build
 		make openssl-install
+		make mysql-download
+		make mysql-install
 		
-		# NetCore
-		make
+		# clean
+		make cryptopp-clean
+		make openssl-clean
+		make mysql-clean
+		
+		# clean all
+		make clean
+		
+		# build
+		make netcore
+		make netclient
+		make netserver
+		make netwebserver
+		
+		# build sandbox
+		make sandboxclient
+		make sandboxserver
+		make sandboxwebserver
 	
 	[WINDOWS]
 	Requires:
