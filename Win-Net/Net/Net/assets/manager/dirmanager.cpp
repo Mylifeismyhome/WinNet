@@ -54,7 +54,11 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
 {
         wcscpy(this->name, w32Data.cFileName);
         wcscpy(this->path, path);
-        wcscpy(this->fullPath, std::wstring(std::wstring(path) + std::wstring(name)).c_str());
+        
+		std::wstring fullPath(this->path);
+        fullPath += CWSTRING("/");
+        fullPath += name;
+        wcscpy(this->fullPath, fullPath.c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
@@ -70,7 +74,11 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
 {
         strcpy(this->name, w32Data.cFileName);
         strcpy(this->path, path);
-        strcpy(this->fullPath, std::string(std::string(path) + std::string(name)).c_str());
+
+        std::string fullPath(this->path);
+        fullPath += CSTRING("/");
+        fullPath += data->d_name;
+        strcpy(this->fullPath, fullPath.c_str());
 
         LARGE_INTEGER fsize;
         fsize.HighPart = w32Data.nFileSizeHigh;
