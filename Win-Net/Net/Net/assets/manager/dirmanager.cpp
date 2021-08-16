@@ -56,7 +56,7 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
         wcscpy(this->path, path);
         
 		std::wstring fullPath(this->path);
-        fullPath += CWSTRING("/");
+        fullPath += CWSTRING("\\");
         fullPath += this->name;
         wcscpy(this->fullPath, fullPath.c_str());
 
@@ -76,7 +76,7 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
         strcpy(this->path, path);
 
         std::string fullPath(this->path);
-        fullPath += CSTRING("/");
+        fullPath += CSTRING("\\");
         fullPath += this->name;
         strcpy(this->fullPath, fullPath.c_str());
 
@@ -681,7 +681,7 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 		if (isDir)
 			scandir(buf, Vector);
 		else
-			Vector.emplace_back(NET_FILE_ATTRW(ffblk, buf));
+			Vector.emplace_back(NET_FILE_ATTRW(ffblk, (wchar_t*)WactualDirname.c_str()));
 
 	} while (FindNextFileW(hFind, &ffblk) != 0);
 
@@ -745,7 +745,7 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 		if (isDir)
 			scandir(buf, Vector);
 		else
-			Vector.emplace_back(NET_FILE_ATTRA(ffblk, buf));
+			Vector.emplace_back(NET_FILE_ATTRA(ffblk, (char*)actualDirname.c_str()));
 
 	} while (FindNextFile(hFind, &ffblk) != 0);
 
