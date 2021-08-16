@@ -187,7 +187,7 @@ TEST(Directory,
 	NET_DIRMANAGER::deleteDir((char*)CSTRING("duhuan/teste/mich/bitte"));
 
  	NET_FILES sfiles;
-        NET_SCANDIR("testdir", sfiles);
+        NET_SCANDIR(CSTRING("testdir"), sfiles);
 
         for(const auto& entry : sfiles)
         {
@@ -274,7 +274,7 @@ TEST(NTP,
 
 int main()
 {
-	RUN(Basic);
+/*	RUN(Basic);
 	RUN(Hex);
 	RUN(Base32);
 	RUN(Base64);
@@ -289,6 +289,8 @@ int main()
 	//RUN(TIMER);
 	RUN(DATABASE);
 	RUN(NTP);
+*/
+	RUN(Directory);
 
 	return 0;
 }

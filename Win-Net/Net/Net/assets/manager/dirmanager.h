@@ -64,6 +64,8 @@ struct NET_FILE_ATTRW
         time_t lastModification;
         time_t creationTime;
 
+ 	NET_FILE_ATTRW() = default;
+
 	#ifdef BUILD_LINUX
 	NET_FILE_ATTRW(struct dirent*, wchar_t*);
 	#else
@@ -84,7 +86,9 @@ struct NET_FILE_ATTRA
         time_t lastModification;
         time_t creationTime;
 
-        #ifdef BUILD_LINUX
+	NET_FILE_ATTRA() = default;
+
+	#ifdef BUILD_LINUX
 	NET_FILE_ATTRA(struct dirent*, char*);
 	#else
 	_WIN32_FIND_DATAA w32Data;
