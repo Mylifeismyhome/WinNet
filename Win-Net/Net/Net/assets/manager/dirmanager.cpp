@@ -16,7 +16,7 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
 
         std::wstring fullPath(this->path);
         fullPath += CWSTRING("/");
-        fullPath += name;
+        fullPath += this->name;
         wcscpy(this->fullPath, fullPath.c_str());
 
         std::string str_fullPath(this->fullPath[0], wcslen(this->fullPath));
@@ -37,7 +37,7 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(struct dirent* data, char* path)
 
         std::string fullPath(this->path);
         fullPath += CSTRING("/");
-        fullPath += data->d_name;
+        fullPath += this->name;
         strcpy(this->fullPath, fullPath.c_str());
 
         struct stat stat_buf;
@@ -57,7 +57,7 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(_WIN32_FIND_DATAW w32Data, wchar_t* path)
         
 		std::wstring fullPath(this->path);
         fullPath += CWSTRING("/");
-        fullPath += name;
+        fullPath += this->name;
         wcscpy(this->fullPath, fullPath.c_str());
 
         LARGE_INTEGER fsize;
@@ -77,7 +77,7 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
 
         std::string fullPath(this->path);
         fullPath += CSTRING("/");
-        fullPath += data->d_name;
+        fullPath += this->name;
         strcpy(this->fullPath, fullPath.c_str());
 
         LARGE_INTEGER fsize;
