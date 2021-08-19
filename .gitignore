@@ -392,3 +392,4 @@ TestLinux/include
 *.tar.gz
 
 extern/MYSQL/tmp/
+Win-Net/Net/Net/Net/NetBuildConfig.h
