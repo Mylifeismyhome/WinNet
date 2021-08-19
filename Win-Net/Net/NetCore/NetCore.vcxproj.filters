@@ -37,11 +37,11 @@
     <Filter Include="Import">
       <UniqueIdentifier>{d3668493-a839-44a7-9586-d7720675e3c6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Protocol">
-      <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="pugiXML">
       <UniqueIdentifier>{3f17bf2a-0acc-4217-a3b5-a28b7340883d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net\Protocol">
+      <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -172,7 +172,7 @@
       <Filter>Import</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Protocol\ICMP.cpp">
-      <Filter>Protocol</Filter>
+      <Filter>Net\Protocol</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Coding\BASE32.cpp">
       <Filter>Coding</Filter>
@@ -184,7 +184,7 @@
       <Filter>Import</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Protocol\NTP.cpp">
-      <Filter>Protocol</Filter>
+      <Filter>Net\Protocol</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
       <Filter>pugiXML</Filter>
@@ -279,7 +279,7 @@
       <Filter>Import</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Protocol\ICMP.h">
-      <Filter>Protocol</Filter>
+      <Filter>Net\Protocol</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Coding\BASE32.h">
       <Filter>Coding</Filter>
@@ -300,7 +300,7 @@
       <Filter>Net</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Protocol\NTP.h">
-      <Filter>Protocol</Filter>
+      <Filter>Net\Protocol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

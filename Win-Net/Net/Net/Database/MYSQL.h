@@ -56,8 +56,6 @@ NET_DSA_BEGIN
 #include <vector>
 #include <cstdarg>
 
-inline sql::Driver* net_get_driver_instance(){ return get_driver_instance(); }
-
 /*
 * Connetion config
 */
@@ -181,32 +179,7 @@ MYSQL_RESULT query(MYSQL_QUERY, bool = false);
 MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY, bool = false);
 NET_CLASS_END;
 
-static char* SQLString(const char* string, ...)
-{
-	va_list vaArgs;
-
-#ifdef BUILD_LINUX
-	va_start(vaArgs, string);
-	const size_t size = std::vsnprintf(nullptr, 0, string, vaArgs);
-	va_end(vaArgs);
-
-	va_start(vaArgs, string);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), string, vaArgs);
-	va_end(vaArgs);
-#else
-	va_start(vaArgs, string);
-	const size_t size = std::vsnprintf(nullptr, 0, string, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), string, vaArgs);
-	va_end(vaArgs);
-#endif
-
-	auto* res = new char[str.size() + 1];
-	memcpy(res, str.data(), str.size());
-	res[str.size()] = '\0';
-	return res;
-}
+char* SQLString(const char* string, ...);
 
 NET_DSA_END
 #endif
