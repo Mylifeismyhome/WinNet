@@ -392,6 +392,3 @@ TestLinux/include
 *.tar.gz
 
 extern/MYSQL/tmp/
-
-# ignore changes in NetBuildConfig
-Win-Net/Net/Net/Net/NetBuildConfig.h
