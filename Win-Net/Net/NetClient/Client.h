@@ -108,9 +108,6 @@ void clearData();
 void createNewRSAKeys(size_t);
 void deleteRSAKeys();
 typeLatency getLatency() const;
-
-void lockSend();
-void unlockSend();
 NET_STRUCT_END
 NET_CLASS_PUBLIC
 Network network;

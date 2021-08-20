@@ -143,23 +143,6 @@ byte* Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
-
-void Server::network_t::lockSend()
-{
-	while (!_mutex_send.try_lock())
-	{
-#ifdef BUILD_LINUX
-		usleep(1);
-#else
-		Kernel32::Sleep(1);
-#endif
-	}
-}
-
-void Server::network_t::unlockSend()
-{
-	_mutex_send.unlock();
-}
 #pragma endregion
 
 void Server::IncreasePeersCounter()
@@ -1294,7 +1277,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	peer->network.lockSend();
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1314,8 +1297,6 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 	JsonBuffer.Accept(writer);
 
 	EncodeFrame((BYTE*)buffer.GetString(), buffer.GetSize(), peer, opc);
-
-	peer->network.unlockSend();
 }
 
 void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
@@ -1326,7 +1307,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	peer->network.lockSend();
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	// write package id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);
@@ -1340,8 +1321,6 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 	EncodeFrame(newBuffer, size + 1, peer, opc);
 
 	FREE(newBuffer);
-
-	peer->network.unlockSend();
 }
 
 void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)

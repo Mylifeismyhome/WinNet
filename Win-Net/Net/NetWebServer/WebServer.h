@@ -125,9 +125,6 @@ bool dataValid() const;
 bool dataFragmentValid() const;
 
 byte* getDataReceive();
-
-void lockSend();
-void unlockSend();
 NET_STRUCT_END
 #pragma endregion
 

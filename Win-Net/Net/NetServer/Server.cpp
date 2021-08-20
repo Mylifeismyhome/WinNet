@@ -126,23 +126,6 @@ byte* Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
-
-void Server::network_t::lockSend()
-{
-	while (!_mutex_send.try_lock())
-	{
-#ifdef BUILD_LINUX
-		usleep(1);
-#else
-		Kernel32::Sleep(1);
-#endif
-	}
-}
-
-void Server::network_t::unlockSend()
-{
-	_mutex_send.unlock();
-}
 #pragma endregion
 
 #pragma region Cryption Structure
@@ -1561,7 +1544,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		return;
 	);
 
-	peer->network.lockSend();
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
@@ -1615,7 +1598,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("Failed Key to encrypt and encode to base64"));
-			peer->network.unlockSend();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64);
 			return;
 		}
@@ -1626,7 +1608,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			Key.free();
 			IV.free();
 			LOG_ERROR(CSTRING("Failed IV to encrypt and encode to base64"));
-			peer->network.unlockSend();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptIVBase64);
 			return;
 		}
@@ -1843,8 +1824,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Footer */
 		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
-
-	peer->network.unlockSend();
 }
 
 struct Receive_t
