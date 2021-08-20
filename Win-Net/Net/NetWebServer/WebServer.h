@@ -140,8 +140,8 @@ bool estabilished;
 /* network data */
 network_t network;
 
-/* Async Handler */
-bool isAsync;
+/* Erase Handler */
+bool bErase;
 
 /* SSL */
 SSL* ssl;
@@ -150,7 +150,6 @@ SSL* ssl;
 bool handshake;
 
 typeLatency latency;
-bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
 bool bHasBeenErased;
@@ -161,17 +160,15 @@ UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
 client_addr = sockaddr_in();
 estabilished = false;
-isAsync = false;
+bErase = false;
 ssl = nullptr;
 handshake = false;
 latency = -1;
-bLatency = false;
 hCalcLatency = nullptr;
 bHasBeenErased = false;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
-void setAsync(bool);
 IPRef IPAddr() const;
 NET_STRUCT_END
 
@@ -276,7 +273,7 @@ SOCKET GetListenSocket() const;
 SOCKET GetAcceptSocket() const;
 bool IsRunning() const;
 
-bool ErasePeer(NET_PEER);
+bool ErasePeer(NET_PEER, bool = false);
 
 NET_CLASS_CONSTRUCTUR(Server)
 NET_CLASS_VDESTRUCTUR(Server)
