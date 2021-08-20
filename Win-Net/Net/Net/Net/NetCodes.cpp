@@ -1,6 +1,9 @@
 #include <Net/Net/NetCodes.h>
 #include <Net/assets/manager/logmanager.h>
 
+NET_ERROR_OBJ;
+NET_CHECK_LOADED_VAR;
+
 NET_ERROR_LIST_BEGIN
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_CryptKeyBase64, "Failed to crypt AES Key or encode to Base64");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_CryptIVBase64, "Failed to crypt AES IV Key or encode to Base64");
@@ -19,6 +22,16 @@ NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_UndefinedFrame, "Frame is undefined and
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameHeader, "Frame header is not valid");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameFooter, "Frame footer is not valid");
 NET_ERROR_LIST_END
+
+void Net::Codes::NetUnloadErrorCodes()
+{
+	for (auto& entry : NetErrorCode_L)
+		entry.free();
+
+	NetErrorCode_L.clear();
+
+	__bloaded_NetCodes = false;
+}
 
 void Net::Codes::NetDefineErrorMessage(const int code, const char* message)
 {

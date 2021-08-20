@@ -1,5 +1,6 @@
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
+#include <Net/Net/NetCodes.h>
 
 // Imports
 #include <Net/Import/Kernel32.h>
@@ -19,6 +20,8 @@ void Net::load()
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	Ws2_32::Initialize();
 #endif
+
+	Net::Codes::NetLoadErrorCodes();
 }
 
 void Net::unload()
@@ -34,6 +37,8 @@ void Net::unload()
 #ifndef NET_DISABLE_IMPORT_KERNEL32
 	Kernel32::Uninitialize();
 #endif
+
+	Net::Codes::NetUnloadErrorCodes();
 }
 
 int Net::SocketOpt(SOCKET s, int level, DWORD optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)

@@ -1,7 +1,7 @@
 #pragma once
 
 /* define to use MYSQL c++ connector */
-#undef NET_USE_MYSQL_SUPPORT
+#define NET_USE_MYSQL_SUPPORT
 
 /* define to build for linux */
 #undef BUILD_LINUX

@@ -73,7 +73,6 @@ NET_TIMER(NTPReSyncClock)
 
 Client::Client()
 {
-	Net::Codes::NetLoadErrorCodes();
 	SetSocket(INVALID_SOCKET);
 	SetServerAddress(CSTRING(""));
 	SetServerPort(NULL);
@@ -620,7 +619,14 @@ typeLatency Client::Network::getLatency() const
 
 void Client::Network::lockSend()
 {
-	_mutex_send.lock();
+	while (!_mutex_send.try_lock())
+	{
+#ifdef BUILD_LINUX
+		usleep(1);
+#else
+		Kernel32::Sleep(1);
+#endif
+	}
 }
 
 void Client::Network::unlockSend()

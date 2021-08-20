@@ -1,7 +1,8 @@
 #pragma once
-#define NET_ERROR_LIST_BEGIN void Net::Codes::NetLoadErrorCodes() {
-#define NET_ERROR_LIST_END }
-#define NET_ERROR_OBJ static std::vector<NetErrorCode_T> NetErrorCode_L
+#define NET_ERROR_LIST_BEGIN void Net::Codes::NetLoadErrorCodes() { if(__bloaded_NetCodes) return;
+#define NET_ERROR_LIST_END __bloaded_NetCodes = true; }
+#define NET_ERROR_OBJ static std::vector<Net::Codes::NetErrorCode_T> NetErrorCode_L
+#define NET_CHECK_LOADED_VAR static bool __bloaded_NetCodes = false
 #define NET_DEFINE_ERROR(code, message) Net::Codes::NetDefineErrorMessage(code, CSTRING(message))
 
 #define NET_ERROR_CODE Net::Codes::NET_ERROR_CODE_T
@@ -26,12 +27,21 @@ namespace Net
 		struct NetErrorCode_T
 		{
 			int Code;
-			char Message[MAX_PATH];
+			char* Message;
 
 			NetErrorCode_T(const int Code, const char* Message)
 			{
 				this->Code = Code;
-				strcpy(this->Message, Message);
+
+				const auto slen = strlen(Message);
+				this->Message = ALLOC<char>(slen + 1);
+				memcpy(this->Message, Message, slen);
+				this->Message[slen] = '\0';
+			}
+
+			void free()
+			{
+				FREE(Message);
 			}
 		};
 
@@ -60,9 +70,8 @@ namespace Net
 
 		void NetDefineErrorMessage(int, const char*);
 		void NetLoadErrorCodes();
+		void NetUnloadErrorCodes();
 		const char* NetGetErrorMessage(int);
-
-		NET_ERROR_OBJ;
 
 		NET_DSA_END
 	}

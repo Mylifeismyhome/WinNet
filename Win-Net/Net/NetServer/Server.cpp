@@ -21,7 +21,6 @@ const char* IPRef::get() const
 
 Server::Server()
 {
-	Net::Codes::NetLoadErrorCodes();
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
@@ -130,7 +129,14 @@ byte* Server::network_t::getDataReceive()
 
 void Server::network_t::lockSend()
 {
-	_mutex_send.lock();
+	while (!_mutex_send.try_lock())
+	{
+#ifdef BUILD_LINUX
+		usleep(1);
+#else
+		Kernel32::Sleep(1);
+#endif
+	}
 }
 
 void Server::network_t::unlockSend()
