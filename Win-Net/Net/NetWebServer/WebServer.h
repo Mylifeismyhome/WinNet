@@ -173,9 +173,6 @@ NET_STRUCT_END_CONTRUCTION
 void clear();
 void setAsync(bool);
 IPRef IPAddr() const;
-
-void lock();
-void unlock();
 NET_STRUCT_END
 
 void DisconnectPeer(NET_PEER, int);

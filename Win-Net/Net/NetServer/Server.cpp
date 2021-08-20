@@ -260,7 +260,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		return false;
 	);
 
-	peer->lock();
+	std::lock_guard<std::mutex> guard(peer->critical);
 
 	if (peer->bHasBeenErased)
 		return false;
@@ -291,8 +291,6 @@ bool Server::ErasePeer(NET_PEER peer)
 		DecreasePeersCounter();
 
 		peer->bHasBeenErased = true;
-
-		peer->unlock();
 		return true;
 	}
 
@@ -310,7 +308,6 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->hCalcLatency = nullptr;
 	}
 
-	peer->unlock();
 	return true;
 }
 
@@ -395,16 +392,6 @@ IPRef Server::NET_IPEER::IPAddr() const
 #else
 	return IPRef(Ws2_32::inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
 #endif
-}
-
-void Server::NET_IPEER::lock()
-{
-	critical.lock();
-}
-
-void Server::NET_IPEER::unlock()
-{
-	critical.unlock();
 }
 
 void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)

@@ -180,9 +180,6 @@ void clear();
 void setAsync(bool);
 typeLatency getLatency() const;
 IPRef IPAddr() const;
-
-void lock();
-void unlock();
 NET_STRUCT_END
 
 NET_CLASS_PRIVATE
