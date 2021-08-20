@@ -1110,20 +1110,17 @@ NET_THREAD(Receive)
 				return NULL;
 			);
 
-			peer->setAsync(true);
 			const auto res = server->Handshake(peer);
 			if (res == WebServerHandshake::peer_not_valid)
 			{
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
-				peer->setAsync(false);
-				server->ErasePeer(peer);
+				server->ErasePeer(peer, true);
 				return NULL;
 			}
 			if (res == WebServerHandshake::would_block)
 			{
-				peer->setAsync(false);
 				continue;
 			}
 			if (res == WebServerHandshake::missmatch)
@@ -1131,25 +1128,22 @@ NET_THREAD(Receive)
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
-				peer->setAsync(false);
-				server->ErasePeer(peer);
+				server->ErasePeer(peer, true);
 				return NULL;
 			}
 			if (res == WebServerHandshake::error)
 			{
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), SERVERNAME(server), peer->IPAddr().get());
 
-				peer->setAsync(false);
-				server->ErasePeer(peer);
+				// erase him
+				server->ErasePeer(peer, true);
 				return NULL;
 			}
 			if (res == WebServerHandshake::success)
 			{
-				peer->setAsync(false);
 				peer->handshake = true;
 				break;
 			}
-			peer->setAsync(false);
 		} while (true);
 
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): handshake has succesfully been performed"), SERVERNAME(server), peer->IPAddr().get());
