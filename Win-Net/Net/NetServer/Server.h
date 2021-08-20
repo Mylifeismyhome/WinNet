@@ -138,17 +138,15 @@ bool estabilished;
 network_t network;
 cryption_t cryption;
 
-/* Async Handler */
-bool isAsync;
+/* Erase Handler */
+bool bErase;
 
 /* Net Version */
 bool NetVersionMatched;
 
 typeLatency latency;
-bool bLatency;
 NET_HANDLE_TIMER hCalcLatency;
 
-bool bHasBeenErased;
 std::mutex critical;
 
 /* TOTP secret */
@@ -164,12 +162,10 @@ UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
 client_addr = sockaddr_in();
 estabilished = false;
-isAsync = false;
+bErase = false;
 NetVersionMatched = false;
 latency = -1;
-bLatency = false;
 hCalcLatency = nullptr;
-bHasBeenErased = false;
 totp_secret = nullptr;
 totp_secret_len = NULL;
 curToken = NULL;
@@ -177,7 +173,6 @@ lastToken = NULL;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();
-void setAsync(bool);
 typeLatency getLatency() const;
 IPRef IPAddr() const;
 NET_STRUCT_END
@@ -191,7 +186,7 @@ NET_CLASS_PUBLIC
 void DisconnectPeer(NET_PEER, int, bool = false);
 #pragma endregion
 
-bool ErasePeer(NET_PEER);
+bool ErasePeer(NET_PEER, bool = false);
 
 /* time */
 time_t curTime;

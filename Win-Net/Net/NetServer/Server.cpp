@@ -179,10 +179,8 @@ NET_TIMER(CalcLatency)
 	const auto server = info->server;
 	const auto peer = info->peer;
 
-	peer->bLatency = true;
 	// tmp: disabled till linux support for icmp
 	//	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
-	peer->bLatency = false;
 
 	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
@@ -254,7 +252,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	return peer;
 }
 
-bool Server::ErasePeer(NET_PEER peer)
+bool Server::ErasePeer(NET_PEER peer, bool clear)
 {
 	PEER_NOT_VALID(peer,
 		return false;
@@ -262,18 +260,8 @@ bool Server::ErasePeer(NET_PEER peer)
 
 	std::lock_guard<std::mutex> guard(peer->critical);
 
-	if (peer->bHasBeenErased)
-		return false;
-
-	if (!peer->isAsync)
+	if (clear)
 	{
-		// close endpoint
-		SOCKET_VALID(peer->pSocket)
-		{
-			Ws2_32::closesocket(peer->pSocket);
-			peer->pSocket = INVALID_SOCKET;
-		}
-
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
@@ -290,7 +278,6 @@ bool Server::ErasePeer(NET_PEER peer)
 
 		DecreasePeersCounter();
 
-		peer->bHasBeenErased = true;
 		return true;
 	}
 
@@ -301,13 +288,7 @@ bool Server::ErasePeer(NET_PEER peer)
 		peer->pSocket = INVALID_SOCKET;
 	}
 
-	if (peer->hCalcLatency)
-	{
-		// stop latency interval
-		Timer::WaitSingleObjectStopped(peer->hCalcLatency);
-		peer->hCalcLatency = nullptr;
-	}
-
+	peer->bErase = true;
 	return true;
 }
 
@@ -357,9 +338,8 @@ void Server::NET_IPEER::clear()
 	pSocket = INVALID_SOCKET;
 	client_addr = sockaddr_in();
 	estabilished = false;
-	isAsync = false;
 	NetVersionMatched = false;
-	bLatency = false;
+	bErase = false;
 	latency = -1;
 	hCalcLatency = nullptr;
 
@@ -372,11 +352,6 @@ void Server::NET_IPEER::clear()
 	totp_secret_len = NULL;
 	curToken = NULL;
 	lastToken = NULL;
-}
-
-void Server::NET_IPEER::setAsync(const bool status)
-{
-	isAsync = status;
 }
 
 typeLatency Server::NET_IPEER::getLatency() const
@@ -1852,39 +1827,24 @@ NET_THREAD(Receive)
 
 		server->OnPeerUpdate(peer);
 
-		DWORD restTime = NULL;
 		SOCKET_VALID(peer->pSocket)
 		{
-			peer->setAsync(true);
-			restTime = server->DoReceive(peer);
-			peer->setAsync(false);
-		}
-		else
-		{
-			peer->setAsync(false);
-			break;
-		}
+			const auto restTime = server->DoReceive(peer);
 
 #ifdef BUILD_LINUX
-		usleep(restTime);
+			usleep(restTime);
 #else
-		Kernel32::Sleep(restTime);
+			Kernel32::Sleep(restTime);
 #endif
-	}
 
-	// wait until thread has finished
-	while (peer && peer->bLatency)
-	{
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server));
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
+			continue;
+		}
+
+		break;
 	}
 
 	// erase him
-	peer->setAsync(false);
-	server->ErasePeer(peer);
+	server->ErasePeer(peer, true);
 
 	delete peer;
 	peer = nullptr;
