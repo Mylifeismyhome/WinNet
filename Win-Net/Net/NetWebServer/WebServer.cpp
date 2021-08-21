@@ -276,7 +276,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		return false;
 	);
 
-	std::lock_guard<std::mutex> guard(peer->critical);
+	std::lock_guard<std::recursive_mutex> guard(peer->critical);
 
 	if (clear)
 	{
@@ -1217,7 +1217,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
 
 	rapidjson::Document JsonBuffer;
 	JsonBuffer.SetObject();
@@ -1247,7 +1247,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
 
 	// write package id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);

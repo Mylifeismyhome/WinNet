@@ -148,7 +148,7 @@ NET_CLASS_BEGIN(MYSQL)
 sql::Driver* msqldriver = nullptr;
 sql::Connection* msqlcon = nullptr;
 MYSQL_CON conConfig;
-std::mutex critical;
+std::recursive_mutex critical;
 
 bool setup();
 

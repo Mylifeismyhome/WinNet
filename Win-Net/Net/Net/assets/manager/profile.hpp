@@ -35,7 +35,7 @@ template <typename T>
 class Profile
 {
 	std::vector<NET_PROFILE_DATA<T>> info;
-	std::mutex critical;
+	std::recursive_mutex critical;
 
 public:
 	Package* Add(T peer)

@@ -78,7 +78,7 @@ CPOINTER<byte> _data;
 size_t _data_size;
 size_t _data_full_size;
 size_t _data_offset;
-std::mutex _mutex_send;
+std::recursive_mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(network_t)
 reset();
@@ -147,7 +147,7 @@ bool NetVersionMatched;
 typeLatency latency;
 NET_HANDLE_TIMER hCalcLatency;
 
-std::mutex critical;
+std::recursive_mutex critical;
 
 /* TOTP secret */
 byte* totp_secret;

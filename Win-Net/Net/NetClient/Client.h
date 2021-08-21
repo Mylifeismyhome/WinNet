@@ -80,7 +80,7 @@ time_t curTime;
 NET_HANDLE_TIMER hSyncClockNTP;
 NET_HANDLE_TIMER hReSyncClockNTP;
 
-std::mutex _mutex_send;
+std::recursive_mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
 memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);

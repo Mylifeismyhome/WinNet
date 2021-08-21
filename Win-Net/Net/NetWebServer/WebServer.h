@@ -93,7 +93,7 @@ CPOINTER<byte> _data;
 size_t _data_size;
 CPOINTER<byte> _dataFragment;
 size_t _data_sizeFragment;
-std::mutex _mutex_send;
+std::recursive_mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(network_t)
 reset();
@@ -153,7 +153,7 @@ typeLatency latency;
 NET_HANDLE_TIMER hCalcLatency;
 
 bool bHasBeenErased;
-std::mutex critical;
+std::recursive_mutex critical;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;

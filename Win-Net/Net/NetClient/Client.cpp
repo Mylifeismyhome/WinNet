@@ -1496,7 +1496,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	if (!IsConnected())
 		return;
 
-	std::lock_guard<std::mutex> guard(network._mutex_send);
+	std::lock_guard<std::recursive_mutex> guard(network._mutex_send);
 
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)

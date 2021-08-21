@@ -258,7 +258,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		return false;
 	);
 
-	std::lock_guard<std::mutex> guard(peer->critical);
+	std::lock_guard<std::recursive_mutex> guard(peer->critical);
 
 	if (clear)
 	{
@@ -1506,7 +1506,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		return;
 	);
 
-	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
 
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
