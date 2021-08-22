@@ -107,7 +107,8 @@ define COPY
 
 	cp -r ../../../extern/JSON/ ../../bin/include/
  	mkdir -p ../../bin/include/MYSQL
-	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/
+ 	mkdir -p ../../bin/include/MYSQL/include
+	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/include
 	cp -r ../../../extern/OpenSSL/bin/bin/include ../../bin/
 	cp -r ../../../extern/crypto++/bin/include/ ../../bin/
 	mkdir -p ../../bin/include/BCrypt
