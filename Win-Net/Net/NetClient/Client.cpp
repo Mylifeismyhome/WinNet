@@ -634,7 +634,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 
 	do
 	{
-		const auto res = Ws2_32::send(GetSocket(), data, static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), data, static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -896,7 +896,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 
 	do
 	{
-		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -1196,7 +1196,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 
 	do
 	{
-		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX

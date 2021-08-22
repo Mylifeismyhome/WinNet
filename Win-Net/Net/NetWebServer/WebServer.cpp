@@ -1007,7 +1007,7 @@ short Server::Handshake(NET_PEER peer)
 				SOCKET_NOT_VALID(peer->pSocket)
 					return false;
 
-				if (Ws2_32::send(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
+				if (Ws2_32::send(peer->pSocket, nullptr, NULL, MSG_NOSIGNAL) == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
 					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
@@ -1040,7 +1040,7 @@ short Server::Handshake(NET_PEER peer)
 			auto res = 0;
 			do
 			{
-				res = Ws2_32::send(peer->pSocket, buffer.get(), size, 0);
+				res = Ws2_32::send(peer->pSocket, buffer.get(), size, MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
@@ -1400,7 +1400,7 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 			auto sendSize = totalLength;
 			do
 			{
-				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), 0);
+				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX

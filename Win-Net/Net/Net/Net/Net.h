@@ -101,6 +101,7 @@ typedef unsigned __int64 uint64;
 #define SOCKET_RDWR SD_SEND
 #define SOCKET_OPT_TYPE char*
 #define SOCKET_OPT_LEN int
+#define MSG_NOSIGNAL 0
 #endif
 
 ///////////////////////////////////

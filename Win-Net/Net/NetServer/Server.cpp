@@ -645,7 +645,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, data, static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, data, static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -906,7 +906,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -1205,7 +1205,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), 0);
+		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
