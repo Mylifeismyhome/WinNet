@@ -60,7 +60,7 @@ NET_THREAD(NetTimerThread)
 		}
 
 #ifdef BUILD_LINUX
-		sleep(1);
+		usleep(1);
 #else
 		Net::Kernel32::Sleep(1);
 #endif
