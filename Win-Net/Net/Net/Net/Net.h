@@ -418,7 +418,7 @@ namespace Net
 
 	namespace sock_err
 	{
-		std::string getString(const int);
+		std::string getString(const int, bool = false);
 	};
 
 	namespace ssl

@@ -196,6 +196,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	peer->UniqueID = socket;
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
+	peer->ssl = nullptr;
 
 	/* Set Read Timeout */
 	timeval tv = {};
@@ -221,36 +222,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		if (res < 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, res);
-			if (err == SSL_ERROR_ZERO_RETURN)
-			{
-				LOG_DEBUG("[%s] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed", SERVERNAME(this));
-				return nullptr;
-			}
-			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
-			{
-				LOG_DEBUG("[%s] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used", SERVERNAME(this));
-				return nullptr;
-			}
-			if (err == SSL_ERROR_WANT_X509_LOOKUP)
-			{
-				LOG_DEBUG("[%s] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application", SERVERNAME(this));
-				return nullptr;
-			}
-			if (err == SSL_ERROR_SYSCALL)
-			{
-				LOG_DEBUG("[%s] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details", SERVERNAME(this));
-				return nullptr;
-			}
-			if (err == SSL_ERROR_SSL)
-			{
-				LOG_DEBUG("[%s] - A non-recoverable, fatal error in the SSL library occurred, usually a protocol error. The OpenSSL error queue contains more information on the error. If this error occurs then no further I/O operations should be performed on the connection and SSL_shutdown() must not be called", SERVERNAME(this));
-				return nullptr;
-			}
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 			ERR_clear_error();
+			return nullptr;
 		}
 	}
-	else
-		peer->ssl = nullptr;
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
 	{
@@ -629,48 +605,15 @@ short Server::Handshake(NET_PEER peer)
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
-			switch (err)
+			peer->network.reset();
+			if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 			{
-			case SSL_ERROR_ZERO_RETURN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case SSL_ERROR_WANT_CONNECT:
-			case SSL_ERROR_WANT_ACCEPT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case SSL_ERROR_WANT_X509_LOOKUP:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case SSL_ERROR_SYSCALL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case SSL_ERROR_SSL:
-				/* Some servers did not close the connection properly */
-				peer->network.reset();
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case SSL_ERROR_WANT_READ:
-				peer->network.reset();
-				return WebServerHandshake::HandshakeRet_t::would_block;
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
+
+			return WebServerHandshake::HandshakeRet_t::would_block;
 		}
 		ERR_clear_error();
 		peer->network.getDataReceive()[data_size] = '\0';
@@ -772,8 +715,8 @@ short Server::Handshake(NET_PEER peer)
 				const auto val = header.substr(end + 2);
 
 				entries[key] = val;
+			}
 		}
-	}
 
 		NET_SHA1 sha;
 		unsigned int message_digest[5];
@@ -827,13 +770,6 @@ short Server::Handshake(NET_PEER peer)
 				SOCKET_NOT_VALID(peer->pSocket)
 					return false;
 
-				if (Ws2_32::send(peer->pSocket, nullptr, NULL, MSG_NOSIGNAL) == SOCKET_ERROR)
-				{
-					ErasePeer(peer);
-					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
-					return WebServerHandshake::HandshakeRet_t::error;
-				}
-
 				res = SSL_write(peer->ssl, buffer.get(), static_cast<int>(strlen(buffer.get())));
 				if (res <= 0)
 				{
@@ -864,7 +800,11 @@ short Server::Handshake(NET_PEER peer)
 				if (res == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
-					LOG_ERROR(CSTRING("[%s] - Failed to send Package, reason: Socket Error"), SERVERNAME(this));
+#ifdef BUILD_LINUX
+					LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+#else
+					LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
 					return WebServerHandshake::HandshakeRet_t::error;
 				}
 
@@ -894,7 +834,7 @@ short Server::Handshake(NET_PEER peer)
 		origin.free();
 		FREE(enc_Sec_Key);
 		return WebServerHandshake::HandshakeRet_t::success;
-}
+	}
 
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), SERVERNAME(this), peer->IPAddr().get());
 
@@ -1167,46 +1107,14 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 				if (res <= 0)
 				{
 					const auto err = SSL_get_error(peer->ssl, res);
-					switch (err)
+					if(err != SSL_ERROR_WANT_WRITE) buf.free();
+					if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 					{
-					case SSL_ERROR_ZERO_RETURN:
-						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 						ErasePeer(peer);
-						return;
-
-					case SSL_ERROR_WANT_CONNECT:
-					case SSL_ERROR_WANT_ACCEPT:
-						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
-						ErasePeer(peer);
-						return;
-
-					case SSL_ERROR_WANT_X509_LOOKUP:
-						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
-						ErasePeer(peer);
-						return;
-
-					case SSL_ERROR_SYSCALL:
-						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
-						ErasePeer(peer);
-						return;
-
-					case SSL_ERROR_SSL:
-						buf.free();
-						return;
-
-					case SSL_ERROR_WANT_WRITE:
-						continue;
-
-					default:
-						buf.free();
-						LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Send"), SERVERNAME(this), peer->IPAddr().get());
-						ErasePeer(peer);
-						return;
+						LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 					}
+
+					return;
 				}
 				ERR_clear_error();
 			} while (res <= 0);
@@ -1259,48 +1167,14 @@ DWORD Server::DoReceive(NET_PEER peer)
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
-			switch (err)
+			peer->network.reset();
+			if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 			{
-			case SSL_ERROR_ZERO_RETURN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case SSL_ERROR_WANT_CONNECT:
-			case SSL_ERROR_WANT_ACCEPT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case SSL_ERROR_WANT_X509_LOOKUP:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case SSL_ERROR_SYSCALL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case SSL_ERROR_SSL:
-				/* Some servers did not close the connection properly */
-				peer->network.reset();
-				return FREQUENZ(this);
-
-			case SSL_ERROR_WANT_READ:
-				peer->network.reset();
-				return FREQUENZ(this);
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 			}
+
+			return FREQUENZ(this);
 		}
 		ERR_clear_error();
 		peer->network.getDataReceive()[data_size] = '\0';
@@ -1372,11 +1246,11 @@ DWORD Server::DoReceive(NET_PEER peer)
 		}
 
 		peer->network.reset();
-		}
+	}
 
 	DecodeFrame(peer);
 	return NULL;
-	}
+}
 
 void Server::DecodeFrame(NET_PEER peer)
 {
@@ -1487,7 +1361,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		{
 			peer->network.clear();
 			return;
-	}
+		}
 
 		if (!memcmp(peer->network.getData(), CSTRING(""), strlen(reinterpret_cast<char const*>(peer->network.getData()))))
 		{

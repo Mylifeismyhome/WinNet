@@ -52,88 +52,102 @@ int Net::SocketOpt(SOCKET s, int level, DWORD optname, SOCKET_OPT_TYPE optval, S
 
 int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
 {
-        const auto result = Net::SocketOpt(socket,
-                IPPROTO_TCP,
-                opt.opt,
-                opt.type,
-                opt.len);
+	const auto result = Net::SocketOpt(socket,
+		IPPROTO_TCP,
+		opt.opt,
+		opt.type,
+		opt.len);
 
-        return result;
+	return result;
 }
 
-std::string Net::sock_err::getString(const int err)
+std::string Net::sock_err::getString(const int err, const bool is_ssl)
 {
+	if (is_ssl)
+	{
+		if (err == SSL_ERROR_ZERO_RETURN)
+			return std::string(CSTRING("The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
+		else if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
+			return std::string(CSTRING("The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
+		else if (err == SSL_ERROR_WANT_X509_LOOKUP)
+			return std::string(CSTRING("The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
+		else if (err == SSL_ERROR_SYSCALL)
+			return std::string(CSTRING("Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
+	}
+	else
+	{
 #ifdef BUILD_LINUX
-	if (err == EACCES)
-		return std::string(CSTRING("EACCES"));
-	else if (err == EALREADY)
-		return std::string(CSTRING("EALREADY"));
-	else if (err == EBADF)
-		return std::string(CSTRING("EBADF"));
-	else if (err == ECONNRESET)
-		return std::string(CSTRING("ECONNRESET"));
-	else if (err == EDESTADDRREQ)
-		return std::string(CSTRING("EDESTADDRREQ"));
-	else if (err == EINTR)
-		return std::string(CSTRING("EINTR"));
-	else if (err == EINVAL)
-		return std::string(CSTRING("EINVAL"));
-	else if (err == EISCONN)
-		return std::string(CSTRING("EISCONN"));
-	else if (err == EMSGSIZE)
-		return std::string(CSTRING("EMSGSIZE"));
-	else if (err == ENOBUFS)
-		return std::string(CSTRING("ENOBUFS"));
-	else if (err == ENOMEM)
-		return std::string(CSTRING("ENOMEM"));
-	else if (err == ENOTCONN)
-		return std::string(CSTRING("ENOTCONN"));
-	else if (err == ENOTSOCK)
-		return std::string(CSTRING("ENOTSOCK"));
-	else if (err == EOPNOTSUPP)
-		return std::string(CSTRING("EOPNOTSUPP"));
-	else if (err == EPIPE)
-		return std::string(CSTRING("EPIPE"));
-	else if (err == EACCES)
-		return std::string(CSTRING("EACCES"));
-	else if (err == EACCES)
-		return std::string(CSTRING("EACCES"));
-	else if (err == EACCES)
-		return std::string(CSTRING("EACCES"));
+		if (err == EACCES)
+			return std::string(CSTRING("EACCES"));
+		else if (err == EALREADY)
+			return std::string(CSTRING("EALREADY"));
+		else if (err == EBADF)
+			return std::string(CSTRING("EBADF"));
+		else if (err == ECONNRESET)
+			return std::string(CSTRING("ECONNRESET"));
+		else if (err == EDESTADDRREQ)
+			return std::string(CSTRING("EDESTADDRREQ"));
+		else if (err == EINTR)
+			return std::string(CSTRING("EINTR"));
+		else if (err == EINVAL)
+			return std::string(CSTRING("EINVAL"));
+		else if (err == EISCONN)
+			return std::string(CSTRING("EISCONN"));
+		else if (err == EMSGSIZE)
+			return std::string(CSTRING("EMSGSIZE"));
+		else if (err == ENOBUFS)
+			return std::string(CSTRING("ENOBUFS"));
+		else if (err == ENOMEM)
+			return std::string(CSTRING("ENOMEM"));
+		else if (err == ENOTCONN)
+			return std::string(CSTRING("ENOTCONN"));
+		else if (err == ENOTSOCK)
+			return std::string(CSTRING("ENOTSOCK"));
+		else if (err == EOPNOTSUPP)
+			return std::string(CSTRING("EOPNOTSUPP"));
+		else if (err == EPIPE)
+			return std::string(CSTRING("EPIPE"));
+		else if (err == EACCES)
+			return std::string(CSTRING("EACCES"));
+		else if (err == EACCES)
+			return std::string(CSTRING("EACCES"));
+		else if (err == EACCES)
+			return std::string(CSTRING("EACCES"));
 #else
-	if (err == WSANOTINITIALISED)
-		return std::string(CSTRING("A successful WSAStartup() call must occur before using this function"));
-	else if (err == WSAENETDOWN)
-		return std::string(CSTRING("The network subsystem has failed"));
-	else if (err == WSAEFAULT)
-		return std::string(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
-	else if (err == WSAENOTCONN)
-		return std::string(CSTRING("The socket is not connected"));
-	else if (err == WSAEINTR)
-		return std::string(CSTRING("The (blocking) call was canceled through WSACancelBlockingCall()"));
-	else if (err == WSAEINPROGRESS)
-		return std::string(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
-	else if (err == WSAENETRESET)
-		return std::string(CSTRING("The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
-	else if (err == WSAENOTSOCK)
-		return std::string(CSTRING("The descriptor is not a socket"));
-	else if (err == WSAEOPNOTSUPP)
-		return std::string(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
-	else if (err == WSAESHUTDOWN)
-		return std::string(CSTRING("The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
-	else if (err == WSAEMSGSIZE)
-		return std::string(CSTRING("The message was too large to fit into the specified buffer and was truncated"));
-	else if (err == WSAEINVAL)
-		return std::string(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
-	else if (err == WSAECONNABORTED)
-		return std::string(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
-	else if (err == WSAETIMEDOUT)
-		return std::string(CSTRING("The connection has been dropped because of a network failure or because the peer system failed to respond"));
-	else if (err == WSAECONNRESET)
-		return std::string(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
-	else if (err == WSAEHOSTUNREACH)
-		return std::string(CSTRING("The remote host cannot be reached from this host at this time"));
+		if (err == WSANOTINITIALISED)
+			return std::string(CSTRING("A successful WSAStartup() call must occur before using this function"));
+		else if (err == WSAENETDOWN)
+			return std::string(CSTRING("The network subsystem has failed"));
+		else if (err == WSAEFAULT)
+			return std::string(CSTRING("The buf parameter is not completely contained in a valid part of the user address space"));
+		else if (err == WSAENOTCONN)
+			return std::string(CSTRING("The socket is not connected"));
+		else if (err == WSAEINTR)
+			return std::string(CSTRING("The (blocking) call was canceled through WSACancelBlockingCall()"));
+		else if (err == WSAEINPROGRESS)
+			return std::string(CSTRING("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
+		else if (err == WSAENETRESET)
+			return std::string(CSTRING("The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
+		else if (err == WSAENOTSOCK)
+			return std::string(CSTRING("The descriptor is not a socket"));
+		else if (err == WSAEOPNOTSUPP)
+			return std::string(CSTRING("MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
+		else if (err == WSAESHUTDOWN)
+			return std::string(CSTRING("The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
+		else if (err == WSAEMSGSIZE)
+			return std::string(CSTRING("The message was too large to fit into the specified buffer and was truncated"));
+		else if (err == WSAEINVAL)
+			return std::string(CSTRING("The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
+		else if (err == WSAECONNABORTED)
+			return std::string(CSTRING("The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+		else if (err == WSAETIMEDOUT)
+			return std::string(CSTRING("The connection has been dropped because of a network failure or because the peer system failed to respond"));
+		else if (err == WSAECONNRESET)
+			return std::string(CSTRING("The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
+		else if (err == WSAEHOSTUNREACH)
+			return std::string(CSTRING("The remote host cannot be reached from this host at this time"));
 #endif
+	}
 
 	return std::string(CSTRING("UNKNOWN"));
 }
