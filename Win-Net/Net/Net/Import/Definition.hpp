@@ -53,6 +53,15 @@
 }
 
 #define IMPORT_BEGIN(name) namespace name { \
+static bool  __##name##_initialized = false; \
+void __set_load_status(bool val) \
+{ \
+	__##name##_initialized = val; \
+} \
+bool IsInitialized() \
+{ \
+	return __##name##_initialized; \
+} \
 bool Initialize(); \
 void Uninitialize();
 
@@ -63,3 +72,8 @@ void Uninitialize();
 
 #define IMPORT_UNLOAD void Uninitialize() \
 {
+
+#define IMPORT_END_INIT __set_load_status(true); }
+#define IMPORT_END_UNLOAD __set_load_status(false); }
+
+bool IsInitialized();

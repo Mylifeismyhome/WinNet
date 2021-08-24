@@ -94,7 +94,7 @@ namespace Net
 	IMPORT_MPROCADDR(ntohll);
 
 	return true;
-	IMPORT_END;
+	IMPORT_END_INIT;
 
 	IMPORT_UNLOAD
 		if (!handle.valid())
@@ -133,7 +133,7 @@ namespace Net
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
-	IMPORT_END;
+	IMPORT_END_UNLOAD;
 
 	MAKE_IMPORT(int, send, SOCKET s, const char* buf, int len, int flags)
 		PASS_PARAMETERS(s, buf, len, flags);

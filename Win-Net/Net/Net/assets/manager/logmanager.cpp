@@ -261,7 +261,10 @@ static void __net_logmanager_invoke_main()
 #ifdef BUILD_LINUX
 		usleep(1);
 #else
-		Net::Kernel32::Sleep(1);
+		if (Net::Kernel32::IsInitialized())
+			Net::Kernel32::Sleep(1);
+		else
+			Sleep(1);
 #endif
 	}
 }

@@ -90,7 +90,7 @@ namespace Net
 	IMPORT_MPROCADDR(GetCurrentThread);
 
 	return true;
-	IMPORT_END;
+	IMPORT_END_INIT;
 
 	IMPORT_UNLOAD
 		if (!handle.valid())
@@ -127,7 +127,7 @@ namespace Net
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
-	IMPORT_END;
+	IMPORT_END_UNLOAD;
 
 	MAKE_IMPORT(HRSRC, FindResourceA, const HMODULE handle, const LPCSTR lpName, const LPCSTR lpType)
 		PASS_PARAMETERS(handle, lpName, lpType);

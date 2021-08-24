@@ -37,7 +37,7 @@ namespace Net
 	IMPORT_MPROCADDR(NtCreateThreadEx);
 	IMPORT_MPROCADDR(NtQueryInformationProcess);
 	return true;
-	IMPORT_END;
+	IMPORT_END_INIT;
 
 	IMPORT_UNLOAD
 		if (!handle.valid())
@@ -48,7 +48,7 @@ namespace Net
 
 	MemoryFreeLibrary(*handle.get());
 	DELETE_IMPORT_HANDLE(handle);
-	IMPORT_END;
+	IMPORT_END_UNLOAD;
 
 	MAKE_IMPORT(NTSTATUS, NtCreateThreadEx, const PHANDLE hThread, const ACCESS_MASK DesiredAccess, const POBJECT_ATTRIBUTES ObjectAttributes, const HANDLE ProcessHandle, const LPTHREAD_START_ROUTINE lpStartAddress, const LPVOID lpParameter, const ULONG Flags, const ULONG_PTR StackZeroBits, const SIZE_T SizeOfStackCommit, const SIZE_T SizeOfStackReserve, const LPVOID lpBytesBuffer)
 		PASS_PARAMETERS(hThread, DesiredAccess, ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter, Flags, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve, lpBytesBuffer);
