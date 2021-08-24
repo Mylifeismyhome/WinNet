@@ -1,5 +1,8 @@
 #include "logmanager.h"
 
+#include <mutex>
+#include <Net/Import/Kernel32.h>
+
 // Color codes
 CONSTEXPR auto BLACK = 0;
 CONSTEXPR auto BLUE = 1;
@@ -34,6 +37,246 @@ static void SetConsoleOutputColor(const int color)
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 #endif
 }
+
+/* MAIN Thread Invoker */
+struct __net_logmanager_array_entry_A_t
+{
+	Net::Console::LogStates state;
+	std::string func;
+	std::string msg;
+	bool save;
+};
+
+struct __net_logmanager_array_entry_W_t
+{
+	Net::Console::LogStates state;
+	std::wstring func;
+	std::wstring msg;
+	bool save;
+};
+
+static std::recursive_mutex __net_logmanager_critical;
+static std::vector<__net_logmanager_array_entry_A_t> __net_logmanager_array_a_queue_main;
+static std::vector<__net_logmanager_array_entry_W_t> __net_logmanager_array_w_queue_main;
+
+static void __net_logmanager_push_queue_a(__net_logmanager_array_entry_A_t data)
+{
+	__net_logmanager_critical.try_lock();
+	__net_logmanager_array_a_queue_main.emplace_back(data);
+	__net_logmanager_critical.unlock();
+}
+
+static void __net_logmanager_push_queue_w(__net_logmanager_array_entry_W_t data)
+{
+	__net_logmanager_critical.try_lock();
+	__net_logmanager_array_w_queue_main.emplace_back(data);
+	__net_logmanager_critical.unlock();
+}
+
+static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry)
+{
+	if (entry.msg.empty())
+		return;
+
+	char time[TIME_LENGTH];
+	Net::Clock::GetTimeA(time);
+
+	char date[DATE_LENGTH];
+	Net::Clock::GetDateA(date);
+
+	// display date & time
+	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
+	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	printf(buffer);
+	FREE(buffer);
+
+	// display prefix in it specific color
+	const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+	buffer = ALLOC<char>(prefix.size() + 4);
+	sprintf(buffer, CSTRING("[%s]"), prefix.data());
+	buffer[prefix.size() + 3] = '\0';
+
+	if (!Net::Console::GetPrintFState())
+		SetConsoleOutputColor(Net::Console::GetColorFromState(entry.state));
+
+	printf(buffer);
+
+	if (OnLogA)
+		(*OnLogA)((int)entry.state, buffer);
+
+	FREE(buffer);
+
+	if (!Net::Console::GetPrintFState())
+		SetConsoleOutputColor(WHITE);
+
+	// output functionname
+	if (!entry.func.empty())
+		printf(CSTRING("[%s]"), entry.func.data());
+
+	printf(CSTRING(" "));
+	printf(entry.msg.data());
+	printf(CSTRING("\n"));
+
+	// create an entire buffer to save to file
+	if (entry.save)
+	{
+		if (!entry.func.empty())
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + 23;
+			buffer = ALLOC<char>(bsize + 1);
+			sprintf(buffer, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+
+			if (OnLogA)
+				(*OnLogA)((int)entry.state, buffer);
+
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
+
+			FREE(buffer);
+		}
+		else
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			auto buffer = ALLOC<char>(bsize + 1);
+			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+
+			if (OnLogA)
+				(*OnLogA)((int)entry.state, buffer);
+
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
+
+			FREE(buffer);
+		}
+	}
+}
+
+static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry)
+{
+	if (entry.msg.empty())
+		return;
+
+	wchar_t time[TIME_LENGTH];
+	Net::Clock::GetTimeW(time);
+
+	wchar_t date[DATE_LENGTH];
+	Net::Clock::GetDateW(date);
+
+	// display date & time
+	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
+	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	wprintf(buffer);
+	FREE(buffer);
+
+	// display prefix in it specific color
+	const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+	buffer = ALLOC<wchar_t>(prefix.size() + 4);
+	swprintf(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
+	buffer[prefix.size() + 3] = '\0';
+
+	if (!Net::Console::GetPrintFState())
+		SetConsoleOutputColor(Net::Console::GetColorFromState(entry.state));
+
+	wprintf(buffer);
+
+	if (OnLogW)
+		(*OnLogW)((int)entry.state, buffer);
+
+	FREE(buffer);
+
+	if (!Net::Console::GetPrintFState())
+		SetConsoleOutputColor(WHITE);
+
+	// output functionname
+	if (!entry.func.empty())
+		wprintf(CWSTRING("[%s]"), entry.func.data());
+
+	wprintf(CWSTRING(" "));
+	wprintf(entry.msg.data());
+	wprintf(CWSTRING("\n"));
+
+	// create an entire buffer to save to file
+	if (entry.save)
+	{
+		if (!entry.func.empty())
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + 23;
+			auto buffer = ALLOC<wchar_t>(bsize + 1);
+			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+
+			if (OnLogW)
+				(*OnLogW)((int)entry.state, buffer);
+
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
+
+			FREE(buffer);
+		}
+		else
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			auto buffer = ALLOC<wchar_t>(bsize + 1);
+			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+
+			if (OnLogW)
+				(*OnLogW)((int)entry.state, buffer);
+
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
+
+			FREE(buffer);
+		}
+	}
+}
+
+static void __net_logmanager_invoke_main()
+{
+	while (true)
+	{
+		__net_logmanager_critical.try_lock();
+		for (std::vector< __net_logmanager_array_entry_A_t>::iterator i = __net_logmanager_array_a_queue_main.begin(); i != __net_logmanager_array_a_queue_main.end();)
+		{
+			__net_logmanager_output_log_a(*i);
+			i = __net_logmanager_array_a_queue_main.erase(i);
+		}
+
+		// qeue wide-strings after ascii-strings displayed
+		for (std::vector< __net_logmanager_array_entry_W_t>::iterator i = __net_logmanager_array_w_queue_main.begin(); i != __net_logmanager_array_w_queue_main.end();)
+		{
+			__net_logmanager_output_log_w(*i);
+			i = __net_logmanager_array_w_queue_main.erase(i);
+		}
+		__net_logmanager_critical.unlock();
+
+#ifdef BUILD_LINUX
+		usleep(1);
+#else
+		Net::Kernel32::Sleep(1);
+#endif
+	}
+}
+
+class __net_logmanager_main_invoke_wrapper
+{
+public:
+	__net_logmanager_main_invoke_wrapper()
+	{
+		std::thread(__net_logmanager_invoke_main).detach();
+	}
+};
+
+// auto start thread on program start
+static auto __net_logmanager_main_invoke_thread_wrapper = __net_logmanager_main_invoke_wrapper();
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Console)
@@ -103,55 +346,19 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	va_end(vaArgs);
 #endif
 
-	if (str.empty())
-		return;
-
-	char time[TIME_LENGTH];
-	Clock::GetTimeA(time);
-
-	char date[DATE_LENGTH];
-	Clock::GetDateA(date);
-
-	// display date & time
-	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
-	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
-	printf(buffer);
-	FREE(buffer);
-
-	// display prefix in it specific color
-	const auto prefix = Console::GetLogStatePrefix(state);
-	buffer = ALLOC<char>(prefix.size() + 4);
-	sprintf(buffer, CSTRING("[%s]"), prefix.data());
-	buffer[prefix.size() + 3] = '\0';
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(Console::GetColorFromState(state));
-
-	printf(buffer);
-
-	if (OnLogA)
-		(*OnLogA)((int)state, buffer);
-
-	FREE(buffer);
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(WHITE);
-
-	// output functionname
-	if (strcmp(func, CSTRING("")) != 0)
-		printf(CSTRING("[%s]"), func);
-
-	printf(CSTRING(" "));
-	printf(str.data());
-	printf(CSTRING("\n"));
+	__net_logmanager_array_entry_A_t data;
+	data.state = state;
+	data.func = std::string(func);
+	data.msg = std::string(str.data());
+	data.save = false;
+	__net_logmanager_push_queue_a(data);
 }
 
-void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
+void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
 {
-	const auto lenfunc = strlen(funcW);
-	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
-	swprintf(func, lenfunc, CWSTRING("%s"), funcW);
+	const size_t lenfunc = strlen(funcA) + 1;
+	wchar_t* func = new wchar_t[lenfunc];
+	mbstowcs(func, funcA, lenfunc);
 
 	va_list vaArgs;
 
@@ -172,51 +379,14 @@ void Log(const LogStates state, const char* funcW, const wchar_t* msg, ...)
 	va_end(vaArgs);
 #endif
 
-	if (str.empty())
-	{
-		FREE(func);
-		return;
-	}
+	__net_logmanager_array_entry_W_t data;
+	data.state = state;
+	data.func = std::wstring(func);
+	data.msg = std::wstring(str.data());
+	data.save = false;
+	__net_logmanager_push_queue_w(data);
 
-	wchar_t time[TIME_LENGTH];
-	Clock::GetTimeW(time);
-
-	wchar_t date[DATE_LENGTH];
-	Clock::GetDateW(date);
-
-	// display date & time
-	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
-	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
-	wprintf(buffer);
-	FREE(buffer);
-
-	// display prefix in it specific color
-	const auto prefix = Console::GetLogStatePrefix(state);
-	buffer = ALLOC<wchar_t>(prefix.size() + 4);
-	swprintf(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
-	buffer[prefix.size() + 3] = '\0';
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(Console::GetColorFromState(state));
-
-	wprintf(buffer);
-
-	if (OnLogW)
-		(*OnLogW)((int)state, buffer);
-
-	FREE(buffer);
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(WHITE);
-
-	// output functionname
-	if (wcscmp(func, CWSTRING("")) != 0)
-		wprintf(CWSTRING("[%s]"), func);
-
-	wprintf(CWSTRING(" "));
-	wprintf(str.data());
-	wprintf(CWSTRING("\n"));
+	FREE(func);
 }
 
 void SetPrintF(const bool state)
@@ -319,93 +489,19 @@ void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 	va_end(vaArgs);
 #endif
 
-	if (str.empty())
-		return;
-
-        if(!__net_output_used())
-        {
-                Net::Console::Log(state, func, str.data());
-                return;
-        }
-
-	char time[TIME_LENGTH];
-	Clock::GetTimeA(time);
-
-	char date[DATE_LENGTH];
-	Clock::GetDateA(date);
-
-	// display date & time
-	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
-	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
-	printf(buffer);
-	FREE(buffer);
-
-	// display prefix in it specific color
-	const auto prefix = Console::GetLogStatePrefix(state);
-	buffer = ALLOC<char>(prefix.size() + 4);
-	sprintf(buffer, CSTRING("[%s]"), prefix.data());
-	buffer[prefix.size() + 3] = '\0';
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(Console::GetColorFromState(state));
-
-	printf(buffer);
-	FREE(buffer);
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(WHITE);
-
-	// output functionname
-	if (strcmp(func, CSTRING("")) != 0)
-		printf(CSTRING("[%s]"), func);
-
-	printf(CSTRING(" "));
-	printf(str.data());
-	printf(CSTRING("\n"));
-
-	// create an entire buffer to save to file
-	{
-		if (strcmp(func, CSTRING("")) == 0)
-		{
-			const auto prefix = Console::GetLogStatePrefix(state);
-			const auto bsize = str.size() + prefix.size() + 23;
-			buffer = ALLOC<char>(bsize + 1);
-			sprintf(buffer, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
-			buffer[bsize] = '\0';
-
-			if (OnLogA)
-				(*OnLogA)((int)state, buffer);
-
-                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-                        file.write(buffer);
-
-			FREE(buffer);
-		}
-		else
-		{
-			const auto prefix = Console::GetLogStatePrefix(state);
-			const auto bsize = str.size() + prefix.size() + strlen(func) + 25;
-			auto buffer = ALLOC<char>(bsize + 1);
-			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
-			buffer[bsize] = '\0';
-
-			if (OnLogA)
-				(*OnLogA)((int)state, buffer);
-
-                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-                        file.write(buffer);
-
-			FREE(buffer);
-		}
-	}
+	__net_logmanager_array_entry_A_t data;
+	data.state = state;
+	data.func = std::string(func);
+	data.msg = std::string(str.data());
+	data.save = true;
+	__net_logmanager_push_queue_a(data);
 }
 
 void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
 {
-	const auto lenfunc = strlen(funcA);
-	wchar_t* func = ALLOC<wchar_t>(lenfunc + 1);
-	swprintf(func, lenfunc, CWSTRING("%s"), funcA);
+	const size_t lenfunc = strlen(funcA) + 1;
+	wchar_t* func = new wchar_t[lenfunc];
+	mbstowcs(func, funcA, lenfunc);
 
 	va_list vaArgs;
 
@@ -426,89 +522,12 @@ void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, 
 	va_end(vaArgs);
 #endif
 
-	if (str.empty())
-	{
-		FREE(func);
-		return;
-	}
-
-	if(!__net_output_used())
-	{
-		Net::Console::Log(state, funcA, str.data());
-		return;
-	}
-
-	wchar_t time[TIME_LENGTH];
-	Clock::GetTimeW(time);
-
-	wchar_t date[DATE_LENGTH];
-	Clock::GetDateW(date);
-
-	// display date & time
-	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
-	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
-	wprintf(buffer);
-	FREE(buffer);
-
-	// display prefix in it specific color
-	const auto prefix = Console::GetLogStatePrefix(state);
-	buffer = ALLOC<wchar_t>(prefix.size() + 4);
-	swprintf(buffer, prefix.size() + 3, CWSTRING("[%s]"), prefix.data());
-	buffer[prefix.size() + 3] = '\0';
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(Console::GetColorFromState(state));
-
-	wprintf(buffer);
-	FREE(buffer);
-
-	if (!Console::GetPrintFState())
-		SetConsoleOutputColor(WHITE);
-
-	// output functionname
-	if (wcscmp(func, CWSTRING("")) != 0)
-		wprintf(CWSTRING("[%s]"), func);
-
-	wprintf(CWSTRING(" "));
-	wprintf(str.data());
-	wprintf(CWSTRING("\n"));
-
-	// create an entire buffer to save to file
-	{
-		if (wcscmp(func, CWSTRING("")) == 0)
-		{
-			const auto prefix = Console::GetLogStatePrefix(state);
-			const auto bsize = str.size() + prefix.size() + 23;
-			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), str.data());
-			buffer[bsize] = '\0';
-
-			if (OnLogW)
-				(*OnLogW)((int)state, buffer);
-
-                        auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-                        file.write(buffer);
-
-			FREE(buffer);
-		}
-		else
-		{
-			const auto prefix = Console::GetLogStatePrefix(state);
-			const auto bsize = str.size() + prefix.size() + wcslen(func) + 25;
-			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), func, str.data());
-			buffer[bsize] = '\0';
-
-			if (OnLogW)
-				(*OnLogW)((int)state, buffer);
-
-			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-			file.write(buffer);
-
-			FREE(buffer);
-		}
-	}
+	__net_logmanager_array_entry_W_t data;
+	data.state = state;
+	data.func = std::wstring(func);
+	data.msg = std::wstring(str.data());
+	data.save = true;
+	__net_logmanager_push_queue_w(data);
 
 	FREE(func);
 }
