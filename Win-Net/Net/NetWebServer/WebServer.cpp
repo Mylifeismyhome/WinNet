@@ -957,8 +957,7 @@ void Server::Acceptor()
 		for (const auto& entry : socketoption)
 		{
 			const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
-			if (res < 0)
-				LOG_ERROR(CSTRING("[%s] - Failure on settings socket option { 0x%ld : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
+			if (res < 0) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
 
 		const auto param = new Receive_t();

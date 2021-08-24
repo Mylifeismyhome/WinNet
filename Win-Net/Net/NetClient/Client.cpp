@@ -366,8 +366,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	for (const auto& entry : socketoption)
 	{
 		const auto res = Net::SetSocketOption(GetSocket(), entry);
-		if (res < 0)
-			LOG_ERROR(CSTRING("[Client] - Failure on settings socket option { 0x%ld : %i }"), entry.opt, LAST_ERROR);
+		if (res < 0) LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry.opt, LAST_ERROR);
 	}
 
 	// clear the unused vector

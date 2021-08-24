@@ -367,7 +367,7 @@ static void Free(T*& data)
 
 template <class T>
 NET_STRUCT_BEGIN(SocketOption_t)
-DWORD opt;
+int opt;
 T type;
 SOCKET_OPT_LEN len;
 
@@ -377,7 +377,7 @@ SocketOption_t()
         this->len = INVALID_SIZE;
 }
 
-SocketOption_t(const DWORD opt, const T type)
+SocketOption_t(const int opt, const T type)
 {
         this->opt = opt;
         this->type = type;
@@ -413,7 +413,7 @@ namespace Net
 	void load();
 	void unload();
 
-	int SocketOpt(SOCKET, int, DWORD, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
+	int SocketOpt(SOCKET, int, int, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
 	int SetSocketOption(SOCKET, SocketOption_t<SOCKET_OPT_TYPE>);
 
 	namespace sock_err

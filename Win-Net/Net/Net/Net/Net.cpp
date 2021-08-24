@@ -41,7 +41,7 @@ void Net::unload()
 	Net::Codes::NetUnloadErrorCodes();
 }
 
-int Net::SocketOpt(SOCKET s, int level, DWORD optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
+int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
