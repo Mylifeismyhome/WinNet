@@ -64,6 +64,42 @@ int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
 std::string Net::sock_err::getString(const int err)
 {
 #ifdef BUILD_LINUX
+	if (err == EACCES)
+		return std::string(CSTRING("EACCES"));
+	else if (err == EALREADY)
+		return std::string(CSTRING("EALREADY"));
+	else if (err == EBADF)
+		return std::string(CSTRING("EBADF"));
+	else if (err == ECONNRESET)
+		return std::string(CSTRING("ECONNRESET"));
+	else if (err == EDESTADDRREQ)
+		return std::string(CSTRING("EDESTADDRREQ"));
+	else if (err == EINTR)
+		return std::string(CSTRING("EINTR"));
+	else if (err == EINVAL)
+		return std::string(CSTRING("EINVAL"));
+	else if (err == EISCONN)
+		return std::string(CSTRING("EISCONN"));
+	else if (err == EMSGSIZE)
+		return std::string(CSTRING("EMSGSIZE"));
+	else if (err == ENOBUFS)
+		return std::string(CSTRING("ENOBUFS"));
+	else if (err == ENOMEM)
+		return std::string(CSTRING("ENOMEM"));
+	else if (err == ENOTCONN)
+		return std::string(CSTRING("ENOTCONN"));
+	else if (err == ENOTSOCK)
+		return std::string(CSTRING("ENOTSOCK"));
+	else if (err == EOPNOTSUPP)
+		return std::string(CSTRING("EOPNOTSUPP"));
+	else if (err == EPIPE)
+		return std::string(CSTRING("EPIPE"));
+	else if (err == EACCES)
+		return std::string(CSTRING("EACCES"));
+	else if (err == EACCES)
+		return std::string(CSTRING("EACCES"));
+	else if (err == EACCES)
+		return std::string(CSTRING("EACCES"));
 #else
 	if (err == WSANOTINITIALISED)
 		return std::string(CSTRING("A successful WSAStartup() call must occur before using this function"));
