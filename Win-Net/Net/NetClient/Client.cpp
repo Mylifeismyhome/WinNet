@@ -1103,166 +1103,26 @@ DWORD Client::DoReceive()
 	if (data_size == SOCKET_ERROR)
 	{
 #ifdef BUILD_LINUX
-		switch (errno)
-		{
-		case EWOULDBLOCK:
-			ProcessPackages();
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			return FREQUENZ;
-
-		case ECONNREFUSED:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
-			Disconnect();
-			return FREQUENZ;
-
-		case EFAULT:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - EFAULT"));
-			Disconnect();
-			return FREQUENZ;
-
-		case EINTR:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - EINTR"));
-			Disconnect();
-			return FREQUENZ;
-
-		case EINVAL:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - EINVAL"));
-			Disconnect();
-			return FREQUENZ;
-
-		case ENOMEM:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
-			Disconnect();
-			return FREQUENZ;
-
-		case ENOTCONN:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
-			Disconnect();
-			return FREQUENZ;
-
-		case ENOTSOCK:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
-			Disconnect();
-			return FREQUENZ;
-
-		default:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
-			Disconnect();
-			return FREQUENZ;
-		}
+		if (errno != EWOULDBLOCK)
 #else
-		switch (Ws2_32::WSAGetLastError())
+		if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
+#endif
 		{
-		case WSANOTINITIALISED:
 			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - A successful WSAStartup() call must occur before using this function"));
 			Disconnect();
-			return FREQUENZ;
 
-		case WSAENETDOWN:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The network subsystem has failed"));
-			Disconnect();
-			return FREQUENZ;
+#ifdef BUILD_LINUX
+			LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+#else
+			LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
 
-		case WSAEFAULT:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The buf parameter is not completely contained in a valid part of the user address space"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAENOTCONN:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The socket is not connected"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAEINTR:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The (blocking) call was canceled through WSACancelBlockingCall()"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAEINPROGRESS:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAENETRESET:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAENOTSOCK:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The descriptor is not a socket"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAEOPNOTSUPP:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAESHUTDOWN:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAEWOULDBLOCK:
-			ProcessPackages();
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			return FREQUENZ;
-
-		case WSAEMSGSIZE:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The message was too large to fit into the specified buffer and was truncated"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAEINVAL:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
-			Disconnect();
-			return FREQUENZ;
-
-		case WSAECONNABORTED:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
-			Timeout();
-			return FREQUENZ;
-
-		case WSAETIMEDOUT:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
-			Timeout();
-			return FREQUENZ;
-
-		case WSAECONNRESET:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
-			Timeout();
-			return FREQUENZ;
-
-		default:
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[NET] - Something bad happen..."));
-			Disconnect();
 			return FREQUENZ;
 		}
-#endif
+
+		ProcessPackages();
+		memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		return FREQUENZ;
 	}
 	if (data_size == 0)
 	{
@@ -1358,14 +1218,14 @@ bool Client::ValidHeader(bool& use_old_token)
 
 				use_old_token = false;
 			}
-		}
+	}
 		else
 		{
 			// sift back using old token
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 		}
-	}
+}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid

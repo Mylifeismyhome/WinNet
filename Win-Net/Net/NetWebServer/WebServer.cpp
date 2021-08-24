@@ -637,11 +637,13 @@ short Server::Handshake(NET_PEER peer)
 #endif
 			{
 				ErasePeer(peer);
+
 #ifdef BUILD_LINUX
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
+
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
 		}
@@ -727,14 +729,17 @@ short Server::Handshake(NET_PEER peer)
 #endif
 			{
 				ErasePeer(peer);
+
 #ifdef BUILD_LINUX
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
+
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
-			else return WebServerHandshake::HandshakeRet_t::would_block;
+
+			return WebServerHandshake::HandshakeRet_t::would_block;
 		}
 		if (data_size == 0)
 		{
@@ -789,8 +794,8 @@ short Server::Handshake(NET_PEER peer)
 				const auto val = header.substr(end + 2);
 
 				entries[key] = val;
-			}
 		}
+	}
 
 		NET_SHA1 sha;
 		unsigned int message_digest[5];
@@ -911,7 +916,7 @@ short Server::Handshake(NET_PEER peer)
 		origin.free();
 		FREE(enc_Sec_Key);
 		return WebServerHandshake::HandshakeRet_t::success;
-	}
+}
 
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), SERVERNAME(this), peer->IPAddr().get());
 
@@ -1286,11 +1291,13 @@ DWORD Server::DoReceive(NET_PEER peer)
 #endif
 			{
 				ErasePeer(peer);
+
 #ifdef BUILD_LINUX
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
+
 				return FREQUENZ(this);
 			}
 		}
@@ -1376,11 +1383,13 @@ DWORD Server::DoReceive(NET_PEER peer)
 #endif
 			{
 				ErasePeer(peer);
+
 #ifdef BUILD_LINUX
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
+
 				return FREQUENZ(this);
 			}
 		}
@@ -1409,11 +1418,11 @@ DWORD Server::DoReceive(NET_PEER peer)
 		}
 
 		peer->network.reset();
-	}
+		}
 
 	DecodeFrame(peer);
 	return NULL;
-}
+	}
 
 void Server::DecodeFrame(NET_PEER peer)
 {
@@ -1522,7 +1531,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		{
 			peer->network.clear();
 			return;
-		}
+	}
 
 		if (!memcmp(peer->network.getData(), CSTRING(""), strlen(reinterpret_cast<char const*>(peer->network.getData()))))
 		{
