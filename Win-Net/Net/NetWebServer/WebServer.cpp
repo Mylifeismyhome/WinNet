@@ -628,43 +628,22 @@ short Server::Handshake(NET_PEER peer)
 		// check socket still open
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
+			peer->network.reset();
+
 #ifdef BUILD_LINUX
-			switch (errno)
-			{
-			case ECONNRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case ENOTCONN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			default:
-				break;
-			}
+			if (errno != EWOULDBLOCK)
 #else
-			switch (Ws2_32::WSAGetLastError())
-			{
-			case WSAETIMEDOUT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAECONNRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been forced to disconnect!"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			default:
-				break;
-			}
+			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
+			{
+				ErasePeer(peer);
+#ifdef BUILD_LINUX
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+#else
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
+				return WebServerHandshake::HandshakeRet_t::error;
+			}
 		}
 
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -739,165 +718,23 @@ short Server::Handshake(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
+			peer->network.reset();
+
 #ifdef BUILD_LINUX
-			switch (errno)
-			{
-			case EWOULDBLOCK:
-				peer->network.reset();
-				return WebServerHandshake::HandshakeRet_t::would_block;
-
-			case ECONNREFUSED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case EFAULT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case EINTR:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EINTR"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case EINVAL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOMEM:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case ENOTCONN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case ENOTSOCK:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-			}
+			if (errno != EWOULDBLOCK)
 #else
-			switch (Ws2_32::WSAGetLastError())
+			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
+#endif
 			{
-			case WSANOTINITIALISED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAENETDOWN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEFAULT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAENOTCONN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEINTR:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEINPROGRESS:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAENETRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAENOTSOCK:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEOPNOTSUPP:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAESHUTDOWN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEWOULDBLOCK:
-				peer->network.reset();
-				return WebServerHandshake::HandshakeRet_t::would_block;
-
-			case WSAEMSGSIZE:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAEINVAL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAECONNABORTED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAETIMEDOUT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			case WSAECONNRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return WebServerHandshake::HandshakeRet_t::error;
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
+#ifdef BUILD_LINUX
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+#else
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
-#endif
+			else return WebServerHandshake::HandshakeRet_t::would_block;
 		}
 		if (data_size == 0)
 		{
@@ -1443,138 +1280,19 @@ DWORD Server::DoReceive(NET_PEER peer)
 		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			switch (errno)
-			{
-			case EWOULDBLOCK:
-				break;
-
-			case ECONNREFUSED:
-				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EFAULT:
-				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EINTR:
-				LOG_PEER(CSTRING("[HTTP] - EINTR"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EINVAL:
-				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOMEM:
-				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOTCONN:
-				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOTSOCK:
-				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			default:
-				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-			}
+			if (errno != EWOULDBLOCK)
 #else
-			switch (Ws2_32::WSAGetLastError())
+			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
+#endif
 			{
-			case WSANOTINITIALISED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENETDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEFAULT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENOTCONN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINTR:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINPROGRESS:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENETRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENOTSOCK:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEOPNOTSUPP:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAESHUTDOWN:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEMSGSIZE:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINVAL:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAECONNABORTED:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAETIMEDOUT:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAECONNRESET:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEWOULDBLOCK:
-				break;
-
-			default:
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
+#ifdef BUILD_LINUX
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+#else
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
 				return FREQUENZ(this);
 			}
-#endif
 		}
 
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -1649,165 +1367,22 @@ DWORD Server::DoReceive(NET_PEER peer)
 		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
+			peer->network.reset();
+
 #ifdef BUILD_LINUX
-			switch (errno)
-			{
-			case EWOULDBLOCK:
-				peer->network.reset();
-				return FREQUENZ(this);
-
-			case ECONNREFUSED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EFAULT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EINTR:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EINTR"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case EINVAL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOMEM:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOTCONN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case ENOTSOCK:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
-				ErasePeer(peer);
-				return FREQUENZ(this);
-			}
+			if (errno != EWOULDBLOCK)
 #else
-			switch (Ws2_32::WSAGetLastError())
+			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
+#endif
 			{
-			case WSANOTINITIALISED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A successful WSAStartup() call must occur before using this function"), SERVERNAME(this), peer->IPAddr().get());
 				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENETDOWN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The network subsystem has failed"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEFAULT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The buf parameter is not completely contained in a valid part of the user address space"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENOTCONN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket is not connected"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINTR:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The (blocking) call was canceled through WSACancelBlockingCall()"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINPROGRESS:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENETRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAENOTSOCK:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The descriptor is not a socket"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEOPNOTSUPP:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAESHUTDOWN:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEWOULDBLOCK:
-				peer->network.reset();
-				return FREQUENZ(this);
-
-			case WSAEMSGSIZE:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The message was too large to fit into the specified buffer and was truncated"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAEINVAL:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAECONNABORTED:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAETIMEDOUT:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The connection has been dropped because of a network failure or because the peer system failed to respond"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			case WSAECONNRESET:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
-				return FREQUENZ(this);
-
-			default:
-				peer->network.reset();
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen... on Receive"), SERVERNAME(this), peer->IPAddr().get());
-				ErasePeer(peer);
+#ifdef BUILD_LINUX
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+#else
+				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+#endif
 				return FREQUENZ(this);
 			}
-#endif
 		}
 		if (data_size == 0)
 		{
