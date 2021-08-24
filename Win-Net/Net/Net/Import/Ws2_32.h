@@ -9,7 +9,7 @@
 
 namespace Net
 {
-	IMPORT_BEGIN(Ws2_32);
+	IMPORT_BEGIN_HEAD(Ws2_32);
 	IMPORT_DEFINE_FNC_WSAAPI(int, send, SOCKET, const char*, int, int);
 	IMPORT_DEFINE_FNC_WSAAPI(int, recv, SOCKET, char*, int, int);
 	IMPORT_DEFINE_FNC_WSAAPI(int, closesocket, SOCKET);

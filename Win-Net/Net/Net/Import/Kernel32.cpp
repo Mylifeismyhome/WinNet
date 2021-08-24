@@ -9,7 +9,7 @@
 
 namespace Net
 {
-	IMPORT_BEGIN(Kernel32)
+	IMPORT_BEGIN_BODY(Kernel32)
 		IMPORT_HANDLE(HMEMORYMODULE, handle);
 
 	IMPORT_DEFINE(FindResourceA);

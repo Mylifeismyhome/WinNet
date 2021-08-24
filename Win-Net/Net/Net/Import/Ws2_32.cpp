@@ -9,7 +9,7 @@
 
 namespace Net
 {
-	IMPORT_BEGIN(Ws2_32)
+	IMPORT_BEGIN_BODY(Ws2_32)
 		IMPORT_HANDLE(HMEMORYMODULE, handle);
 
 	IMPORT_DEFINE(send);

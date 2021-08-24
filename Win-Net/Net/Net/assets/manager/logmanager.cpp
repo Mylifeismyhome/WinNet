@@ -39,7 +39,7 @@ static void SetConsoleOutputColor(const int color)
 }
 
 /* MAIN Thread Invoker */
-struct __net_logmanager_array_entry_A_t
+struct [[nodiscard]] __net_logmanager_array_entry_A_t
 {
 	Net::Console::LogStates state;
 	std::string func;
@@ -47,7 +47,7 @@ struct __net_logmanager_array_entry_A_t
 	bool save;
 };
 
-struct __net_logmanager_array_entry_W_t
+struct [[nodiscard]] __net_logmanager_array_entry_W_t
 {
 	Net::Console::LogStates state;
 	std::wstring func;
@@ -61,16 +61,14 @@ static std::vector<__net_logmanager_array_entry_W_t> __net_logmanager_array_w_qu
 
 static void __net_logmanager_push_queue_a(__net_logmanager_array_entry_A_t data)
 {
-	__net_logmanager_critical.try_lock();
+	std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
 	__net_logmanager_array_a_queue_main.emplace_back(data);
-	__net_logmanager_critical.unlock();
 }
 
 static void __net_logmanager_push_queue_w(__net_logmanager_array_entry_W_t data)
 {
-	__net_logmanager_critical.try_lock();
+	std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
 	__net_logmanager_array_w_queue_main.emplace_back(data);
-	__net_logmanager_critical.unlock();
 }
 
 static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry)
@@ -243,7 +241,7 @@ static void __net_logmanager_invoke_main()
 {
 	while (true)
 	{
-		__net_logmanager_critical.try_lock();
+		std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
 		for (std::vector< __net_logmanager_array_entry_A_t>::iterator i = __net_logmanager_array_a_queue_main.begin(); i != __net_logmanager_array_a_queue_main.end();)
 		{
 			__net_logmanager_output_log_a(*i);
@@ -256,7 +254,6 @@ static void __net_logmanager_invoke_main()
 			__net_logmanager_output_log_w(*i);
 			i = __net_logmanager_array_w_queue_main.erase(i);
 		}
-		__net_logmanager_critical.unlock();
 
 #ifdef BUILD_LINUX
 		usleep(1);
@@ -435,30 +432,30 @@ NET_NAMESPACE_BEGIN(Log)
 void SetOutputName(const char* name)
 {
 	Net::String tmp(name);
-        if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
-                || tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
-                || tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
-                || tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
-        {
-                if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
-                {
-                        strcpy(__net_output_fname, name);
-                        strcat(__net_output_fname, CSTRING(".log"));
-                }
-                else
-                {
-                        strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
-                        strcpy(__net_output_fname, name);
-                        strcat(__net_output_fname, CSTRING(".log"));
-                        NET_DIRMANAGER::createDir(__net_output_fname);
-                }
-        }
-        else
-        {
-                strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
-                strcat(__net_output_fname, name);
-                strcat(__net_output_fname, CSTRING(".log"));
-        }
+	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
+		|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+	{
+		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+		{
+			strcpy(__net_output_fname, name);
+			strcat(__net_output_fname, CSTRING(".log"));
+		}
+		else
+		{
+			strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+			strcpy(__net_output_fname, name);
+			strcat(__net_output_fname, CSTRING(".log"));
+			NET_DIRMANAGER::createDir(__net_output_fname);
+		}
+	}
+	else
+	{
+		strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+		strcat(__net_output_fname, name);
+		strcat(__net_output_fname, CSTRING(".log"));
+	}
 }
 
 void SetLogCallbackA(OnLogA_t callback)

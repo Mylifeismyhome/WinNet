@@ -8,7 +8,7 @@
 
 namespace Net
 {
-	IMPORT_BEGIN(Kernel32);
+	IMPORT_BEGIN_HEAD(Kernel32);
 	IMPORT_DEFINE_FNC_WINAPI(HRSRC, FindResourceA, HMODULE, LPCSTR, LPCSTR);
 	IMPORT_DEFINE_FNC_WINAPI(HRSRC, FindResourceW, HMODULE, const wchar_t*, const wchar_t*);
 	IMPORT_DEFINE_FNC_WINAPI(HGLOBAL, LoadResource, HMODULE, HRSRC);

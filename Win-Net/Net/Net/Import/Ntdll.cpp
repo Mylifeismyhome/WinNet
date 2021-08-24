@@ -9,7 +9,7 @@
 
 namespace Net
 {
-	IMPORT_BEGIN(Ntdll)
+	IMPORT_BEGIN_BODY(Ntdll)
 		IMPORT_HANDLE(HMEMORYMODULE, handle);
 
 	IMPORT_DEFINE(NtCreateThreadEx);
