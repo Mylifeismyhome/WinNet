@@ -305,7 +305,7 @@ NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 NET_CLASS_PRIVATE
 void DecodeFrame(NET_PEER);
 void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
-bool ProcessPackage(NET_PEER, BYTE*, size_t);
+void ProcessPackage(NET_PEER, BYTE*, size_t);
 
 NET_CLASS_PROTECTED
 /* CALLBACKS */

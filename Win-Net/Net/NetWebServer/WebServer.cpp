@@ -1532,13 +1532,9 @@ void Server::DecodeFrame(NET_PEER peer)
 			if (OPC == NET_OPCODE_TEXT || OPC == NET_OPCODE_BINARY)
 			{
 				if (!peer->network.dataFragmentValid())
-				{
-					//LOG(CSTRING("Executing complete data frame: %llu\nPayload: %s"), peer->data_size, reinterpret_cast<const char*>(peer->data));
 					ProcessPackage(peer, peer->network.getData(), peer->network.getDataSize());
-				}
 				else
 				{
-					//LOG(CSTRING("Executing data fragement: %llu\nPayload fragment: %s"), peer->data_sizeFragment, reinterpret_cast<const char*>(peer->data_sizeFragment));
 					ProcessPackage(peer, peer->network.getDataFragmented(), peer->network.getDataFragmentSize());
 					peer->network.setDataFragmented(nullptr);
 					peer->network.setDataFragmentSize(NULL);
@@ -1558,34 +1554,33 @@ void Server::DecodeFrame(NET_PEER peer)
 	peer->network.clear();
 }
 
-bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
+void Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 {
 	PEER_NOT_VALID(peer,
-		return false;
+		return;
 	);
 
-	if (!data)
-		return false;
+	if (!data) return;
 
 	Package PKG;
 	PKG.Parse(reinterpret_cast<char*>(data));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
-		LOG_PEER(CSTRING("Missing member 'ID' in the package"));
-		return false;
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+		return;
 	}
 
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-		return false;
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+		return;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-		return false;
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+		return;
 	}
 
 	Package Content;
@@ -1594,15 +1589,8 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	if (!CheckDataN(peer, id, Content))
-	{
 		if (!CheckData(peer, id, Content))
-		{
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 void Server::onSSLTimeout(NET_PEER peer)

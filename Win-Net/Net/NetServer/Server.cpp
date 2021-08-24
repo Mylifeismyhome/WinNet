@@ -1292,7 +1292,6 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 				// [PROTOCOL] - check header is actually valid
 				if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 				{
-					LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid header"), SERVERNAME(this), peer->IPAddr().get());
 					peer->network.clear();
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
 					return false;
@@ -1325,7 +1324,6 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 		// [PROTOCOL] - check header is actually valid
 		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
-			LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid header"), SERVERNAME(this), peer->IPAddr().get());
 			peer->network.clear();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
 			return false;
@@ -1892,28 +1890,28 @@ NET_SERVER_END_DATA_PACKAGE
 NET_BEGIN_FNC_PKG(Server, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame, cipher option is been disabled on the server, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame, cipher option is been disabled on the server, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 if (peer->estabilished)
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame but is already been estabilished, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame but is already been estabilished, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 if (peer->cryption.getHandshakeStatus())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame which already have been performed, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a handshake frame which already have been performed, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 
 const auto publicKey = PKG.String(CSTRING("PublicKey"));
 if (!publicKey.valid()) // empty
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent an empty handshake frame, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent an empty handshake frame, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 
@@ -1933,14 +1931,14 @@ NET_END_FNC_PKG
 NET_BEGIN_FNC_PKG(Server, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame but have not performed a handshake yet, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame but have not performed a handshake yet, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 if (peer->estabilished)
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame but is already been estabilished, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame but is already been estabilished, rejecting the frame"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 
@@ -1954,8 +1952,8 @@ if (!majorVersion.valid()
 	|| !revision.valid()
 	|| !key.valid())
 {
-	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame with invalid values"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
+	LOG_ERROR(CSTRING("[%s][%s] - Peer ('%s'): has sent a version frame with invalid values"), SERVERNAME(this), FUNCTION_NAME, peer->IPAddr().get());
 	return;
 }
 

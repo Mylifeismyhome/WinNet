@@ -1200,9 +1200,9 @@ bool Client::ValidHeader(bool& use_old_token)
 				// [PROTOCOL] - check header is actually valid
 				if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 				{
-					LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
 					network.clear();
 					Disconnect();
+					LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
 					return false;
 				}
 
@@ -1233,9 +1233,9 @@ bool Client::ValidHeader(bool& use_old_token)
 		// [PROTOCOL] - check header is actually valid
 		if (memcmp(&network.data.get()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
 		{
-			LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
 			network.clear();
 			Disconnect();
+			LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
 			return false;
 		}
 	}
@@ -1325,9 +1325,9 @@ void Client::ProcessPackages()
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&network.data.get()[network.data_full_size - NET_PACKAGE_FOOTER_LEN], NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN) != 0)
 	{
-		LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid footer"));
 		network.clear();
 		Disconnect();
+		LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid footer"));
 		return;
 	}
 
@@ -1431,7 +1431,7 @@ void Client::ExecutePackage()
 		{
 			AESKey.free();
 			AESIV.free();
-
+			Disconnect();
 			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
 			return;
 		}
@@ -1440,7 +1440,7 @@ void Client::ExecutePackage()
 		{
 			AESKey.free();
 			AESIV.free();
-
+			Disconnect();
 			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
 			return;
 		}
@@ -1450,7 +1450,7 @@ void Client::ExecutePackage()
 		{
 			AESKey.free();
 			AESIV.free();
-
+			Disconnect();
 			LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
 			return;
 		}
@@ -1525,6 +1525,7 @@ void Client::ExecutePackage()
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
+						Disconnect();
 						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 						return;
 					}
@@ -1574,8 +1575,9 @@ void Client::ExecutePackage()
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), packageSize))
 				{
-					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					data.free();
+					Disconnect();
+					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					return;
 				}
 			}
@@ -1706,6 +1708,7 @@ void Client::ExecutePackage()
 
 	if (!data.valid())
 	{
+		Disconnect();
 		LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
 		return;
 	}
@@ -1714,23 +1717,26 @@ void Client::ExecutePackage()
 	PKG.Parse(reinterpret_cast<char*>(data.get()));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
-		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
+		Disconnect();
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		return;
 	}
 
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
+		Disconnect();
+		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		return;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		data.free();
+		Disconnect();
+		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		return;
 	}
 
@@ -1747,8 +1753,8 @@ void Client::ExecutePackage()
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))
 		{
-			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 			Disconnect();
+			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 		}
 
 	data.free();
@@ -1851,20 +1857,20 @@ NET_CLIENT_END_DATA_PACKAGE
 NET_BEGIN_FNC_PKG(Client, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, cipher option is been disabled, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, cipher option is been disabled, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 if (network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already performed a handshake, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already performed a handshake, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 
@@ -1873,8 +1879,8 @@ NET_JOIN_PACKAGE(pkg, pkgRel);
 const auto publicKey = pkgRel.String(CSTRING("PublicKey"));
 if (!publicKey.valid())
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 
@@ -1892,14 +1898,14 @@ NET_END_FNC_PKG
 NET_BEGIN_FNC_PKG(Client, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 
@@ -1917,14 +1923,14 @@ NET_END_FNC_PKG
 NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 if (network.estabilished)
 {
-	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	Disconnect();
+	LOG_ERROR(CSTRING("[NET][%s] - received an estabilishing frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
 	return;
 }
 
