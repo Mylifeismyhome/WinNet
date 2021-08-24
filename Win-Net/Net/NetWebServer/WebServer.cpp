@@ -956,6 +956,7 @@ void Server::Acceptor()
 		// Set socket options
 		for (const auto& entry : socketoption)
 		{
+			// todo: fix crash on calling this function!
 			const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
 			if (res < 0) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
 		}
