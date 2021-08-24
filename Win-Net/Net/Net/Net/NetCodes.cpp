@@ -22,6 +22,10 @@ NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_UndefinedFrame, "Frame is undefined and
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameHeader, "Frame header is not valid");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameFooter, "Frame footer is not valid");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_DecryptAES, "Failed to decrypt AES Frame");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_DataInvalid, "Data of frame is invalid");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_NoMemberID, "Missing member ID in frame");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_MemberIDInvalid, "Member ID is less than zero");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_NoMemberContent, "Missing member Content in frame");
 NET_ERROR_LIST_END
 
 void Net::Codes::NetUnloadErrorCodes()
