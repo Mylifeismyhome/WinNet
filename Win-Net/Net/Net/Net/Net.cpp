@@ -53,7 +53,7 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
 {
 	const auto result = Net::SocketOpt(socket,
-		IPPROTO_TCP,
+		opt.level,
 		opt.opt,
 		opt.type,
 		opt.len);

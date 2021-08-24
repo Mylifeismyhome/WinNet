@@ -367,18 +367,21 @@ static void Free(T*& data)
 
 template <class T>
 NET_STRUCT_BEGIN(SocketOption_t)
+int level;
 int opt;
 T type;
 SOCKET_OPT_LEN len;
 
 SocketOption_t()
 {
+        this->level = NULL;
         this->opt = NULL;
         this->len = INVALID_SIZE;
 }
 
-SocketOption_t(const int opt, const T type)
+SocketOption_t(const int level, const int opt, const T type)
 {
+        this->level = opt;
         this->opt = opt;
         this->type = type;
         this->len = sizeof(type);
