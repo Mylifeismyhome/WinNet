@@ -1224,11 +1224,13 @@ DWORD Server::DoReceive(NET_PEER peer)
 		peer->network.reset();
 		return FREQUENZ(this);
 	}
+
+	// graceful disconnect
 	if (data_size == 0)
 	{
 		peer->network.reset();
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		ErasePeer(peer);
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		return FREQUENZ(this);
 	}
 

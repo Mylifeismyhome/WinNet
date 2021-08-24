@@ -1124,11 +1124,13 @@ DWORD Client::DoReceive()
 		memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		return FREQUENZ;
 	}
+
+	// graceful disconnect
 	if (data_size == 0)
 	{
 		memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-		LOG_PEER(CSTRING("[NET] - Connection has been gracefully closed"));
 		Disconnect();
+		LOG_PEER(CSTRING("Connection has been gracefully closed"));
 		return FREQUENZ;
 	}
 

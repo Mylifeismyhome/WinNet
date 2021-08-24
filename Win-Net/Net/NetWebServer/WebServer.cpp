@@ -625,29 +625,6 @@ short Server::Handshake(NET_PEER peer)
 	/* SSL */
 	if (peer->ssl)
 	{
-		// check socket still open
-		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
-		{
-			peer->network.reset();
-
-#ifdef BUILD_LINUX
-			if (errno != EWOULDBLOCK)
-#else
-			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
-#endif
-			{
-				ErasePeer(peer);
-
-#ifdef BUILD_LINUX
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
-#else
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
-#endif
-
-				return WebServerHandshake::HandshakeRet_t::error;
-			}
-		}
-
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
@@ -741,14 +718,15 @@ short Server::Handshake(NET_PEER peer)
 
 			return WebServerHandshake::HandshakeRet_t::would_block;
 		}
+
+		// graceful disconnect
 		if (data_size == 0)
 		{
 			peer->network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			ErasePeer(peer);
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			return WebServerHandshake::HandshakeRet_t::error;
 		}
-		peer->network.getDataReceive()[data_size] = '\0';
 
 		if (!peer->network.dataValid())
 		{
@@ -1281,27 +1259,6 @@ DWORD Server::DoReceive(NET_PEER peer)
 
 	if (peer->ssl)
 	{
-		// check socket still open
-		if (Ws2_32::recv(peer->pSocket, nullptr, NULL, 0) == SOCKET_ERROR)
-		{
-#ifdef BUILD_LINUX
-			if (errno != EWOULDBLOCK)
-#else
-			if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
-#endif
-			{
-				ErasePeer(peer);
-
-#ifdef BUILD_LINUX
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
-#else
-				LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
-#endif
-
-				return FREQUENZ(this);
-			}
-		}
-
 		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		if (data_size <= 0)
 		{
@@ -1393,14 +1350,15 @@ DWORD Server::DoReceive(NET_PEER peer)
 				return FREQUENZ(this);
 			}
 		}
+
+		// graceful disconnect
 		if (data_size == 0)
 		{
 			peer->network.reset();
-			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			ErasePeer(peer);
+			LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 			return FREQUENZ(this);
 		}
-		peer->network.getDataReceive()[data_size] = '\0';
 
 		if (!peer->network.dataValid())
 		{
