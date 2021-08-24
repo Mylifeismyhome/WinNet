@@ -61,6 +61,11 @@ int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
         return result;
 }
 
+std::string Net::sock_err::getString(const int err)
+{
+	return {};
+}
+
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
 {
 	for (auto& val : NET_SSL_METHOD_L)

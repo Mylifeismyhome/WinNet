@@ -416,6 +416,11 @@ namespace Net
 	int SocketOpt(SOCKET, int, DWORD, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
 	int SetSocketOption(SOCKET, SocketOption_t<SOCKET_OPT_TYPE>);
 
+	namespace sock_err
+	{
+		std::string getString(const int);
+	};
+
 	namespace ssl
 	{
 		struct NET_SSL_METHOD_T
