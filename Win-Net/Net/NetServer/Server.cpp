@@ -382,10 +382,8 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
-
-	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 }
 
 void Server::SetListenSocket(const SOCKET ListenSocket)
@@ -844,8 +842,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		{
 			Key.free();
 			IV.free();
-
-			LOG_ERROR(CSTRING("Failed to Init AES [0]"));
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
 			return;
 		}
@@ -855,7 +851,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		{
 			Key.free();
 			IV.free();
-			LOG_ERROR(CSTRING("Failed Key to encrypt and encode to base64"));
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64);
 			return;
 		}
@@ -865,7 +860,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		{
 			Key.free();
 			IV.free();
-			LOG_ERROR(CSTRING("Failed IV to encrypt and encode to base64"));
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptIVBase64);
 			return;
 		}
@@ -1426,7 +1420,6 @@ void Server::ProcessPackages(NET_PEER peer)
 	// [PROTOCOL] - check footer is actually valid
 	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - NET_PACKAGE_FOOTER_LEN], NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN) != 0)
 	{
-		LOG_ERROR(CSTRING("[%s] - Peer ('%s'): has sent a frame with an invalid footer"), SERVERNAME(this), peer->IPAddr().get());
 		peer->network.clear();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);
 		return;
@@ -1536,8 +1529,7 @@ void Server::ExecutePackage(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-
-			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptKeyBase64);
 			return;
 		}
 
@@ -1545,8 +1537,7 @@ void Server::ExecutePackage(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-
-			LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptIVBase64);
 			return;
 		}
 
@@ -1555,8 +1546,7 @@ void Server::ExecutePackage(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-
-			LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
 			return;
 		}
 
@@ -1630,7 +1620,7 @@ void Server::ExecutePackage(NET_PEER peer)
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
-						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
+						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 						return;
 					}
 
@@ -1679,8 +1669,8 @@ void Server::ExecutePackage(NET_PEER peer)
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), packageSize))
 				{
-					LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 					data.free();
+					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 					return;
 				}
 			}
@@ -1811,7 +1801,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 	if (!data.valid())
 	{
-		LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
 	}
 
@@ -1819,23 +1809,23 @@ void Server::ExecutePackage(NET_PEER peer)
 	PKG.Parse(reinterpret_cast<char*>(data.get()));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
-		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
 		return;
 	}
 
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 		data.free();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
 		return;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		LOG_PEER(CSTRING("[NET] - Frame is empty"));
 		data.free();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
 		return;
 	}
 
@@ -1851,10 +1841,7 @@ void Server::ExecutePackage(NET_PEER peer)
 
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))
-		{
-			LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-		}
 
 	data.free();
 }

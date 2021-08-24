@@ -1146,11 +1146,7 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 			in_frame_offset += bufferLength;
 		}
 
-		if (!buf.valid())
-		{
-			LOG_DEBUG(CSTRING("[%s] - Buffer is nullptr!"), SERVERNAME(this));
-			return;
-		}
+		if (!buf.valid()) return;
 
 		/* SSL */
 		if (peer->ssl)
@@ -1398,10 +1394,12 @@ void Server::DecodeFrame(NET_PEER peer)
 	/* DECODE FRAME */
 	const unsigned char FIN = peer->network.getData()[0] & NET_WS_FIN;
 	const unsigned char OPC = peer->network.getData()[0] & NET_WS_OPCODE;
+
+	// graceful disconnect
 	if (OPC == NET_OPCODE_CLOSE)
 	{
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		ErasePeer(peer);
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		return;
 	}
 	if (OPC == NET_OPCODE_PING)
@@ -1477,8 +1475,8 @@ void Server::DecodeFrame(NET_PEER peer)
 	}
 	else
 	{
-		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been closed due to unmasked message"), SERVERNAME(this), peer->IPAddr().get());
 		ErasePeer(peer);
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been closed due to unmasked message"), SERVERNAME(this), peer->IPAddr().get());
 		return;
 	}
 
@@ -1580,14 +1578,12 @@ bool Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
 	if (id < 0)
 	{
-		LOG_PEER(CSTRING("Member 'ID' is smaller than zero and gets blocked"));
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 		return false;
 	}
 
 	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
 	{
-		LOG_PEER(CSTRING("Missing member 'CONTENT' in the package"));
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 		return false;
 	}
@@ -1615,8 +1611,8 @@ void Server::onSSLTimeout(NET_PEER peer)
 		return;
 	);
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 	ErasePeer(peer);
+	LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 }
 
 size_t Server::getCountPeers() const

@@ -64,6 +64,11 @@ namespace Net
 			NET_ERR_UndefinedFrame,
 			NET_ERR_InvalidFrameHeader,
 			NET_ERR_InvalidFrameFooter,
+			NET_ERR_DecryptAES,
+			NET_ERR_DataInvalid,
+			NET_ERR_NoMemberID,
+			NET_ERR_MemberIDInvalid,
+			NET_ERR_NoMemberContent,
 
 			LAST_NET_ERROR_CODE
 		};

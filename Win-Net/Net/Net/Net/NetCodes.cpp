@@ -21,6 +21,7 @@ NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_Handshake, "Failed to perform TLS Hands
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_UndefinedFrame, "Frame is undefined and can not be processed");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameHeader, "Frame header is not valid");
 NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_InvalidFrameFooter, "Frame footer is not valid");
+NET_DEFINE_ERROR(NET_ERROR_CODE::NET_ERR_DecryptAES, "Failed to decrypt AES Frame");
 NET_ERROR_LIST_END
 
 void Net::Codes::NetUnloadErrorCodes()
