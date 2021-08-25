@@ -1,3 +1,4 @@
+/* Credits of this SHA1 class goes to https://github.com/983/SHA1 */
 #include "SHA1.h"
 
 NET_NAMESPACE_BEGIN(Net)
