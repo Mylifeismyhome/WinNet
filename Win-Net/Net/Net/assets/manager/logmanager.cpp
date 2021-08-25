@@ -1,7 +1,5 @@
 #include "logmanager.h"
-
 #include <mutex>
-#include <Net/Import/Kernel32.h>
 
 // Color codes
 CONSTEXPR auto BLACK = 0;
@@ -55,24 +53,12 @@ struct [[nodiscard]] __net_logmanager_array_entry_W_t
 	bool save;
 };
 
-static std::recursive_mutex __net_logmanager_critical;
-static std::vector<__net_logmanager_array_entry_A_t> __net_logmanager_array_a_queue_main;
-static std::vector<__net_logmanager_array_entry_W_t> __net_logmanager_array_w_queue_main;
-
-static void __net_logmanager_push_queue_a(__net_logmanager_array_entry_A_t data)
-{
-	std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
-	__net_logmanager_array_a_queue_main.emplace_back(data);
-}
-
-static void __net_logmanager_push_queue_w(__net_logmanager_array_entry_W_t data)
-{
-	std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
-	__net_logmanager_array_w_queue_main.emplace_back(data);
-}
-
+/* lock the call - just output one message each lock */
+static std::mutex __net_logmanager_critical;
 static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry)
 {
+	std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
 	if (entry.msg.empty())
 		return;
 
@@ -156,6 +142,8 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 
 static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry)
 {
+	std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
 	if (entry.msg.empty())
 		return;
 
@@ -237,47 +225,6 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 	}
 }
 
-static void __net_logmanager_invoke_main()
-{
-	while (true)
-	{
-		std::lock_guard<std::recursive_mutex> guard(__net_logmanager_critical);
-		for (std::vector< __net_logmanager_array_entry_A_t>::iterator i = __net_logmanager_array_a_queue_main.begin(); i != __net_logmanager_array_a_queue_main.end();)
-		{
-			__net_logmanager_output_log_a(*i);
-			i = __net_logmanager_array_a_queue_main.erase(i);
-		}
-
-		// qeue wide-strings after ascii-strings displayed
-		for (std::vector< __net_logmanager_array_entry_W_t>::iterator i = __net_logmanager_array_w_queue_main.begin(); i != __net_logmanager_array_w_queue_main.end();)
-		{
-			__net_logmanager_output_log_w(*i);
-			i = __net_logmanager_array_w_queue_main.erase(i);
-		}
-
-#ifdef BUILD_LINUX
-		usleep(1);
-#else
-		if (Net::Kernel32::IsInitialized())
-			Net::Kernel32::Sleep(1);
-		else
-			Sleep(1);
-#endif
-	}
-}
-
-class __net_logmanager_main_invoke_wrapper
-{
-public:
-	__net_logmanager_main_invoke_wrapper()
-	{
-		std::thread(__net_logmanager_invoke_main).detach();
-	}
-};
-
-// auto start thread on program start
-static auto __net_logmanager_main_invoke_thread_wrapper = __net_logmanager_main_invoke_wrapper();
-
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Console)
 static bool DisablePrintF = false;
@@ -351,7 +298,7 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 	data.func = std::string(func);
 	data.msg = std::string(str.data());
 	data.save = false;
-	__net_logmanager_push_queue_a(data);
+	std::thread(__net_logmanager_output_log_a, data).detach();
 }
 
 void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
@@ -384,7 +331,7 @@ void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
 	data.func = std::wstring(func);
 	data.msg = std::wstring(str.data());
 	data.save = false;
-	__net_logmanager_push_queue_w(data);
+	std::thread(__net_logmanager_output_log_w, data).detach();
 
 	FREE(func);
 }
@@ -494,7 +441,7 @@ void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 	data.func = std::string(func);
 	data.msg = std::string(str.data());
 	data.save = true;
-	__net_logmanager_push_queue_a(data);
+	std::thread(__net_logmanager_output_log_a, data).detach();
 }
 
 void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
@@ -527,7 +474,7 @@ void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, 
 	data.func = std::wstring(func);
 	data.msg = std::wstring(str.data());
 	data.save = true;
-	__net_logmanager_push_queue_w(data);
+	std::thread(__net_logmanager_output_log_w, data).detach();
 
 	FREE(func);
 }

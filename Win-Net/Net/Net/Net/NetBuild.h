@@ -1,5 +1,4 @@
 #pragma once
-
 #include "NetBuildConfig.h"
 
 // disable windows compitable code

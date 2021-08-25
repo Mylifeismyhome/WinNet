@@ -641,7 +641,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			else {
 				bPreviousSentFailed = true;
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -649,7 +649,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			else {
 				bPreviousSentFailed = true;
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -692,7 +692,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -701,7 +701,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -746,7 +746,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -755,7 +755,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
-				LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -1111,9 +1111,9 @@ DWORD Client::DoReceive()
 			Disconnect();
 
 #ifdef BUILD_LINUX
-			LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+			if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 #else
-			LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+			if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 			return FREQUENZ;

@@ -43,7 +43,10 @@ void Net::unload()
 
 int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)
 {
+	if (s == INVALID_SOCKET) return -1;
+
 #ifndef NET_DISABLE_IMPORT_WS2_32
+	if(!Ws2_32::IsInitialized()) return setsockopt(s, level, optname, optval, optlen);
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
 #else
 	return setsockopt(s, level, optname, optval, optlen);
@@ -52,13 +55,11 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 
 int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
 {
-	const auto result = Net::SocketOpt(socket,
+	return Net::SocketOpt(socket,
 		opt.level,
 		opt.opt,
 		opt.type,
 		opt.len);
-
-	return result;
 }
 
 std::string Net::sock_err::getString(const int err, const bool is_ssl)
@@ -149,7 +150,7 @@ std::string Net::sock_err::getString(const int err, const bool is_ssl)
 #endif
 	}
 
-	return std::string(CSTRING("UNKNOWN"));
+	return std::string(Net::String(CSTRING("The socket triggert an unknown error {code: %i, ssl_error: %s}"), err, is_ssl ? CSTRING("true") : CSTRING("false")).data().data());
 }
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
