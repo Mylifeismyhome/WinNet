@@ -92,6 +92,7 @@ typedef uint64_t uint64;
 #define INVALID_SOCKET -1
 #define SOCKET_OPT_TYPE void*
 #define SOCKET_OPT_LEN socklen_t
+#define ERRNO_ERROR_TRIGGERED errno != -1 && errno != 0
 #else
 typedef __int64 int64;
 typedef unsigned int uint;

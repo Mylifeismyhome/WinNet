@@ -641,7 +641,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			else {
 				bPreviousSentFailed = true;
 				Disconnect();
-				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -692,7 +692,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
-				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -746,7 +746,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
-				if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -1111,7 +1111,7 @@ DWORD Client::DoReceive()
 			Disconnect();
 
 #ifdef BUILD_LINUX
-			if(errno != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+			if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 #else
 			if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
