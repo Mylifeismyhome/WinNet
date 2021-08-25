@@ -4,42 +4,32 @@
 NET_DSA_BEGIN
 
 #define NET_SHA1 Net::Coding::SHA1
+#define NET_SHA1_HEX_SIZE (40 + 1)
+#define NET_SHA1_BASE64_SIZE (28 + 1)
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Coding)
 NET_CLASS_BEGIN(SHA1)
-void ProcessMessageBlock();
+uint32_t state[5];
+uint8_t buf[64];
+uint32_t i;
+uint64_t n_bits;
 
-void PadMessage();
+void add_byte_dont_count_bits(uint8_t);
+void process_block(const uint8_t*);
 
-inline unsigned CircularShift(int, unsigned);
-
-unsigned H[5];                      // Message digest buffers
-
-unsigned Length_Low;                // Message length in bits
-unsigned Length_High;               // Message length in bits
-
-unsigned char Message_Block[64];    // 512-bit message blocks
-int Message_Block_Index;            // Index into message block array
-
-bool Computed;                      // Is the digest computed?
-bool Corrupted;                     // Is the message digest corruped?
 NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(SHA1)
-NET_CLASS_VDESTRUCTUR(SHA1)
+SHA1(const char* = NULL);
 
-void Reset();
+SHA1& add(uint8_t);
+SHA1& add(char);
 
-bool Result(unsigned*);
+SHA1& add(const void*, uint32_t);
+SHA1& add(const char*);
+SHA1& finalize();
 
-void Input(const unsigned char*, unsigned);
-void Input(const char*, unsigned);
-void Input(unsigned char);
-void Input(char);
-SHA1& operator<<(const char*);
-SHA1& operator<<(const unsigned char*);
-SHA1& operator<<(const char);
-SHA1& operator<<(const unsigned char);
+const SHA1& to_hex(char*, bool = true, const char* = "0123456789abcdef");
+const SHA1& to_base64(char*, bool = true);
 NET_CLASS_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

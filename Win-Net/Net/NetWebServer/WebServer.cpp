@@ -651,7 +651,7 @@ short Server::Handshake(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
@@ -717,28 +717,13 @@ short Server::Handshake(NET_PEER peer)
 				entries[key] = val;
 			}
 		}
-
-		NET_SHA1 sha;
-		unsigned int message_digest[5];
-
 		const auto stringSecWebSocketKey = CSTRING("Sec-WebSocket-Key");
 
-		sha.Reset();
-		sha << entries[stringSecWebSocketKey].data();
-		sha << CSTRING("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+		unsigned int sha1 = 0;
 
-		sha.Result(message_digest);
-		// convert sha1 hash bytes to network byte order because this sha1
-		//  library works on ints rather than bytes
-		for (auto& entry : message_digest)
-			entry = Ws2_32::htonl(entry);
-
-		// Encode Base64
-		size_t outlen = 20;
-		byte* enc_Sec_Key = ALLOC<BYTE>(20 + 1);
-		memcpy(enc_Sec_Key, message_digest, 20);
-		enc_Sec_Key[20] = '\0';
-		NET_BASE64::encode(enc_Sec_Key, outlen);
+		// Compute SHA1
+		char enc_Sec_Key[NET_SHA1_BASE64_SIZE];
+		NET_SHA1(entries[stringSecWebSocketKey].data()).add(CSTRING("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")).finalize().to_base64(enc_Sec_Key);
 
 		char host[15];
 		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
@@ -802,7 +787,7 @@ short Server::Handshake(NET_PEER peer)
 					ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-					if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+					if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 					if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
@@ -833,7 +818,6 @@ short Server::Handshake(NET_PEER peer)
 		}
 
 		origin.free();
-		FREE(enc_Sec_Key);
 		return WebServerHandshake::HandshakeRet_t::success;
 	}
 
@@ -1213,7 +1197,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
 				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
@@ -1260,6 +1244,8 @@ void Server::DecodeFrame(NET_PEER peer)
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	LOG("FULL: %s", peer->network.getData());
 
 	// 6 bytes have to be set (2 bytes to read the mask and 4 bytes represent the mask key)
 	if (peer->network.getDataSize() < 6)
