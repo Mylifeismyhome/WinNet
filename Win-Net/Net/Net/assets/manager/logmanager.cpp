@@ -86,9 +86,6 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 
 	printf(buffer);
 
-	if (OnLogA)
-		(*OnLogA)((int)entry.state, buffer);
-
 	FREE(buffer);
 
 	if (!Net::Console::GetPrintFState())
@@ -138,6 +135,20 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			FREE(buffer);
 		}
 	}
+	else
+	{
+		// create entire output for the callback
+		if (OnLogA)
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			auto buffer = ALLOC<char>(bsize + 1);
+			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+			(*OnLogA)((int)entry.state, buffer);
+			FREE(buffer);
+		}
+	}
 }
 
 static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry)
@@ -170,9 +181,6 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 		SetConsoleOutputColor(Net::Console::GetColorFromState(entry.state));
 
 	wprintf(buffer);
-
-	if (OnLogW)
-		(*OnLogW)((int)entry.state, buffer);
 
 	FREE(buffer);
 
@@ -220,6 +228,20 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
 			file.write(buffer);
 
+			FREE(buffer);
+		}
+	}
+	else
+	{
+		// create entire output for the callback
+		if (OnLogW)
+		{
+			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
+			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			auto buffer = ALLOC<wchar_t>(bsize + 1);
+			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			buffer[bsize] = '\0';
+			(*OnLogW)((int)entry.state, buffer);
 			FREE(buffer);
 		}
 	}

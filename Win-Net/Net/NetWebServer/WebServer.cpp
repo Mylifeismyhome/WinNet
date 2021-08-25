@@ -1245,8 +1245,6 @@ void Server::DecodeFrame(NET_PEER peer)
 		return;
 	);
 
-	LOG("FULL: %s", peer->network.getData());
-
 	// 6 bytes have to be set (2 bytes to read the mask and 4 bytes represent the mask key)
 	if (peer->network.getDataSize() < 6)
 	{
