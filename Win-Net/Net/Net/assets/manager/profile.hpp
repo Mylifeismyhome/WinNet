@@ -40,15 +40,14 @@ class Profile
 public:
 	Package* Add(T peer)
 	{
-		critical.lock();
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		info.emplace_back(NET_PROFILE_DATA<T>(peer));
-		critical.unlock();
 		return this->peer(peer);
 	}
 
 	void Remove(T peer)
 	{
-		critical.lock();
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		for (auto it = info.begin(); it != info.end(); ++it)
 		{
 			NET_PROFILE_DATA<T> entry = (NET_PROFILE_DATA<T>) * it;
@@ -59,27 +58,22 @@ public:
 				break;
 			}
 		}
-		critical.unlock();
 	}
 
 	void* peerExt(T peer)
 	{
-		critical.lock();
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		for (NET_PROFILE_DATA<T>& it : info)
 		{
 			if (it.peer == peer)
-			{
-				critical.unlock();
 				return it.ext;
-			}
 		}
-		critical.unlock();
 		return nullptr;
 	}
 
 	void setPeerExt(T peer, void* ext)
 	{
-		critical.lock();
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		for (NET_PROFILE_DATA<T>& it : info)
 		{
 			if (it.peer == peer)
@@ -88,31 +82,28 @@ public:
 				break;
 			}
 		}
-		critical.unlock();
 	}
 
 	Package* peer(T peer)
 	{
-		critical.lock();
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		for (NET_PROFILE_DATA<T>& it : info)
 		{
 			if (it.peer == peer)
-			{
-				critical.unlock();
 				return it.data;
-			}
 		}
-		critical.unlock();
 		return nullptr;
 	}
 
 	std::vector<NET_PROFILE_DATA<T>>& All()
 	{
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		return info;
 	}
 
 	size_t count() const
 	{
+		std::lock_guard<std::recursive_mutex> guard(critical);
 		return info.size();
 	}
 };
