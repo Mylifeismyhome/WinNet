@@ -97,7 +97,6 @@ public:
 
 	std::vector<NET_PROFILE_DATA<T>>& All()
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
 		return info;
 	}
 
