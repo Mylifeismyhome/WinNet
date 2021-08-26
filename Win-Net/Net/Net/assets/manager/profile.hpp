@@ -103,7 +103,6 @@ public:
 
 	size_t count() const
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
 		return info.size();
 	}
 };
