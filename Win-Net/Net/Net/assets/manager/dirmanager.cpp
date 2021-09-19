@@ -94,14 +94,16 @@ NET_FILE_ATTRA::NET_FILE_ATTRA(_WIN32_FIND_DATAA w32Data, char* path)
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
 // Return true if the folder exists, false otherwise
-bool Directory::folderExists(const wchar_t* folderName)
+bool Directory::folderExists(const wchar_t* folderName, bool ignoreHomeDir)
 {
 #ifdef BUILD_LINUX
 	char* folderNameA = nullptr;
-        wcstombs(folderNameA, folderName, wcslen(folderName));
+    wcstombs(folderNameA, folderName, wcslen(folderName));
 
-	auto actualPath = homeDirA();
-	actualPath += folderNameA;
+	std::string actualPath = std::string(folderNameA);
+	if(!ignoreHomeDir)
+		actualPath = std::string(homeDirA() + folderNameA);
+
 	FREE(folderNameA);
 
  	struct stat sb;
@@ -124,11 +126,12 @@ bool Directory::folderExists(const wchar_t* folderName)
 	return true;
 }
 
-bool Directory::folderExists(const char* folderName)
+bool Directory::folderExists(const char* folderName, bool ignoreHomeDir)
 {
 #ifdef BUILD_LINUX
- 	auto actualPath = homeDirA();
-        actualPath += folderName;
+	std::string actualPath = std::string(folderNameA);
+	if (!ignoreHomeDir)
+		actualPath = std::string(homeDirA() + folderNameA);
 
 	struct stat sb;
         if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
@@ -423,7 +426,7 @@ static int NET_LINUX_IS_DIRECTORY(const char* path)
 #ifdef BUILD_LINUX
 bool Directory::deleteDir(wchar_t* dirname)
 #else
-bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
+bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories, bool ignoreHomeDir)
 #endif
 {
 #ifdef BUILD_LINUX
@@ -449,15 +452,21 @@ bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 
         for(auto it = vPath.rbegin(); it != vPath.rend(); it++)
         {
-                std::string path(homeDirA() + (*it));
-                rmdir(path.c_str());
+			std::string str((*it));
+			if (!ignoreHomeDir)
+				str = std::string(homeDirA() + (*it));
+
+			rmdir(str.c_str());
         }
 #else
 	std::wstring     strFilePath;                 // Filepath
 	std::wstring     strPattern;                  // Pattern
 	WIN32_FIND_DATAW FileInformation;             // File information
 
-	const std::wstring str(homeDirW() + dirname);
+	std::wstring str(dirname);
+	if (!ignoreHomeDir)
+		str = std::wstring(homeDirW() + dirname);
+
 	strPattern = str + CWSTRING("\\*.*");
 	const auto hFile = ::FindFirstFileW(strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
@@ -522,7 +531,7 @@ bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories)
 #ifdef BUILD_LINUX
 bool Directory::deleteDir(char* dirname)
 #else
-bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
+bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories, bool ignoreHomeDir)
 #endif
 {
 #ifdef BUILD_LINUX
@@ -547,15 +556,21 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 
         for(auto it = vPath.rbegin(); it != vPath.rend(); it++)
         {
-                std::string path(homeDirA() + (*it));
-                rmdir(path.c_str());
+			std::string str((*it));
+			if (!ignoreHomeDir)
+				str = std::string(homeDirA() + (*it));
+
+			rmdir(str.c_str());
         }
 #else
 	std::string     strFilePath;                 // Filepath
 	std::string     strPattern;                  // Pattern
 	WIN32_FIND_DATA FileInformation;             // File information
 
-	const std::string str(homeDirA() + dirname);
+	std::string str(dirname);
+	if (!ignoreHomeDir)
+		str = std::string(homeDirA() + dirname);
+
 	strPattern = str + CSTRING("\\*.*");
 	const auto hFile = ::FindFirstFileA(strPattern.c_str(), &FileInformation);
 	if (hFile != INVALID_HANDLE_VALUE)
@@ -617,10 +632,16 @@ bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories)
 	return true;
 }
 
-void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
+void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector, bool ignoreHomeDir)
 {
-	std::string actualDirname(homeDirA() + std::string(Dirname[0], wcslen(Dirname)));
-	std::wstring WactualDirname(homeDirW() + Dirname);
+	std::string actualDirname(std::string(Dirname[0], wcslen(Dirname)));
+	std::wstring WactualDirname(Dirname);
+
+	if (!ignoreHomeDir)
+	{
+		actualDirname = std::string(homeDirA() + std::string(Dirname[0], wcslen(Dirname)));
+		WactualDirname = std::wstring(homeDirW() + Dirname);
+	}
 	
 #ifdef BUILD_LINUX
 	const auto dir = opendir(actualDirname.c_str());
@@ -644,7 +665,7 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 
        			FREE(w_d_name);
 
-                        scandir((wchar_t*)nextDir.c_str(), Vector);
+                        scandir((wchar_t*)nextDir.c_str(), Vector, ignoreHomeDir);
                         continue;
                 }
 
@@ -679,7 +700,7 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 
 		// recurse to directory
 		if (isDir)
-			scandir(buf, Vector);
+			scandir(buf, Vector, ignoreHomeDir);
 		else
 			Vector.emplace_back(NET_FILE_ATTRW(ffblk, (wchar_t*)WactualDirname.c_str()));
 
@@ -687,13 +708,17 @@ void Directory::scandir(wchar_t* Dirname, std::vector<NET_FILE_ATTRW>& Vector)
 
 	FindClose(hFind);
 
-	memset(buf, NULL, MAX_PATH);
+	memset(buf, NULL, NET_MAX_PATH);
 #endif
 }
 
-void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
+void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector, bool ignoreHomeDir)
 {
-	const auto actualDirname(homeDirA() + Dirname);
+	std::string actualDirname(Dirname);
+
+	if (!ignoreHomeDir)
+		actualDirname = std::string(homeDirA() + Dirname);
+
 #ifdef BUILD_LINUX
 	const auto dir = opendir(actualDirname.c_str());
         if(!dir) return;
@@ -708,7 +733,7 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
                         std::string nextDir(Dirname);
                         nextDir += CSTRING("/");
                         nextDir += entry->d_name;
-                        scandir((char*)nextDir.c_str(), Vector);
+                        scandir((char*)nextDir.c_str(), Vector, ignoreHomeDir);
                         continue;
                 }
 
@@ -717,14 +742,14 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
         closedir(dir);
 #else
 	WIN32_FIND_DATA ffblk;
-	char buf[MAX_PATH];
+	char buf[NET_MAX_PATH];
 
 	if (actualDirname.empty())
 		sprintf_s(buf, CSTRING("%s"), CSTRING("*.*"));
 	else
 		sprintf_s(buf, CSTRING("%s\\%s"), actualDirname.c_str(), CSTRING("*.*"));
 
-	const auto hFind = FindFirstFile((LPCSTR)buf, &ffblk);
+	const auto hFind = FindFirstFileA((LPCSTR)buf, &ffblk);
 	if (hFind == INVALID_HANDLE_VALUE) {
 		return;
 	}
@@ -743,7 +768,7 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 
 		// recurse to directory
 		if (isDir)
-			scandir(buf, Vector);
+			scandir(buf, Vector, ignoreHomeDir);
 		else
 			Vector.emplace_back(NET_FILE_ATTRA(ffblk, (char*)actualDirname.c_str()));
 
@@ -751,7 +776,7 @@ void Directory::scandir(char* Dirname, std::vector<NET_FILE_ATTRA>& Vector)
 
 	FindClose(hFind);
 
-	memset(buf, NULL, MAX_PATH);
+	memset(buf, NULL, NET_MAX_PATH);
 #endif
 }
 

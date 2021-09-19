@@ -155,8 +155,8 @@ struct createDirResA
 	}
 };
 
-bool folderExists(const wchar_t*);
-bool folderExists(const char*);
+bool folderExists(const wchar_t*, bool = false);
+bool folderExists(const char*, bool = false);
 
 #ifdef BUILD_LINUX
 createDirResW createDir(wchar_t*, __mode_t = NET_DEFAULT_MKDIR_MODE);
@@ -167,15 +167,15 @@ createDirResA createDir(char*);
 #endif
 
 #ifdef BUILD_LINUX
-bool deleteDir(wchar_t*);
-bool deleteDir(char*);
+bool deleteDir(wchar_t*, bool = false);
+bool deleteDir(char*, bool = false);
 #else
-bool deleteDir(wchar_t*, bool = true);
-bool deleteDir(char*, bool = true);
+bool deleteDir(wchar_t*, bool = true, bool = false);
+bool deleteDir(char*, bool = true, bool = false);
 #endif
 
-void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&);
-void scandir(char*, std::vector<NET_FILE_ATTRA>&);
+void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&, bool = false);
+void scandir(char*, std::vector<NET_FILE_ATTRA>&, bool = false);
 std::wstring homeDirW();
 std::string homeDirA();
 std::wstring currentFileNameW();
