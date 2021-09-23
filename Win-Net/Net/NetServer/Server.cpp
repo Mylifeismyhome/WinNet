@@ -1654,17 +1654,18 @@ void Server::ExecutePackage(NET_PEER peer)
 				}
 
 				// read the data
-				data = ALLOC<BYTE>(packageSize + 1);
-				memcpy(data.get(), &peer->network.getData()[offset], packageSize);
-				data.get()[packageSize] = '\0';
+				size_t dataSize = packageSize;
+				data = ALLOC<BYTE>(dataSize + 1);
+				memcpy(data.get(), &peer->network.getData()[offset], dataSize);
+				data.get()[dataSize] = '\0';
 
 				offset += packageSize;
 
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					DecompressData(data.reference().get(), packageSize);
+					DecompressData(data.reference().get(), dataSize);
 
 				/* decrypt aes */
-				if (!aes.decrypt(data.get(), packageSize))
+				if (!aes.decrypt(data.get(), dataSize))
 				{
 					data.free();
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
