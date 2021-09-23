@@ -1827,19 +1827,13 @@ bool Client::CreateTOTPSecret()
 
 void Client::DecompressData(BYTE*& data, size_t& size)
 {
-	/* Compression */
+	/* Decompression */
 	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 	{
-		auto copy = ALLOC<BYTE>(size + 1);
-		memcpy(copy, data, size);
-		copy[size] = '\0';
-
 #ifdef DEBUG
 		const auto PrevSize = size;
 #endif
-		NET_ZLIB::Decompress(copy, size);
-
-		data = copy; // swap pointer;
+		NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
 		LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
