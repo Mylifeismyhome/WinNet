@@ -1,6 +1,7 @@
 #include "logmanager.h"
 #include <mutex>
 
+#ifndef NET_DISABLE_LOGMANAGER
 // Color codes
 CONSTEXPR auto BLACK = 0;
 CONSTEXPR auto BLUE = 1;
@@ -503,3 +504,4 @@ void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, 
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END
+#endif

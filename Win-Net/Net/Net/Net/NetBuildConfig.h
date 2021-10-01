@@ -11,3 +11,6 @@
 
 /* define to track memory */
 #undef NET_TEST_MEMORY_LEAKS
+
+/* define to disable logging */
+#undef NET_DISABLE_LOGMANAGER
