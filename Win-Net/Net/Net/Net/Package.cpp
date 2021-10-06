@@ -9,8 +9,7 @@ Package::Package()
 Package::~Package()
 {
 	/* free all raw data */
-	for (auto& entry : rawData)
-		entry.free();
+	for (auto& entry : rawData) entry.free();
 }
 
 bool Package::Parse(const char* data)

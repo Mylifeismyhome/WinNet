@@ -1004,11 +1004,11 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				SingleSend(NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
-				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
+				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
+				SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
@@ -1100,11 +1100,11 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				SingleSend(NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
-				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
+				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
+				SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);

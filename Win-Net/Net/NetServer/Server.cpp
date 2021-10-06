@@ -1005,11 +1005,11 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
-				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
+				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
@@ -1101,11 +1101,11 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
-				const auto KeyLengthStr = std::to_string(data.keylength() + 1);
+				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(peer, data.key(), data.keylength() + 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);

@@ -39,8 +39,7 @@ NET_NAMESPACE_END
 NET_DSA_BEGIN
 
 NET_CLASS_BEGIN(Package_RawData_t)
-char* _key;
-size_t _keyLength;
+char _key[256];
 byte* _data;
 size_t _size;
 bool _free_after_sent; /* by default this value is set to TRUE */
@@ -48,19 +47,15 @@ bool _valid;
 
 NET_CLASS_PUBLIC
 NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t)
-this->_key = nullptr;
-this->_keyLength = NULL;
+memset(this->_key, NULL, 256);
 this->_data = nullptr;
 this->_size = NULL;
-this->_free_after_sent = true;
+this->_free_after_sent = false;
 this->_valid = false;
 NET_CLASS_END_CONTRUCTION
 
 NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t, const char* name, byte* pointer, const size_t size)
-this->_keyLength = strlen(name);
-this->_key = ALLOC<char>(this->_keyLength + 1);
-memcpy(this->_key, name, this->_keyLength);
-this->_key[this->_keyLength] = '\0';
+strcpy(this->_key, name);
 this->_data = pointer;
 this->_size = size;
 this->_free_after_sent = true;
@@ -68,10 +63,7 @@ this->_valid = true;
 NET_CLASS_END_CONTRUCTION
 
 NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t, const char* name, byte* pointer, const size_t size, const bool free_after_sent)
-this->_keyLength = strlen(name);
-this->_key = ALLOC<char>(this->_keyLength + 1);
-memcpy(this->_key, name, this->_keyLength);
-this->_key[this->_keyLength] = '\0';
+strcpy(this->_key, name);
 this->_data = pointer;
 this->_size = size;
 this->_free_after_sent = free_after_sent;
@@ -125,21 +117,15 @@ void set(byte* pointer)
 	_data = pointer;
 }
 
-size_t keylength() const
-{
-	return _keyLength;
-}
-
 void free()
 {
-	FREE(this->_key);
-	this->_key = nullptr;
-	this->_keyLength = NULL;
-
 	// only free the passed reference if we allow it
 	if(do_free()) FREE(this->_data);
 
 	this->_data = nullptr;
+	this->_size = NULL;
+
+	this->_valid = false;
 }
 NET_CLASS_END
 
@@ -365,7 +351,7 @@ size_t GetRawDataFullSize() const
 	{
 		size += strlen(NET_RAW_DATA_KEY);
 		size += 1;
-		const auto KeyLengthStr = std::to_string(entry.keylength() + 1);
+		const auto KeyLengthStr = std::to_string(strlen(entry.key()) + 1);
 		size += KeyLengthStr.size();
 		size += 1;
 		size += strlen(NET_RAW_DATA);
@@ -373,7 +359,7 @@ size_t GetRawDataFullSize() const
 		const auto rawDataLengthStr = std::to_string(entry.size());
 		size += rawDataLengthStr.size();
 		size += 1;
-		size += entry.keylength() + 1;
+		size += strlen(entry.key()) + 1;
 		size += entry.size();
 	}
 
