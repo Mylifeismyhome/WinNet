@@ -240,6 +240,7 @@ NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return fal
 void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+void SingleSend(Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE

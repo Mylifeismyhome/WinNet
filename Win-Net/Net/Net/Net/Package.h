@@ -43,6 +43,7 @@ char* _key;
 size_t _keyLength;
 byte* _data;
 size_t _size;
+bool _free_after_sent; /* by default this value is set to TRUE */
 bool _valid;
 
 NET_CLASS_PUBLIC
@@ -51,6 +52,7 @@ this->_key = nullptr;
 this->_keyLength = NULL;
 this->_data = nullptr;
 this->_size = NULL;
+this->_free_after_sent = true;
 this->_valid = false;
 NET_CLASS_END_CONTRUCTION
 
@@ -61,6 +63,18 @@ memcpy(this->_key, name, this->_keyLength);
 this->_key[this->_keyLength] = '\0';
 this->_data = pointer;
 this->_size = size;
+this->_free_after_sent = true;
+this->_valid = true;
+NET_CLASS_END_CONTRUCTION
+
+NET_CLASS_BEGIN_CONSTRUCTUR(Package_RawData_t, const char* name, byte* pointer, const size_t size, const bool free_after_sent)
+this->_keyLength = strlen(name);
+this->_key = ALLOC<char>(this->_keyLength + 1);
+memcpy(this->_key, name, this->_keyLength);
+this->_key[this->_keyLength] = '\0';
+this->_data = pointer;
+this->_size = size;
+this->_free_after_sent = free_after_sent;
 this->_valid = true;
 NET_CLASS_END_CONTRUCTION
 
@@ -89,6 +103,16 @@ size_t& size()
 	return _size;
 }
 
+void skip_free()
+{
+	_free_after_sent = false;
+}
+
+bool do_free() const
+{
+	return _free_after_sent;
+}
+
 const char* key() const
 {
 	if (_key == nullptr) return CSTRING("");
@@ -97,7 +121,7 @@ const char* key() const
 
 void set(byte* pointer)
 {
-	FREE(_data);
+	if (do_free())  FREE(_data);
 	_data = pointer;
 }
 
@@ -108,9 +132,14 @@ size_t keylength() const
 
 void free()
 {
-	FREE(_key);
-	_keyLength = NULL;
-	FREE(_data);
+	FREE(this->_key);
+	this->_key = nullptr;
+	this->_keyLength = NULL;
+
+	// only free the passed reference if we allow it
+	if(do_free()) FREE(this->_data);
+
+	this->_data = nullptr;
 }
 NET_CLASS_END
 
@@ -206,16 +235,10 @@ NET_NAMESPACE_BEGIN(Net)
 NET_CLASS_BEGIN(Package)
 rapidjson::Document pkg;
 std::vector<Package_RawData_t> rawData;
-bool bDoNotDesturct;
 
 NET_CLASS_PUBLIC
 explicit NET_CLASS_CONSTRUCTUR(Package);
 NET_CLASS_DESTRUCTUR(Package);
-
-void DoNotDestruct()
-{
-	bDoNotDesturct = true;
-}
 
 template<typename Type>
 void Append(const char* Key, const Type Value)
@@ -237,19 +260,25 @@ void Append(const char* Key, const Type Value)
 		pkg.AddMember(key, value, pkg.GetAllocator());
 }
 
-void AppendRawData(const char* Key, BYTE* data, const size_t size)
+void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true)
 {
 	for (auto& entry : rawData)
 	{
 		if (!strcmp(entry.key(), Key))
 		{
-			LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
-			FREE(data);
+			if (free_after_sent)
+			{
+				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				FREE(data);
+				return;
+			}
+
+			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
 			return;
 		}
 	}
 
-	rawData.emplace_back(Package_RawData_t(Key, data, size));
+	rawData.emplace_back(Package_RawData_t(Key, data, size, free_after_sent));
 }
 
 template<typename Type>
@@ -336,7 +365,7 @@ size_t GetRawDataFullSize() const
 	{
 		size += strlen(NET_RAW_DATA_KEY);
 		size += 1;
-		const auto KeyLengthStr = std::to_string(strlen(entry.key()) + 1);
+		const auto KeyLengthStr = std::to_string(entry.keylength() + 1);
 		size += KeyLengthStr.size();
 		size += 1;
 		size += strlen(NET_RAW_DATA);
@@ -344,7 +373,7 @@ size_t GetRawDataFullSize() const
 		const auto rawDataLengthStr = std::to_string(entry.size());
 		size += rawDataLengthStr.size();
 		size += 1;
-		size += strlen(entry.key()) + 1;
+		size += entry.keylength() + 1;
 		size += entry.size();
 	}
 

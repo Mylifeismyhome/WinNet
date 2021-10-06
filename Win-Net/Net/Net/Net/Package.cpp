@@ -4,16 +4,13 @@ NET_NAMESPACE_BEGIN(Net)
 Package::Package()
 {
 	pkg.SetObject();
-	bDoNotDesturct = false;
 }
 
 Package::~Package()
 {
-	if(!bDoNotDesturct)
-	{
-		for (auto& entry : rawData)
-			entry.free();
-	}
+	/* free all raw data */
+	for (auto& entry : rawData)
+		entry.free();
 }
 
 bool Package::Parse(const char* data)

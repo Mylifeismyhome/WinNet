@@ -777,6 +777,62 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 	data.free();
 }
 
+void Server::SingleSend(NET_PEER peer, Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+{
+	if (!data.valid()) return;
+
+	PEER_NOT_VALID(peer,
+		data.free();
+	return;
+	);
+
+	if (bPreviousSentFailed)
+	{
+		data.free();
+		return;
+	}
+
+	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+	{
+		for (size_t it = 0; it < data.size(); ++it)
+			data.value()[it] = data.value()[it] ^ sendToken;
+	}
+
+	size_t size_send = data.size();
+	do
+	{
+		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.value()), static_cast<int>(size_send), MSG_NOSIGNAL);
+		if (res == SOCKET_ERROR)
+		{
+#ifdef BUILD_LINUX
+			if (errno == EWOULDBLOCK) continue;
+			else {
+				bPreviousSentFailed = true;
+				data.free();
+				ErasePeer(peer);
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				return;
+			}
+#else
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
+			else {
+				bPreviousSentFailed = true;
+				data.free();
+				ErasePeer(peer);
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				return;
+			}
+#endif
+		}
+		if (res < 0)
+			break;
+
+		size_send -= res;
+	} while (size_send > 0);
+
+	data.free();
+}
+
 /*
 *							Visualisation of package structure in NET
 *	---------------------------------------------------------------------------------------------------------------------------------
@@ -874,7 +930,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 		if (PKG.HasRawData())
 		{
-			const auto rawData = PKG.GetRawData();
+			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -886,8 +942,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		{
 			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 			{
-				const auto rawData = PKG.GetRawData();
-				for (auto data : rawData)
+				std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+				for (auto& data : rawData)
 					CompressData(data.value(), data.size());
 			}
 
@@ -942,8 +998,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Data */
 		if (PKG.HasRawData())
 		{
-			const auto rawData = PKG.GetRawData();
-			for (auto data : rawData)
+			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+			for (auto& data : rawData)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
@@ -963,8 +1019,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed, sendToken);
-				PKG.DoNotDestruct();
+				SingleSend(peer, data, bPreviousSentFailed, sendToken);
+				
+				data.skip_free();
 			}
 		}
 
@@ -1001,8 +1058,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		{
 			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 			{
-				const auto rawData = PKG.GetRawData();
-				for (auto data : rawData)
+				std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+				for (auto& data : rawData)
 					CompressData(data.value(), data.size());
 			}
 
@@ -1037,8 +1094,8 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Data */
 		if (PKG.HasRawData())
 		{
-			const auto rawData = PKG.GetRawData();
-			for (auto data : rawData)
+			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+			for (auto& data : rawData)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
@@ -1058,8 +1115,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(peer, data.value(), data.size(), bPreviousSentFailed, sendToken);
-				PKG.DoNotDestruct();
+				SingleSend(peer, data, bPreviousSentFailed, sendToken);
+			
+				data.skip_free();
 			}
 		}
 
@@ -1621,6 +1679,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						return;
 					}
 
+					entry.skip_free();
 					rawData.emplace_back(entry);
 					key.free();
 
@@ -1747,6 +1806,7 @@ void Server::ExecutePackage(NET_PEER peer)
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 						DecompressData(entry.value(), entry.size());
 
+					entry.skip_free();
 					rawData.emplace_back(entry);
 					key.free();
 
@@ -1828,14 +1888,12 @@ void Server::ExecutePackage(NET_PEER peer)
 	}
 
 	Package Content;
-	Content.DoNotDestruct();
 
 	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	// set raw data
-	if (!rawData.empty())
-		Content.SetRawData(rawData);
+	if (!rawData.empty()) Content.SetRawData(rawData);
 
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))
