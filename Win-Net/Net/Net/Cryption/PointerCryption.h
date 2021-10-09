@@ -1,6 +1,5 @@
 #pragma once
-#undef DISABLE_POINTERCRYPTION
-#define CPOINTER PointerCryption
+#define CPOINTER Net::Cryption::Pointer
 
 #include <Net/Net/Net.h>
 #include <random>
@@ -16,51 +15,22 @@ static int __NET_POINTER_CRYPTION_RNDSEED(int min, int max)
 
 #define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED(0, INT_MAX))
 
+NET_NAMESPACE_BEGIN(Net)
+NET_NAMESPACE_BEGIN(Cryption)
 template <typename T>
-class PointerCryptionUniquePointer
+class Cryption
 {
-	T** _pointer;
+protected:
 	uintptr_t _key;
-
-	T* encode(T* pointer) const
-	{
-		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
-		return pointer;
-	}
 
 public:
-	explicit PointerCryptionUniquePointer(T** pointer, const uintptr_t key)
-	{
-		_key = key;
-		_pointer = pointer;
-	}
-
-	~PointerCryptionUniquePointer()
-	{
-		if (*_pointer)
-			*_pointer = encode(*_pointer);
-	}
-
-	T*& get()
-	{
-		return *_pointer;
-	}
-};
-
-template <typename T>
-class PointerCryption
-{
-	T* _pointer;
-	uintptr_t _key;
-	bool _valid;
-
-	T* encode(T* pointer) NOEXPECT
+	T* encode(T* pointer)
 	{
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 		return pointer;
 	}
 
-	T* encode(const T*& pointer) NOEXPECT
+	T* encode(const T*& pointer)
 	{
 		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
 		return pointer;
@@ -72,86 +42,105 @@ class PointerCryption
 		return pointer;
 	}
 
+	T*& decodeRef(T*& pointer)
+	{
+		pointer = (T*)((uintptr_t)pointer ^ (uintptr_t)_key);
+		return pointer;
+	}
+};
+
+template <typename T>
+class UniquePointer : public Cryption<T>
+{
+	T** _pointer;
+
 public:
-	PointerCryption()
+	explicit UniquePointer(T** pointer, const uintptr_t key)
 	{
-		_key = RAND_NUMBER;
+		this->_key = key;
+		_pointer = pointer;
+	}
+
+	~UniquePointer()
+	{
+		if (*_pointer) *_pointer = this->encode(*_pointer);
+	}
+
+	T*& get()
+	{
+		return this->decodeRef(*_pointer);
+	}
+};
+
+template <typename T>
+class Pointer : public Cryption<T>
+{
+	T* _pointer;
+
+public:
+	Pointer()
+	{
+		this->_key = 0;
 		_pointer = nullptr;
-		_valid = false;
-	}
-	
-	explicit PointerCryption(const T*& pointer)
-	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
 	}
 
-	explicit PointerCryption(T*&& pointer) NOEXPECT
+	explicit Pointer(const T*& pointer)
 	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
 	}
 
-	PointerCryption& operator=(T* pointer)
+	explicit Pointer(T*&& pointer)
 	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
+	}
+
+	Pointer& operator=(T* pointer)
+	{
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
 		return *this;
 	}
 
-	PointerCryption& operator=(const T*& pointer)
+	Pointer& operator=(const T*& pointer)
 	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
 		return *this;
 	}
 
 	void Set(T* pointer)
 	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
 	}
 
 	void Set(const T*& pointer)
 	{
-		_key = RAND_NUMBER;
-		_pointer = pointer == nullptr ? nullptr : encode(pointer);
-		_valid = (pointer != nullptr);
+		this->_key = pointer == nullptr ? 0 : RAND_NUMBER;
+		_pointer = pointer == nullptr ? nullptr : this->encode(pointer);
 	}
 
-	bool valid() const
-	{
-		return _valid;
-	}
+	T value() const { return *this->decode(_pointer); }
+	T value() { return *this->decode(_pointer); }
+	T* get() const { return this->decode(_pointer); }
+	T* get() { return this->decode(_pointer); }
+	UniquePointer<T> ref() { return UniquePointer<T>(&_pointer, this->_key); }
+	UniquePointer<T> reference() { return ref(); }
 
-	T* get() const
-	{
-		if (!_pointer)
-			return nullptr;
-		
-		return decode(_pointer);
-	}
-
-	PointerCryptionUniquePointer<T> reference()
-	{
-		_pointer = decode(_pointer);
-		return PointerCryptionUniquePointer<T>(&_pointer, _key);
-	}
+	bool valid() const { return (_pointer != nullptr); }
+	bool valid() { return (_pointer != nullptr); }
 
 	void free()
 	{
-		if (!valid())
-			return;
-
-		_pointer = decode(_pointer);
+		if (_pointer == nullptr) return;
+		_pointer = this->decode(_pointer);
 		FREE(_pointer);
-
-		_valid = false;
+		_pointer = nullptr;
+		this->_key = 0;
 	}
 };
+NET_NAMESPACE_END
+NET_NAMESPACE_END
 NET_DSA_END
