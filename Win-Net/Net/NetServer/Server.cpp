@@ -669,7 +669,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 				bPreviousSentFailed = true;
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) FREE(heap);
 				ErasePeer(peer);
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -678,7 +678,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 				bPreviousSentFailed = true;
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) FREE(heap);
 				ErasePeer(peer);
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -726,7 +726,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 				bPreviousSentFailed = true;
 				FREE(data);
 				ErasePeer(peer);
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -735,7 +735,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 				bPreviousSentFailed = true;
 				FREE(data);
 				ErasePeer(peer);
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -783,7 +783,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -792,7 +792,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -1034,7 +1034,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
-				
+
 				data.skip_free();
 			}
 		}
@@ -1096,7 +1096,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
-			
+
 				data.skip_free();
 			}
 		}
@@ -1239,9 +1239,9 @@ DWORD Server::DoReceive(NET_PEER peer)
 			ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-			if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+			if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-			if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+			if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 			return FREQUENZ(this);
@@ -1358,14 +1358,14 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 
 				use_old_token = false;
 			}
-	}
+		}
 		else
 		{
 			// sift back using old token
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 		}
-}
+	}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid

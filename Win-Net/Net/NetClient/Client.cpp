@@ -659,7 +659,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 				bPreviousSentFailed = true;
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) FREE(heap);
 				Disconnect();
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -668,7 +668,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 				bPreviousSentFailed = true;
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) FREE(heap);
 				Disconnect();
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -717,7 +717,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -726,7 +726,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -775,7 +775,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
-				if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -784,7 +784,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -1092,7 +1092,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(data, bPreviousSentFailed, sendToken);
-			
+
 				data.skip_free();
 			}
 		}
@@ -1143,9 +1143,9 @@ DWORD Client::DoReceive()
 			Disconnect();
 
 #ifdef BUILD_LINUX
-			if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
+			if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 #else
-			if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+			if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 			return FREQUENZ;
@@ -1265,14 +1265,14 @@ bool Client::ValidHeader(bool& use_old_token)
 
 				use_old_token = false;
 			}
-	}
+		}
 		else
 		{
 			// sift back using old token
 			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
 				network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
 		}
-}
+	}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid
