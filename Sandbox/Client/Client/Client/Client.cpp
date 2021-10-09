@@ -11,7 +11,6 @@ NET_TIMER(Test)
 	if (!client) NET_STOP_TIMER;
 
 	Net::Package pkg;
-	//pkg.AppendRawData("test", data, size);
 	client->DoSend(Packages::PKG_TEST, pkg);
 
 	NET_CONTINUE_TIMER;
@@ -38,6 +37,9 @@ void Client::OnVersionMismatch() {}
 NET_BEGIN_FNC_PKG(Client, Test)
 auto data = pkg.RawData("test");
 if (!data.valid()) return;
+
+NET_FILEMANAGER fmanager("test.out", NET_FILE_READWRITE);
+fmanager.write(data.value(), data.size());
 
 LOG("Received Package from Server");
 NET_END_FNC_PKG

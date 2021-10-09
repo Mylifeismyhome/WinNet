@@ -1530,19 +1530,19 @@ void Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
-					/* Decompression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					{
-						DecompressData(entry.value(), entry.size(), true);
-						entry.set_free(true);
-					}
-
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						Disconnect();
 						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 						return;
+					}
+
+					/* Decompression */
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					{
+						DecompressData(entry.value(), entry.size(), true);
+						entry.set_free(true);
 					}
 
 					Content.AppendRawData(entry);
