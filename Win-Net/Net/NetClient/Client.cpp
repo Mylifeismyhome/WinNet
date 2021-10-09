@@ -1781,7 +1781,7 @@ void Client::ExecutePackage()
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
 
 	// set raw data
-	if (!rawData.empty())  Content.SetRawData(rawData);
+	if (!rawData.empty()) Content.SetRawData(rawData);
 
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))
