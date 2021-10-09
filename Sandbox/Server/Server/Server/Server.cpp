@@ -12,11 +12,19 @@ void Server::OnPeerUpdate(NET_PEER peer) {}
 
 NET_BEGIN_FNC_PKG(Server, Test)
 LOG("Received Package from Client");
-const auto data = pkg.RawData("test");
-if (!data.valid()) return;
+//const auto data = pkg.RawData("test");
+//if (!data.valid()) return;
 
-NET_FILEMANAGER fmanager("s.exe", NET_FILE_READWRITE);
-fmanager.write(data.value(), data.size());
+//NET_FILEMANAGER fmanager("s.exe", NET_FILE_READWRITE);
+//fmanager.write(data.value(), data.size());
 
-DoSend(PEER, Packages::PKG_TEST, pkg);
+NET_FILEMANAGER fmanager("test.exe", NET_FILE_READ);
+
+byte* data = nullptr;
+size_t size = 0;
+if (!fmanager.read(data, size)) return;
+
+Package kk;
+kk.AppendRawData("test", data, size);
+DoSend(PEER, Packages::PKG_TEST, kk);
 NET_END_FNC_PKG

@@ -10,17 +10,9 @@ NET_TIMER(Test)
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
 
-	NET_FILEMANAGER fmanager("test.exe", NET_FILE_READ);
-
-	byte* data = nullptr;
-	size_t size = 0;
-	if (!fmanager.read(data, size)) NET_STOP_TIMER;
-
 	Net::Package pkg;
-	pkg.AppendRawData("test", data, size, false);
+	//pkg.AppendRawData("test", data, size);
 	client->DoSend(Packages::PKG_TEST, pkg);
-
-	FREE(data);
 
 	NET_CONTINUE_TIMER;
 }
@@ -44,5 +36,11 @@ void Client::OnTimeout() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_FNC_PKG(Client, Test)
+const auto data = pkg.RawData("test");
+if (!data.valid()) return;
+
+NET_FILEMANAGER fmanager("s.exe", NET_FILE_READWRITE);
+fmanager.write(data.value(), data.size());
+
 LOG("Received Package from Server");
 NET_END_FNC_PKG
