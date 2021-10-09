@@ -877,11 +877,11 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
 
-	auto dataBufferSize = buffer.GetSize();
+	auto dataBufferSize = buffer.GetLength();
 	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
 	memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
-	buffer.Flush();
 	dataBuffer.get()[dataBufferSize] = '\0';
+	buffer.Flush();
 
 	size_t combinedSize = NULL;
 
@@ -1038,7 +1038,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
 			/* Compress Data */
-			//CompressData(dataBuffer.reference().get(), dataBufferSize, true);
+			//CompressData(dataBuffer.reference().get(), dataBufferSize);
 
 			/* Compress Raw Data */
 			if (PKG.HasRawData())
