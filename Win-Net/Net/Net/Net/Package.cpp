@@ -384,7 +384,7 @@ Package_t_Array Package::Array(const char* Key)
 	return { true, Key, pkg.FindMember(Key)->value.GetArray() };
 }
 
-Package_RawData_t Package::RawData(const char* Key)
+Package_RawData_t& Package::RawData(const char* Key)
 {
 	for(auto& entry : rawData)
 	{

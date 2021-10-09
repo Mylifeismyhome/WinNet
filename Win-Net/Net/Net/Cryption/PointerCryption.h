@@ -52,6 +52,7 @@ class PointerCryption
 {
 	T* _pointer;
 	uintptr_t _key;
+	bool _valid;
 
 	T* encode(T* pointer) NOEXPECT
 	{
@@ -76,24 +77,28 @@ public:
 	{
 		_key = RAND_NUMBER;
 		_pointer = nullptr;
+		_valid = false;
 	}
 	
 	explicit PointerCryption(const T*& pointer)
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 	}
 
 	explicit PointerCryption(T*&& pointer) NOEXPECT
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 	}
 
 	PointerCryption& operator=(T* pointer)
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 		return *this;
 	}
 
@@ -101,6 +106,7 @@ public:
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 		return *this;
 	}
 
@@ -108,17 +114,19 @@ public:
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 	}
 
 	void Set(const T*& pointer)
 	{
 		_key = RAND_NUMBER;
 		_pointer = pointer == nullptr ? nullptr : encode(pointer);
+		_valid = (pointer != nullptr);
 	}
 
 	bool valid() const
 	{
-		return _pointer == nullptr ? false : get() != nullptr;
+		return _valid;
 	}
 
 	T* get() const
@@ -142,6 +150,8 @@ public:
 
 		_pointer = decode(_pointer);
 		FREE(_pointer);
+
+		_valid = false;
 	}
 };
 NET_DSA_END

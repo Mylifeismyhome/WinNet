@@ -36,11 +36,8 @@ void Client::OnTimeout() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_FNC_PKG(Client, Test)
-const auto data = pkg.RawData("test");
+auto data = pkg.RawData("test");
 if (!data.valid()) return;
-
-NET_FILEMANAGER fmanager("s.exe", NET_FILE_READWRITE);
-fmanager.write(data.value(), data.size());
 
 LOG("Received Package from Server");
 NET_END_FNC_PKG
