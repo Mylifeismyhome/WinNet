@@ -1873,7 +1873,7 @@ void Server::CompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Compress(data, size);
+	NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
@@ -1884,7 +1884,7 @@ void Server::DecompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Decompress(data, size);
+	NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
