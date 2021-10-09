@@ -178,8 +178,10 @@ IPRef IPAddr() const;
 NET_STRUCT_END
 
 NET_CLASS_PRIVATE
-void CompressData(BYTE*&, size_t&);
-void DecompressData(BYTE*&, size_t&);
+void CompressData(BYTE*&, size_t&, bool = false);
+void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
+void DecompressData(BYTE*&, size_t&, bool = false);
+void DecompressData(BYTE*&, BYTE*&, size_t&, bool = false);
 bool CreateTOTPSecret(NET_PEER);
 
 NET_CLASS_PUBLIC

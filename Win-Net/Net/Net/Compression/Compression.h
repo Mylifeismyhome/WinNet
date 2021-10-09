@@ -31,8 +31,10 @@ enum class CompressionLevel
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
 NET_NAMESPACE_BEGIN(ZLib)
-int Compress(BYTE*&, size_t&, CompressionLevel = CompressionLevel::BEST_COMPRESSION);
-int Decompress(BYTE*&, size_t&);
+int Compress(BYTE*&, size_t&, CompressionLevel = CompressionLevel::BEST_COMPRESSION, bool = false);
+int Compress(BYTE*&, BYTE*&, size_t&, CompressionLevel = CompressionLevel::BEST_COMPRESSION, bool = false);
+int Decompress(BYTE*&, size_t&, bool = false);
+int Decompress(BYTE*&, BYTE*&, size_t&, bool = false);
 NET_NAMESPACE_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

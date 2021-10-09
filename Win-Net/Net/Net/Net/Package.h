@@ -95,9 +95,10 @@ size_t& size()
 	return _size;
 }
 
-void skip_free()
+void set_free(bool free)
 {
-	_free_after_sent = false;
+	_free_after_sent = free;
+
 }
 
 bool do_free() const
@@ -119,6 +120,8 @@ void set(byte* pointer)
 
 void free()
 {
+	if (!this->_valid) return;
+
 	// only free the passed reference if we allow it
 	if(do_free()) FREE(this->_data);
 

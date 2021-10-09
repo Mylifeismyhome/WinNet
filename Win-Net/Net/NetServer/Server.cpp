@@ -886,7 +886,10 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		if (PKG.HasRawData())
 		{
 			for (auto& entry : PKG.GetRawData())
-				CompressData(entry.value(), entry.size());
+			{
+				CompressData(entry.value(), entry.size(), !entry.do_free());
+				entry.set_free(true);
+			}
 		}
 	}
 
@@ -990,8 +993,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Data */
 		if (PKG.HasRawData())
 		{
-			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
-			for (auto& data : rawData)
+			for (auto& data : PKG.GetRawData())
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
@@ -1013,7 +1015,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
 
-				data.skip_free();
+				data.set_free(false);
 			}
 		}
 
@@ -1052,8 +1054,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		/* Append Package Data */
 		if (PKG.HasRawData())
 		{
-			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
-			for (auto& data : rawData)
+			for (auto& data : PKG.GetRawData())
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
@@ -1075,7 +1076,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
 
-				data.skip_free();
+				data.set_free(false);
 			}
 		}
 
@@ -1621,19 +1622,13 @@ void Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
-					if (!Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) entry.skip_free();
+					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					{
-						size_t dataSize = entry.size();
-						auto data = ALLOC<BYTE>(dataSize + 1);
-						memcpy(data, entry.value(), dataSize);
-						data[dataSize] = '\0';
-						DecompressData(data, dataSize);
-						entry.value() = data;
-						entry.size() = dataSize;
+						DecompressData(entry.value(), entry.size(), true);
+						entry.set_free(true);
 					}
 
 					/* decrypt aes */
@@ -1761,19 +1756,13 @@ void Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize };
-					if (!Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION) entry.skip_free();
+					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					{
-						size_t dataSize = entry.size();
-						auto data = ALLOC<BYTE>(dataSize + 1);
-						memcpy(data, entry.value(), dataSize);
-						data[dataSize] = '\0';
-						DecompressData(data, dataSize);
-						entry.value() = data;
-						entry.size() = dataSize;
+						DecompressData(entry.value(), entry.size(), true);
+						entry.set_free(true);
 					}
 
 					rawData.emplace_back(entry);
@@ -1868,23 +1857,45 @@ void Server::ExecutePackage(NET_PEER peer)
 	data.free();
 }
 
-void Server::CompressData(BYTE*& data, size_t& size)
+void Server::CompressData(BYTE*& data, size_t& size, const bool skip_free)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Compress(data, size);
+	NET_ZLIB::Compress(data, size, CompressionLevel::BEST_COMPRESSION, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
-void Server::DecompressData(BYTE*& data, size_t& size)
+void Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Decompress(data, size);
+	NET_ZLIB::Compress(data, out, size, CompressionLevel::BEST_COMPRESSION, skip_free);
+#ifdef DEBUG
+	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+#endif
+}
+
+void Server::DecompressData(BYTE*& data, size_t& size, const bool skip_free)
+{
+#ifdef DEBUG
+	const auto PrevSize = size;
+#endif
+	NET_ZLIB::Decompress(data, size, skip_free);
+#ifdef DEBUG
+	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+#endif
+}
+
+void Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
+{
+#ifdef DEBUG
+	const auto PrevSize = size;
+#endif
+	NET_ZLIB::Decompress(data, out, size, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
