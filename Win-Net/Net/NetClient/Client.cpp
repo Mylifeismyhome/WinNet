@@ -1166,6 +1166,7 @@ DWORD Client::DoReceive()
 			memcpy(newBuffer, network.data.get(), network.data_size);
 			memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
 			newBuffer[network.data_size + data_size] = '\0';
+			network.data.free();
 			network.data = newBuffer; // pointer swap
 			network.data_size += data_size;
 		}
