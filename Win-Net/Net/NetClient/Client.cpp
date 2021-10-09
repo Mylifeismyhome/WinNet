@@ -1795,32 +1795,24 @@ void Client::ExecutePackage()
 
 void Client::CompressData(BYTE*& data, size_t& size)
 {
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
 #ifdef DEBUG
-		const auto PrevSize = size;
+	const auto PrevSize = size;
 #endif
-		NET_ZLIB::Compress(data, size);
+	NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
+	LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
-	}
 }
 
 void Client::DecompressData(BYTE*& data, size_t& size)
 {
-	/* Decompression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
 #ifdef DEBUG
-		const auto PrevSize = size;
+	const auto PrevSize = size;
 #endif
-		NET_ZLIB::Decompress(data, size);
+	NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
+	LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
-	}
 }
 
 bool Client::CreateTOTPSecret()

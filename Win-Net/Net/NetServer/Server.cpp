@@ -421,7 +421,7 @@ NET_THREAD(TickThread)
 	const auto server = (Server*)parameter;
 	if (!server) return NULL;
 
-	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
+	LOG_DEBUG(CSTRING("[%s] - Tick thread has been started"), SERVERNAME(server));
 	while (server->IsRunning())
 	{
 		server->Tick();
@@ -431,7 +431,7 @@ NET_THREAD(TickThread)
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
 	}
-	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
+	LOG_DEBUG(CSTRING("[%s] - Tick thread has been end"), SERVERNAME(server));
 	return NULL;
 }
 
@@ -440,7 +440,7 @@ NET_THREAD(AcceptorThread)
 	const auto server = (Server*)parameter;
 	if (!server) return NULL;
 
-	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
+	LOG_DEBUG(CSTRING("[%s] - Acceptor thread has been started"), SERVERNAME(server));
 	while (server->IsRunning())
 	{
 		server->Acceptor();
@@ -450,7 +450,7 @@ NET_THREAD(AcceptorThread)
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
 	}
-	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
+	LOG_DEBUG(CSTRING("[%s] - Acceptor thread has been end"), SERVERNAME(server));
 	return NULL;
 }
 
@@ -1882,32 +1882,24 @@ void Server::ExecutePackage(NET_PEER peer)
 
 void Server::CompressData(BYTE*& data, size_t& size)
 {
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
 #ifdef DEBUG
-		const auto PrevSize = size;
+	const auto PrevSize = size;
 #endif
-		NET_ZLIB::Compress(data, size);
+	NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("Compressed data from size %llu to %llu"), PrevSize, size);
+	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
-	}
 }
 
 void Server::DecompressData(BYTE*& data, size_t& size)
 {
-	/* Decompression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
 #ifdef DEBUG
-		const auto PrevSize = size;
+	const auto PrevSize = size;
 #endif
-		NET_ZLIB::Decompress(data, size);
+	NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
-		LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
+	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
-	}
 }
 
 NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Server)
