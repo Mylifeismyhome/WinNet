@@ -16,13 +16,14 @@ int main()
 	Net::load();
 
 	Client client;
-	client.SetSocketOption<bool>({ TCP_NODELAY, true });
 
 #ifdef _USE_CIPHER_
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
 
 	LOG_WARNING("USING CIPHER");
 #endif
+
+	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{
