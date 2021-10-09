@@ -35,7 +35,7 @@ const static unsigned char unb64[] = {
 // Converts binary data of length=len to base64 characters.
 // Length of the resultant string is stored in flen
 // (you must pass pointer flen).
-static unsigned char* Base64_Encode(const unsigned char* data, const size_t len, size_t* flen, const bool preventDelete = false)
+static BYTE* Base64_Encode(BYTE* data, const size_t len, size_t* flen, const bool preventDelete = false)
 {
 	size_t rc = 0;
 	size_t byteNo = 0;
@@ -45,44 +45,40 @@ static unsigned char* Base64_Encode(const unsigned char* data, const size_t len,
 
 	*flen = 4 * (len + pad) / 3;
 
-	const auto res = new unsigned char[*flen + 1];
-	for (byteNo = 0; byteNo <= len - 3; byteNo += 3)
+	const auto res = ALLOC<BYTE>(*flen + 1);
+	for (byteNo = 0; byteNo <= (len < 4 ? 1 : len - 3); byteNo += 3)
 	{
 		const auto BYTE0 = data[byteNo];
 		const auto BYTE1 = data[byteNo + 1];
 		const auto BYTE2 = data[byteNo + 2];
 		res[rc++] = NET_BASE64_PATTERN[BYTE0 >> 2];
 		res[rc++] = NET_BASE64_PATTERN[((0x3 & BYTE0) << 4) + (BYTE1 >> 4)];
-		res[rc++] = NET_BASE64_PATTERN[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
-		res[rc++] = NET_BASE64_PATTERN[0x3f & BYTE2];
+		if (len > 1) res[rc++] = NET_BASE64_PATTERN[((0x0f & BYTE1) << 2) + (BYTE2 >> 6)];
+		if (len > 2) res[rc++] = NET_BASE64_PATTERN[0x3f & BYTE2];
 	}
 
 	if (pad == 2)
 	{
-		res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
-		res[rc++] = NET_BASE64_PATTERN[(0x3 & data[byteNo]) << 4];
+		if (len > 1) res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
+		if (len > 2) res[rc++] = NET_BASE64_PATTERN[(0x3 & data[byteNo]) << 4];
 		res[rc++] = '=';
 		res[rc++] = '=';
 	}
 	else if (pad == 1)
 	{
-		res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
-		res[rc++] = NET_BASE64_PATTERN[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
-		res[rc++] = NET_BASE64_PATTERN[(0x0f & data[byteNo + 1]) << 2];
+		if (len > 2) res[rc++] = NET_BASE64_PATTERN[data[byteNo] >> 2];
+		if (len > 3) res[rc++] = NET_BASE64_PATTERN[((0x3 & data[byteNo]) << 4) + (data[byteNo + 1] >> 4)];
+		if (len > 3) res[rc++] = NET_BASE64_PATTERN[(0x0f & data[byteNo + 1]) << 2];
 		res[rc++] = '=';
 	}
 
-	if (!preventDelete)
-	{
-		delete[] data;
-		data = nullptr;
-	}
+	if (!preventDelete) FREE(data);
 
 	res[rc] = 0;
 	return res;
 }
 
-static unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len, size_t* flen, const bool preventDelete = false)
+static BYTE* Base64_Decode(BYTE* ascii, const size_t len, size_t* flen, const bool preventDelete = false)
 {
 	size_t cb = 0;
 	size_t charNo;
@@ -100,7 +96,7 @@ static unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len
 	if (ascii[len - 2] == '=')  ++pad;
 
 	*flen = 3 * len / 4 - pad;
-	const auto bin = new unsigned char[*flen + 1];
+	const auto bin = ALLOC<BYTE>(*flen + 1);
 	if (!bin)
 	{
 		LOG_ERROR(CSTRING("ERROR: unbase64 could not allocate enough memory."));
@@ -137,11 +133,7 @@ static unsigned char* Base64_Decode(const unsigned char* ascii, const size_t len
 		bin[cb++] = (A << 2) | (B >> 4);
 	}
 
-	if (!preventDelete)
-	{
-		delete[] ascii;
-		ascii = nullptr;
-	}
+	if (!preventDelete) FREE(ascii);
 
 	bin[cb] = 0;
 	return bin;
