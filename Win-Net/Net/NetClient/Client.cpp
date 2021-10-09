@@ -869,21 +869,13 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
 
-	size_t combinedSize = NULL;
+	auto dataBufferSize = buffer.GetSize();
+	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
+	memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
+	buffer.Flush();
+	dataBuffer.get()[dataBufferSize] = '\0';
 
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
-		/* Compress Raw Data */
-		if (PKG.HasRawData())
-		{
-			for (auto& entry : PKG.GetRawData())
-			{
-				CompressData(entry.value(), entry.size(), !entry.do_free());
-				entry.set_free(true);
-			}
-		}
-	}
+	size_t combinedSize = NULL;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -931,11 +923,6 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		}
 
 		/* Crypt Buffer using AES and Encode to Base64 */
-		auto dataBufferSize = buffer.GetSize();
-		CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-		memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
-		buffer.Flush();
-		dataBuffer.get()[dataBufferSize] = '\0';
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
 		if (PKG.HasRawData())
@@ -945,12 +932,29 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 				aes.encrypt(data.value(), data.size());
 		}
 
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			/* Compress Data */
+			//CompressData(dataBuffer.reference().get(), dataBufferSize, true);
+
+			/* Compress Raw Data */
+			if (PKG.HasRawData())
+			{
+				for (auto& entry : PKG.GetRawData())
+				{
+					CompressData(entry.value(), entry.size(), !entry.do_free());
+					entry.set_free(true);
+				}
+			}
+		}
+
 		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + NET_AES_KEY_LEN + strlen(NET_AES_IV) + aesKeySize + IVSize + 8;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
-		std::string dataSizeStr = std::to_string(buffer.GetSize());
+		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
 
 		const auto KeySizeStr = std::to_string(aesKeySize);
@@ -1026,12 +1030,29 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 	}
 	else
 	{
-		combinedSize = buffer.GetSize() + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			/* Compress Data */
+			//CompressData(dataBuffer.reference().get(), dataBufferSize);
+
+			/* Compress Raw Data */
+			if (PKG.HasRawData())
+			{
+				for (auto& entry : PKG.GetRawData())
+				{
+					CompressData(entry.value(), entry.size(), !entry.do_free());
+					entry.set_free(true);
+				}
+			}
+		}
+
+		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
-		std::string dataSizeStr = std::to_string(buffer.GetSize());
+		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
 
 		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
@@ -1080,7 +1101,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 		SingleSend(NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed, sendToken);
 		SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-		SingleSend(buffer.GetString(), buffer.GetSize(), bPreviousSentFailed, sendToken);
+		SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
 		SingleSend(NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
@@ -1530,19 +1551,19 @@ void Client::ExecutePackage()
 
 					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
+					/* Decompression */
+					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					{
+						DecompressData(entry.value(), entry.size(), true);
+						entry.set_free(true);
+					}
+
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
 						Disconnect();
 						LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 						return;
-					}
-
-					/* Decompression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					{
-						DecompressData(entry.value(), entry.size(), true);
-						entry.set_free(true);
 					}
 
 					Content.AppendRawData(entry);
@@ -1583,6 +1604,10 @@ void Client::ExecutePackage()
 				data.get()[packageSize] = '\0';
 
 				offset += packageSize;
+
+				/* Decompression */
+				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				//	DecompressData(data.reference().get(), packageSize, true);
 
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), packageSize))
@@ -1710,6 +1735,10 @@ void Client::ExecutePackage()
 				data.get()[packageSize] = '\0';
 
 				offset += packageSize;
+
+				/* Decompression */
+			//	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				//	DecompressData(data.reference().get(), packageSize, true);
 			}
 
 			// we have reached the end of reading

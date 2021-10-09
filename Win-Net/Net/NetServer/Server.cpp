@@ -877,21 +877,13 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	JsonBuffer.Accept(writer);
 
-	size_t combinedSize = NULL;
+	auto dataBufferSize = buffer.GetSize();
+	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
+	memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
+	buffer.Flush();
+	dataBuffer.get()[dataBufferSize] = '\0';
 
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-	{
-		/* Compress Raw Data */
-		if (PKG.HasRawData())
-		{
-			for (auto& entry : PKG.GetRawData())
-			{
-				CompressData(entry.value(), entry.size(), !entry.do_free());
-				entry.set_free(true);
-			}
-		}
-	}
+	size_t combinedSize = NULL;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
@@ -935,11 +927,6 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		/* Crypt Buffer using AES and Encode to Base64 */
-		auto dataBufferSize = buffer.GetSize();
-		CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-		memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
-		buffer.Flush();
-		dataBuffer.get()[dataBufferSize] = '\0';
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
 		if (PKG.HasRawData())
@@ -949,12 +936,29 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 				aes.encrypt(data.value(), data.size());
 		}
 
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			/* Compress Data */
+			//CompressData(dataBuffer.reference().get(), dataBufferSize, true);
+
+			/* Compress Raw Data */
+			if (PKG.HasRawData())
+			{
+				for (auto& entry : PKG.GetRawData())
+				{
+					CompressData(entry.value(), entry.size(), !entry.do_free());
+					entry.set_free(true);
+				}
+			}
+		}
+
 		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
-		std::string dataSizeStr = std::to_string(buffer.GetSize());
+		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
 
 		const auto KeySizeStr = std::to_string(aesKeySize);
@@ -1030,12 +1034,29 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	}
 	else
 	{
-		combinedSize = buffer.GetSize() + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			/* Compress Data */
+			//CompressData(dataBuffer.reference().get(), dataBufferSize, true);
+
+			/* Compress Raw Data */
+			if (PKG.HasRawData())
+			{
+				for (auto& entry : PKG.GetRawData())
+				{
+					CompressData(entry.value(), entry.size(), !entry.do_free());
+					entry.set_free(true);
+				}
+			}
+		}
+
+		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
-		std::string dataSizeStr = std::to_string(buffer.GetSize());
+		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
 
 		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
@@ -1084,7 +1105,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-		SingleSend(peer, buffer.GetString(), buffer.GetSize(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
 		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
@@ -1624,18 +1645,18 @@ void Server::ExecutePackage(NET_PEER peer)
 
 					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
-					/* decrypt aes */
-					if (!aes.decrypt(entry.value(), entry.size()))
-					{
-						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
-						return;
-					}
-
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					{
 						DecompressData(entry.value(), entry.size(), true);
 						entry.set_free(true);
+					}
+
+					/* decrypt aes */
+					if (!aes.decrypt(entry.value(), entry.size()))
+					{
+						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
+						return;
 					}
 
 					Content.AppendRawData(entry);
@@ -1677,6 +1698,10 @@ void Server::ExecutePackage(NET_PEER peer)
 				data.get()[dataSize] = '\0';
 
 				offset += packageSize;
+
+				/* Decompression */
+			//	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				//	DecompressData(data.reference().get(), packageSize, true);
 
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), dataSize))
@@ -1803,6 +1828,10 @@ void Server::ExecutePackage(NET_PEER peer)
 				data.get()[packageSize] = '\0';
 
 				offset += packageSize;
+
+				/* Decompression */
+				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					//DecompressData(data.reference().get(), packageSize);
 			}
 
 			// we have reached the end of reading
