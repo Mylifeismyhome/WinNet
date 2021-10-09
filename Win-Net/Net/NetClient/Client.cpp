@@ -1364,7 +1364,7 @@ void Client::ProcessPackages()
 void Client::ExecutePackage()
 {
 	CPOINTER<BYTE> data;
-	std::vector<Package_RawData_t> rawData;
+	Package Content;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -1544,7 +1544,7 @@ void Client::ExecutePackage()
 						return;
 					}
 
-					rawData.emplace_back(entry);
+					Content.AppendRawData(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1671,7 +1671,7 @@ void Client::ExecutePackage()
 						entry.set_free(true);
 					}
 
-					rawData.emplace_back(entry);
+					Content.AppendRawData(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1752,13 +1752,8 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	Package Content;
-
 	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
-
-	// set raw data
-	if (!rawData.empty()) Content.SetRawData(rawData);
 
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))

@@ -270,6 +270,27 @@ void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool fr
 	rawData.emplace_back(Package_RawData_t(Key, data, size, free_after_sent));
 }
 
+void AppendRawData(Package_RawData_t& data)
+{
+	for (auto& entry : rawData)
+	{
+		if (!strcmp(entry.key(), data.key()))
+		{
+			if (data.do_free())
+			{
+				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				data.free();
+				return;
+			}
+
+			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
+			return;
+		}
+	}
+
+	rawData.emplace_back(data);
+}
+
 template<typename Type>
 void Rewrite(const char* Key, const Type Value)
 {

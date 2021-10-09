@@ -1462,7 +1462,7 @@ void Server::ExecutePackage(NET_PEER peer)
 	);
 
 	CPOINTER<BYTE> data;
-	std::vector<Package_RawData_t> rawData;
+	Package Content;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
@@ -1638,7 +1638,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						return;
 					}
 
-					rawData.emplace_back(entry);
+					Content.AppendRawData(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1765,7 +1765,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						entry.set_free(true);
 					}
 
-					rawData.emplace_back(entry);
+					Content.AppendRawData(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1842,13 +1842,8 @@ void Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
-	Package Content;
-
 	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
-
-	// set raw data
-	if (!rawData.empty()) Content.SetRawData(rawData);
 
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))

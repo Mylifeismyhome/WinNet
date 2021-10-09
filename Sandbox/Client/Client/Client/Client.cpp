@@ -44,6 +44,5 @@ void Client::OnTimeout() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_FNC_PKG(Client, Test)
-pkg.RawData("test");
 LOG("Received Package from Server");
 NET_END_FNC_PKG
