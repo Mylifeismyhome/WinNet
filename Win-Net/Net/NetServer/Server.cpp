@@ -947,7 +947,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			{
 				for (auto& entry : PKG.GetRawData())
 				{
-					CompressData(entry.value(), entry.size(), !entry.do_free());
+					CompressData(entry.value(), entry.size());
 					entry.set_free(true);
 				}
 			}
@@ -1045,7 +1045,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			{
 				for (auto& entry : PKG.GetRawData())
 				{
-					CompressData(entry.value(), entry.size(), !entry.do_free());
+					CompressData(entry.value(), entry.size());
 					entry.set_free(true);
 				}
 			}
@@ -1648,7 +1648,7 @@ void Server::ExecutePackage(NET_PEER peer)
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					{
-						DecompressData(entry.value(), entry.size(), true);
+						DecompressData(entry.value(), entry.value(), entry.size(), true);
 						entry.set_free(true);
 					}
 
@@ -1786,7 +1786,7 @@ void Server::ExecutePackage(NET_PEER peer)
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 					{
-						DecompressData(entry.value(), entry.size(), true);
+						DecompressData(entry.value(), entry.value(), entry.size(), true);
 						entry.set_free(true);
 					}
 
@@ -1881,12 +1881,12 @@ void Server::ExecutePackage(NET_PEER peer)
 	data.free();
 }
 
-void Server::CompressData(BYTE*& data, size_t& size, const bool skip_free)
+void Server::CompressData(BYTE*& data, size_t& size)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Compress(data, size, CompressionLevel::BEST_COMPRESSION, skip_free);
+	NET_LZMA::Compress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
@@ -1897,18 +1897,18 @@ void Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Compress(data, out, size, CompressionLevel::BEST_COMPRESSION, skip_free);
+	NET_LZMA::Compress(data, out, size, LZMA_CompressionLevel::ELZMA_lzma, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
-void Server::DecompressData(BYTE*& data, size_t& size, const bool skip_free)
+void Server::DecompressData(BYTE*& data, size_t& size)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Decompress(data, size, skip_free);
+	NET_LZMA::Decompress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
@@ -1919,7 +1919,7 @@ void Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool sk
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Decompress(data, out, size, skip_free);
+	NET_LZMA::Decompress(data, out, size, LZMA_CompressionLevel::ELZMA_lzma, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[%s] - Decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif

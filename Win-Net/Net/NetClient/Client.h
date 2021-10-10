@@ -203,9 +203,9 @@ void Timeout();
 /* clear all stored data */
 void ConnectionClosed();
 
-void CompressData(BYTE*&, size_t&, bool = false);
+void CompressData(BYTE*&, size_t&);
 void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
-void DecompressData(BYTE*&, size_t&, bool = false);
+void DecompressData(BYTE*&, size_t&);
 void DecompressData(BYTE*&, BYTE*&, size_t&, bool = false);
 
 NET_CLASS_PUBLIC
