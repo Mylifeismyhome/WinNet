@@ -848,6 +848,7 @@
     <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaDec.c" />
     <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaEnc.c" />
     <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaLib.c" />
+    <ClCompile Include="..\..\..\extern\lzo\minilzo.c" />
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp" />
     <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
     <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
@@ -918,6 +919,9 @@
     <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaEnc.h" />
     <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaLib.h" />
     <ClInclude Include="..\..\..\extern\elzma\pavlov\Types.h" />
+    <ClInclude Include="..\..\..\extern\lzo\lzoconf.h" />
+    <ClInclude Include="..\..\..\extern\lzo\lzodefs.h" />
+    <ClInclude Include="..\..\..\extern\lzo\minilzo.h" />
     <ClInclude Include="..\Net\assets\assets.h" />
     <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
     <ClInclude Include="..\Net\assets\manager\filemanager.h" />

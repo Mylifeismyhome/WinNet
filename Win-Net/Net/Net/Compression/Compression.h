@@ -37,6 +37,10 @@ enum class LZMA_CompressionLevel
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
+NET_NAMESPACE_BEGIN(lzo)
+int Compress(BYTE*&, size_t&);
+int Decompress(BYTE*&, size_t&);
+NET_NAMESPACE_END
 NET_NAMESPACE_BEGIN(LZMA)
 int Compress(BYTE*&, size_t&, LZMA_CompressionLevel = LZMA_CompressionLevel::ELZMA_lzma);
 int Compress(BYTE*&, BYTE*&, size_t&, LZMA_CompressionLevel = LZMA_CompressionLevel::ELZMA_lzma, bool = false);

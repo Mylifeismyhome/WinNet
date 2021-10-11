@@ -3,6 +3,7 @@
 
 #include <elzma/easylzma/compress.h>
 #include <elzma/easylzma/decompress.h>
+#include <lzo/minilzo.h>
 
 struct dataStream
 {
@@ -47,8 +48,27 @@ static size_t outputCallback(void* ctx, const void* buf, size_t size)
 	return size;
 }
 
+#define HEAP_WORKER(var,size) \
+    lzo_align_t __LZO_MMODEL var [ ((size) + (sizeof(lzo_align_t) - 1)) / sizeof(lzo_align_t) ]
+
+static HEAP_WORKER(wrkmem, LZO1X_1_MEM_COMPRESS);
+
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Compression)
+int lzo::Compress(BYTE*& data, size_t& size)
+{
+	auto init = lzo_init();
+	if (init != LZO_E_OK) return init;
+	return lzo1x_1_compress(data, size, data, &size, wrkmem);
+}
+
+int lzo::Decompress(BYTE*& data, size_t& size)
+{
+	auto init = lzo_init();
+	if (init != LZO_E_OK) return init;
+	return lzo1x_decompress(data, size, data, &size, nullptr);
+}
+
 int LZMA::Compress(BYTE*& data, size_t& size, const LZMA_CompressionLevel format)
 {
 	/* allocate compression handle */
