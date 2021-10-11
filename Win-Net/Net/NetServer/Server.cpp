@@ -641,9 +641,16 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 			ptr[it] = ptr[it] ^ sendToken;
 	}
 
+	short count_call = 0;
+	size_t chunk_buffer_offset = 0;
+	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, data, static_cast<int>(size), MSG_NOSIGNAL);
+		memcpy(chunk_buffer, &data[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+		const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -668,7 +675,23 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 			break;
 
 		size -= res;
+		chunk_buffer_offset += res;
+
+		if ((count_call % 10) == 0)
+		{
+#ifdef BUILD_LINUX
+			usleep(1);
+#else
+			Kernel32::Sleep(1);
+#endif
+
+			count_call = 0;
+		}
+
+		++count_call;
 	} while (size > 0);
+
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 }
 
 void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
@@ -690,9 +713,16 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 			data[it] = data[it] ^ sendToken;
 	}
 
+	short count_call = 0;
+	size_t chunk_buffer_offset = 0;
+	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), static_cast<int>(size), MSG_NOSIGNAL);
+		memcpy(chunk_buffer, &data[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+		const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -719,8 +749,23 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 			break;
 
 		size -= res;
+		chunk_buffer_offset += res;
+
+		if ((count_call % 10) == 0)
+		{
+#ifdef BUILD_LINUX
+			usleep(1);
+#else
+			Kernel32::Sleep(1);
+#endif
+
+			count_call = 0;
+		}
+
+		++count_call;
 	} while (size > 0);
 
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	FREE(data);
 }
 
@@ -743,9 +788,16 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 			data.get()[it] = data.get()[it] ^ sendToken;
 	}
 
+	short count_call = 0;
+	size_t chunk_buffer_offset = 0;
+	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), static_cast<int>(size), MSG_NOSIGNAL);
+		memcpy(chunk_buffer, &data.get()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+		const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -772,8 +824,23 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 			break;
 
 		size -= res;
+		chunk_buffer_offset += res;
+
+		if ((count_call % 10) == 0)
+		{
+#ifdef BUILD_LINUX
+			usleep(1);
+#else
+			Kernel32::Sleep(1);
+#endif
+
+			count_call = 0;
+		}
+
+		++count_call;
 	} while (size > 0);
 
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	data.free();
 }
 
@@ -798,10 +865,17 @@ void Server::SingleSend(NET_PEER peer, Package_RawData_t& data, bool& bPreviousS
 			data.value()[it] = data.value()[it] ^ sendToken;
 	}
 
-	size_t size_send = data.size();
+	short count_call = 0;
+	size_t chunk_buffer_offset = 0;
+	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
+	size_t size = data.size();
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.value()), static_cast<int>(size_send), MSG_NOSIGNAL);
+		memcpy(chunk_buffer, &data.value()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+		const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
@@ -827,9 +901,24 @@ void Server::SingleSend(NET_PEER peer, Package_RawData_t& data, bool& bPreviousS
 		if (res < 0)
 			break;
 
-		size_send -= res;
-	} while (size_send > 0);
+		size -= res;
+		chunk_buffer_offset += res;
 
+		if ((count_call % 10) == 0)
+		{
+#ifdef BUILD_LINUX
+			usleep(1);
+#else
+			Kernel32::Sleep(1);
+#endif
+
+			count_call = 0;
+		}
+
+		++count_call;
+	} while (size > 0);
+
+	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	data.free();
 }
 

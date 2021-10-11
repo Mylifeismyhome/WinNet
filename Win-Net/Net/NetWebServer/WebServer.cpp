@@ -777,11 +777,18 @@ short Server::Handshake(NET_PEER peer)
 		}
 		else
 		{
+			short count_call = 0;
+			size_t chunk_buffer_offset = 0;
+			char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
 			auto size = static_cast<int>(strlen(buffer.get()));
 			auto res = 0;
 			do
 			{
-				res = Ws2_32::send(peer->pSocket, buffer.get(), size, MSG_NOSIGNAL);
+				memcpy(chunk_buffer, &buffer.get()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+				res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
 					ErasePeer(peer);
@@ -795,7 +802,23 @@ short Server::Handshake(NET_PEER peer)
 				}
 
 				size -= res;
+				chunk_buffer_offset += res;
+
+				if ((count_call % 10) == 0)
+				{
+#ifdef BUILD_LINUX
+					usleep(1);
+#else
+					Kernel32::Sleep(1);
+#endif
+
+					count_call = 0;
+				}
+
+				++count_call;
 			} while (size > 0);
+
+			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		}
 
 		buffer.free();
@@ -1106,10 +1129,17 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 		}
 		else
 		{
+			short count_call = 0;
+			size_t chunk_buffer_offset = 0;
+			char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+
 			auto sendSize = totalLength;
 			do
 			{
-				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<char*>(buf.get()), static_cast<int>(totalLength), MSG_NOSIGNAL);
+				memcpy(chunk_buffer, &buf.get()[chunk_buffer_offset], (totalLength < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(totalLength) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+
+				const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (totalLength < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(totalLength) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
@@ -1132,7 +1162,23 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 				}
 
 				sendSize -= res;
+				chunk_buffer_offset += res;
+
+				if ((count_call % 10) == 0)
+				{
+#ifdef BUILD_LINUX
+					usleep(1);
+#else
+					Kernel32::Sleep(1);
+#endif
+
+					count_call = 0;
+				}
+
+				++count_call;
 			} while (sendSize > 0);
+
+			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		}
 
 		buf.free();
