@@ -8,14 +8,12 @@ NET_DSA_BEGIN
 #ifndef VS13
 #define COMPILETIME_XOR(string) [] \
 { \
-	CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); \
-	return Net::Cryption::CXOR<(sizeof(string)/sizeof(char)), char, COMPILETIME_XORKEY>(string); \
-}().decrypt()
+	return Net::Cryption::CXOR<char, sizeof(string)/sizeof(char)>(string); \
+}().get()
 #define WCOMPILETIME_XOR(string) [] \
 { \
-	CONSTEXPR size_t COMPILETIME_XORKEY = 0 + Net::Cryption::COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1); \
-	return Net::Cryption::CXOR<(sizeof(string)/sizeof(wchar_t)), wchar_t, COMPILETIME_XORKEY>(string); \
-}().decrypt()
+	return Net::Cryption::CXOR<wchar_t, sizeof(string)/sizeof(wchar_t)>(string); \
+}().get()
 #define CASTRING(string) COMPILETIME_XOR(string)
 #define CWSTRING(string) WCOMPILETIME_XOR(L##string)
 #endif
@@ -76,26 +74,37 @@ CONSTEXPR size_t COMPILETIME_XOR_LCG(const unsigned rounds) {
 }
 #endif
 
-template <unsigned size, typename Char, const size_t Key>
-class CXOR {
-public:
-	const unsigned _numchars = (size - 1);
-	Char _string[size];
+template<typename T, const size_t len>
+class CXOR
+{
+	T _string[len];
+	size_t _key[len];
 
-	explicit CXOR(const Char* string) : _string{}
+public:
+	explicit CXOR(const T* string) : _string{}, _key{}
 	{
-		for (auto i = 0u; i < size; ++i)
-			_string[i] = string[i] ^ (static_cast<Char>(Key) + i);
+		memset(_string, NULL, len);
+		memset(_key, NULL, len);
+
+		for (size_t i = 0; i < len; i++)
+			_key[i] = COMPILETIME_XOR_LCG(10) % (0xFF - 0 + 1);
+
+		for (size_t i = 0; i < len; i++)
+			_string[i] = string[i] ^ _key[i];
 	}
 
-	CONSTEXPR Char* decrypt() const
+	~CXOR()
 	{
-		Char* string = const_cast<Char*>(_string);
-		for (unsigned t = 0; t < _numchars; t++) {
-			string[t] = string[t] ^ (static_cast<Char>(Key) + t);
-		}
-		string[_numchars] = '\0';
-		return string;
+		memset(_string, NULL, len);
+		memset(_key, NULL, len);
+	}
+
+	CONSTEXPR T* get()
+	{
+		for (size_t i = 0; i < len; i++)
+			_string[i] = _string[i] ^ _key[i];
+
+		return _string;
 	}
 };
 NET_NAMESPACE_END
