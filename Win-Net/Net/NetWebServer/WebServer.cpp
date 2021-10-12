@@ -651,9 +651,9 @@ short Server::Handshake(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 				return WebServerHandshake::HandshakeRet_t::error;
@@ -777,48 +777,41 @@ short Server::Handshake(NET_PEER peer)
 		}
 		else
 		{
-			short count_call = 0;
-			size_t chunk_buffer_offset = 0;
-			char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 			auto size = static_cast<int>(strlen(buffer.get()));
 			auto res = 0;
 			do
 			{
-				memcpy(chunk_buffer, &buffer.get()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-				res = Ws2_32::send(peer->pSocket, chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+				res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(buffer.get()), size, MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
-					ErasePeer(peer);
+#ifdef BUILD_LINUX
+					if (errno == EWOULDBLOCK)
+					{
+						usleep(FREQUENZ(this));
+						continue;
+					}
+#else
+					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+						Kernel32::Sleep(FREQUENZ(this));
+						continue;
+					}
+#endif
+					else
+					{
+						ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-					if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+						if (errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-					if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+						if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
-					return WebServerHandshake::HandshakeRet_t::error;
+						return WebServerHandshake::HandshakeRet_t::error;
+					}
 				}
 
 				size -= res;
-				chunk_buffer_offset += res;
-
-				if ((count_call % 10) == 0)
-				{
-#ifdef BUILD_LINUX
-					usleep(1);
-#else
-					Kernel32::Sleep(1);
-#endif
-
-					count_call = 0;
-				}
-
-				++count_call;
 			} while (size > 0);
-
-			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		}
 
 		buffer.free();
@@ -1115,7 +1108,7 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 				if (res <= 0)
 				{
 					const auto err = SSL_get_error(peer->ssl, res);
-					if(err != SSL_ERROR_WANT_WRITE) buf.free();
+					if (err != SSL_ERROR_WANT_WRITE) buf.free();
 					if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 					{
 						ErasePeer(peer);
@@ -1129,62 +1122,49 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 		}
 		else
 		{
-			short count_call = 0;
-			size_t chunk_buffer_offset = 0;
-			char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 			auto sendSize = totalLength;
 			do
 			{
-				memcpy(chunk_buffer, &buf.get()[chunk_buffer_offset], (totalLength < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(totalLength) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-				const auto res = Ws2_32::send(peer->pSocket, chunk_buffer, (totalLength < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(totalLength) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(buf.get()), sendSize, MSG_NOSIGNAL);
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK) continue;
-					else {
+					if (errno == EWOULDBLOCK)
+					{
+						usleep(FREQUENZ(this));
+						continue;
+					}
+					else
+					{
 						buf.free();
 						ErasePeer(peer);
-						if(ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+						if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 						return;
 					}
 #else
-					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
-					else {
+					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+						Kernel32::Sleep(FREQUENZ(this));
+						continue;
+					}
+					else
+					{
 						buf.free();
 						ErasePeer(peer);
-						if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+						if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
 					}
 #endif
 				}
 
 				sendSize -= res;
-				chunk_buffer_offset += res;
-
-				if ((count_call % 10) == 0)
-				{
-#ifdef BUILD_LINUX
-					usleep(1);
-#else
-					Kernel32::Sleep(1);
-#endif
-
-					count_call = 0;
+					} while (sendSize > 0);
 				}
 
-				++count_call;
-			} while (sendSize > 0);
-
-			memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-		}
-
 		buf.free();
-	}
+			}
 	///////////////////////
-}
+		}
 
 DWORD Server::DoReceive(NET_PEER peer)
 {
@@ -1243,9 +1223,9 @@ DWORD Server::DoReceive(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if(errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (errno != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-				if(Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 				return FREQUENZ(this);
@@ -1279,11 +1259,11 @@ DWORD Server::DoReceive(NET_PEER peer)
 		}
 
 		peer->network.reset();
-	}
+		}
 
 	DecodeFrame(peer);
 	return NULL;
-}
+	}
 
 void Server::DecodeFrame(NET_PEER peer)
 {
@@ -1379,7 +1359,7 @@ void Server::DecodeFrame(NET_PEER peer)
 		peer->network.getData()[PayloadLength] = '\0';
 		peer->network.setDataSize(PayloadLength);
 		Payload.free();
-	}
+}
 	else
 	{
 		ErasePeer(peer);

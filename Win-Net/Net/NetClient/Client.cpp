@@ -631,29 +631,32 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			ptr[it] = ptr[it] ^ sendToken;
 	}
 
-	short count_call = 0;
-	size_t chunk_buffer_offset = 0;
-	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 	do
 	{
-		memcpy(chunk_buffer, &data[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-		const auto res = Ws2_32::send(GetSocket(), chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK) continue;
-			else {
+			if (errno == EWOULDBLOCK)
+			{
+				usleep(FREQUENZ));
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				Disconnect();
 				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
-			else {
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+			{
+				Kernel32::Sleep(FREQUENZ);
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				Disconnect();
 				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
@@ -665,23 +668,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 			break;
 
 		size -= res;
-		chunk_buffer_offset += res;
-
-		if ((count_call % 10) == 0)
-		{
-#ifdef BUILD_LINUX
-			usleep(1);
-#else
-			Kernel32::Sleep(1);
-#endif
-
-			count_call = 0;
-	}
-
-		++count_call;
 	} while (size > 0);
-
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 }
 
 void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
@@ -704,21 +691,19 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 			data[it] = data[it] ^ sendToken;
 	}
 
-	short count_call = 0;
-	size_t chunk_buffer_offset = 0;
-	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 	do
 	{
-		memcpy(chunk_buffer, &data[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-		const auto res = Ws2_32::send(GetSocket(), chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK) continue;
-			else {
+			if (errno == EWOULDBLOCK)
+			{
+				usleep(FREQUENZ));
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
@@ -726,8 +711,13 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 				return;
 			}
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
-			else {
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+			{
+				Kernel32::Sleep(FREQUENZ);
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				FREE(data);
 				Disconnect();
@@ -740,23 +730,8 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 			break;
 
 		size -= res;
-		chunk_buffer_offset += res;
-
-		if ((count_call % 10) == 0)
-		{
-#ifdef BUILD_LINUX
-			usleep(1);
-#else
-			Kernel32::Sleep(1);
-#endif
-
-			count_call = 0;
-	}
-
-		++count_call;
 	} while (size > 0);
 
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	FREE(data);
 }
 
@@ -780,21 +755,19 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 			data.get()[it] = data.get()[it] ^ sendToken;
 	}
 
-	short count_call = 0;
-	size_t chunk_buffer_offset = 0;
-	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 	do
 	{
-		memcpy(chunk_buffer, &data.get()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-		const auto res = Ws2_32::send(GetSocket(), chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), size, MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK) continue;
-			else {
+			if (errno == EWOULDBLOCK)
+			{
+				usleep(FREQUENZ));
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
@@ -802,8 +775,13 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 				return;
 			}
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
-			else {
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+			{
+				Kernel32::Sleep(FREQUENZ);
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
@@ -816,23 +794,8 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 			break;
 
 		size -= res;
-		chunk_buffer_offset += res;
-
-		if ((count_call % 10) == 0)
-		{
-#ifdef BUILD_LINUX
-			usleep(1);
-#else
-			Kernel32::Sleep(1);
-#endif
-
-			count_call = 0;
-	}
-
-		++count_call;
 	} while (size > 0);
 
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	data.free();
 }
 
@@ -858,22 +821,20 @@ void Client::SingleSend(Package_RawData_t& data, bool& bPreviousSentFailed, cons
 			data.value()[it] = data.value()[it] ^ sendToken;
 	}
 
-	short count_call = 0;
-	size_t chunk_buffer_offset = 0;
-	char chunk_buffer[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-
 	size_t size = data.size();
 	do
 	{
-		memcpy(chunk_buffer, &data.value()[chunk_buffer_offset], (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE));
-
-		const auto res = Ws2_32::send(GetSocket(), chunk_buffer, (size < NET_OPT_DEFAULT_MAX_PACKET_SIZE ? static_cast<int>(size) : NET_OPT_DEFAULT_MAX_PACKET_SIZE), MSG_NOSIGNAL);
+		const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.value()), size, MSG_NOSIGNAL);
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK) continue;
-			else {
+			if (errno == EWOULDBLOCK)
+			{
+				usleep(FREQUENZ));
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
@@ -881,8 +842,13 @@ void Client::SingleSend(Package_RawData_t& data, bool& bPreviousSentFailed, cons
 				return;
 			}
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK) continue;
-			else {
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+			{
+				Kernel32::Sleep(FREQUENZ);
+				continue;
+			}
+			else
+			{
 				bPreviousSentFailed = true;
 				data.free();
 				Disconnect();
@@ -895,23 +861,8 @@ void Client::SingleSend(Package_RawData_t& data, bool& bPreviousSentFailed, cons
 			break;
 
 		size -= res;
-		chunk_buffer_offset += res;
-
-		if ((count_call % 10) == 0)
-		{
-			#ifdef BUILD_LINUX
-						usleep(1);
-			#else
-						Kernel32::Sleep(1);
-			#endif
-
-			count_call = 0;
-		}
-
-		++count_call;
 	} while (size > 0);
 
-	memset(chunk_buffer, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	data.free();
 }
 
