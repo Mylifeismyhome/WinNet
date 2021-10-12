@@ -249,7 +249,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -298,7 +298,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -347,7 +347,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -396,7 +396,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -446,7 +446,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -496,7 +496,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -545,7 +545,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MT|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -593,7 +593,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MT|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -641,7 +641,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MD|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -689,7 +689,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MD|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -737,7 +737,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_DLL|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -786,7 +786,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_DLL|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_SERVER</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>

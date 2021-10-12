@@ -1840,7 +1840,7 @@ void Client::CompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_LZMA::Compress(data, size);
+	NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
@@ -1851,7 +1851,7 @@ void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_LZMA::Compress(data, out, size, LZMA_CompressionLevel::ELZMA_lzma, skip_free);
+	NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
@@ -1862,7 +1862,7 @@ void Client::DecompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_LZMA::Decompress(data, size);
+	NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif
@@ -1873,7 +1873,7 @@ void Client::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool sk
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_LZMA::Decompress(data, out, size, LZMA_CompressionLevel::ELZMA_lzma, skip_free);
+	NET_ZLIB::Decompress(data, out, size, skip_free);
 #ifdef DEBUG
 	LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif

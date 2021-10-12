@@ -43,18 +43,6 @@
     <Filter Include="Protocol">
       <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Compression\elzma">
-      <UniqueIdentifier>{cd08dee2-650b-4062-be9d-1f8180093ebd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Compression\elzma\pavlov">
-      <UniqueIdentifier>{1d373538-9dc1-46ad-a2e4-5d2a22fd9206}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Compression\elzma\easylzma">
-      <UniqueIdentifier>{8e3889ec-0653-4d6b-a185-69139f6b5641}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Compression\lzo">
-      <UniqueIdentifier>{29e3be1b-4e0c-42ca-9de7-a52529f133f5}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\extern\ZLib\uncompr.c">
@@ -201,66 +189,6 @@
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
       <Filter>pugiXML</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\compress.c">
-      <Filter>Compression\elzma</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\decompress.c">
-      <Filter>Compression\elzma</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\lzip_header.c">
-      <Filter>Compression\elzma</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\lzma_header.c">
-      <Filter>Compression\elzma</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\common_internal.c">
-      <Filter>Compression\elzma</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zBuf2.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zCrc.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zFile.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zStream.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Alloc.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bcj2.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bra.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bra86.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\BraIA64.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzFind.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaDec.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaEnc.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaLib.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zBuf.c">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\lzo\minilzo.c">
-      <Filter>Compression\lzo</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -373,75 +301,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\Protocol\NTP.h">
       <Filter>Protocol</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\common_internal.h">
-      <Filter>Compression\elzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\lzip_header.h">
-      <Filter>Compression\elzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\lzma_header.h">
-      <Filter>Compression\elzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zCrc.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zFile.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zVersion.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Alloc.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Bcj2.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Bra.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\CpuArch.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzFind.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzHash.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaDec.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaEnc.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaLib.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Types.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zBuf.h">
-      <Filter>Compression\elzma\pavlov</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\compress.h">
-      <Filter>Compression\elzma\easylzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\decompress.h">
-      <Filter>Compression\elzma\easylzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\common.h">
-      <Filter>Compression\elzma\easylzma</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\lzo\lzodefs.h">
-      <Filter>Compression\lzo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\lzo\minilzo.h">
-      <Filter>Compression\lzo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\extern\lzo\lzoconf.h">
-      <Filter>Compression\lzo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

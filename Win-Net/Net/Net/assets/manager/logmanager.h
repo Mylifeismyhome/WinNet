@@ -200,8 +200,9 @@ enum class LogStates
 	success,
 	peer
 };
-
+#endif
 tm TM_GetTime();
+#ifndef NET_DISABLE_LOGMANAGER
 std::string GetLogStatePrefix(LogStates);
 void Log(LogStates, const char*, const char*, ...);
 void Log(LogStates, const char*, const wchar_t*, ...);

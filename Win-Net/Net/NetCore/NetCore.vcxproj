@@ -250,7 +250,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -298,7 +298,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -346,7 +346,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -396,7 +396,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -448,7 +448,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -497,7 +497,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -545,7 +545,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MT|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -568,6 +568,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -591,7 +593,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MT|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -614,6 +616,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -637,7 +641,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MD|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -660,6 +664,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -683,7 +689,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_LIB_MD|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -706,6 +712,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -732,7 +740,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_DLL|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -755,6 +763,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -779,7 +789,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE_DLL|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_CORE</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -802,6 +812,8 @@
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -829,26 +841,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\extern\elzma\common_internal.c" />
-    <ClCompile Include="..\..\..\extern\elzma\compress.c" />
-    <ClCompile Include="..\..\..\extern\elzma\decompress.c" />
-    <ClCompile Include="..\..\..\extern\elzma\lzip_header.c" />
-    <ClCompile Include="..\..\..\extern\elzma\lzma_header.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zBuf.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zBuf2.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zCrc.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zFile.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\7zStream.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Alloc.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bcj2.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bra.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\Bra86.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\BraIA64.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzFind.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaDec.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaEnc.c" />
-    <ClCompile Include="..\..\..\extern\elzma\pavlov\LzmaLib.c" />
-    <ClCompile Include="..\..\..\extern\lzo\minilzo.c" />
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp" />
     <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
     <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
@@ -899,29 +891,6 @@
     <ClCompile Include="..\Net\Protocol\NTP.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\extern\elzma\common_internal.h" />
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\common.h" />
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\compress.h" />
-    <ClInclude Include="..\..\..\extern\elzma\easylzma\decompress.h" />
-    <ClInclude Include="..\..\..\extern\elzma\lzip_header.h" />
-    <ClInclude Include="..\..\..\extern\elzma\lzma_header.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zBuf.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zCrc.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zFile.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\7zVersion.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Alloc.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Bcj2.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Bra.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\CpuArch.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzFind.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzHash.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaDec.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaEnc.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\LzmaLib.h" />
-    <ClInclude Include="..\..\..\extern\elzma\pavlov\Types.h" />
-    <ClInclude Include="..\..\..\extern\lzo\lzoconf.h" />
-    <ClInclude Include="..\..\..\extern\lzo\lzodefs.h" />
-    <ClInclude Include="..\..\..\extern\lzo\minilzo.h" />
     <ClInclude Include="..\Net\assets\assets.h" />
     <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
     <ClInclude Include="..\Net\assets\manager\filemanager.h" />

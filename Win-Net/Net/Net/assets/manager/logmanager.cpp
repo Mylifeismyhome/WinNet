@@ -248,9 +248,12 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 	}
 }
 
+#endif
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Console)
+#ifndef NET_DISABLE_LOGMANAGER
 static bool DisablePrintF = false;
+#endif
 
 tm TM_GetTime()
 {
@@ -271,6 +274,7 @@ tm TM_GetTime()
 	return timeinfo;
 }
 
+#ifndef NET_DISABLE_LOGMANAGER
 std::string GetLogStatePrefix(LogStates state)
 {
 	switch (static_cast<int>(state))
@@ -395,8 +399,10 @@ WORD GetColorFromState(const LogStates state)
 		return WHITE;
 	}
 }
+#endif
 NET_NAMESPACE_END
 
+#ifndef NET_DISABLE_LOGMANAGER
 NET_NAMESPACE_BEGIN(Manager)
 NET_NAMESPACE_BEGIN(Log)
 void SetOutputName(const char* name)
@@ -503,5 +509,5 @@ void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, 
 }
 NET_NAMESPACE_END
 NET_NAMESPACE_END
-NET_NAMESPACE_END
 #endif
+NET_NAMESPACE_END
