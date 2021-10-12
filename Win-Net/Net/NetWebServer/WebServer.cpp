@@ -216,7 +216,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		const auto res = SSL_accept(peer->ssl);
 		if (res == 0)
 		{
-			LOG_ERROR("[%s] - The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol", SERVERNAME(this));
+			LOG_ERROR(CSTRING("[%s] - The TLS/SSL handshake was not successful but was shut down controlled and by the specifications of the TLS/SSL protocol"), SERVERNAME(this));
 			return nullptr;
 		}
 		if (res < 0)

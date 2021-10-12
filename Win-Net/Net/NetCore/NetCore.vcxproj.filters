@@ -302,6 +302,9 @@
     <ClInclude Include="..\Net\Protocol\NTP.h">
       <Filter>Protocol</Filter>
     </ClInclude>
+    <ClInclude Include="..\Net\Cryption\CXOR.hpp">
+      <Filter>Cryption</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Net\Cryption\BCrypt\x86.S">

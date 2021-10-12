@@ -274,6 +274,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -322,6 +323,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -370,6 +372,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -422,6 +425,7 @@
       <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -472,6 +476,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -521,6 +526,7 @@
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -570,6 +576,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -618,6 +625,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -666,6 +674,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -714,6 +723,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>
@@ -765,6 +775,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -814,6 +825,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;cryptlib.lib;mysqlcppconn-static.lib</AdditionalDependencies>
@@ -909,6 +921,7 @@
     <ClInclude Include="..\Net\Coding\SHA1.h" />
     <ClInclude Include="..\Net\Compression\Compression.h" />
     <ClInclude Include="..\Net\Cryption\AES.h" />
+    <ClInclude Include="..\Net\Cryption\CXOR.hpp" />
     <ClInclude Include="..\Net\Cryption\PointerCryption.h" />
     <ClInclude Include="..\Net\Cryption\RSA.h" />
     <ClInclude Include="..\Net\Cryption\XOR.h" />

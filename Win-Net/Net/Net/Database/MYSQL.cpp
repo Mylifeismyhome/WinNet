@@ -300,7 +300,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 	lock();
 
 	if(retry)
-		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
@@ -388,7 +388,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 	lock();
 
 	if (retry)
-		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
@@ -476,7 +476,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 	lock();
 
 	if (retry)
-		LOG_WARNING("[MYSQL] - The previous query has been failed, proccessing the query again.");
+		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
