@@ -753,12 +753,12 @@ NET_NAMESPACE_END
 #ifndef VS13
 #define NOEXPECT noexcept
 #define CONSTEXPR constexpr
-#define FUNCNAME __func__
 #else
 #define NOEXPECT
 #define CONSTEXPR const
-#define FUNCNAME __FUNCTION__
 #endif
+
+#define FUNCNAME CSTRING(__FUNCTION__)
 
 #ifdef BUILD_LINUX
 #define __int64 long long
