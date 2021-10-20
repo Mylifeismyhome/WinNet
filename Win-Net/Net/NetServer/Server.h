@@ -147,8 +147,6 @@ bool NetVersionMatched;
 typeLatency latency;
 NET_HANDLE_TIMER hCalcLatency;
 
-std::recursive_mutex critical;
-
 /* TOTP secret */
 byte* totp_secret;
 size_t totp_secret_len;

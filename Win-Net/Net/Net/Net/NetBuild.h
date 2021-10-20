@@ -7,6 +7,7 @@
 #define NET_DISABLE_IMPORT_KERNEL32
 #define NET_DISABLE_IMPORT_NTDLL
 #define NET_DISABLE_IMPORT_WS2_32
+#define NET_DISABLE_IMPORT_User32
 #endif
 
 /* disable dynamic link */

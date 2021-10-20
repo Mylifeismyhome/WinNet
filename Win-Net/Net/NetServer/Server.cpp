@@ -236,7 +236,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		const auto _CalcLatency = new CalcLatency_t();
 		_CalcLatency->server = this;
 		_CalcLatency->peer = peer;
-		peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
+		//peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
 	}
 
 	if (CreateTOTPSecret(peer))
@@ -258,14 +258,12 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		return false;
 	);
 
-	std::lock_guard<std::recursive_mutex> guard(peer->critical);
-
 	if (clear)
 	{
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
-			Timer::WaitSingleObjectStopped(peer->hCalcLatency);
+			//Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 			peer->hCalcLatency = nullptr;
 		}
 
@@ -1184,27 +1182,20 @@ NET_THREAD(Receive)
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
-	while (peer)
+	while (peer && peer->pSocket != INVALID_SOCKET)
 	{
-		if (!server->IsRunning())
-			break;
+		if (!server->IsRunning()) break;
+		if (peer->bErase) break;
 
 		server->OnPeerUpdate(peer);
 
-		SOCKET_VALID(peer->pSocket)
-		{
-			const auto restTime = server->DoReceive(peer);
+		const auto restTime = server->DoReceive(peer);
 
 #ifdef BUILD_LINUX
-			usleep(restTime);
+		usleep(restTime);
 #else
-			Kernel32::Sleep(restTime);
+		Kernel32::Sleep(restTime);
 #endif
-
-			continue;
-		}
-
-		break;
 	}
 
 	// erase him
@@ -1235,7 +1226,7 @@ void Server::Acceptor()
 
 		const auto param = new Receive_t();
 		param->server = this;
-		param->peer = CreatePeer(client_addr, GetAcceptSocket());;
+		param->peer = CreatePeer(client_addr, GetAcceptSocket());
 		Thread::Create(Receive, param);
 	}
 }

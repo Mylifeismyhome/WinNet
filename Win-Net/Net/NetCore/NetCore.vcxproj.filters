@@ -189,6 +189,9 @@
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
       <Filter>pugiXML</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Import\User32.cpp">
+      <Filter>Import</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -304,6 +307,9 @@
     </ClInclude>
     <ClInclude Include="..\Net\Cryption\CXOR.hpp">
       <Filter>Cryption</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\User32.h">
+      <Filter>Import</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

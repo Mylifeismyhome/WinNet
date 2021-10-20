@@ -758,7 +758,7 @@ NET_NAMESPACE_END
 #define CONSTEXPR const
 #endif
 
-#define FUNCNAME CSTRING(__FUNCTION__)
+#define FUNCNAME CSTRING("")
 
 #ifdef BUILD_LINUX
 #define __int64 long long

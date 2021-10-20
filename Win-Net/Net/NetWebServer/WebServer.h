@@ -152,9 +152,6 @@ bool handshake;
 typeLatency latency;
 NET_HANDLE_TIMER hCalcLatency;
 
-bool bHasBeenErased;
-std::recursive_mutex critical;
-
 NET_STRUCT_BEGIN_CONSTRUCTUR(peerInfo)
 UniqueID = INVALID_UID;
 pSocket = INVALID_SOCKET;
@@ -165,7 +162,6 @@ ssl = nullptr;
 handshake = false;
 latency = -1;
 hCalcLatency = nullptr;
-bHasBeenErased = false;
 NET_STRUCT_END_CONTRUCTION
 
 void clear();

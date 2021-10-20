@@ -233,7 +233,7 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 		const auto _DoCalcLatency = new DoCalcLatency_t();
 		_DoCalcLatency->server = this;
 		_DoCalcLatency->peer = peer;
-		peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
+		//peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
 	}
 
 	IncreasePeersCounter();
@@ -252,14 +252,12 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		return false;
 	);
 
-	std::lock_guard<std::recursive_mutex> guard(peer->critical);
-
 	if (clear)
 	{
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
-			Timer::WaitSingleObjectStopped(peer->hCalcLatency);
+		//	Timer::WaitSingleObjectStopped(peer->hCalcLatency);
 			peer->hCalcLatency = nullptr;
 		}
 
@@ -867,10 +865,6 @@ NET_THREAD(Receive)
 	{
 		do
 		{
-			PEER_NOT_VALID_EX(peer, server,
-				return NULL;
-			);
-
 			const auto res = server->Handshake(peer);
 			if (res == WebServerHandshake::peer_not_valid)
 			{
@@ -878,10 +872,14 @@ NET_THREAD(Receive)
 
 				// erase him
 				server->ErasePeer(peer, true);
+			
+				delete peer;
+				peer = nullptr;
 				return NULL;
 			}
 			if (res == WebServerHandshake::would_block)
 			{
+				Kernel32::Sleep(FREQUENZ(server));
 				continue;
 			}
 			if (res == WebServerHandshake::missmatch)
@@ -890,6 +888,9 @@ NET_THREAD(Receive)
 
 				// erase him
 				server->ErasePeer(peer, true);
+			
+				delete peer;
+				peer = nullptr;
 				return NULL;
 			}
 			if (res == WebServerHandshake::error)
@@ -898,6 +899,9 @@ NET_THREAD(Receive)
 
 				// erase him
 				server->ErasePeer(peer, true);
+
+				delete peer;
+				peer = nullptr;
 				return NULL;
 			}
 			if (res == WebServerHandshake::success)
@@ -912,27 +916,20 @@ NET_THREAD(Receive)
 	peer->estabilished = true;
 	server->OnPeerEstabilished(peer);
 
-	while (peer)
+	while (peer && peer->pSocket != INVALID_SOCKET)
 	{
-		if (!server->IsRunning())
-			break;
+		if (!server->IsRunning()) break;
+		if (peer->bErase) break;
 
 		server->OnPeerUpdate(peer);
 
-		SOCKET_VALID(peer->pSocket)
-		{
-			const auto restTime = server->DoReceive(peer);
+		const auto restTime = server->DoReceive(peer);
 
 #ifdef BUILD_LINUX
-			usleep(restTime);
+		usleep(restTime);
 #else
-			Kernel32::Sleep(restTime);
+		Kernel32::Sleep(restTime);
 #endif
-
-			continue;
-		}
-
-		break;
 	}
 
 	// erase him

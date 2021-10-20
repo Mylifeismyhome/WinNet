@@ -12,7 +12,7 @@ void ShowMessageBox(const char* title, const char* msg, ...)
 	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
 
-	MessageBoxA(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
+	User32::MessageBoxA(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
 
 void ShowMessageBox(const wchar_t* title, const wchar_t* msg, ...)
@@ -24,7 +24,7 @@ void ShowMessageBox(const wchar_t* title, const wchar_t* msg, ...)
 	std::vswprintf(str.data(), str.size(), msg, vaArgs);
 	va_end(vaArgs);
 
-	MessageBoxW(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
+	User32::MessageBoxW(nullptr, str.data(), title, MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND);
 }
 #endif
 
