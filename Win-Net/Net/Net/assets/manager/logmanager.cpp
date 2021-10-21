@@ -20,10 +20,10 @@ CONSTEXPR auto LIGHTMAGENTA = 13;
 CONSTEXPR auto YELLOW = 14;
 CONSTEXPR auto WHITE = 15;
 
-static char __net_output_fname[NET_MAX_PATH];
+static char __net_output_fname[NET_MAX_PATH] = { 0 };
 static bool __net_output_used()
 {
-	return strcmp(__net_output_fname, CSTRING(""));
+	return strcmp(__net_output_fname, CSTRING("")) != 0;
 }
 
 // global override able callback
