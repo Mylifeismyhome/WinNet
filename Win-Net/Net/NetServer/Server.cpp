@@ -387,8 +387,16 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
 
+	if (code == 0)
+	{
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected"), SERVERNAME(this), peer->IPAddr().get());
+	}
+	else
+	{
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+	}
+
 	ErasePeer(peer);
-	LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 }
 
 void Server::SetListenSocket(const SOCKET ListenSocket)

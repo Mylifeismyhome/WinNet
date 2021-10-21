@@ -329,7 +329,14 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 		return;
 	);
 
-	LOG_DEBUG(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+	if (code == 0)
+	{
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected"), SERVERNAME(this), peer->IPAddr().get());
+	}
+	else
+	{
+		LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected, reason: %s"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+	}
 
 	// now after we have sent him the reason, close connection
 	ErasePeer(peer);
