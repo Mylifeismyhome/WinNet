@@ -46,7 +46,6 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 	if (s == INVALID_SOCKET) return -1;
 
 #ifndef NET_DISABLE_IMPORT_WS2_32
-	if(!Ws2_32::IsInitialized()) return setsockopt(s, level, optname, optval, optlen);
 	return Ws2_32::setsockopt(s, level, optname, optval, optlen);
 #else
 	return setsockopt(s, level, optname, optval, optlen);

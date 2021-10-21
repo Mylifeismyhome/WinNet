@@ -362,13 +362,6 @@ bool Client::Connect(const char* Address, const u_short Port)
 		return false;
 	}
 
-	// Set socket options
-	for (const auto& entry : socketoption)
-	{
-		const auto res = Net::SetSocketOption(GetSocket(), entry);
-		if (res < 0) LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry.opt, LAST_ERROR);
-	}
-
 	// clear the unused vector
 	socketoption.clear();
 
@@ -377,6 +370,19 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	// Set Mode
 	ChangeMode(Isset(NET_OPT_MODE_BLOCKING) ? GetOption<bool>(NET_OPT_MODE_BLOCKING) : NET_OPT_DEFAULT_MODE_BLOCKING);
+
+	/* Set Read Timeout */
+	timeval tv = {};
+	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
+	tv.tv_usec = 0;
+	Ws2_32::setsockopt(GetSocket(), SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+
+	// Set socket options
+	for (const auto& entry : socketoption)
+	{
+		const auto res = Net::SetSocketOption(GetSocket(), entry);
+		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry.opt, LAST_ERROR);
+	}
 
 	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 		/* create RSA Key Pair */

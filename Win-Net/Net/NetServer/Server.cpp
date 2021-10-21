@@ -229,7 +229,21 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	timeval tv = {};
 	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
 	tv.tv_usec = 0;
-	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+
+	/* enable SO_LINGER to wait till all messages queued before disconnecting peer */
+	linger linger_;
+	linger_.l_onoff = 1;
+	linger_.l_linger = 10000;
+	if(Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_LINGER, (char*)&linger_, sizeof(linger_)) == SOCKET_ERROR)
+		LOG_ERROR(CSTRING("[%s] - 2 Following socket option could not been applied { %i : %i }"), SERVERNAME(this), SO_LINGER, LAST_ERROR);
+
+	// Set socket options
+	for (const auto& entry : socketoption)
+	{
+		const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
+		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
+	}
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
 	{
@@ -1217,13 +1231,6 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		// Set socket options
-		for (const auto& entry : socketoption)
-		{
-			const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
-			if (res < 0) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
-		}
-
 		const auto param = new Receive_t();
 		param->server = this;
 		param->peer = CreatePeer(client_addr, GetAcceptSocket());
