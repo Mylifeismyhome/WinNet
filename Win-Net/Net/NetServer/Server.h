@@ -204,37 +204,35 @@ size_t GetReceivedPackageSize(NET_PEER);
 float GetReceivedPackageSizeAsPerc(NET_PEER);
 
 DWORD optionBitFlag;
-std::vector<Option_t<SOCKET_OPT_TYPE>> option;
+std::vector<OptionInterface_t*> option;
 
 DWORD socketOptionBitFlag;
 std::vector<SocketOptionInterface_t*> socketoption;
 
 NET_CLASS_PUBLIC
 template <class T>
-void SetOption(const Option_t<T> o)
+void SetOption(Option_t<T> o)
 {
 	// check option is been set using bitflag
 	if (optionBitFlag & o.opt)
 	{
 		// reset the option value
 		for (auto& entry : option)
-			if (entry.opt == o.opt)
+			if (entry->opt == o.opt)
 			{
-				entry.type = (SOCKET_OPT_TYPE)o.type;
-				entry.len = o.len;
-				return;
+				if (dynamic_cast<Option_t<T>*>(entry))
+				{
+					dynamic_cast<Option_t<T>*>(entry)->set(o.value());
+					return;
+				}
 			}
 	}
 
 	// save the option value
-	Option_t<SOCKET_OPT_TYPE> opt;
-	opt.opt = o.opt;
-	opt.type = (SOCKET_OPT_TYPE)o.type;
-	opt.len = o.len;
-	option.emplace_back(opt);
+	option.emplace_back(new Option_t<T>(o));
 
 	// set the bit flag
-	optionBitFlag |= opt.opt;
+	optionBitFlag |= o.opt;
 }
 
 bool Isset(DWORD) const;
@@ -243,9 +241,10 @@ template <class T>
 T GetOption(const DWORD opt)
 {
 	if (!Isset(opt)) return NULL;
-	for (const auto& entry : option)
-		if (entry.opt == opt)
-			return *(T*)&entry.type;
+	for (auto& entry : option)
+		if (entry->opt == opt)
+			if (dynamic_cast<Option_t<T>*>(entry))
+				return dynamic_cast<Option_t<T>*>(entry)->value();
 
 	return NULL;
 }

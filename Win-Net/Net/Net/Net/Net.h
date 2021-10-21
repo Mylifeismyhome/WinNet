@@ -413,25 +413,45 @@ public:
 	}
 };
 
+class OptionInterface_t
+{
+public:
+	OptionInterface_t(DWORD opt)
+	{
+		this->opt = opt;
+	}
+
+	DWORD opt;
+
+	virtual int optlen() = 0;
+};
+
 template <class T>
-NET_STRUCT_BEGIN(Option_t)
-DWORD opt;
-T type;
-SOCKET_OPT_LEN len;
-
-Option_t()
+class Option_t : public OptionInterface_t
 {
-        this->opt = NULL;
-        this->len = INVALID_SIZE;
-}
+	T _value;
 
-Option_t(const DWORD opt, const T type)
-{
-        this->opt = opt;
-        this->type = type;
-        this->len = sizeof(type);
-}
-NET_STRUCT_END
+public:
+	Option_t(DWORD opt, T value) : OptionInterface_t(opt)
+	{
+		this->_value = value;
+	}
+
+	T value()
+	{
+		return _value;
+	}
+
+	void set(T val)
+	{
+		_value = val;
+	}
+
+	int optlen() override
+	{
+		return sizeof(T);
+	}
+};
 
 /////////////////////////////////////////////////////
 //    SECTION - SSL Methode Definitions     //
