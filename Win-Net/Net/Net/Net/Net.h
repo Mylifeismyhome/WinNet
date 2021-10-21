@@ -366,28 +366,52 @@ static void Free(T*& data)
 		stuff \
 	}
 
+class SocketOptionInterface_t
+{
+public:
+	SocketOptionInterface_t(int level, int opt)
+	{
+		this->level = level;
+		this->opt = opt;
+	}
+
+	int level;
+	int opt;
+	virtual char* value() = 0;
+	virtual int optlen() = 0;
+};
+
 template <class T>
-NET_STRUCT_BEGIN(SocketOption_t)
-int level;
-int opt;
-T type;
-SOCKET_OPT_LEN len;
-
-SocketOption_t()
+class SocketOption_t : public SocketOptionInterface_t
 {
-        this->level = NULL;
-        this->opt = NULL;
-        this->len = INVALID_SIZE;
-}
+	T _value;
 
-SocketOption_t(const int level, const int opt, const T type)
-{
-        this->level = opt;
-        this->opt = opt;
-        this->type = type;
-        this->len = sizeof(type);
-}
-NET_STRUCT_END
+public:
+	SocketOption_t(int level, int opt, T value) : SocketOptionInterface_t(level, opt)
+	{
+		this->_value = value;
+	}
+
+	T val()
+	{
+		return _value;
+	}
+
+	char* value() override
+	{
+		return (char*)&_value;
+	}
+
+	void set(T val)
+	{
+		_value = val;
+	}
+
+	int optlen() override
+	{
+		return sizeof(T);
+	}
+};
 
 template <class T>
 NET_STRUCT_BEGIN(Option_t)
@@ -418,7 +442,6 @@ namespace Net
 	void unload();
 
 	int SocketOpt(SOCKET, int, int, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
-	int SetSocketOption(SOCKET, SocketOption_t<SOCKET_OPT_TYPE>);
 
 	namespace sock_err
 	{

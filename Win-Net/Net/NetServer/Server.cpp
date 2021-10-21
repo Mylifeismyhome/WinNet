@@ -231,18 +231,11 @@ Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET 
 	tv.tv_usec = 0;
 	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
 
-	/* enable SO_LINGER to wait till all messages queued before disconnecting peer */
-	linger linger_;
-	linger_.l_onoff = 1;
-	linger_.l_linger = 10000;
-	if(Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_LINGER, (char*)&linger_, sizeof(linger_)) == SOCKET_ERROR)
-		LOG_ERROR(CSTRING("[%s] - 2 Following socket option could not been applied { %i : %i }"), SERVERNAME(this), SO_LINGER, LAST_ERROR);
-
 	// Set socket options
 	for (const auto& entry : socketoption)
 	{
-		const auto res = Net::SetSocketOption(GetAcceptSocket(), entry);
-		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry.opt, LAST_ERROR);
+		const auto res = Ws2_32::setsockopt(peer->pSocket, entry->level, entry->opt, entry->value(), entry->optlen());
+		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("[%s] - Following socket option could not been applied { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
 	}
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)

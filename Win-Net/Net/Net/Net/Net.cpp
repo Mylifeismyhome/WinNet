@@ -52,15 +52,6 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 #endif
 }
 
-int Net::SetSocketOption(SOCKET socket, SocketOption_t<SOCKET_OPT_TYPE> opt)
-{
-	return Net::SocketOpt(socket,
-		opt.level,
-		opt.opt,
-		opt.type,
-		opt.len);
-}
-
 std::string Net::sock_err::getString(const int err, const bool is_ssl)
 {
 	if (is_ssl)

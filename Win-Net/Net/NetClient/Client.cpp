@@ -380,8 +380,8 @@ bool Client::Connect(const char* Address, const u_short Port)
 	// Set socket options
 	for (const auto& entry : socketoption)
 	{
-		const auto res = Net::SetSocketOption(GetSocket(), entry);
-		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry.opt, LAST_ERROR);
+		const auto res = Ws2_32::setsockopt(GetSocket(), entry->level, entry->opt, entry->value(), entry->optlen());
+		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry->opt, LAST_ERROR);
 	}
 
 	if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)

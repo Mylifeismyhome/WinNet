@@ -207,7 +207,7 @@ DWORD optionBitFlag;
 std::vector<Option_t<SOCKET_OPT_TYPE>> option;
 
 DWORD socketOptionBitFlag;
-std::vector<SocketOption_t<SOCKET_OPT_TYPE>> socketoption;
+std::vector<SocketOptionInterface_t*> socketoption;
 
 NET_CLASS_PUBLIC
 template <class T>
@@ -251,30 +251,28 @@ T GetOption(const DWORD opt)
 }
 
 template <class T>
-void SetSocketOption(const SocketOption_t<T> opt)
+void SetSocketOption(SocketOption_t<T> opt)
 {
 	// check option is been set using bitflag
 	if (socketOptionBitFlag & opt.opt)
 	{
 		// reset the option value
 		for (auto& entry : socketoption)
-			if (entry.opt == opt.opt)
+			if (entry->opt == opt.opt)
 			{
-				entry.type = (SOCKET_OPT_TYPE)opt.type;
-				entry.len = opt.len;
-				return;
+				if (dynamic_cast<SocketOption_t<T>*>(entry))
+				{
+					dynamic_cast<SocketOption_t<T>*>(entry)->set(opt.val());
+					return;
+				}
 			}
 	}
 
 	// save the option value
-	SocketOption_t<SOCKET_OPT_TYPE> option;
-	option.opt = opt.opt;
-	option.type = (SOCKET_OPT_TYPE)opt.type;
-	option.len = opt.len;
-	socketoption.emplace_back(option);
+	socketoption.emplace_back(new SocketOption_t<T>(opt));
 
 	// set the bit flag
-	socketOptionBitFlag |= option.opt;
+	socketOptionBitFlag |= opt.opt;
 }
 
 bool Isset_SocketOpt(DWORD) const;
