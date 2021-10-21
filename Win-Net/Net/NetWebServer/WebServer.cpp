@@ -30,6 +30,15 @@ Server::Server()
 
 Server::~Server()
 {
+	for (auto& entry : socketoption)
+		delete entry;
+
+	socketoption.clear();
+
+	for (auto& entry : option)
+		delete entry;
+
+	option.clear();
 }
 
 bool Server::Isset(const DWORD opt) const

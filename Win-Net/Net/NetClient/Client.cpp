@@ -83,6 +83,15 @@ Client::Client()
 
 Client::~Client()
 {
+	for (auto& entry : socketoption)
+		delete entry;
+
+	socketoption.clear();
+
+	for (auto& entry : option)
+		delete entry;
+
+	option.clear();
 }
 
 NET_THREAD(Receive)
