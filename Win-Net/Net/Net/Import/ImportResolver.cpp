@@ -8,23 +8,16 @@ namespace Import
 {
 	namespace Resolver
 	{
-		static std::vector<module_t> modules;
+		static std::map<const char*, module_t> modules;
 
 		bool isLoaded(const char* library)
 		{
-			for (auto& module : modules)
-				if (!strcmp(module.name, library)) return true;
-
-			return false;
+			return (modules.find(library) != modules.end());
 		}
 
 		module_t getModule(const char* library)
 		{
-			for (auto& module : modules)
-				if (!strcmp(module.name, library))
-					return module;
-
-			return {};
+			return modules[library];
 		}
 
 		bool Load(const char* library, const char* path, type_t type)
@@ -83,7 +76,7 @@ namespace Import
 				strcpy_s(mod.name, library);
 				strcpy_s(mod.path, path);
 				mod.type = type;
-				modules.emplace_back(mod);
+				modules.emplace(std::pair(library, mod));
 				return true;
 			}
 
@@ -92,17 +85,7 @@ namespace Import
 
 		bool Remove(const char* library)
 		{
-			for (auto it = modules.begin(); it != modules.end(); ++it)
-			{
-				module_t& mod = *it;
-				if (!strcmp(mod.name, library))
-				{
-					it = modules.erase(it);
-					return true;
-				}
-			}
-
-			return false;
+			return (modules.erase(library) > 0);
 		}
 
 		bool Unload(const char* library)
