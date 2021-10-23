@@ -1,5 +1,5 @@
 #include <Net/assets/timer.h>
-#include <Net/Import/Kernel32.h>
+#include <Net/Import/Kernel32.hpp>
 #include <Net/assets/thread.h>
 
 NET_THREAD(NetTimerThread)
@@ -62,7 +62,7 @@ NET_THREAD(NetTimerThread)
 #ifdef BUILD_LINUX
 		usleep(1);
 #else
-		Net::Kernel32::Sleep(1);
+		Kernel32::Sleep(1);
 #endif
 	}
 }
