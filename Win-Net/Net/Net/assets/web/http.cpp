@@ -1,5 +1,5 @@
 #include "http.h"
-#include <Net/Import/Ws2_32.h>
+#include <Net/Import/Ws2_32.hpp>
 
 NET_IGNORE_CONVERSION_NULL
 void Net::Web::Head::Network::AllocData(const size_t size)

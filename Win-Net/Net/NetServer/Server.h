@@ -310,8 +310,6 @@ size_t getCountPeers() const;
 void Acceptor();
 DWORD DoReceive(NET_PEER);
 
-NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
-
 NET_CLASS_PRIVATE
 bool ValidHeader(NET_PEER, bool&);
 void ProcessPackages(NET_PEER);
@@ -326,8 +324,11 @@ NET_DEF_FNC_PKG(VersionPackage);
 NET_CLASS_PROTECTED
 /* CALLBACKS */
 NET_DEFINE_CALLBACK(void, OnPeerConnect, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
+NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER, int last_error) {}
 NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
+
+NET_CLASS_PUBLIC
+NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
 NET_DSA_END
 NET_NAMESPACE_END

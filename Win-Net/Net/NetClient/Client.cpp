@@ -1,6 +1,6 @@
 #include <NetClient/Client.h>
-#include <Net/Import/Kernel32.h>
-#include <Net/Import/Ws2_32.h>
+#include <Net/Import/Kernel32.hpp>
+#include <Net/Import/Ws2_32.hpp>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)

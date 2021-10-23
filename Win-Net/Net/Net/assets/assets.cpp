@@ -1,5 +1,6 @@
 #include "assets.h"
 #include <random>
+#include <Net/Import/User32.hpp>
 
 NET_NAMESPACE_BEGIN(Net)
 #ifndef BUILD_LINUX

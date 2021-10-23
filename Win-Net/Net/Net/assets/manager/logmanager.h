@@ -15,8 +15,6 @@ typedef uint16_t WORD;
 #endif
 
 #include <Net/Net/NetString.h>
-#include <Net/assets/assets.h>
-#include <Net/assets/manager/filemanager.h>
 
 typedef void (*OnLogA_t)(int state, const char* buffer);
 typedef void (*OnLogW_t)(int state, const wchar_t* buffer);

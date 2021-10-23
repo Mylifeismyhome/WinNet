@@ -1,6 +1,6 @@
 #include "WebServer.h"
-#include <Net/Import/Kernel32.h>
-#include <Net/Import/Ws2_32.h>
+#include <Net/Import/Kernel32.hpp>
+#include <Net/Import/Ws2_32.hpp>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(WebServer)
@@ -278,7 +278,11 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		}
 
 		// callback
-		OnPeerDisconnect(peer);
+#ifdef BUILD_LINUX
+		OnPeerDisconnect(peer, errno);
+#else
+		OnPeerDisconnect(peer, Ws2_32::WSAGetLastError());
+#endif
 
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected"), SERVERNAME(this), peer->IPAddr().get());
 

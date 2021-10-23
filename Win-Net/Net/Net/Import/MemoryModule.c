@@ -1,6 +1,3 @@
-#include "MemoryModule.h"
-
-#ifndef NET_DISABLE_MEMORY_IMPORT_DLL
 /*
  * Memory DLL loading code
  * Version 0.0.4
@@ -1220,5 +1217,4 @@ BOOL MemoryModuleTestsuite() {
     }
     return success;
 }
-#endif
 #endif

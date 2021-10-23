@@ -1,6 +1,9 @@
 #include "logmanager.h"
 #include <mutex>
 
+#include <Net/assets/assets.h>
+#include <Net/assets/manager/filemanager.h>
+
 #ifndef NET_DISABLE_LOGMANAGER
 // Color codes
 CONSTEXPR auto BLACK = 0;

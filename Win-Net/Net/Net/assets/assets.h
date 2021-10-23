@@ -2,7 +2,6 @@
 #include <Net/Net/Net.h>
 #include <Net/assets/manager/dirmanager.h>
 #include <Net/Cryption/XOR.h>
-#include <Net/Import/User32.h>
 
 NET_DSA_BEGIN
 

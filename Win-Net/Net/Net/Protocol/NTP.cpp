@@ -1,5 +1,5 @@
 #include <Net/Protocol/NTP.h>
-#include <Net/Import/Ws2_32.h>
+#include <Net/Import/Ws2_32.hpp>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Protocol)

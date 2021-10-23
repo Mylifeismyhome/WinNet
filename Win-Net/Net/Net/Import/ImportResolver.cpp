@@ -1,0 +1,187 @@
+#include "ImportResolver.h"
+
+typedef HMODULE(*_LoadLibraryA)(LPCSTR lpLibFileName);
+typedef BOOL(*_FreeLibrary)(HMODULE hLibModule);
+typedef FARPROC(*_GetProcAddress)(HMODULE hModule, LPCSTR lpProcName);
+
+namespace Import
+{
+	namespace Resolver
+	{
+		static std::vector<module_t> modules;
+
+		bool isLoaded(const char* library)
+		{
+			for (auto& module : modules)
+				if (!strcmp(module.name, library)) return true;
+
+			return false;
+		}
+
+		module_t getModule(const char* library)
+		{
+			for (auto& module : modules)
+				if (!strcmp(module.name, library))
+					return module;
+
+			return {};
+		}
+
+		bool Load(const char* library, const char* path, type_t type)
+		{
+			if (isLoaded(library)) return true;
+
+			module_t mod = { 0 };
+
+			switch (type)
+			{
+			case type_t::RESOLVE_KERNEL32:
+			{
+				/* Load up Kernel32 Module if not done yet */
+				if (!isLoaded(CSTRING("Kernel32")))
+					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+
+				auto ptr = Function(CSTRING("Kernel32"), CSTRING("LoadLibraryA"));
+				if (!ptr.valid()) return false;
+
+				auto fnc = (_LoadLibraryA)ptr.get();
+				if (!fnc)
+				{
+					Unload(CSTRING("Kernel32"));
+					break;
+				}
+
+				mod.module = fnc(path);
+				break;
+			}
+
+			case type_t::RESOLVE_MEMORY:
+			{
+				/* load file from path */
+				NET_FILEMANAGER fmanager(path, NET_FILE_READ);
+
+				BYTE* data = nullptr;
+				size_t size = 0;
+				if (fmanager.read(data, size))
+				{
+					mod.module = ::MemoryLoadLibrary(data, size);
+					FREE(data);
+					break;
+				}
+
+				LOG_ERROR(CSTRING("Unable to resolve memory from file '%s'"), path);
+				return false;
+			}
+
+			default:
+				LOG_WARNING(CSTRING("Invalid Type"));
+				return false;
+			};
+
+			if (mod.module.valid())
+			{
+				strcpy_s(mod.name, library);
+				strcpy_s(mod.path, path);
+				mod.type = type;
+				modules.emplace_back(mod);
+				return true;
+			}
+
+			return false;
+		}
+
+		bool Remove(const char* library)
+		{
+			for (auto it = modules.begin(); it != modules.end(); ++it)
+			{
+				module_t& mod = *it;
+				if (!strcmp(mod.name, library))
+				{
+					it = modules.erase(it);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		bool Unload(const char* library)
+		{
+			if (isLoaded(library)) return false;
+			auto mod = getModule(library);
+			if (!mod.module.valid()) return Remove(library);
+
+			switch (mod.type)
+			{
+			case type_t::RESOLVE_KERNEL32:
+			{
+				/* Load up Kernel32 Module if not done yet */
+				if (!isLoaded(CSTRING("Kernel32")))
+					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+
+				auto ptr = Function(CSTRING("Kernel32"), CSTRING("FreeLibrary"));
+				if (!ptr.valid()) return false;
+
+				auto fnc = (_FreeLibrary)ptr.get();
+				if (!fnc)
+				{
+					Unload(CSTRING("Kernel32"));
+					break;
+				}
+
+				fnc((HMODULE)mod.module.get());
+				break;
+			}
+
+			case type_t::RESOLVE_MEMORY:
+				::MemoryFreeLibrary((HMEMORYMODULE)mod.module.get());
+				break;
+
+			default:
+				LOG_WARNING(CSTRING("Invalid Type"));
+				return Remove(library);
+			};
+
+			return Remove(library);
+		}
+
+		CPOINTER<void> Function(const char* library, const char* funcName)
+		{
+			if (!isLoaded(library)) return CPOINTER<void>();
+			auto mod = getModule(library);
+			if (!mod.module.valid()) return CPOINTER<void>();
+
+			switch (mod.type)
+			{
+			case type_t::RESOLVE_KERNEL32:
+			{
+				/* Load up Kernel32 Module if not done yet */
+				if (!isLoaded(CSTRING("Kernel32")))
+					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+
+				auto ptr = Function(CSTRING("Kernel32"), CSTRING("GetProcAddress"));
+				if(!ptr.valid()) return CPOINTER<void>();
+
+				auto fnc = (_GetProcAddress)ptr.get();
+				if (!fnc)
+				{
+					Unload(CSTRING("Kernel32"));
+					break;
+				}
+
+				return CPOINTER<void>(fnc((HMODULE)mod.module.get(), funcName));
+			}
+
+			case type_t::RESOLVE_MEMORY:
+				return CPOINTER<void>(::MemoryGetProcAddress((HMEMORYMODULE)mod.module.get(), funcName));
+				break;
+
+			default:
+				LOG_WARNING(CSTRING("Invalid Type"));
+				break;
+			};
+
+			return CPOINTER<void>();
+		}
+	}
+}

@@ -291,10 +291,6 @@ size_t getCountPeers() const;
 
 DWORD DoReceive(NET_PEER);
 
-/* CALLBACKS */
-NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
-
 NET_CLASS_PRIVATE
 void DecodeFrame(NET_PEER);
 void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
@@ -303,7 +299,11 @@ void ProcessPackage(NET_PEER, BYTE*, size_t);
 NET_CLASS_PROTECTED
 /* CALLBACKS */
 NET_DEFINE_CALLBACK(void, OnPeerConnect, NET_PEER) {}
-NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER) {}
+NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER, int last_error) {}
+
+NET_CLASS_PUBLIC
+NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
+NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 NET_CLASS_END
 NET_DSA_END
 NET_NAMESPACE_END

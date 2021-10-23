@@ -162,15 +162,6 @@
     <ClCompile Include="..\Net\assets\thread.cpp">
       <Filter>Assets</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Import\Ntdll.cpp">
-      <Filter>Import</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Import\MemoryModule.c">
-      <Filter>Import</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Import\Kernel32.cpp">
-      <Filter>Import</Filter>
-    </ClCompile>
     <ClCompile Include="..\Net\Protocol\ICMP.cpp">
       <Filter>Protocol</Filter>
     </ClCompile>
@@ -180,16 +171,16 @@
     <ClCompile Include="..\Net\Coding\TOTP.cpp">
       <Filter>Coding</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Import\Ws2_32.cpp">
-      <Filter>Import</Filter>
-    </ClCompile>
     <ClCompile Include="..\Net\Protocol\NTP.cpp">
       <Filter>Protocol</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
       <Filter>pugiXML</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Import\User32.cpp">
+    <ClCompile Include="..\Net\Import\MemoryModule.c">
+      <Filter>Import</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Net\Import\ImportResolver.cpp">
       <Filter>Import</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,18 +260,6 @@
     <ClInclude Include="..\Net\assets\thread.h">
       <Filter>Assets</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\Import\Ntdll.h">
-      <Filter>Import</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Import\MemoryModule.h">
-      <Filter>Import</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Import\Kernel32.h">
-      <Filter>Import</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Import\Definition.hpp">
-      <Filter>Import</Filter>
-    </ClInclude>
     <ClInclude Include="..\Net\Protocol\ICMP.h">
       <Filter>Protocol</Filter>
     </ClInclude>
@@ -292,9 +271,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\assets\manager\profile.hpp">
       <Filter>Assets\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Import\Ws2_32.h">
-      <Filter>Import</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetBuildConfig.h">
       <Filter>Net</Filter>
@@ -308,7 +284,22 @@
     <ClInclude Include="..\Net\Cryption\CXOR.hpp">
       <Filter>Cryption</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\Import\User32.h">
+    <ClInclude Include="..\Net\Import\MemoryModule.h">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Ntdll.hpp">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\ImportResolver.h">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Kernel32.hpp">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\Ws2_32.hpp">
+      <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Import\User32.hpp">
       <Filter>Import</Filter>
     </ClInclude>
   </ItemGroup>
