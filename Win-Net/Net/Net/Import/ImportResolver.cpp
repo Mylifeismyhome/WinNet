@@ -8,7 +8,7 @@ namespace Import
 {
 	namespace Resolver
 	{
-		static std::map<const char*, module_t> modules;
+		static std::map<std::string, module_t> modules;
 
 		bool isLoaded(const char* library)
 		{
