@@ -83,6 +83,8 @@ Client::Client()
 
 Client::~Client()
 {
+	Clear();
+
 	for (auto& entry : socketoption)
 		delete entry;
 
@@ -119,7 +121,6 @@ NET_THREAD(Receive)
 #endif
 	}
 
-	client->Clear();
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
 	return NULL;
 }

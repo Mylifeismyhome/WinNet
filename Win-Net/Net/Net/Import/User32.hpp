@@ -1,6 +1,9 @@
 #pragma once
 #include "ImportResolver.h"
 
+#ifdef NET_DISABLE_IMPORT_USER32
+#define User32
+#else
 #define IMPORT_NAME User32
 
 RESOLVE_IMPORT_BEGIN;
@@ -61,3 +64,4 @@ MAKE_IMPORT(hWnd, lpText, lpCaption, uType);
 DEFINE_IMPORT(int, MessageBoxW, HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType);
 MAKE_IMPORT(hWnd, lpText, lpCaption, uType);
 RESOLVE_IMPORT_END;
+#endif

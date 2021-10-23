@@ -183,6 +183,9 @@
     <ClCompile Include="..\Net\Import\ImportResolver.cpp">
       <Filter>Import</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Import\Imports.cpp">
+      <Filter>Import</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">

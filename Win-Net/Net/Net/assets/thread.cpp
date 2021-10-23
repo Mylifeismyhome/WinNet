@@ -7,10 +7,15 @@
 bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
 	std::thread(StartRoutine, parameter).detach();
+	return true;
 }
 #else
 bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
+#ifdef NET_DISABLE_IMPORT_NTDLL
+	std::thread(StartRoutine, parameter).detach();
+	return true;
+#else
 	auto handle = INVALID_HANDLE_VALUE;
 
 	const auto status = (NTSTATUS)Ntdll::NtCreateThreadEx(&handle, THREAD_ALL_ACCESS, nullptr, GetCurrentProcess(), nullptr, parameter, THREAD_TERMINATE, NULL, NULL, NULL, nullptr);
@@ -49,5 +54,6 @@ bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const p
 	}
 
 	return true;
+#endif
 }
 #endif

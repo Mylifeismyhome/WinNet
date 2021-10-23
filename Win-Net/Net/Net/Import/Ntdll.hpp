@@ -244,6 +244,9 @@ typedef enum _HARDERROR_RESPONSE
 #define PDI_HEAP_BLOCKS 0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
+#ifdef NET_DISABLE_IMPORT_NTDLL
+#define Ntdll
+#else
 #define IMPORT_NAME Ntdll
 
 RESOLVE_IMPORT_BEGIN;
@@ -295,3 +298,4 @@ MAKE_IMPORT(Buffer);
 DEFINE_IMPORT(NTSTATUS, NtSetDebugFilterState, DWORD d1, DWORD d2, bool b);
 MAKE_IMPORT(d1, d2, b);
 RESOLVE_IMPORT_END;
+#endif
