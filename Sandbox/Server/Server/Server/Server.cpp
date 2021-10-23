@@ -12,4 +12,7 @@ void Server::OnPeerUpdate(NET_PEER peer) {}
 
 NET_BEGIN_FNC_PKG(Server, Test)
 LOG("Received Package from Client");
+
+Net::Package pkg2;
+DoSend(peer, Packages::PKG_TEST, pkg2);
 NET_END_FNC_PKG
