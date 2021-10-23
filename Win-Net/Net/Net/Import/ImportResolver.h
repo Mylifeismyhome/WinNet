@@ -22,6 +22,9 @@ static Ret funcName##(__VA_ARGS__) \
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
 #include <Net/Cryption/PointerCryption.h>
+#include <Net/assets/manager/logmanager.h>
+#include <Net/assets/manager/filemanager.h>
+#include "MemoryModule.h"
 
 namespace Import
 {
