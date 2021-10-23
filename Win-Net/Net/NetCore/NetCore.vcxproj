@@ -891,7 +891,6 @@
     <ClCompile Include="..\Net\Cryption\XOR.cpp" />
     <ClCompile Include="..\Net\Database\MYSQL.cpp" />
     <ClCompile Include="..\Net\Import\ImportResolver.cpp" />
-    <ClCompile Include="..\Net\Import\Imports.cpp" />
     <ClCompile Include="..\Net\Import\MemoryModule.c" />
     <ClCompile Include="..\Net\Net\Net.cpp" />
     <ClCompile Include="..\Net\Net\NetCodes.cpp" />

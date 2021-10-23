@@ -2,23 +2,20 @@
 #include <Net/Cryption/XOR.h>
 #include <Net/Net/NetCodes.h>
 #include <Net/Import/ImportResolver.h>
-
-#include <Net/Import/Kernel32.hpp>
-#include <Net/Import/Ntdll.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
 void Net::load()
 {
 #ifndef NET_DISABLE_IMPORT_KERNEL32
-	IMPORT_LOAD(Kernel32, CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
+	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
 #endif
 
 #ifndef NET_DISABLE_IMPORT_NTDLL
-	IMPORT_LOAD(Ntdll, CSTRING("C:\\Windows\\System32\\ntdll.dll"));
+	Import::Resolver::Load(CSTRING("Ntdll"), CSTRING("C:\\Windows\\System32\\ntdll.dll"));
 #endif
 
 #ifndef NET_DISABLE_IMPORT_WS2_32
-	IMPORT_LOAD(Ws2_32, CSTRING("C:\\Windows\\System32\\Ws2_32.dll"));
+	Import::Resolver::Load(CSTRING("Ws2_32"), CSTRING("C:\\Windows\\System32\\Ws2_32.dll"));
 #endif
 
 	Net::Codes::NetLoadErrorCodes();
@@ -27,15 +24,15 @@ void Net::load()
 void Net::unload()
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
-	IMPORT_UNLOAD(CSTRING("Ws2_32"));
+	Import::Resolver::Unload(CSTRING("Ws2_32"));
 #endif
 
 #ifndef NET_DISABLE_IMPORT_NTDLL
-	IMPORT_UNLOAD(CSTRING("Ntdll"));
+	Import::Resolver::Unload(CSTRING("Ntdll"));
 #endif
 
 #ifndef NET_DISABLE_IMPORT_KERNEL32
-	IMPORT_UNLOAD(CSTRING("Kernel32"));
+	Import::Resolver::Unload(CSTRING("Kernel32"));
 #endif
 
 	Net::Codes::NetUnloadErrorCodes();
