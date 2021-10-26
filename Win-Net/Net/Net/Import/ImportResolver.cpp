@@ -1,3 +1,4 @@
+#ifndef BUILD_LINUX
 #include "ImportResolver.h"
 
 typedef HMODULE(*_LoadLibraryA)(LPCSTR lpLibFileName);
@@ -168,3 +169,4 @@ namespace Import
 		}
 	}
 }
+#endif

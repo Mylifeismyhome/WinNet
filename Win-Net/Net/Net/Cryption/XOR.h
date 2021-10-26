@@ -6,10 +6,16 @@
 NET_DSA_BEGIN
 
 #define RUNTIMEXOR Net::Cryption::XOR
+
+#ifdef BUILD_LINUX
+#define CASTRING(string) string
+#define CWSTRING(string) L##string
+#else
 #define COMPILETIME_XOR(string) xorstr_(string)
 #define WCOMPILETIME_XOR(string) xorstr_(string)
 #define CASTRING(string) COMPILETIME_XOR(string)
 #define CWSTRING(string) WCOMPILETIME_XOR(L##string)
+#endif
 
 #ifdef UNICODE
 #define CSTRING(string) CWSTRING(string)

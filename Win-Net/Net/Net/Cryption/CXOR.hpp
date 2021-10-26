@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#ifndef BUILD_LINUX
 #ifndef JM_XORSTR_HPP
 #define JM_XORSTR_HPP
 
@@ -243,3 +244,4 @@ namespace jm {
 } // namespace jm
 
 #endif // include guard
+#endif

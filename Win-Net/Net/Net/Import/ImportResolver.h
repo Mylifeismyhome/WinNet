@@ -1,3 +1,4 @@
+
 #pragma once
 #define X_RESOLVER_TO_STRING(str) RESOLVER_TO_STRING(str)
 #define RESOLVER_TO_STRING(str) #str
@@ -19,6 +20,7 @@ static Ret funcName##(__VA_ARGS__) \
 	return func(__VA_ARGS__); \
 }
 
+#ifndef BUILD_LINUX
 #include <Net/Net/Net.h>
 #include <Net/Cryption/XOR.h>
 #include <Net/Cryption/PointerCryption.h>
@@ -52,3 +54,4 @@ namespace Import
 		CPOINTER<void> Function(const char* library, const char* funcName);
 	}
 }
+#endif
