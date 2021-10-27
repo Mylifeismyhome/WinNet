@@ -128,6 +128,9 @@ namespace Net
 		class NET_EXPORT_CLASS Interface
 		{
 		public:
+			virtual void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
+			virtual void AppendRawData(Net::Package::Package_RawData_t& data) = 0;
+
 			virtual void RewriteRawData(const char* Key, BYTE* data) = 0;
 
 			virtual bool Parse(const char* data) = 0;
@@ -186,8 +189,8 @@ namespace Net
 					pkg.AddMember(key, value, pkg.GetAllocator());
 			}
 
-			void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true);
-			void AppendRawData(Net::Package::Package_RawData_t& data);
+			void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
+			void AppendRawData(Net::Package::Package_RawData_t& data) override;
 
 			template<typename Type>
 			void Rewrite(const char* Key, const Type Value)
