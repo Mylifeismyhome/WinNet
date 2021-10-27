@@ -1,28 +1,273 @@
 #include <Net/Net/Package.h>
 
-NET_NAMESPACE_BEGIN(Net)
-Package::Package()
+Net::Package::Package_RawData_t::Package_RawData_t()
+{
+	memset(this->_key, NULL, 256);
+	this->_data = nullptr;
+	this->_size = NULL;
+	this->_free_after_sent = false;
+	this->_valid = false;
+}
+
+Net::Package::Package_RawData_t::Package_RawData_t(const char* name, byte* pointer, const size_t size)
+{
+	strcpy(this->_key, name);
+	this->_data = pointer;
+	this->_size = size;
+	this->_free_after_sent = true;
+	this->_valid = true;
+}
+
+Net::Package::Package_RawData_t::Package_RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent)
+{
+	strcpy(this->_key, name);
+	this->_data = pointer;
+	this->_size = size;
+	this->_free_after_sent = free_after_sent;
+	this->_valid = true;
+}
+
+bool Net::Package::Package_RawData_t::valid() const
+{
+	return _valid;
+}
+
+byte* Net::Package::Package_RawData_t::value() const
+{
+	return _data;
+}
+
+byte*& Net::Package::Package_RawData_t::value()
+{
+	return _data;
+}
+
+size_t Net::Package::Package_RawData_t::size() const
+{
+	return _size;
+}
+
+size_t& Net::Package::Package_RawData_t::size()
+{
+	return _size;
+}
+
+void Net::Package::Package_RawData_t::set_free(bool free)
+{
+	_free_after_sent = free;
+
+}
+
+bool Net::Package::Package_RawData_t::do_free() const
+{
+	return _free_after_sent;
+}
+
+const char* Net::Package::Package_RawData_t::key() const
+{
+	if (_key == nullptr) return CSTRING("");
+	return _key;
+}
+
+void Net::Package::Package_RawData_t::set(byte* pointer)
+{
+	if (do_free())  FREE(_data);
+	_data = pointer;
+}
+
+void Net::Package::Package_RawData_t::free()
+{
+	if (!this->_valid) return;
+
+	// only free the passed reference if we allow it
+	if (do_free()) FREE(this->_data);
+
+	this->_data = nullptr;
+	this->_size = NULL;
+
+	this->_valid = false;
+}
+
+Net::Package::Package_t_Object::Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
+{
+	this->_valid = _valid;
+	strcpy(this->_name, _name);
+	this->_value = _value;
+}
+
+bool Net::Package::Package_t_Object::valid() const
+{
+	return _valid;
+}
+
+const char* Net::Package::Package_t_Object::name() const
+{
+	return _name;
+}
+
+rapidjson::Value::Object Net::Package::Package_t_Object::value()
+{
+	return _value.GetObject();
+}
+
+Net::Package::Package_t_Array::Package_t_Array(const bool _valid, const char* _name, rapidjson::Value _value)
+{
+	this->_valid = _valid;
+	strcpy(this->_name, _name);
+	this->_value = _value;
+}
+
+bool Net::Package::Package_t_Array::valid() const
+{
+	return _valid;
+}
+
+const char* Net::Package::Package_t_Array::name() const
+{
+	return _name;
+}
+
+rapidjson::Value::Array Net::Package::Package_t_Array::value()
+{
+	return _value.GetArray();
+}
+
+Net::Package::Package::Package()
 {
 	pkg.SetObject();
 }
 
-Package::~Package()
+Net::Package::Package::~Package()
 {
 	/* free all raw data */
 	for (auto& entry : rawData) entry.free();
 }
 
-bool Package::Parse(const char* data)
+void Net::Package::Package::AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
+{
+	for (auto& entry : rawData)
+	{
+		if (!strcmp(entry.key(), Key))
+		{
+			if (free_after_sent)
+			{
+				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				FREE(data);
+				return;
+			}
+
+			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
+			return;
+		}
+	}
+
+	rawData.emplace_back(Net::Package::Package_RawData_t(Key, data, size, free_after_sent));
+}
+
+void Net::Package::Package::AppendRawData(Net::Package::Package_RawData_t& data)
+{
+	for (auto& entry : rawData)
+	{
+		if (!strcmp(entry.key(), data.key()))
+		{
+			if (data.do_free())
+			{
+				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				data.free();
+				return;
+			}
+
+			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
+			return;
+		}
+	}
+
+	rawData.emplace_back(data);
+}
+
+void Net::Package::Package::RewriteRawData(const char* Key, BYTE* data)
+{
+	for (auto entry : rawData)
+	{
+		if (!strcmp(entry.key(), Key))
+		{
+			entry.set(data);
+			break;
+		}
+	}
+}
+
+bool Net::Package::Package::Parse(const char* data)
 {
 	return !this->pkg.Parse(data).HasParseError();
 }
 
-rapidjson::Document& Package::GetPackage()
+void Net::Package::Package::SetPackage(const rapidjson::Document& doc)
+{
+	this->pkg.CopyFrom(doc, this->pkg.GetAllocator());
+}
+
+void Net::Package::Package::SetPackage(const rapidjson::Value& doc)
+{
+	this->pkg.CopyFrom(doc, this->pkg.GetAllocator());
+}
+
+void Net::Package::Package::SetPackage(const rapidjson::Document::Object& obj)
+{
+	this->pkg.Set(obj);
+}
+
+void Net::Package::Package::SetPackage(const rapidjson::Document::ValueIterator& arr)
+{
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	arr->Accept(writer);
+	this->pkg.Parse(buffer.GetString());
+}
+
+void Net::Package::Package::SetRawData(const std::vector<Net::Package::Package_RawData_t>& data)
+{
+	rawData = data;
+}
+
+std::vector<Net::Package::Package_RawData_t>& Net::Package::Package::GetRawData()
+{
+	return rawData;
+}
+
+bool Net::Package::Package::HasRawData() const
+{
+	return !rawData.empty();
+}
+
+size_t Net::Package::Package::GetRawDataFullSize() const
+{
+	size_t size = NULL;
+	for (auto& entry : rawData)
+	{
+		size += strlen(NET_RAW_DATA_KEY);
+		size += 1;
+		const auto KeyLengthStr = std::to_string(strlen(entry.key()) + 1);
+		size += KeyLengthStr.size();
+		size += 1;
+		size += strlen(NET_RAW_DATA);
+		size += 1;
+		const auto rawDataLengthStr = std::to_string(entry.size());
+		size += rawDataLengthStr.size();
+		size += 1;
+		size += strlen(entry.key()) + 1;
+		size += entry.size();
+	}
+
+	return size;
+}
+
+rapidjson::Document& Net::Package::Package::GetPackage()
 {
 	return pkg;
 }
 
-std::string Package::StringifyPackage() const
+std::string Net::Package::Package::StringifyPackage() const
 {
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -31,7 +276,7 @@ std::string Package::StringifyPackage() const
 	return outBuffer;
 }
 
-Package_t<const char*> Package::String(const char* Key) const
+Net::Package::Package_t<const char*> Net::Package::Package::String(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -66,7 +311,7 @@ Package_t<const char*> Package::String(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetString() };
 }
 
-Package_t<int> Package::Int(const char* Key) const
+Net::Package::Package_t<int> Net::Package::Package::Int(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -101,7 +346,7 @@ Package_t<int> Package::Int(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetInt() };
 }
 
-Package_t<double> Package::Double(const char* Key) const
+Net::Package::Package_t<double> Net::Package::Package::Double(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -138,7 +383,7 @@ Package_t<double> Package::Double(const char* Key) const
 	return { true, Key, (pkg.FindMember(Key)->value.IsDouble() ? pkg.FindMember(Key)->value.GetDouble() : (pkg.FindMember(Key)->value.IsFloat() ? static_cast<double>(pkg.FindMember(Key)->value.GetFloat()) : static_cast<double>(pkg.FindMember(Key)->value.GetInt()))) };
 }
 
-Package_t<float> Package::Float(const char* Key) const
+Net::Package::Package_t<float> Net::Package::Package::Float(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -174,7 +419,7 @@ Package_t<float> Package::Float(const char* Key) const
 	return { true, Key,  (pkg.FindMember(Key)->value.IsFloat() ? pkg.FindMember(Key)->value.GetFloat() : static_cast<float>(pkg.FindMember(Key)->value.GetInt())) };
 }
 
-Package_t<int64> Package::Int64(const char* Key) const
+Net::Package::Package_t<int64> Net::Package::Package::Int64(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -209,7 +454,7 @@ Package_t<int64> Package::Int64(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetInt64() };
 }
 
-Package_t<uint> Package::UINT(const char* Key) const
+Net::Package::Package_t<uint> Net::Package::Package::UINT(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -244,7 +489,7 @@ Package_t<uint> Package::UINT(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetUint() };
 }
 
-Package_t<uint64> Package::UINT64(const char* Key) const
+Net::Package::Package_t<uint64> Net::Package::Package::UINT64(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -279,7 +524,7 @@ Package_t<uint64> Package::UINT64(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetUint64() };
 }
 
-Package_t<bool> Package::Boolean(const char* Key) const
+Net::Package::Package_t<bool> Net::Package::Package::Boolean(const char* Key) const
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -314,7 +559,7 @@ Package_t<bool> Package::Boolean(const char* Key) const
 	return { true, Key, pkg.FindMember(Key)->value.GetBool() };
 }
 
-Package_t_Object Package::Object(const char* Key)
+Net::Package::Package_t_Object Net::Package::Package::Object(const char* Key)
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -349,7 +594,7 @@ Package_t_Object Package::Object(const char* Key)
 	return { true, Key, pkg.FindMember(Key)->value.GetObjectA() };
 }
 
-Package_t_Array Package::Array(const char* Key)
+Net::Package::Package_t_Array Net::Package::Package::Array(const char* Key)
 {
 	if (pkg.IsArray() && pkg.Empty())
 	{
@@ -384,7 +629,7 @@ Package_t_Array Package::Array(const char* Key)
 	return { true, Key, pkg.FindMember(Key)->value.GetArray() };
 }
 
-Package_RawData_t& Package::RawData(const char* Key)
+Net::Package::Package_RawData_t& Net::Package::Package::RawData(const char* Key)
 {
 	for(auto& entry : rawData)
 	{
@@ -394,5 +639,3 @@ Package_RawData_t& Package::RawData(const char* Key)
 
 	return Package_RawData_t();
 }
-
-NET_NAMESPACE_END
