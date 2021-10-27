@@ -117,8 +117,8 @@ typedef unsigned __int64 uint64;
 #define NET_NAMESPACE_BEGIN(n) namespace n {
 #define NET_NAMESPACE_END }
 
-#define NET_CLASS_BEGIN(c) class NET_API c {
-#define NET_ABSTRAC_CLASS_BEGIN(c, d) class NET_API c : public d {
+#define NET_CLASS_BEGIN(c) class c {
+#define NET_ABSTRAC_CLASS_BEGIN(c, d) class c : public d {
 #define NET_CLASS_END };
 #define NET_CLASS_CONSTRUCTUR(a, ...) a(__VA_ARGS__);
 #define NET_CLASS_CONSTRUCTUR_NOEXCEPT(a, ...) a(__VA_ARGS__) NOEXPECT;
@@ -458,8 +458,8 @@ public:
 ////////////////////////////////////////////////////
 namespace Net
 {
-	void load();
-	void unload();
+	NET_API void load();
+	NET_API void unload();
 
 	int SocketOpt(SOCKET, int, int, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
 

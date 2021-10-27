@@ -1,6 +1,18 @@
 #include "http.h"
 #include <Net/Import/Ws2_32.hpp>
 
+#ifdef DLL
+NET_API Net::Web::HTTP* CreateNetHTTP(const char* address)
+{
+	return new Net::Web::HTTP(address);
+}
+
+NET_API Net::Web::HTTPS* CreateNetHTTPS(const char* address)
+{
+	return new Net::Web::HTTPS(address);
+}
+#endif
+
 NET_IGNORE_CONVERSION_NULL
 void Net::Web::Head::Network::AllocData(const size_t size)
 {

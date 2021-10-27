@@ -25,7 +25,7 @@ static char* rcs_id = (char*)"$Id: md5.c,v 1.8 2010-05-07 13:58:18 gray Exp $";
 /* version id for the library */
 static char* version_id = (char*)"$MD5Version: 1.0.0 November-19-1997 $";
 
-extern "C" NET_API inline void process_block(md5_t * md5_p, const void* buffer,
+inline void process_block(md5_t * md5_p, const void* buffer,
 	const unsigned int buf_len)
 {
 	md5_uint32	correct[16];
@@ -179,7 +179,7 @@ extern "C" NET_API inline void process_block(md5_t * md5_p, const void* buffer,
  *
  * result - A 16 byte buffer that will contain the MD5 signature.
  */
-extern "C" NET_API inline void md5_get_result(const md5_t * md5_p, void* result)
+inline void md5_get_result(const md5_t * md5_p, void* result)
 {
 	md5_uint32	hold;
 	auto res_p = result;
@@ -222,7 +222,7 @@ extern "C" NET_API inline void md5_get_result(const md5_t * md5_p, void* result)
  *
  * md5_p - Pointer to md5 structure that we are initializing.
  */
-extern "C" NET_API inline void md5_init(md5_t * md5_p)
+inline void md5_init(md5_t * md5_p)
 {
 	md5_p->md_A = 0x67452301;
 	md5_p->md_B = 0xefcdab89;
@@ -257,7 +257,7 @@ extern "C" NET_API inline void md5_init(md5_t * md5_p)
  *
  * buf_len - The length of the buffer.
  */
-extern "C" NET_API inline void md5_process(md5_t * md5_p, const void* buffer, const unsigned int buf_len)
+inline void md5_process(md5_t * md5_p, const void* buffer, const unsigned int buf_len)
 {
 	auto len = buf_len;
 	unsigned int in_block = 0, add = 0;
@@ -327,7 +327,7 @@ extern "C" NET_API inline void md5_process(md5_t * md5_p, const void* buffer, co
  *
  * signature - A 16 byte buffer that will contain the MD5 signature.
  */
-extern "C" NET_API inline void md5_finish(md5_t * md5_p, void* signature)
+inline void md5_finish(md5_t * md5_p, void* signature)
 {
 	md5_uint32	bytes = 0, hold = 0;
 	auto pad = 0;
@@ -411,7 +411,7 @@ extern "C" NET_API inline void md5_finish(md5_t * md5_p, void* signature)
  *
  * signature - A 16 byte buffer that will contain the MD5 signature.
  */
-extern "C" NET_API inline void md5_buffer(const char* buffer, const unsigned int buf_len, void* signature)
+inline void md5_buffer(const char* buffer, const unsigned int buf_len, void* signature)
 {
 	md5_t md5;
 
@@ -446,7 +446,7 @@ extern "C" NET_API inline void md5_buffer(const char* buffer, const unsigned int
  *
  * str_len - the length of the string.
  */
-extern "C" NET_API inline void md5_sig_to_string(void* signature, char* str, const int str_len)
+inline void md5_sig_to_string(void* signature, char* str, const int str_len)
 {
 	unsigned char* sig_p = nullptr;
 	char* str_p = nullptr, * max_p = nullptr;
@@ -492,7 +492,7 @@ extern "C" NET_API inline void md5_sig_to_string(void* signature, char* str, con
  * str - A string of charactes which _must_ be at least 32 bytes long (2
  * characters per MD5 byte).
  */
-extern "C" NET_API inline void md5_sig_from_string(void* signature, const char* str)
+inline void md5_sig_from_string(void* signature, const char* str)
 {
 	unsigned char* sig_p = nullptr;
 	const char* str_p = nullptr;
