@@ -101,7 +101,7 @@ int GetRandNumber(int min, int max)
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
-NET_API void GetRandString(char*& out, const size_t len)
+NET_EXPORT_FUNCTION void GetRandString(char*& out, const size_t len)
 {
 	FREE(out);
 	out = ALLOC< char >(len + 1);
@@ -112,7 +112,7 @@ NET_API void GetRandString(char*& out, const size_t len)
 	out[len] = '\0';
 }
 
-NET_API void GetRandStringNew(BYTE*& out, const size_t len)
+NET_EXPORT_FUNCTION void GetRandStringNew(BYTE*& out, const size_t len)
 {
 	FREE(out);
 	out = ALLOC< BYTE >(len + 1);
@@ -123,7 +123,7 @@ NET_API void GetRandStringNew(BYTE*& out, const size_t len)
 	out[len] = '\0';
 }
 
-NET_API int GetRandSeed()
+NET_EXPORT_FUNCTION int GetRandSeed()
 {
 	return Net::Math::GetRandNumber(0, INT_MAX);
 }

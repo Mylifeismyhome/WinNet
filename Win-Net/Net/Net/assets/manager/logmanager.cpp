@@ -258,7 +258,7 @@ NET_NAMESPACE_BEGIN(Console)
 static bool DisablePrintF = false;
 #endif
 
-tm TM_GetTime()
+NET_EXPORT_FUNCTION tm TM_GetTime()
 {
 	auto timeinfo = tm();
 #ifdef BUILD_LINUX
@@ -278,7 +278,7 @@ tm TM_GetTime()
 }
 
 #ifndef NET_DISABLE_LOGMANAGER
-std::string GetLogStatePrefix(LogStates state)
+NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates state)
 {
 	switch (static_cast<int>(state))
 	{
@@ -366,17 +366,17 @@ void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
 	FREE(func);
 }
 
-void SetPrintF(const bool state)
+NET_EXPORT_FUNCTION void SetPrintF(const bool state)
 {
 	DisablePrintF = !state;
 }
 
-bool GetPrintFState()
+NET_EXPORT_FUNCTION bool GetPrintFState()
 {
 	return DisablePrintF;
 }
 
-WORD GetColorFromState(const LogStates state)
+NET_EXPORT_FUNCTION WORD GetColorFromState(const LogStates state)
 {
 	switch (state)
 	{
@@ -408,7 +408,7 @@ NET_NAMESPACE_END
 #ifndef NET_DISABLE_LOGMANAGER
 NET_NAMESPACE_BEGIN(Manager)
 NET_NAMESPACE_BEGIN(Log)
-void SetOutputName(const char* name)
+NET_EXPORT_FUNCTION void SetOutputName(const char* name)
 {
 	Net::String tmp(name);
 	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
@@ -437,17 +437,17 @@ void SetOutputName(const char* name)
 	}
 }
 
-void SetLogCallbackA(OnLogA_t callback)
+NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t callback)
 {
 	OnLogA = callback;
 }
 
-void SetLogCallbackW(OnLogW_t callback)
+NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t callback)
 {
 	OnLogW = callback;
 }
 
-void Log(const Console::LogStates state, const char* func, const char* msg, ...)
+NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 {
 	va_list vaArgs;
 

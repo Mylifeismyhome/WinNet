@@ -2,19 +2,27 @@
 #include <Net/Import/Ws2_32.hpp>
 
 #ifdef DLL
-NET_API Net::Web::HTTP* CreateNetHTTP(const char* address)
+NET_EXPORT_FUNCTION Net::Web::Interface* CreateNetHTTP(const char* address)
 {
 	return new Net::Web::HTTP(address);
 }
 
-NET_API Net::Web::HTTPS* CreateNetHTTPS(const char* address)
+NET_EXPORT_FUNCTION Net::Web::Interface* CreateNetHTTPS(const char* address)
 {
 	return new Net::Web::HTTPS(address);
 }
 #endif
 
 NET_IGNORE_CONVERSION_NULL
-void Net::Web::Head::Network::AllocData(const size_t size)
+Net::Web::Network_t::Network_t()
+{
+	memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+	data = nullptr;
+	data_size = 0;
+	data_full_size = 0;
+}
+
+void Net::Web::Network_t::AllocData(const size_t size)
 {
 	data = ALLOC<byte>(size + 1);
 	memset(data.get(), NULL, size);
@@ -22,7 +30,7 @@ void Net::Web::Head::Network::AllocData(const size_t size)
 	data_full_size = 0;
 }
 
-void Net::Web::Head::Network::clearData()
+void Net::Web::Network_t::clearData()
 {
 	data.free();
 	data_size = 0;

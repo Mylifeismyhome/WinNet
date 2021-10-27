@@ -4,7 +4,7 @@
 #include <Net/Import/ImportResolver.h>
 #include <Net/Import/Ws2_32.hpp>
 
-NET_API void Net::load()
+NET_EXPORT_FUNCTION void Net::load()
 {
 #ifndef NET_DISABLE_IMPORT_KERNEL32
 	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
@@ -21,7 +21,7 @@ NET_API void Net::load()
 	Net::Codes::NetLoadErrorCodes();
 }
 
-NET_API void Net::unload()
+NET_EXPORT_FUNCTION void Net::unload()
 {
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	Import::Resolver::Unload(CSTRING("Ws2_32"));

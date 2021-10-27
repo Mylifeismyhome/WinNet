@@ -109,16 +109,18 @@ typedef unsigned __int64 uint64;
 //    SECTION - DEFINES     //
 //////////////////////////////////
 #ifdef DLL
-#define NET_API extern "C" __declspec(dllexport)
+#define NET_EXPORT_FUNCTION extern "C" __declspec(dllexport)
+#define NET_EXPORT_CLASS __declspec(dllexport)
 #else
-#define NET_API
+#define NET_EXPORT_FUNCTION
+#define NET_EXPORT_CLASS __declspec(dllimport)
 #endif
 
 #define NET_NAMESPACE_BEGIN(n) namespace n {
 #define NET_NAMESPACE_END }
 
 #define NET_CLASS_BEGIN(c) class c {
-#define NET_ABSTRAC_CLASS_BEGIN(c, d) class c : public d {
+#define NET_ABSTRAC_CLASS_BEGIN(c, d) class NET_EXPORT_CLASS c : public d {
 #define NET_CLASS_END };
 #define NET_CLASS_CONSTRUCTUR(a, ...) a(__VA_ARGS__);
 #define NET_CLASS_CONSTRUCTUR_NOEXCEPT(a, ...) a(__VA_ARGS__) NOEXPECT;
@@ -458,8 +460,8 @@ public:
 ////////////////////////////////////////////////////
 namespace Net
 {
-	NET_API void load();
-	NET_API void unload();
+	NET_EXPORT_FUNCTION void load();
+	NET_EXPORT_FUNCTION void unload();
 
 	int SocketOpt(SOCKET, int, int, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
 

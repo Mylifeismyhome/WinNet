@@ -67,9 +67,9 @@ int GetRandNumber(int min, int max);
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Random)
-NET_API void GetRandString(char*& out, size_t len);
-NET_API void GetRandStringNew(BYTE * &out, size_t len);
-NET_API int GetRandSeed();
+NET_EXPORT_FUNCTION void GetRandString(char*& out, size_t len);
+NET_EXPORT_FUNCTION void GetRandStringNew(BYTE * &out, size_t len);
+NET_EXPORT_FUNCTION int GetRandSeed();
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Util)

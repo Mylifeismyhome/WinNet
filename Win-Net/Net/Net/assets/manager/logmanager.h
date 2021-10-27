@@ -199,26 +199,26 @@ enum class LogStates
 	peer
 };
 #endif
-tm TM_GetTime();
+NET_EXPORT_FUNCTION tm TM_GetTime();
 #ifndef NET_DISABLE_LOGMANAGER
-std::string GetLogStatePrefix(LogStates);
+NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates);
 void Log(LogStates, const char*, const char*, ...);
 void Log(LogStates, const char*, const wchar_t*, ...);
-void ChangeStdOutputColor(int);
+NET_EXPORT_FUNCTION void ChangeStdOutputColor(int);
 
-void SetPrintF(bool);
-bool GetPrintFState();
-WORD GetColorFromState(LogStates);
+NET_EXPORT_FUNCTION void SetPrintF(bool);
+NET_EXPORT_FUNCTION bool GetPrintFState();
+NET_EXPORT_FUNCTION WORD GetColorFromState(LogStates);
 #endif
 NET_NAMESPACE_END
 
 NET_NAMESPACE_BEGIN(Manager)
 NET_NAMESPACE_BEGIN(Log)
 #ifndef NET_DISABLE_LOGMANAGER
-void SetOutputName(const char*);
-void SetLogCallbackA(OnLogA_t);
-void SetLogCallbackW(OnLogW_t);
-void Log(Console::LogStates, const char*, const char*, ...);
+NET_EXPORT_FUNCTION void SetOutputName(const char*);
+NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
+NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
+NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const char*, ...);
 void Log(Console::LogStates, const char*, const wchar_t*, ...);
 #endif
 NET_NAMESPACE_END
