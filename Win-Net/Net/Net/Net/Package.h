@@ -125,7 +125,39 @@ namespace Net
 			rapidjson::Value::Array value();
 		};
 
-		class Package
+		class NET_EXPORT_CLASS Interface
+		{
+		public:
+			virtual void RewriteRawData(const char* Key, BYTE* data) = 0;
+
+			virtual bool Parse(const char* data) = 0;
+
+			virtual void SetPackage(const rapidjson::Document& doc) = 0;
+			virtual void SetPackage(const rapidjson::Value& doc) = 0;
+			virtual void SetPackage(const rapidjson::Document::Object& obj) = 0;
+			virtual void SetPackage(const rapidjson::Document::ValueIterator& arr) = 0;
+			virtual void SetRawData(const std::vector<Net::Package::Package_RawData_t>& data) = 0;
+
+			virtual std::vector<Net::Package::Package_RawData_t>& GetRawData() = 0;
+			virtual bool HasRawData() const = 0;
+			virtual size_t GetRawDataFullSize() const = 0;
+
+			virtual rapidjson::Document& GetPackage() = 0;
+			virtual std::string StringifyPackage() const = 0;
+			virtual Net::Package::Package_t<const char*> String(const char*) const = 0;
+			virtual Net::Package::Package_t<int> Int(const char*) const = 0;
+			virtual Net::Package::Package_t<double> Double(const char*) const = 0;
+			virtual Net::Package::Package_t<float> Float(const char*) const = 0;
+			virtual Net::Package::Package_t<int64> Int64(const char*) const = 0;
+			virtual Net::Package::Package_t<uint> UINT(const char*) const = 0;
+			virtual Net::Package::Package_t<uint64> UINT64(const char*) const = 0;
+			virtual Net::Package::Package_t<bool> Boolean(const char*) const = 0;
+			virtual Net::Package::Package_t_Object Object(const char*) = 0;
+			virtual Net::Package::Package_t_Array Array(const char*) = 0;
+			virtual Net::Package::Package_RawData_t& RawData(const char*) = 0;
+		};
+
+		class NET_EXPORT_CLASS Package : public Interface
 		{
 			rapidjson::Document pkg;
 			std::vector<Net::Package::Package_RawData_t> rawData;
@@ -182,33 +214,33 @@ namespace Net
 				member->value.Set<Type>(Value);
 			}
 
-			void RewriteRawData(const char* Key, BYTE* data);
+			void RewriteRawData(const char* Key, BYTE* data) override;
 
-			bool Parse(const char* data);
+			bool Parse(const char* data) override;
 
-			void SetPackage(const rapidjson::Document& doc);
-			void SetPackage(const rapidjson::Value& doc);
-			void SetPackage(const rapidjson::Document::Object& obj);
-			void SetPackage(const rapidjson::Document::ValueIterator& arr);
-			void SetRawData(const std::vector<Net::Package::Package_RawData_t>& data);
+			void SetPackage(const rapidjson::Document& doc) override;
+			void SetPackage(const rapidjson::Value& doc) override;
+			void SetPackage(const rapidjson::Document::Object& obj) override;
+			void SetPackage(const rapidjson::Document::ValueIterator& arr) override;
+			void SetRawData(const std::vector<Net::Package::Package_RawData_t>& data) override;
 
-			std::vector<Net::Package::Package_RawData_t>& GetRawData();
-			bool HasRawData() const;
-			size_t GetRawDataFullSize() const;
+			std::vector<Net::Package::Package_RawData_t>& GetRawData() override;
+			bool HasRawData() const override;
+			size_t GetRawDataFullSize() const override;
 
-			rapidjson::Document& GetPackage();
-			std::string StringifyPackage() const;
-			Net::Package::Package_t<const char*> String(const char*) const;
-			Net::Package::Package_t<int> Int(const char*) const;
-			Net::Package::Package_t<double> Double(const char*) const;
-			Net::Package::Package_t<float> Float(const char*) const;
-			Net::Package::Package_t<int64> Int64(const char*) const;
-			Net::Package::Package_t<uint> UINT(const char*) const;
-			Net::Package::Package_t<uint64> UINT64(const char*) const;
-			Net::Package::Package_t<bool> Boolean(const char*) const;
-			Net::Package::Package_t_Object Object(const char*);
-			Net::Package::Package_t_Array Array(const char*);
-			Net::Package::Package_RawData_t& RawData(const char*);
+			rapidjson::Document& GetPackage() override;
+			std::string StringifyPackage() const override;
+			Net::Package::Package_t<const char*> String(const char*) const override;
+			Net::Package::Package_t<int> Int(const char*) const override;
+			Net::Package::Package_t<double> Double(const char*) const override;
+			Net::Package::Package_t<float> Float(const char*) const override;
+			Net::Package::Package_t<int64> Int64(const char*) const override;
+			Net::Package::Package_t<uint> UINT(const char*) const override;
+			Net::Package::Package_t<uint64> UINT64(const char*) const override;
+			Net::Package::Package_t<bool> Boolean(const char*) const override;
+			Net::Package::Package_t_Object Object(const char*) override;
+			Net::Package::Package_t_Array Array(const char*) override;
+			Net::Package::Package_RawData_t& RawData(const char*) override;
 		};
 	}
 }

@@ -1,5 +1,12 @@
 #include <Net/Net/Package.h>
 
+#ifdef DLL
+NET_EXPORT_FUNCTION Net::Package::Interface* CreatePackage()
+{
+	return new Net::Package::Package();
+}
+#endif
+
 Net::Package::Package_RawData_t::Package_RawData_t()
 {
 	memset(this->_key, NULL, 256);
