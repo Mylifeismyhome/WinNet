@@ -1303,7 +1303,7 @@ void Server::DecodeFrame(NET_PEER peer)
 	}
 	if (OPC == NET_OPCODE_PING)
 	{
-		Package pong;
+		Net::Package::Package pong;
 		DoSend(peer, NET_WS_CONTROL_PACKAGE, pong, NET_OPCODE_PONG);
 		peer->network.clear();
 		return;
@@ -1461,7 +1461,7 @@ void Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 
 	if (!data) return;
 
-	Package PKG;
+	Net::Package::Package PKG;
 	PKG.Parse(reinterpret_cast<char*>(data));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
@@ -1482,7 +1482,7 @@ void Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 		return;
 	}
 
-	Package Content;
+	Net::Package::Package Content;
 
 	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());

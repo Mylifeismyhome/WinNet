@@ -391,7 +391,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 
 	if (!skipNotify)
 	{
-		Net::Package PKG;
+		Net::Package::Package PKG;
 		PKG.Append(CSTRING("code"), code);
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
@@ -829,7 +829,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 			data.free();
 		}
 
-void Server::SingleSend(NET_PEER peer, Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -993,7 +993,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 		if (PKG.HasRawData())
 		{
-			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+			std::vector<Net::Package::Package_RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -1195,14 +1195,14 @@ NET_THREAD(Receive)
 
 		const auto PublicKey = peer->cryption.RSA.publicKey();
 
-		Package PKG;
+		Net::Package::Package PKG;
 		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
 	else
 	{
 		// keep it empty, we get it filled back
-		Package PKG;
+		Net::Package::Package PKG;
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
@@ -1691,7 +1691,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::Package::Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1829,7 +1829,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::Package::Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)

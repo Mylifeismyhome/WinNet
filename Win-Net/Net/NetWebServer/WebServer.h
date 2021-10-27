@@ -83,7 +83,7 @@ NET_CLASS_DESTRUCTUR(IPRef)
 const char* get() const;
 NET_CLASS_END
 
-NET_ABSTRAC_CLASS_BEGIN(Server, Package)
+NET_ABSTRAC_CLASS_BEGIN(Server, Net::Package::Package)
 NET_CLASS_PUBLIC
 #pragma region PEERS TABLE
 #pragma region Network Structure

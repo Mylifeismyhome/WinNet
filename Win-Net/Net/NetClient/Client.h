@@ -50,7 +50,7 @@
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 NET_DSA_BEGIN
-NET_ABSTRAC_CLASS_BEGIN(Client, Package)
+NET_ABSTRAC_CLASS_BEGIN(Client, Net::Package::Package)
 NET_STRUCT_BEGIN(Network)
 byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> data;
@@ -239,7 +239,7 @@ NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return fal
 void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-void SingleSend(Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+void SingleSend(Net::Package::Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 void DoSend(int, NET_PACKAGE);
 
 NET_CLASS_PRIVATE

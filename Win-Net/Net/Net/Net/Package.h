@@ -1,5 +1,5 @@
 #pragma once
-#define NET_PACKAGE Package&
+#define NET_PACKAGE Net::Package::Package&
 
 #define NET_JOIN_PACKAGE(PKGOLD, PKGNEW) \
 	Package PKGNEW; \

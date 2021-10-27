@@ -815,7 +815,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 	data.free();
 }
 
-void Client::SingleSend(Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Client::SingleSend(Net::Package::Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -983,7 +983,7 @@ void Client::DoSend(const int id, NET_PACKAGE pkg)
 
 		if (PKG.HasRawData())
 		{
-			std::vector<Package_RawData_t>& rawData = PKG.GetRawData();
+			std::vector<Net::Package::Package_RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -1605,7 +1605,7 @@ void Client::ExecutePackage()
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+					Net::Package::Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1744,7 +1744,7 @@ void Client::ExecutePackage()
 						}
 					}
 
-					Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+					Net::Package::Package_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)

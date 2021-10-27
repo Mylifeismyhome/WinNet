@@ -67,7 +67,7 @@ NET_CLASS_DESTRUCTUR(IPRef)
 const char* get() const;
 NET_CLASS_END
 
-NET_ABSTRAC_CLASS_BEGIN(Server, Package)
+NET_ABSTRAC_CLASS_BEGIN(Server, Net::Package::Package)
 NET_CLASS_PUBLIC
 #pragma region PEERS TABLE
 
@@ -302,7 +302,7 @@ NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { r
 void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-void SingleSend(NET_PEER, Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+void SingleSend(NET_PEER, Net::Package::Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 void DoSend(NET_PEER, int, NET_PACKAGE);
 
 size_t getCountPeers() const;
