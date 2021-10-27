@@ -695,20 +695,11 @@ namespace Net
 ////////////////////////////////////
 //    USEFULL FUNCTIONS    //
 ///////////////////////////////////
-#ifdef VS13
-static bool NET_STRING_IS_NUMBER(const std::string& s)
-{
-	for (size_t it = 0; it < s.length(); ++it)
-		if (s[it] < '0' || s[it] > '9') return false;
-	return true;
-}
-#else
 static bool NET_STRING_IS_NUMBER(const std::string& s)
 {
 	return !s.empty() && std::find_if(s.begin(),
 		s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
-#endif
 
 NET_NAMESPACE_BEGIN(ServerHandshake)
 enum Server_HandshakeRet_t
@@ -793,13 +784,8 @@ NET_NAMESPACE_END
 #define NET_OPT_DEFAULT_TOTP_INTERVAL 60
 #define NET_OPT_DEFAULT_NTP_SYNC_INTERVAL 30000
 
-#ifndef VS13
-#define NOEXPECT noexcept
-#define CONSTEXPR constexpr
-#else
 #define NOEXPECT
 #define CONSTEXPR const
-#endif
 
 #define FUNCNAME CSTRING("")
 

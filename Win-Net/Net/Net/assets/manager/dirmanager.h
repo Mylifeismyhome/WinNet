@@ -11,9 +11,7 @@
 #else
 #include <list>
 
-#ifndef VS13
 #include <corecrt_io.h>
-#endif
 
 #include <direct.h>
 #endif

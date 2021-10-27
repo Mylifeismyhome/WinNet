@@ -129,7 +129,6 @@ bool Get();
 bool Post();
 NET_CLASS_END
 
-#ifndef VS13
 NET_ABSTRAC_CLASS_BEGIN(HTTPS, Head)
 friend class Head;
 SSL_CTX* ctx;
@@ -150,7 +149,6 @@ bool IsInited() const;
 bool Get();
 bool Post();
 NET_CLASS_END
-#endif
 NET_DSA_END
 NET_NAMESPACE_END
 NET_NAMESPACE_END

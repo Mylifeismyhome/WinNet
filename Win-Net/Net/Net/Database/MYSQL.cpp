@@ -1,8 +1,6 @@
 #include "MYSQL.h"
 
 #ifdef NET_USE_MYSQL_SUPPORT
-#ifndef VS13
-
 char* SQLString(const char* string, ...)
 {
 	va_list vaArgs;
@@ -568,5 +566,4 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 	unlock();
 	return {};
 }
-#endif
 #endif

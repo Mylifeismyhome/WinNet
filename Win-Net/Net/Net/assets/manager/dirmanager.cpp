@@ -110,12 +110,10 @@ bool Directory::folderExists(const wchar_t* folderName, bool ignoreHomeDir)
 	if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
 		return false;
 #else
-#ifndef VS13
 	if (_waccess(folderName, 0) == -1) {
 		//File not found
 		return false;
 	}
-#endif
 
 	if (!(GetFileAttributesW(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
@@ -137,12 +135,10 @@ bool Directory::folderExists(const char* folderName, bool ignoreHomeDir)
         if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
                 return false;
 #else
-#ifndef VS13
 	if (_access(folderName, 0) == -1) {
 		//File not found
 		return false;
 	}
-#endif
 
 	if (!(GetFileAttributesA(folderName) & FILE_ATTRIBUTE_DIRECTORY)) {
 		// File is not a directory
@@ -314,7 +310,6 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 		actualPath = NET_LINUX_REPLACE_ESCAPE(actualPath, std::string(CSTRING("\\")), std::string(CSTRING("/")));
 #endif
 
-#ifndef VS13
 		struct stat st = { 0 };
 
 #ifdef BUILD_LINUX
@@ -327,7 +322,6 @@ static Directory::createDirResA ProcessCreateDirectory(char* path, std::vector<c
 			bError = true;
 			continue;
 		}
-#endif
 
 #ifdef BUILD_LINUX
                 const auto ret = NET_MKDIR(actualPath.c_str(), mode);

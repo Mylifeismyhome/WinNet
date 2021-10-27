@@ -1249,7 +1249,6 @@ bool Net::Web::HTTP::Post()
 	return false;
 }
 
-#ifndef VS13
 Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
 {
 	ctx = nullptr;
@@ -1788,4 +1787,3 @@ bool Net::Web::HTTPS::Post()
 	return false;
 }
 NET_POP
-#endif
