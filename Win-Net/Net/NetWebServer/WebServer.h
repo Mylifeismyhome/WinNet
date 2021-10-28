@@ -67,6 +67,7 @@ CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
 
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
+#include <Net/assets/manager/filemanager.h>
 
 #include <mutex>
 

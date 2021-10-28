@@ -895,14 +895,18 @@ NET_THREAD(Receive)
 
 				// erase him
 				server->ErasePeer(peer, true);
-			
+
 				delete peer;
 				peer = nullptr;
 				return NULL;
 			}
 			if (res == WebServerHandshake::would_block)
 			{
+#ifdef BUILD_LINUX
+				usleep(FREQUENZ(server));
+#else
 				Kernel32::Sleep(FREQUENZ(server));
+#endif
 				continue;
 			}
 			if (res == WebServerHandshake::missmatch)
@@ -911,7 +915,7 @@ NET_THREAD(Receive)
 
 				// erase him
 				server->ErasePeer(peer, true);
-			
+
 				delete peer;
 				peer = nullptr;
 				return NULL;

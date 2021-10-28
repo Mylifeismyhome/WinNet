@@ -655,7 +655,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ));
+				usleep(FREQUENZ);
 				continue;
 			}
 			else
@@ -715,7 +715,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ));
+				usleep(FREQUENZ);
 				continue;
 			}
 			else
@@ -779,7 +779,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ));
+				usleep(FREQUENZ);
 				continue;
 			}
 			else
@@ -846,7 +846,7 @@ void Client::SingleSend(Net::Package::Package_RawData_t& data, bool& bPreviousSe
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ));
+				usleep(FREQUENZ);
 				continue;
 			}
 			else
