@@ -1,5 +1,5 @@
 # build NetServer Sandbox
-CFLAGS=-std=c++11 -Wall -w
+CFLAGS=-std=c++11 -Wall -w -D BUILD_LINUX
 INCLUDE_PATH=-I ../../../Win-Net/bin/include/ -I ../../../extern/
 LIBRARY_PATH=-L ../../../Win-Net/bin/ -l:NetServer.a -l:NetCore.a
 LINKFLAGS=-pthread -ldl -lresolv

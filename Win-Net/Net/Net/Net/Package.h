@@ -6,9 +6,9 @@
 	PKGNEW.SetPackage(PKGOLD.GetPackage());
 
 ///////////////////////////////////////////////////////////
-///																	///
-///		  FAST PACKAGE ID IMPLEMENTATION	    ///
-///																	///
+///							///
+///		  FAST PACKAGE ID IMPLEMENTATION	///
+///							///
 //////////////////////////////////////////////////////////
 #define NET_DEFINE_PACKAGES(name, first, ...) \
 NET_NAMESPACE_BEGIN(name) \
@@ -145,6 +145,8 @@ namespace Net
 		class NET_EXPORT_CLASS Interface
 		{
 		public:
+			Interface() = default;
+
 			virtual void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
 			virtual void AppendRawData(Net::Package::Package_RawData_t& data) = 0;
 

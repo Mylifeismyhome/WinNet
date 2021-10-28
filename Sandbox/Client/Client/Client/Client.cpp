@@ -10,7 +10,7 @@ NET_TIMER(Test)
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
 
-	Net::Package pkg;
+	Net::Package::Package pkg;
 	client->DoSend(Packages::PKG_TEST, pkg);
 
 	NET_CONTINUE_TIMER;
@@ -23,7 +23,7 @@ void Client::OnConnectionEstabilished()
 	hTimer = Net::Timer::Create(Test, 1000, this);
 }
 
-void Client::OnDisconnected() 
+void Client::OnDisconnected()
 {
 	Net::Timer::Clear(hTimer);
 }

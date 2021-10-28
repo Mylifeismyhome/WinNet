@@ -14,9 +14,8 @@ int main()
 	Net::load();
 
 	Server server;
-	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
+	server.SetOption<const char*>({ NET_OPT_NAME, SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
-	server.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
 
 #ifdef _USE_CIPHER_
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
