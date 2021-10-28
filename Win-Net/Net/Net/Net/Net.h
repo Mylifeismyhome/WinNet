@@ -108,12 +108,17 @@ typedef unsigned __int64 uint64;
 ///////////////////////////////////
 //    SECTION - DEFINES     //
 //////////////////////////////////
+#ifdef BUILD_LINUX
+#define NET_EXPORT_FUNCTION
+#define NET_EXPORT_CLASS
+#else
 #ifdef DLL
 #define NET_EXPORT_FUNCTION extern "C" __declspec(dllexport)
 #define NET_EXPORT_CLASS __declspec(dllexport)
 #else
 #define NET_EXPORT_FUNCTION
 #define NET_EXPORT_CLASS __declspec(dllimport)
+#endif
 #endif
 
 #define NET_NAMESPACE_BEGIN(n) namespace n {

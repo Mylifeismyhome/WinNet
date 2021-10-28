@@ -1,4 +1,5 @@
 #pragma once
+#ifndef BUILD_LINUX
 #include "ImportResolver.h"
 #include <winternl.h>
 
@@ -298,4 +299,5 @@ MAKE_IMPORT(Buffer);
 DEFINE_IMPORT(NTSTATUS, NtSetDebugFilterState, DWORD d1, DWORD d2, bool b);
 MAKE_IMPORT(d1, d2, b);
 RESOLVE_IMPORT_END;
+#endif
 #endif

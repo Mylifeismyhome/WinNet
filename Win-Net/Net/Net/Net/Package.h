@@ -67,6 +67,23 @@ namespace Net
 			void free();
 		};
 
+
+		class Binary_t
+                {
+                        Package_RawData_t* ptr_data;
+                        bool is_valid;
+
+                        public:
+				Binary_t(Package_RawData_t* ptr_data, bool is_valid)
+				{
+					this->ptr_data = ptr_data;
+					this->is_valid = is_valid;
+				}
+
+                                Package_RawData_t& data() { return *ptr_data; }
+                                bool valid() const { return is_valid; }
+                };
+
 		template<typename TYPE>
 		class Package_t
 		{
@@ -110,7 +127,7 @@ namespace Net
 			const char* name() const;
 			rapidjson::Value::Object value();
 		};
-		
+
 		class Package_t_Array
 		{
 			bool _valid;
@@ -157,7 +174,7 @@ namespace Net
 			virtual Net::Package::Package_t<bool> Boolean(const char*) const = 0;
 			virtual Net::Package::Package_t_Object Object(const char*) = 0;
 			virtual Net::Package::Package_t_Array Array(const char*) = 0;
-			virtual Net::Package::Package_RawData_t& RawData(const char*) = 0;
+			virtual Net::Package::Binary_t Binary(const char*) = 0;
 		};
 
 		class NET_EXPORT_CLASS Package : public Interface
@@ -243,7 +260,7 @@ namespace Net
 			Net::Package::Package_t<bool> Boolean(const char*) const override;
 			Net::Package::Package_t_Object Object(const char*) override;
 			Net::Package::Package_t_Array Array(const char*) override;
-			Net::Package::Package_RawData_t& RawData(const char*) override;
+			Net::Package::Binary_t Binary(const char*) override;
 		};
 	}
 }

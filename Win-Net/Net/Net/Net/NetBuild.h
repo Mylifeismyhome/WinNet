@@ -39,3 +39,7 @@
 #define NET_DISABLE_LOGMANAGER
 #endif
 #endif
+
+#ifdef NET_DISABLE_IMPORT_WS2_32
+#define Ws2_32
+#endif

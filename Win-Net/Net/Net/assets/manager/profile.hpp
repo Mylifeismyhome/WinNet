@@ -13,13 +13,13 @@ template <typename T>
 struct Profile_t
 {
 	T peer;
-	Package* data;
+	Net::Package::Package* data;
 	void* ext;
 
 	Profile_t(T peer)
 	{
 		this->peer = peer;
-		data = new Package();
+		data = new Net::Package::Package();
 		ext = nullptr;
 	}
 
@@ -38,7 +38,7 @@ class Profile
 	std::recursive_mutex critical;
 
 public:
-	Package* Add(T peer)
+	Net::Package::Package* Add(T peer)
 	{
 		std::lock_guard<std::recursive_mutex> guard(critical);
 		info.emplace_back(NET_PROFILE_DATA<T>(peer));
@@ -84,7 +84,7 @@ public:
 		}
 	}
 
-	Package* peer(T peer)
+	Net::Package::Package* peer(T peer)
 	{
 		std::lock_guard<std::recursive_mutex> guard(critical);
 		for (NET_PROFILE_DATA<T>& it : info)

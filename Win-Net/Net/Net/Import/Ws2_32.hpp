@@ -1,4 +1,5 @@
 #pragma once
+#ifndef BUILD_LINUX
 #include "ImportResolver.h"
 
 #ifdef NET_DISABLE_IMPORT_WS2_32
@@ -97,4 +98,5 @@ MAKE_IMPORT(netshort);
 DEFINE_IMPORT(unsigned __int64, ntohll, unsigned __int64 Value)
 MAKE_IMPORT(Value);
 RESOLVE_IMPORT_END;
+#endif
 #endif

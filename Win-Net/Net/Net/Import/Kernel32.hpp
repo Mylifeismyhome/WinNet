@@ -1,4 +1,5 @@
 #pragma once
+#ifndef BUILD_LINUX
 #include "ImportResolver.h"
 
 #ifdef NET_DISABLE_IMPORT_KERNEL32
@@ -177,4 +178,5 @@ MAKE_IMPORT(hSnapshot, lpte);
 DEFINE_IMPORT(DWORD, GetFileSize, HANDLE hFile, LPDWORD lpFileSizeHigh);
 MAKE_IMPORT(hFile, lpFileSizeHigh);
 RESOLVE_IMPORT_END;
+#endif
 #endif
