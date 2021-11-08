@@ -9,100 +9,167 @@
 NET_DSA_BEGIN
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Manager)
-template <typename T>
-struct Profile_t
+class Profile_t
 {
-	T peer;
+	void* peer;
+
+public:
 	Net::Package::Package* data;
 	void* ext;
 
-	Profile_t(T peer)
+	Profile_t()
+	{
+		peer = nullptr;
+		data = nullptr;
+		ext = nullptr;
+	}
+
+	Profile_t(void* peer)
 	{
 		this->peer = peer;
 		data = new Net::Package::Package();
 		ext = nullptr;
 	}
 
+	bool valid()
+	{
+		return (peer != nullptr);
+	}
+
 	void clear()
 	{
+		peer = nullptr;
 		FREE(data);
 		FREE(ext);
-		peer = NULL;
+	}
+
+	template <typename T>
+	T Peer()
+	{
+		return (T)peer;
 	}
 };
 
-template <typename T>
 class Profile
 {
-	std::vector<NET_PROFILE_DATA<T>> info;
+	NET_PROFILE_DATA* data;
+	size_t max_entries;
+	size_t c_entries;
 	std::recursive_mutex critical;
 
-public:
-	Net::Package::Package* Add(T peer)
+	size_t get_free_slot()
 	{
+		if (!data) return INVALID_SIZE;
+
 		std::lock_guard<std::recursive_mutex> guard(critical);
-		info.emplace_back(NET_PROFILE_DATA<T>(peer));
+
+		for (size_t i = 0; i < max_entries; ++i)
+			if (data[i].Peer<void*>() == nullptr) return i;
+
+		// indicates all slots are being in use
+		return INVALID_SIZE;
+	}
+
+public:
+	Profile()
+	{
+		data = nullptr;
+		max_entries = 0;
+	}
+
+	void Init(size_t max_entries)
+	{
+		this->max_entries = max_entries;
+		data = new NET_PROFILE_DATA[this->max_entries];
+		memset(data, 0, this->max_entries);
+	}
+
+	~Profile()
+	{
+		delete data;
+		data = nullptr;
+		max_entries = 0;
+	}
+
+	Net::Package::Package* Add(void* peer)
+	{
+		if (!data) return nullptr;
+
+		auto slot = get_free_slot();
+		if (slot == INVALID_SIZE) return nullptr;
+		data[slot] = NET_PROFILE_DATA(peer);
+		++c_entries;
 		return this->peer(peer);
 	}
 
-	void Remove(T peer)
+	void Remove(void* peer)
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
-		for (auto it = info.begin(); it != info.end(); ++it)
+		if (!data) return;
+
+		for (size_t i = 0; i < max_entries; ++i)
 		{
-			NET_PROFILE_DATA<T> entry = (NET_PROFILE_DATA<T>) * it;
-			if (entry.peer == peer)
+			if (data[i].Peer<void*>() == peer)
 			{
-				entry.clear();
-				info.erase(it);
+				data[i].clear();
+				--c_entries;
 				break;
 			}
 		}
 	}
 
-	void* peerExt(T peer)
+	void* peerExt(void* peer)
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
-		for (NET_PROFILE_DATA<T>& it : info)
+		if (!data) return nullptr;
+
+		for (size_t i = 0; i < max_entries; ++i)
 		{
-			if (it.peer == peer)
-				return it.ext;
+			if (data[i].Peer<void*>() == peer)
+				return data[i].ext;
 		}
+
 		return nullptr;
 	}
 
-	void setPeerExt(T peer, void* ext)
+	void setPeerExt(void* peer, void* ext)
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
-		for (NET_PROFILE_DATA<T>& it : info)
+		if (!data) return;
+
+		for (size_t i = 0; i < max_entries; ++i)
 		{
-			if (it.peer == peer)
+			if (data[i].Peer<void*>() == peer)
 			{
-				it.ext = ext;
+				data[i].ext = ext;
 				break;
 			}
 		}
 	}
 
-	Net::Package::Package* peer(T peer)
+	Net::Package::Package* peer(void* peer)
 	{
-		std::lock_guard<std::recursive_mutex> guard(critical);
-		for (NET_PROFILE_DATA<T>& it : info)
+		if (!data) return nullptr;
+
+		for (size_t i = 0; i < max_entries; ++i)
 		{
-			if (it.peer == peer)
-				return it.data;
+			if (data[i].Peer<void*>() == peer)
+				return data[i].data;
 		}
+
 		return nullptr;
 	}
 
-	std::vector<NET_PROFILE_DATA<T>>& All()
+	NET_PROFILE_DATA* all()
 	{
-		return info;
+		return data;
 	}
 
 	size_t count() const
 	{
-		return info.size();
+		return max_entries;
+	}
+
+	size_t count_entries() const
+	{
+		return c_entries;
 	}
 };
 NET_NAMESPACE_END
