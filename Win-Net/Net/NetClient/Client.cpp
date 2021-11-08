@@ -79,10 +79,13 @@ Client::Client()
 	SetConnected(false);
 	optionBitFlag = NULL;
 	socketOptionBitFlag = NULL;
+	bReceiveThread = false;
 }
 
 Client::~Client()
 {
+	while (bReceiveThread) Kernel32::Sleep(FREQUENZ);
+
 	Clear();
 
 	for (auto& entry : socketoption)
@@ -100,6 +103,8 @@ NET_THREAD(Receive)
 {
 	const auto client = (Client*)parameter;
 	if (!client) return NULL;
+
+	client->bReceiveThread = true;
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 	while (client->IsConnected())
@@ -120,6 +125,8 @@ NET_THREAD(Receive)
 		Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
 #endif
 	}
+
+	client->bReceiveThread = false;
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
 	return NULL;
