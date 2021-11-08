@@ -276,6 +276,26 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 
 	if (clear)
 	{
+		// close endpoint
+		SOCKET_VALID(peer->pSocket)
+		{
+			bool bBlocked = false;
+			do
+			{
+				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
+				{
+					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+						bBlocked = true;
+						Kernel32::Sleep(FREQUENZ(this));
+					}
+				}
+
+			} while (bBlocked);
+
+			peer->pSocket = INVALID_SOCKET;
+		}
+
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
@@ -297,13 +317,6 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		DecreasePeersCounter();
 
 		return true;
-	}
-
-	// close endpoint
-	SOCKET_VALID(peer->pSocket)
-	{
-		Ws2_32::closesocket(peer->pSocket);
-		peer->pSocket = INVALID_SOCKET;
 	}
 
 	peer->bErase = true;
@@ -653,6 +666,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 		return;
 	);
 
+	if (peer->bErase) return;
 	if (bPreviousSentFailed)
 		return;
 
@@ -709,6 +723,12 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 		FREE(data);
 	return;
 	);
+
+	if (peer->bErase)
+	{
+		FREE(data);
+		return;
+	}
 
 	if (bPreviousSentFailed)
 	{
@@ -772,6 +792,12 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 		data.free();
 	return;
 	);
+
+	if (peer->bErase)
+	{
+		data.free();
+		return;
+	}
 
 	if (bPreviousSentFailed)
 	{
@@ -837,6 +863,12 @@ void Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bo
 		data.free();
 	return;
 	);
+
+	if (peer->bErase)
+	{
+		data.free();
+		return;
+	}
 
 	if (bPreviousSentFailed)
 	{
@@ -917,6 +949,9 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	if (peer->bErase)
+		return;
 
 	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
 

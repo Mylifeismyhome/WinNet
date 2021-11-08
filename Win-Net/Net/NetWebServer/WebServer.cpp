@@ -270,6 +270,26 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 
 	if (clear)
 	{
+		// close endpoint
+		SOCKET_VALID(peer->pSocket)
+		{
+			bool bBlocked = false;
+			do
+			{
+				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
+				{
+					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+						bBlocked = true;
+						Kernel32::Sleep(FREQUENZ(this));
+					}
+				}
+
+			} while (bBlocked);
+
+			peer->pSocket = INVALID_SOCKET;
+		}
+
 		if (peer->hCalcLatency)
 		{
 			// stop latency interval
@@ -291,13 +311,6 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 		DecreasePeersCounter();
 
 		return true;
-	}
-
-	// close endpoint
-	SOCKET_VALID(peer->pSocket)
-	{
-		Ws2_32::closesocket(peer->pSocket);
-		peer->pSocket = INVALID_SOCKET;
 	}
 
 	peer->bErase = true;
@@ -988,6 +1001,9 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 		return;
 	);
 
+	if (peer->bErase)
+		return;
+
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
 	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
@@ -1017,6 +1033,9 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 	PEER_NOT_VALID(peer,
 		return;
 	);
+
+	if (peer->bErase)
+		return;
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
@@ -1183,6 +1202,9 @@ DWORD Server::DoReceive(NET_PEER peer)
 	PEER_NOT_VALID(peer,
 		return FREQUENZ(this);
 	);
+
+	if (peer->bErase)
+		return FREQUENZ(this);
 
 	if (peer->ssl)
 	{

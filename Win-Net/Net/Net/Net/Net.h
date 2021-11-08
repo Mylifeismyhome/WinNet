@@ -113,7 +113,7 @@ typedef unsigned __int64 uint64;
 #define NET_EXPORT_CLASS __declspec(dllexport)
 #else
 #define NET_EXPORT_FUNCTION
-#define NET_EXPORT_CLASS __declspec(dllimport)
+#define NET_EXPORT_CLASS
 #endif
 
 #define NET_NAMESPACE_BEGIN(n) namespace n {

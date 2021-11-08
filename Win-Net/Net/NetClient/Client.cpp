@@ -329,7 +329,27 @@ bool Client::Connect(const char* Address, const u_short Port)
 		if (res != 1)
 		{
 			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
-			Ws2_32::closesocket(GetSocket());
+
+			// close endpoint
+			SOCKET_VALID(GetSocket())
+			{
+				bool bBlocked = false;
+				do
+				{
+					if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
+					{
+						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+						{
+							bBlocked = true;
+							Kernel32::Sleep(FREQUENZ);
+						}
+					}
+
+				} while (bBlocked);
+
+				SetSocket(INVALID_SOCKET);
+			}
+
 #ifndef BUILD_LINUX
 			Ws2_32::WSACleanup();
 #endif
@@ -342,7 +362,27 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
-		Ws2_32::closesocket(GetSocket());
+	
+		// close endpoint
+		SOCKET_VALID(GetSocket())
+		{
+			bool bBlocked = false;
+			do
+			{
+				if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
+				{
+					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+					{
+						bBlocked = true;
+						Kernel32::Sleep(FREQUENZ);
+					}
+				}
+
+			} while (bBlocked);
+
+			SetSocket(INVALID_SOCKET);
+		}
+
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -352,7 +392,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), LAST_ERROR);
-		Ws2_32::closesocket(GetSocket());
+
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -362,7 +402,6 @@ bool Client::Connect(const char* Address, const u_short Port)
 	/* Connect to the server */
 	if (Ws2_32::connect(GetSocket(), sockaddr, slen) == SOCKET_ERROR)
 	{
-		Ws2_32::closesocket(GetSocket());
 		SetSocket(INVALID_SOCKET);
 
 		LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
@@ -460,9 +499,23 @@ void Client::Timeout()
 
 void Client::ConnectionClosed()
 {
-	if (GetSocket())
+	// close endpoint
+	SOCKET_VALID(GetSocket())
 	{
-		Ws2_32::closesocket(GetSocket());
+		bool bBlocked = false;
+		do
+		{
+			if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
+			{
+				if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+				{
+					bBlocked = true;
+					Kernel32::Sleep(FREQUENZ);
+				}
+			}
+
+		} while (bBlocked);
+
 		SetSocket(INVALID_SOCKET);
 	}
 
