@@ -1,4 +1,5 @@
 #pragma once
+#ifndef BUILD_LINUX
 #include "ImportResolver.h"
 
 #ifdef NET_DISABLE_IMPORT_USER32
@@ -64,4 +65,5 @@ MAKE_IMPORT(hWnd, lpText, lpCaption, uType);
 DEFINE_IMPORT(int, MessageBoxW, HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType);
 MAKE_IMPORT(hWnd, lpText, lpCaption, uType);
 RESOLVE_IMPORT_END;
+#endif
 #endif

@@ -127,9 +127,9 @@ bool Directory::folderExists(const wchar_t* folderName, bool ignoreHomeDir)
 bool Directory::folderExists(const char* folderName, bool ignoreHomeDir)
 {
 #ifdef BUILD_LINUX
-	std::string actualPath = std::string(folderNameA);
+	std::string actualPath = std::string(folderName);
 	if (!ignoreHomeDir)
-		actualPath = std::string(homeDirA() + folderNameA);
+		actualPath = std::string(homeDirA() + folderName);
 
 	struct stat sb;
         if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
@@ -418,7 +418,7 @@ static int NET_LINUX_IS_DIRECTORY(const char* path)
 #endif
 
 #ifdef BUILD_LINUX
-bool Directory::deleteDir(wchar_t* dirname)
+bool Directory::deleteDir(wchar_t* dirname, bool ignoreHomeDir)
 #else
 bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories, bool ignoreHomeDir)
 #endif
@@ -523,7 +523,7 @@ bool Directory::deleteDir(wchar_t* dirname, const bool bDeleteSubdirectories, bo
 }
 
 #ifdef BUILD_LINUX
-bool Directory::deleteDir(char* dirname)
+bool Directory::deleteDir(char* dirname, bool ignoreHomeDir)
 #else
 bool Directory::deleteDir(char* dirname, const bool bDeleteSubdirectories, bool ignoreHomeDir)
 #endif

@@ -2,5 +2,3 @@
 
 #define SANDBOX_SERVERNAME CSTRING("Sandbox Server")
 #define SANDBOX_PORT 2888
-
-#undef BUILD_LINUX

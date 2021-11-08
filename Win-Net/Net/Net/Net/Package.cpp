@@ -636,13 +636,13 @@ Net::Package::Package_t_Array Net::Package::Package::Array(const char* Key)
 	return { true, Key, pkg.FindMember(Key)->value.GetArray() };
 }
 
-Net::Package::Package_RawData_t& Net::Package::Package::RawData(const char* Key)
+Net::Package::Binary_t Net::Package::Package::Binary(const char* Key)
 {
 	for(auto& entry : rawData)
 	{
 		if (!strcmp(entry.key(), Key))
-			return entry;
+			return Net::Package::Binary_t(&entry, true);
 	}
 
-	return Package_RawData_t();
+	return Net::Package::Binary_t(nullptr, false);
 }

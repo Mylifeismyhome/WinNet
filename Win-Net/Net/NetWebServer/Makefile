@@ -1,5 +1,5 @@
 # build NetWebServer
-CFLAGS=-std=c++11 -Wall -w
+CFLAGS=-std=c++11 -Wall -w -D BUILD_LINUX
 INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # link Library
