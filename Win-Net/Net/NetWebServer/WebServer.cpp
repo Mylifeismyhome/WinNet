@@ -279,10 +279,18 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 				bBlocked = false;
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
+#ifdef BUILD_LINUX
+					if (errno != EWOULDBLOCK)
+#else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+#endif
 					{
 						bBlocked = true;
+#ifdef BUILD_LINUX
+						usleep(FREQUENZ(this));
+#else
 						Kernel32::Sleep(FREQUENZ(this));
+#endif
 					}
 				}
 

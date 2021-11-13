@@ -345,10 +345,18 @@ bool Client::Connect(const char* Address, const u_short Port)
 				{
 					if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 					{
+#ifdef BUILD_LINUX
+						if (errno != EWOULDBLOCK)
+#else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+#endif
 						{
 							bBlocked = true;
+#ifdef BUILD_LINUX
+							usleep(FREQUENZ);
+#else
 							Kernel32::Sleep(FREQUENZ);
+#endif
 						}
 					}
 
