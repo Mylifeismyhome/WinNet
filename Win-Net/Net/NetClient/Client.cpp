@@ -376,6 +376,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 			bool bBlocked = false;
 			do
 			{
+				bBlocked = false;
 				if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 				{
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)

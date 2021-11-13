@@ -276,6 +276,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 			bool bBlocked = false;
 			do
 			{
+				bBlocked = false;
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
@@ -956,10 +957,11 @@ NET_THREAD(Receive)
 	peer->estabilished = true;
 	server->OnPeerEstabilished(peer);
 
-	while (peer && peer->pSocket != INVALID_SOCKET)
+	while (peer)
 	{
 		if (!server->IsRunning()) break;
 		if (peer->bErase) break;
+		if (peer->pSocket == INVALID_SOCKET) break;
 
 		server->OnPeerUpdate(peer);
 
