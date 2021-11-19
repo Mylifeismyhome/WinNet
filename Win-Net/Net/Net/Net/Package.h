@@ -69,20 +69,20 @@ namespace Net
 
 
 		class Binary_t
-                {
-                        Package_RawData_t* ptr_data;
-                        bool is_valid;
+		{
+			Package_RawData_t* ptr_data;
+			bool is_valid;
 
-                        public:
-				Binary_t(Package_RawData_t* ptr_data, bool is_valid)
-				{
-					this->ptr_data = ptr_data;
-					this->is_valid = is_valid;
-				}
+		public:
+			Binary_t(Package_RawData_t* ptr_data, bool is_valid)
+			{
+				this->ptr_data = ptr_data;
+				this->is_valid = is_valid;
+			}
 
-                                Package_RawData_t& data() { return *ptr_data; }
-                                bool valid() const { return is_valid; }
-                };
+			Package_RawData_t& data() { return *ptr_data; }
+			bool valid() const { return is_valid; }
+		};
 
 		template<typename TYPE>
 		class Package_t
@@ -135,11 +135,27 @@ namespace Net
 			rapidjson::Value _value;
 
 		public:
-			Package_t_Array(const bool _valid, const char* _name, rapidjson::Value _value);
+			Package_t_Array(const bool _valid, const char* _name, rapidjson::Value::Array _value)
+			{
+				this->_valid = _valid;
+				strcpy(this->_name, _name);
+				this->_value = _value;
+			}
 
-			bool valid() const;
-			const char* name() const;
-			rapidjson::Value::Array value();
+			bool valid() const
+			{
+				return _valid;
+			}
+
+			const char* name() const
+			{
+				return _name;
+			}
+
+			rapidjson::Value::Array value()
+			{
+				return _value.GetArray();
+			}
 		};
 
 		class NET_EXPORT_CLASS Interface
@@ -147,10 +163,10 @@ namespace Net
 		public:
 			Interface() = default;
 
-			virtual void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
-			virtual void AppendRawData(Net::Package::Package_RawData_t& data) = 0;
+			virtual void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
+			virtual void Append(Net::Package::Package_RawData_t& data) = 0;
 
-			virtual void RewriteRawData(const char* Key, BYTE* data) = 0;
+			virtual void Rewrite(const char* Key, BYTE* data) = 0;
 
 			virtual bool Parse(const char* data) = 0;
 
@@ -179,7 +195,7 @@ namespace Net
 			virtual Net::Package::Binary_t Binary(const char*) = 0;
 		};
 
-		class NET_EXPORT_CLASS Package : public Interface
+		class Package : public Interface
 		{
 			rapidjson::Document pkg;
 			std::vector<Net::Package::Package_RawData_t> rawData;
@@ -208,8 +224,8 @@ namespace Net
 					pkg.AddMember(key, value, pkg.GetAllocator());
 			}
 
-			void AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
-			void AppendRawData(Net::Package::Package_RawData_t& data) override;
+			void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
+			void Append(Net::Package::Package_RawData_t& data) override;
 
 			template<typename Type>
 			void Rewrite(const char* Key, const Type Value)
@@ -236,7 +252,7 @@ namespace Net
 				member->value.Set<Type>(Value);
 			}
 
-			void RewriteRawData(const char* Key, BYTE* data) override;
+			void Rewrite(const char* Key, BYTE* data) override;
 
 			bool Parse(const char* data) override;
 

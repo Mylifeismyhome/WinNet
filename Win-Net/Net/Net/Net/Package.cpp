@@ -117,28 +117,6 @@ rapidjson::Value::Object Net::Package::Package_t_Object::value()
 	return _value.GetObject();
 }
 
-Net::Package::Package_t_Array::Package_t_Array(const bool _valid, const char* _name, rapidjson::Value _value)
-{
-	this->_valid = _valid;
-	strcpy(this->_name, _name);
-	this->_value = _value;
-}
-
-bool Net::Package::Package_t_Array::valid() const
-{
-	return _valid;
-}
-
-const char* Net::Package::Package_t_Array::name() const
-{
-	return _name;
-}
-
-rapidjson::Value::Array Net::Package::Package_t_Array::value()
-{
-	return _value.GetArray();
-}
-
 Net::Package::Package::Package()
 {
 	pkg.SetObject();
@@ -150,7 +128,7 @@ Net::Package::Package::~Package()
 	for (auto& entry : rawData) entry.free();
 }
 
-void Net::Package::Package::AppendRawData(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
+void Net::Package::Package::Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
 {
 	for (auto& entry : rawData)
 	{
@@ -171,7 +149,7 @@ void Net::Package::Package::AppendRawData(const char* Key, BYTE* data, const siz
 	rawData.emplace_back(Net::Package::Package_RawData_t(Key, data, size, free_after_sent));
 }
 
-void Net::Package::Package::AppendRawData(Net::Package::Package_RawData_t& data)
+void Net::Package::Package::Append(Net::Package::Package_RawData_t& data)
 {
 	for (auto& entry : rawData)
 	{
@@ -192,7 +170,7 @@ void Net::Package::Package::AppendRawData(Net::Package::Package_RawData_t& data)
 	rawData.emplace_back(data);
 }
 
-void Net::Package::Package::RewriteRawData(const char* Key, BYTE* data)
+void Net::Package::Package::Rewrite(const char* Key, BYTE* data)
 {
 	for (auto entry : rawData)
 	{
@@ -309,7 +287,7 @@ Net::Package::Package_t<const char*> Net::Package::Package::String(const char* K
 		return { false, Key, "" };
 	}
 
-	if(!pkg.FindMember(Key)->value.IsString())
+	if (!pkg.FindMember(Key)->value.IsString())
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a string"), Key);
 		return { false, Key, "" };
@@ -606,39 +584,39 @@ Net::Package::Package_t_Array Net::Package::Package::Array(const char* Key)
 	if (pkg.IsArray() && pkg.Empty())
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray() };
+		return Net::Package::Package_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
 	}
 
 	if (pkg.IsObject() && pkg.ObjectEmpty())
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray() };
+		return Net::Package::Package_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
 	}
 
 	if (!pkg.HasMember(Key))
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray() };
+		return Net::Package::Package_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
 	}
 
 	if (pkg.FindMember(Key)->value.IsNull())
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray() };
+		return Net::Package::Package_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
 	}
 
 	if (!pkg.FindMember(Key)->value.IsArray())
 	{
 		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an array"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray() };
+		return Net::Package::Package_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
 	}
 
-	return { true, Key, pkg.FindMember(Key)->value.GetArray() };
+	return Net::Package::Package_t_Array(true, Key, pkg.FindMember(Key)->value.GetArray());
 }
 
 Net::Package::Binary_t Net::Package::Package::Binary(const char* Key)
 {
-	for(auto& entry : rawData)
+	for (auto& entry : rawData)
 	{
 		if (!strcmp(entry.key(), Key))
 			return Net::Package::Binary_t(&entry, true);
