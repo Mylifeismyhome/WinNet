@@ -222,3 +222,9 @@ std::string Net::ssl::NET_SSL_METHOD_T::Name() const
 
 	return std::string(CASTRING("UNKNOWN"));
 }
+
+bool Net::NET_STRING_IS_NUMBER(const std::string& s)
+{
+	return !s.empty() && std::find_if(s.begin(),
+		s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}

@@ -697,15 +697,11 @@ namespace Net
 
 		std::string GET_SSL_METHOD_NAME(const int method);
 	}
-}
 
-////////////////////////////////////
-//    USEFULL FUNCTIONS    //
-///////////////////////////////////
-static bool NET_STRING_IS_NUMBER(const std::string& s)
-{
-	return !s.empty() && std::find_if(s.begin(),
-		s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+	////////////////////////////////////
+	//    USEFULL FUNCTIONS    //
+	///////////////////////////////////
+	bool NET_STRING_IS_NUMBER(const std::string& s);
 }
 
 NET_NAMESPACE_BEGIN(ServerHandshake)
