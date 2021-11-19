@@ -84,7 +84,14 @@ Client::Client()
 
 Client::~Client()
 {
-	while (bReceiveThread) Kernel32::Sleep(FREQUENZ);
+	while (bReceiveThread)
+	{
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ);
+#else
+		Kernel32::Sleep(FREQUENZ);
+#endif
+	}
 
 	Clear();
 
@@ -377,7 +384,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	if (!sockaddr)
 	{
 		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
-	
+
 		// close endpoint
 		SOCKET_VALID(GetSocket())
 		{
@@ -387,10 +394,18 @@ bool Client::Connect(const char* Address, const u_short Port)
 				bBlocked = false;
 				if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 				{
+#ifdef BUILD_LINUX
+					if(errno == EWOULDBLOCK)
+#else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+#endif
 					{
 						bBlocked = true;
+#ifdef BUILD_LINUX
+						usleep(FREQUENZ);
+#else
 						Kernel32::Sleep(FREQUENZ);
+#endif
 					}
 				}
 
@@ -523,10 +538,19 @@ void Client::ConnectionClosed()
 		{
 			if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 			{
+#ifdef BUILD_LINUX
+				if(errno == EWOULDBLOCK)
+#else
 				if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+#endif
+
 				{
 					bBlocked = true;
+#ifdef BUILD_LINUX
+					usleep(FREQUENZ);
+#else
 					Kernel32::Sleep(FREQUENZ);
+#endif
 				}
 			}
 
