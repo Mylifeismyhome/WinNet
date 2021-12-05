@@ -177,7 +177,7 @@ void Server::DecreasePeersCounter()
 struct	 CalcLatency_t
 {
 	Server* server;
-	Server::NET_PEER peer;
+	Server::peerInfo* peer;
 };
 
 NET_TIMER(CalcLatency)
@@ -226,7 +226,7 @@ NET_TIMER(NTPReSyncClock)
 	NET_CONTINUE_TIMER;
 }
 
-Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
+Server::peerInfo* Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
 	const auto peer = new NET_IPEER();
@@ -372,7 +372,7 @@ float Server::GetReceivedPackageSizeAsPerc(NET_PEER peer)
 	return perc;
 }
 
-void Server::NET_IPEER::clear()
+void Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
@@ -394,12 +394,12 @@ void Server::NET_IPEER::clear()
 	lastToken = NULL;
 }
 
-typeLatency Server::NET_IPEER::getLatency() const
+typeLatency Server::peerInfo::getLatency() const
 {
 	return latency;
 }
 
-IPRef Server::NET_IPEER::IPAddr() const
+IPRef Server::peerInfo::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(Ws2_32::inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
@@ -1221,7 +1221,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 struct Receive_t
 {
 	Server* server;
-	Server::NET_PEER peer;
+	NET_PEER peer;
 };
 
 Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
