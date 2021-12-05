@@ -122,10 +122,27 @@ namespace Net
 			rapidjson::Value _value;
 
 		public:
-			Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value);
-			bool valid() const;
-			const char* name() const;
-			rapidjson::Value::Object value();
+			Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
+			{
+				this->_valid = _valid;
+				strcpy(this->_name, _name);
+				this->_value = _value;
+			}
+
+			bool valid() const
+			{
+				return _valid;
+			}
+
+			const char* name() const
+			{
+				return _name;
+			}
+
+			rapidjson::Value::Object value()
+			{
+				return _value.GetObjectA();
+			}
 		};
 
 		class Package_t_Array
@@ -163,10 +180,15 @@ namespace Net
 		public:
 			Interface() = default;
 
+			virtual void Append(const char* Key, const char* value) = 0;
+			virtual void Append(const char* Key, char* value) = 0;
+			virtual void Append(const char* Key, unsigned int value) = 0;
+			virtual void Append(const char* Key, int value) = 0;
+			virtual void Append(const char* Key, long value) = 0;
+			virtual void Append(const char* Key, float value) = 0;
+			virtual void Append(const char* Key, double value) = 0;
 			virtual void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
 			virtual void Append(Net::Package::Package_RawData_t& data) = 0;
-
-			virtual void Rewrite(const char* Key, BYTE* data) = 0;
 
 			virtual bool Parse(const char* data) = 0;
 
@@ -204,55 +226,15 @@ namespace Net
 			Package();
 			~Package();
 
-			template<typename Type>
-			void Append(const char* Key, const Type Value)
-			{
-				if (pkg.IsNull())
-					pkg.SetObject();
-
-				if (pkg.HasMember(Key))
-				{
-					LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key already exists in JSON Object"));
-					return;
-				}
-
-				rapidjson::Value key(Key, pkg.GetAllocator());
-				rapidjson::Value value;
-				value.Set<Type>(Value);
-
-				if (!value.IsNull())
-					pkg.AddMember(key, value, pkg.GetAllocator());
-			}
-
+			void Append(const char* Key, const char* value) override;
+			void Append(const char* Key, char* value) override;
+			void Append(const char* Key, unsigned int value) override;
+			void Append(const char* Key, int value) override;
+			void Append(const char* Key, long value) override;
+			void Append(const char* Key, float value) override;
+			void Append(const char* Key, double value) override;
 			void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
 			void Append(Net::Package::Package_RawData_t& data) override;
-
-			template<typename Type>
-			void Rewrite(const char* Key, const Type Value)
-			{
-				if (pkg.IsArray() && pkg.Empty())
-				{
-					LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Package is empty"));
-					return;
-				}
-
-				if (pkg.IsObject() && pkg.ObjectEmpty())
-				{
-					LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Package is empty"));
-					return;
-				}
-
-				if (!pkg.HasMember(Key))
-				{
-					LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Could not find Key"));
-					return;
-				}
-
-				const auto member = pkg.FindMember(Key);
-				member->value.Set<Type>(Value);
-			}
-
-			void Rewrite(const char* Key, BYTE* data) override;
 
 			bool Parse(const char* data) override;
 

@@ -183,6 +183,9 @@
     <ClCompile Include="..\Net\Import\ImportResolver.cpp">
       <Filter>Import</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Net\NetPeerPool.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -301,6 +304,9 @@
     </ClInclude>
     <ClInclude Include="..\Net\Import\User32.hpp">
       <Filter>Import</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Net\NetPeerPool.h">
+      <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

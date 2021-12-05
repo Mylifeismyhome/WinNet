@@ -41,7 +41,7 @@
 #include <Net/assets/thread.h>
 #include <Net/assets/timer.h>
 
-#include <mutex>
+#include <Net/Net/NetPeerPool.h>
 
 #ifndef BUILD_LINUX
 #pragma warning(disable: 4302)
@@ -126,6 +126,8 @@ void setHandshakeStatus(bool);
 bool getHandshakeStatus() const;
 NET_STRUCT_END
 #pragma endregion
+
+Net::PeerPool::PeerPool_t PeerPoolManager;
 
 // table to keep track of each client's socket
 NET_STRUCT_BEGIN(NET_IPEER)

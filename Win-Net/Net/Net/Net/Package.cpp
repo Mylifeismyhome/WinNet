@@ -95,28 +95,6 @@ void Net::Package::Package_RawData_t::free()
 	this->_valid = false;
 }
 
-Net::Package::Package_t_Object::Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
-{
-	this->_valid = _valid;
-	strcpy(this->_name, _name);
-	this->_value = _value;
-}
-
-bool Net::Package::Package_t_Object::valid() const
-{
-	return _valid;
-}
-
-const char* Net::Package::Package_t_Object::name() const
-{
-	return _name;
-}
-
-rapidjson::Value::Object Net::Package::Package_t_Object::value()
-{
-	return _value.GetObject();
-}
-
 Net::Package::Package::Package()
 {
 	pkg.SetObject();
@@ -126,6 +104,151 @@ Net::Package::Package::~Package()
 {
 	/* free all raw data */
 	for (auto& entry : rawData) entry.free();
+}
+
+void Net::Package::Package::Append(const char* Key, const char* value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<const char*>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<const char*>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, char* value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<const char*>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<const char*>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, unsigned int value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<unsigned int>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<unsigned int>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, int value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key already exists in JSON Object"));
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<int>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, long value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<long>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<long>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, float value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<float>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<float>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, double value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<double>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<double>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
 }
 
 void Net::Package::Package::Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
@@ -168,18 +291,6 @@ void Net::Package::Package::Append(Net::Package::Package_RawData_t& data)
 	}
 
 	rawData.emplace_back(data);
-}
-
-void Net::Package::Package::Rewrite(const char* Key, BYTE* data)
-{
-	for (auto entry : rawData)
-	{
-		if (!strcmp(entry.key(), Key))
-		{
-			entry.set(data);
-			break;
-		}
-	}
 }
 
 bool Net::Package::Package::Parse(const char* data)

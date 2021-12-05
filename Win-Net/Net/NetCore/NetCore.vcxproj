@@ -902,6 +902,7 @@
     <ClCompile Include="..\Net\Import\MemoryModule.c" />
     <ClCompile Include="..\Net\Net\Net.cpp" />
     <ClCompile Include="..\Net\Net\NetCodes.cpp" />
+    <ClCompile Include="..\Net\Net\NetPeerPool.cpp" />
     <ClCompile Include="..\Net\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Net\NetVersion.cpp" />
     <ClCompile Include="..\Net\Net\Package.cpp" />
@@ -943,6 +944,7 @@
     <ClInclude Include="..\Net\Net\NetBuild.h" />
     <ClInclude Include="..\Net\Net\NetBuildConfig.h" />
     <ClInclude Include="..\Net\Net\NetCodes.h" />
+    <ClInclude Include="..\Net\Net\NetPeerPool.h" />
     <ClInclude Include="..\Net\Net\NetString.h" />
     <ClInclude Include="..\Net\Net\NetVersion.h" />
     <ClInclude Include="..\Net\Net\Package.h" />

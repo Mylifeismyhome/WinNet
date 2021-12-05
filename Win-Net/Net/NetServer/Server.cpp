@@ -1224,55 +1224,46 @@ struct Receive_t
 	Server::NET_PEER peer;
 };
 
-NET_THREAD(Receive)
+Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 {
-	const auto param = (Receive_t*)parameter;
-	if (!param) return NULL;
+	const auto data = (Receive_t*)pdata;
+	if (!data) return Net::PeerPool::WorkStatus_t::STOP;
 
-	auto peer = param->peer;
-	const auto server = param->server;
+	auto peer = data->peer;
+	const auto server = data->server;
 
-	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
-	{
-		/* Create new RSA Key Pair */
-		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+	if (!server->IsRunning()) return Net::PeerPool::WorkStatus_t::STOP;
+	if (peer->bErase) return Net::PeerPool::WorkStatus_t::STOP;
+	if (peer->pSocket == INVALID_SOCKET) return Net::PeerPool::WorkStatus_t::STOP;
 
-		const auto PublicKey = peer->cryption.RSA.publicKey();
+	server->OnPeerUpdate(peer);
 
-		Net::Package::Package PKG;
-		PKG.Append<const char*>(CSTRING("PublicKey"), PublicKey.get());
-		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
-	}
-	else
-	{
-		// keep it empty, we get it filled back
-		Net::Package::Package PKG;
-		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
-	}
+	const auto restTime = server->DoReceive(peer);
 
-	while (peer)
-	{
-		if (!server->IsRunning()) break;
-		if (peer->bErase) break;
-		if (peer->pSocket == INVALID_SOCKET) break;
-
-		server->OnPeerUpdate(peer);
-
-		const auto restTime = server->DoReceive(peer);
-
+	/*
 #ifdef BUILD_LINUX
-		usleep(restTime);
+	usleep(restTime);
 #else
-		Kernel32::Sleep(restTime);
+	Kernel32::Sleep(restTime);
 #endif
-	}
+*/
+
+	return Net::PeerPool::WorkStatus_t::CONTINUE;
+}
+
+void OnPeerDelete(void* pdata)
+{
+	const auto data = (Receive_t*)pdata;
+	if (!data) return;
+
+	auto peer = data->peer;
+	const auto server = data->server;
 
 	// erase him
 	server->ErasePeer(peer, true);
 
 	delete peer;
 	peer = nullptr;
-	return NULL;
 }
 
 void Server::Acceptor()
@@ -1286,10 +1277,34 @@ void Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		const auto param = new Receive_t();
-		param->server = this;
-		param->peer = CreatePeer(client_addr, GetAcceptSocket());
-		Thread::Create(Receive, param);
+		const auto pdata = new Receive_t();
+		pdata->server = this;
+		pdata->peer = CreatePeer(client_addr, GetAcceptSocket());
+
+		if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
+		{
+			/* Create new RSA Key Pair */
+			pdata->peer->cryption.createKeyPair(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+
+			const auto PublicKey = pdata->peer->cryption.RSA.publicKey();
+
+			Net::Package::Package PKG;
+			PKG.Append(CSTRING("PublicKey"), PublicKey.get());
+			NET_SEND(pdata->peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+		}
+		else
+		{
+			// keep it empty, we get it filled back
+			Net::Package::Package PKG;
+			NET_SEND(pdata->peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
+		}
+
+		/* add peer to peer thread pool */
+		Net::PeerPool::peerInfo_t pInfo;
+		pInfo.SetPeer(pdata);
+		pInfo.SetWorker(&PeerWorker);
+		pInfo.SetCallbackOnDelete(&OnPeerDelete);
+		PeerPoolManager.add(pInfo);
 	}
 }
 
@@ -1752,7 +1767,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						return;
 					}
 
-					Content.AppendRawData(entry);
+					Content.Append(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1883,7 +1898,7 @@ void Server::ExecutePackage(NET_PEER peer)
 						entry.set_free(true);
 					}
 
-					Content.AppendRawData(entry);
+					Content.Append(entry);
 					key.free();
 
 					offset += packageSize;

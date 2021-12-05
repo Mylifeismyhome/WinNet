@@ -2,18 +2,10 @@
 #define CPOINTER Net::Cryption::Pointer
 
 #include <Net/Net/Net.h>
-#include <random>
 
 NET_DSA_BEGIN
 
-static int __NET_POINTER_CRYPTION_RNDSEED(int min, int max)
-{
-	thread_local static std::mt19937 mt(std::random_device{}());
-	thread_local static std::uniform_int_distribution<int> pick;
-	return pick(mt, decltype(pick)::param_type{ min, max });
-}
-
-#define RAND_NUMBER static_cast<uintptr_t>(__NET_POINTER_CRYPTION_RNDSEED(0, INT_MAX))
+#define RAND_NUMBER 1337
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Cryption)

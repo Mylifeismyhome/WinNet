@@ -15,6 +15,7 @@
  */
 
 #ifndef BUILD_LINUX
+#ifndef DISABLE_CPP17_XOR
 #ifndef JM_XORSTR_HPP
 #define JM_XORSTR_HPP
 
@@ -244,4 +245,7 @@ namespace jm {
 } // namespace jm
 
 #endif // include guard
+#else
+#define xorstr_(str) str
+#endif
 #endif

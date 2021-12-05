@@ -1715,7 +1715,7 @@ void Client::ExecutePackage()
 						return;
 					}
 
-					Content.AppendRawData(entry);
+					Content.Append(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1846,7 +1846,7 @@ void Client::ExecutePackage()
 						entry.set_free(true);
 					}
 
-					Content.AppendRawData(entry);
+					Content.Append(entry);
 					key.free();
 
 					offset += packageSize;
@@ -2078,7 +2078,7 @@ if (!publicKey.valid())
 
 // send our generated Public Key to the Server
 const auto PublicKeyRef = network.RSA.publicKey();
-pkgRel.Rewrite<const char*>(CSTRING("PublicKey"), PublicKeyRef.get());
+pkgRel.Append(CSTRING("PublicKey"), PublicKeyRef.get());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
 
 network.RSA.setPublicKey(publicKey.value());
@@ -2105,10 +2105,10 @@ NET_JOIN_PACKAGE(pkg, pkgRel);
 
 const auto Key = Version::Key().data(); // otherwise we memleak
 
-pkgRel.Append<int>(CSTRING("MajorVersion"), Version::Major());
-pkgRel.Append<int>(CSTRING("MinorVersion"), Version::Minor());
-pkgRel.Append<int>(CSTRING("Revision"), Version::Revision());
-pkgRel.Append<const char*>(CSTRING("Key"), Key.data());
+pkgRel.Append(CSTRING("MajorVersion"), Version::Major());
+pkgRel.Append(CSTRING("MinorVersion"), Version::Minor());
+pkgRel.Append(CSTRING("Revision"), Version::Revision());
+pkgRel.Append(CSTRING("Key"), Key.data());
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
 NET_END_FNC_PKG
 
