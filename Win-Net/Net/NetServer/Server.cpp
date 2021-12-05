@@ -1246,9 +1246,7 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 
 	server->OnPeerUpdate(peer);
 
-	const auto take_rest = server->DoReceive(peer);
-
-	return !take_rest ? Net::PeerPool::WorkStatus_t::FORWARD : Net::PeerPool::WorkStatus_t::CONTINUE;
+	return (!server->DoReceive(peer) ? Net::PeerPool::WorkStatus_t::FORWARD : Net::PeerPool::WorkStatus_t::CONTINUE);
 }
 
 void OnPeerDelete(void* pdata)

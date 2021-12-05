@@ -14,7 +14,7 @@ int main()
 	Net::load();
 
 	Server server;
-	server.SetOption<char*>({ NET_OPT_NAME, strdup(SANDBOX_SERVERNAME) });
+	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 
 #ifdef _USE_CIPHER_
