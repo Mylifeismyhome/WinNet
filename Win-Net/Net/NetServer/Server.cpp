@@ -623,6 +623,14 @@ bool Server::Run()
 		}
 	}
 
+	PeerPoolManager.set_sleep_time(FREQUENZ(this));
+
+#ifdef BUILD_LINUX
+	PeerPoolManager.set_sleep_function(&usleep);
+#else
+	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
+#endif;
+
 	Thread::Create(TickThread, this);
 	Thread::Create(AcceptorThread, this);
 
