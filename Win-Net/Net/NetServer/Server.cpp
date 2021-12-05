@@ -1246,17 +1246,9 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 
 	server->OnPeerUpdate(peer);
 
-	const auto restTime = server->DoReceive(peer);
+	const auto take_rest = server->DoReceive(peer);
 
-	/*
-#ifdef BUILD_LINUX
-	usleep(restTime);
-#else
-	Kernel32::Sleep(restTime);
-#endif
-*/
-
-	return Net::PeerPool::WorkStatus_t::CONTINUE;
+	return !take_rest ? Net::PeerPool::WorkStatus_t::FORWARD : Net::PeerPool::WorkStatus_t::CONTINUE;
 }
 
 void OnPeerDelete(void* pdata)
@@ -1333,14 +1325,14 @@ void Server::Acceptor()
 *	{END PACKAGE}									*		{END PACKAGE}
 *
  */
-DWORD Server::DoReceive(NET_PEER peer)
+bool Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return FREQUENZ(this);
+		return true;
 	);
 
 	SOCKET_NOT_VALID(peer->pSocket)
-		return FREQUENZ(this);
+		return true;
 
 	auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 	if (data_size == SOCKET_ERROR)
@@ -1360,12 +1352,12 @@ DWORD Server::DoReceive(NET_PEER peer)
 			if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
-			return FREQUENZ(this);
+			return true;
 		}
 
 		ProcessPackages(peer);
 		peer->network.reset();
-		return FREQUENZ(this);
+		return true;
 	}
 
 	// graceful disconnect
@@ -1374,7 +1366,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 		peer->network.reset();
 		ErasePeer(peer);
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
-		return FREQUENZ(this);
+		return true;
 	}
 
 	if (!peer->network.dataValid())
@@ -1404,7 +1396,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 
 	peer->network.reset();
 	ProcessPackages(peer);
-	return NULL;
+	return false;
 }
 
 bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)

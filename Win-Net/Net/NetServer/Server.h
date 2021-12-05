@@ -320,7 +320,7 @@ namespace Net
 			size_t getCountRunningPeerThreads();
 
 			void Acceptor();
-			DWORD DoReceive(NET_PEER);
+			bool DoReceive(NET_PEER);
 
 			NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 

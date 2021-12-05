@@ -130,6 +130,8 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 {
 	while (true)
 	{
+		bool take_rest = true;
+
 		for (auto& peer : pool->vPeers)
 		{
 			if (peer == nullptr)
@@ -156,7 +158,9 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 				ret = (*fncWork)(peer->GetPeer());
 			}
 
-			if (ret == WorkStatus_t::STOP)
+			switch (ret)
+			{
+			case WorkStatus_t::STOP:
 			{
 				auto fncCallbackOnDeletePointer = peer->GetCallbackOnDelete();
 				if (fncCallbackOnDeletePointer)
@@ -168,8 +172,11 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 				delete peer;
 				peer = nullptr;
 				pool->num_peers--;
+				break;
 			}
-			else if (ret == WorkStatus_t::CONTINUE)
+
+			case WorkStatus_t::CONTINUE:
+			case WorkStatus_t::FORWARD:
 			{
 				const auto p = threadpool_get_free_slot_in_target_pool(pool);
 				if (p)
@@ -188,7 +195,16 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 						}
 					}
 				}
+				break;
 			}
+
+			default:
+				break;
+			}
+
+			// do not take a rest if we want to forward on processing worker function rapidly
+			if (ret == WorkStatus_t::FORWARD)
+				take_rest = false;
 		}
 
 		// close this thread
@@ -212,13 +228,16 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 			return;
 		}
 
-		if (fncSleep)
+		if (take_rest)
 		{
-			(*fncSleep)(ms_sleep_time);
-		}
-		else
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(ms_sleep_time));
+			if (fncSleep)
+			{
+				(*fncSleep)(ms_sleep_time);
+			}
+			else
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(ms_sleep_time));
+			}
 		}
 	}
 }

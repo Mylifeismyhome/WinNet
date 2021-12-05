@@ -8,8 +8,9 @@ namespace Net
 	{
 		enum class WorkStatus_t
 		{
-			CONTINUE = 0,
-			STOP = 1
+			STOP = 0,
+			CONTINUE,
+			FORWARD
 		};
 
 		class peerInfo_t
