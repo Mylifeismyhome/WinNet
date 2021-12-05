@@ -308,6 +308,7 @@ void SingleSend(NET_PEER, Net::Package::Package_RawData_t&, bool&, uint32_t = IN
 void DoSend(NET_PEER, int, NET_PACKAGE);
 
 size_t getCountPeers() const;
+size_t getCountRunningPeerThreads();
 
 void Acceptor();
 DWORD DoReceive(NET_PEER);

@@ -14,7 +14,7 @@ int main()
 	Net::load();
 
 	Server server;
-	server.SetOption<const char*>({ NET_OPT_NAME, SANDBOX_SERVERNAME });
+	server.SetOption<char*>({ NET_OPT_NAME, strdup(SANDBOX_SERVERNAME) });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 
 #ifdef _USE_CIPHER_
@@ -30,7 +30,7 @@ int main()
 #ifdef BUILD_LINUX
 		usleep(1000);
 #else
-		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d"), server.getCountPeers()).get().get());
+		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d | Peer-Threads: %llu"), server.getCountPeers(), server.getCountRunningPeerThreads()).get().get());
 		Sleep(1000);
 #endif
 	}

@@ -2139,6 +2139,11 @@ size_t Server::getCountPeers() const
 	return _CounterPeersTable;
 }
 
+size_t Server::getCountRunningPeerThreads()
+{
+	return PeerPoolManager.count_pools();
+}
+
 bool Server::CreateTOTPSecret(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
