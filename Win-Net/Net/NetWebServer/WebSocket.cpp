@@ -2,24 +2,22 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(WebSocket)
-IPRef::IPRef(const char* pointer)
+Net::WebSocket::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
 }
 
-IPRef::~IPRef()
+Net::WebSocket::IPRef::~IPRef()
 {
 	FREE(pointer);
 }
 
-const char* IPRef::get() const
+const char* Net::WebSocket::IPRef::get() const
 {
 	return pointer;
 }
 
-Server::Server()
+Net::WebSocket::Server::Server()
 {
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
@@ -28,7 +26,7 @@ Server::Server()
 	socketOptionBitFlag = NULL;
 }
 
-Server::~Server()
+Net::WebSocket::Server::~Server()
 {
 	for (auto& entry : socketoption)
 		delete entry;
@@ -41,32 +39,32 @@ Server::~Server()
 	option.clear();
 }
 
-bool Server::Isset(const DWORD opt) const
+bool Net::WebSocket::Server::Isset(const DWORD opt) const
 {
 	// use the bit flag to perform faster checks
 	return optionBitFlag & opt;
 }
 
-bool Server::Isset_SocketOpt(const DWORD opt) const
+bool Net::WebSocket::Server::Isset_SocketOpt(const DWORD opt) const
 {
 	// use the bit flag to perform faster checks
 	return socketOptionBitFlag & opt;
 }
 
 #pragma region Network Structure
-void Server::network_t::setData(byte* pointer)
+void Net::WebSocket::Server::network_t::setData(byte* pointer)
 {
 	deallocData();
 	_data = pointer;
 }
 
-void Server::network_t::setDataFragmented(byte* pointer)
+void Net::WebSocket::Server::network_t::setDataFragmented(byte* pointer)
 {
 	deallocDataFragmented();
 	_dataFragment = pointer;
 }
 
-void Server::network_t::allocData(const size_t size)
+void Net::WebSocket::Server::network_t::allocData(const size_t size)
 {
 	clear();
 	_data = ALLOC<byte>(size + 1);
@@ -76,7 +74,7 @@ void Server::network_t::allocData(const size_t size)
 	setDataSize(size);
 }
 
-void Server::network_t::allocDataFragmented(const size_t size)
+void Net::WebSocket::Server::network_t::allocDataFragmented(const size_t size)
 {
 	clear();
 	_dataFragment = ALLOC<byte>(size + 1);
@@ -86,80 +84,80 @@ void Server::network_t::allocDataFragmented(const size_t size)
 	setDataSize(size);
 }
 
-void Server::network_t::deallocData()
+void Net::WebSocket::Server::network_t::deallocData()
 {
 	_data.free();
 }
 
-void Server::network_t::deallocDataFragmented()
+void Net::WebSocket::Server::network_t::deallocDataFragmented()
 {
 	_dataFragment.free();
 
 }
-byte* Server::network_t::getData() const
+byte* Net::WebSocket::Server::network_t::getData() const
 {
 	return _data.get();
 }
 
-byte* Server::network_t::getDataFragmented() const
+byte* Net::WebSocket::Server::network_t::getDataFragmented() const
 {
 	return _dataFragment.get();
 }
 
-void Server::network_t::reset()
+void Net::WebSocket::Server::network_t::reset()
 {
 	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE * sizeof(byte));
 }
 
-void Server::network_t::clear()
+void Net::WebSocket::Server::network_t::clear()
 {
 	deallocData();
 	deallocDataFragmented();
 	_data_size = NULL;
 }
 
-void Server::network_t::setDataSize(const size_t size)
+void Net::WebSocket::Server::network_t::setDataSize(const size_t size)
 {
 	_data_size = size;
 }
 
-size_t Server::network_t::getDataSize() const
+size_t Net::WebSocket::Server::network_t::getDataSize() const
 {
 	return _data_size;
 }
 
-void Server::network_t::setDataFragmentSize(const size_t size)
+void Net::WebSocket::Server::network_t::setDataFragmentSize(const size_t size)
 {
 	_data_sizeFragment = size;
 }
 
-size_t Server::network_t::getDataFragmentSize() const
+size_t Net::WebSocket::Server::network_t::getDataFragmentSize() const
 {
 	return _data_sizeFragment;
 }
 
-bool Server::network_t::dataValid() const
+bool Net::WebSocket::Server::network_t::dataValid() const
 {
 	return _data.valid();
 }
 
-bool Server::network_t::dataFragmentValid() const
+bool Net::WebSocket::Server::network_t::dataFragmentValid() const
 {
 	return _dataFragment.valid();
 }
 
-byte* Server::network_t::getDataReceive()
+byte* Net::WebSocket::Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
 #pragma endregion
 
-void Server::IncreasePeersCounter()
+void Net::WebSocket::Server::IncreasePeersCounter()
 {
 	++_CounterPeersTable;
 }
 
-void Server::DecreasePeersCounter()
+void Net::WebSocket::Server::DecreasePeersCounter()
 {
 	--_CounterPeersTable;
 
@@ -181,7 +179,7 @@ NET_THREAD(LatencyTick)
 
 struct DoCalcLatency_t
 {
-	Server* server;
+	Net::WebSocket::Server* server;
 	NET_PEER peer;
 };
 
@@ -193,12 +191,12 @@ NET_TIMER(DoCalcLatency)
 	const auto server = info->server;
 	const auto peer = info->peer;
 
-	Thread::Create(LatencyTick, peer);
-	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
+	Net::Thread::Create(LatencyTick, peer);
+	Net::Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
 }
 
-NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
+NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
 	const auto peer = new Net::WebSocket::Server::peerInfo();
@@ -262,7 +260,7 @@ NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 	return peer;
 }
 
-bool Server::ErasePeer(NET_PEER peer, bool clear)
+bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 {
 	PEER_NOT_VALID(peer,
 		return false;
@@ -326,7 +324,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 	return true;
 }
 
-void Server::peerInfo::clear()
+void Net::WebSocket::Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
@@ -348,13 +346,13 @@ void Server::peerInfo::clear()
 	}
 }
 
-IPRef Server::peerInfo::IPAddr() const
+Net::WebSocket::IPRef Net::WebSocket::Server::peerInfo::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(Ws2_32::inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
 }
 
-void Server::DisconnectPeer(NET_PEER peer, const int code)
+void Net::WebSocket::Server::DisconnectPeer(NET_PEER peer, const int code)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -376,7 +374,7 @@ void Server::DisconnectPeer(NET_PEER peer, const int code)
 /* Thread functions */
 NET_THREAD(TickThread)
 {
-	const auto server = (Server*)parameter;
+	const auto server = (Net::WebSocket::Server*)parameter;
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
@@ -395,7 +393,7 @@ NET_THREAD(TickThread)
 
 NET_THREAD(AcceptorThread)
 {
-	const auto server = (Server*)parameter;
+	const auto server = (Net::WebSocket::Server*)parameter;
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
@@ -412,37 +410,37 @@ NET_THREAD(AcceptorThread)
 	return NULL;
 }
 
-void Server::SetListenSocket(const SOCKET ListenSocket)
+void Net::WebSocket::Server::SetListenSocket(const SOCKET ListenSocket)
 {
 	this->ListenSocket = ListenSocket;
 }
 
-void Server::SetAcceptSocket(const SOCKET AcceptSocket)
+void Net::WebSocket::Server::SetAcceptSocket(const SOCKET AcceptSocket)
 {
 	this->AcceptSocket = AcceptSocket;
 }
 
-void Server::SetRunning(const bool bRunning)
+void Net::WebSocket::Server::SetRunning(const bool bRunning)
 {
 	this->bRunning = bRunning;
 }
 
-SOCKET Server::GetListenSocket() const
+SOCKET Net::WebSocket::Server::GetListenSocket() const
 {
 	return ListenSocket;
 }
 
-SOCKET Server::GetAcceptSocket() const
+SOCKET Net::WebSocket::Server::GetAcceptSocket() const
 {
 	return AcceptSocket;
 }
 
-bool Server::IsRunning() const
+bool Net::WebSocket::Server::IsRunning() const
 {
 	return bRunning;
 }
 
-bool Server::Run()
+bool Net::WebSocket::Server::Run()
 {
 	if (IsRunning())
 		return false;
@@ -611,7 +609,7 @@ bool Server::Run()
 	return true;
 }
 
-bool Server::Close()
+bool Net::WebSocket::Server::Close()
 {
 	if (!IsRunning())
 	{
@@ -635,7 +633,7 @@ bool Server::Close()
 	return true;
 }
 
-short Server::Handshake(NET_PEER peer)
+short Net::WebSocket::Server::Handshake(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return WebServerHandshake::HandshakeRet_t::peer_not_valid;
@@ -889,7 +887,7 @@ short Server::Handshake(NET_PEER peer)
 
 struct Receive_t
 {
-	Server* server;
+	Net::WebSocket::Server* server;
 	NET_PEER peer;
 };
 
@@ -990,7 +988,7 @@ NET_THREAD(Receive)
 	return NULL;
 }
 
-void Server::Acceptor()
+void Net::WebSocket::Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
 
@@ -1009,7 +1007,7 @@ void Server::Acceptor()
 	}
 }
 
-void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const unsigned char opc)
+void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1042,7 +1040,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const uns
 	EncodeFrame((BYTE*)buffer.GetString(), buffer.GetSize(), peer, opc);
 }
 
-void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
+void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1069,7 +1067,7 @@ void Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, c
 	FREE(newBuffer);
 }
 
-void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
+void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1211,7 +1209,7 @@ void Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER pee
 	///////////////////////
 		}
 
-DWORD Server::DoReceive(NET_PEER peer)
+DWORD Net::WebSocket::Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return FREQUENZ(this);
@@ -1313,7 +1311,7 @@ DWORD Server::DoReceive(NET_PEER peer)
 	return NULL;
 	}
 
-void Server::DecodeFrame(NET_PEER peer)
+void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1489,7 +1487,7 @@ void Server::DecodeFrame(NET_PEER peer)
 	peer->network.clear();
 }
 
-void Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
+void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1528,7 +1526,7 @@ void Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 }
 
-void Server::onSSLTimeout(NET_PEER peer)
+void Net::WebSocket::Server::onSSLTimeout(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1538,12 +1536,10 @@ void Server::onSSLTimeout(NET_PEER peer)
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
 }
 
-size_t Server::getCountPeers() const
+size_t Net::WebSocket::Server::getCountPeers() const
 {
 	return _CounterPeersTable;
 }
 
-NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Server)
+NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Net::WebSocket::Server)
 NET_SERVER_END_DATA_PACKAGE
-NET_NAMESPACE_END
-NET_NAMESPACE_END
