@@ -186,9 +186,11 @@ namespace Net
 			virtual void Append(const char* Key, char* value) = 0;
 			virtual void Append(const char* Key, unsigned int value) = 0;
 			virtual void Append(const char* Key, int value) = 0;
+			virtual void Append(const char* Key, bool value) = 0;
 			virtual void Append(const char* Key, long value) = 0;
 			virtual void Append(const char* Key, float value) = 0;
 			virtual void Append(const char* Key, double value) = 0;
+			virtual void Append(const char* Key, size_t value) = 0;
 			virtual void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
 			virtual void Append(Net::Package::Package_RawData_t& data) = 0;
 
@@ -234,9 +236,11 @@ namespace Net
 			void Append(const char* Key, char* value) override;
 			void Append(const char* Key, unsigned int value) override;
 			void Append(const char* Key, int value) override;
+			void Append(const char* Key, bool value) override;
 			void Append(const char* Key, long value) override;
 			void Append(const char* Key, float value) override;
 			void Append(const char* Key, double value) override;
+			void Append(const char* Key, size_t value) override;
 			void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
 			void Append(Net::Package::Package_RawData_t& data) override;
 

@@ -299,7 +299,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	auto v4 = AddrIsV4(GetServerAddress());
 	if (!v6 && !v4)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
+		LOG_ERROR(CSTRING("[NET] - Address is neather IPV4 nor IPV6 Protocol"));
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -309,7 +309,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	SetSocket(Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP));
 	if (GetSocket() == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), LAST_ERROR);
+		LOG_ERROR(CSTRING("[NET] - Unable to create socket, error code: %d"), LAST_ERROR);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -342,7 +342,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 		res = inet_pton(AF_INET6, GetServerAddress(), &sockaddr6.sin6_addr);
 		if (res != 1)
 		{
-			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
+			LOG_ERROR(CSTRING("[NET]  - Failure on setting IPV6 Address with error code %d"), res);
 
 			// close endpoint
 			SOCKET_VALID(GetSocket())
@@ -383,7 +383,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 
 	if (!sockaddr)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
+		LOG_ERROR(CSTRING("[NET]  - Socket is not being valid"));
 
 		// close endpoint
 		SOCKET_VALID(GetSocket())

@@ -206,13 +206,36 @@ void Net::Package::Package::Append(const char* Key, int value)
 
 	if (pkg.HasMember(Key))
 	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key already exists in JSON Object"));
+		rapidjson::Value v;
+		v.Set<int>(value);
+		pkg.FindMember(Key)->value = v;
 		return;
 	}
 
 	rapidjson::Value key(Key, pkg.GetAllocator());
 	rapidjson::Value v;
 	v.Set<int>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, bool value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<bool>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<bool>(value);
 
 	if (!v.IsNull())
 		pkg.AddMember(key, v, pkg.GetAllocator());
@@ -276,6 +299,27 @@ void Net::Package::Package::Append(const char* Key, double value)
 	rapidjson::Value key(Key, pkg.GetAllocator());
 	rapidjson::Value v;
 	v.Set<double>(value);
+
+	if (!v.IsNull())
+		pkg.AddMember(key, v, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, size_t value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		rapidjson::Value v;
+		v.Set<size_t>(value);
+		pkg.FindMember(Key)->value = v;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	rapidjson::Value v;
+	v.Set<size_t>(value);
 
 	if (!v.IsNull())
 		pkg.AddMember(key, v, pkg.GetAllocator());
