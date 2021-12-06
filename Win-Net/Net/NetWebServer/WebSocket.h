@@ -1,5 +1,5 @@
 #pragma once
-#define NET_WEB_SERVER Net::WebServer::Server
+#define NET_WEB_SERVER Net::WebSocket::Server
 
 #define NET_PEER Net::WebSocket::Server::peerInfo*
 

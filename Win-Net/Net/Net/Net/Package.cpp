@@ -106,6 +106,36 @@ Net::Package::Package::~Package()
 	for (auto& entry : rawData) entry.free();
 }
 
+void Net::Package::Package::Append(const char* Key, rapidjson::Value value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		pkg.FindMember(Key)->value = value;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	if (!value.IsNull()) pkg.AddMember(key, value, pkg.GetAllocator());
+}
+
+void Net::Package::Package::Append(const char* Key, rapidjson::Value& value)
+{
+	if (pkg.IsNull())
+		pkg.SetObject();
+
+	if (pkg.HasMember(Key))
+	{
+		pkg.FindMember(Key)->value = value;
+		return;
+	}
+
+	rapidjson::Value key(Key, pkg.GetAllocator());
+	if (!value.IsNull()) pkg.AddMember(key, value, pkg.GetAllocator());
+}
+
 void Net::Package::Package::Append(const char* Key, const char* value)
 {
 	if (pkg.IsNull())

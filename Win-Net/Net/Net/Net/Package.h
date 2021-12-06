@@ -180,6 +180,8 @@ namespace Net
 		public:
 			Interface() = default;
 
+			virtual void Append(const char* Key, rapidjson::Value value) = 0;
+			virtual void Append(const char* Key, rapidjson::Value& value) = 0;
 			virtual void Append(const char* Key, const char* value) = 0;
 			virtual void Append(const char* Key, char* value) = 0;
 			virtual void Append(const char* Key, unsigned int value) = 0;
@@ -226,6 +228,8 @@ namespace Net
 			Package();
 			~Package();
 
+			void Append(const char* Key, rapidjson::Value value) override;
+			void Append(const char* Key, rapidjson::Value& value) override;
 			void Append(const char* Key, const char* value) override;
 			void Append(const char* Key, char* value) override;
 			void Append(const char* Key, unsigned int value) override;
