@@ -2,24 +2,22 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Server)
-IPRef::IPRef(const char* pointer)
+Net::Server::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
 }
 
-IPRef::~IPRef()
+Net::Server::IPRef::~IPRef()
 {
 	FREE(pointer);
 }
 
-const char* IPRef::get() const
+const char* Net::Server::IPRef::get() const
 {
 	return pointer;
 }
 
-Server::Server()
+Net::Server::Server::Server()
 {
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
@@ -31,7 +29,7 @@ Server::Server()
 	socketOptionBitFlag = NULL;
 }
 
-Server::~Server()
+Net::Server::Server::~Server()
 {
 	for (auto& entry : socketoption)
 		delete entry;
@@ -44,26 +42,26 @@ Server::~Server()
 	option.clear();
 }
 
-bool Server::Isset(const DWORD opt) const
+bool Net::Server::Server::Isset(const DWORD opt) const
 {
 	// use the bit flag to perform faster checks
 	return optionBitFlag & opt;
 }
 
-bool Server::Isset_SocketOpt(const DWORD opt) const
+bool Net::Server::Server::Isset_SocketOpt(const DWORD opt) const
 {
 	// use the bit flag to perform faster checks
 	return socketOptionBitFlag & opt;
 }
 
 #pragma region Network Structure
-void Server::network_t::setData(byte* pointer)
+void Net::Server::Server::network_t::setData(byte* pointer)
 {
 	deallocData();
 	_data = pointer;
 }
 
-void Server::network_t::allocData(const size_t size)
+void Net::Server::Server::network_t::allocData(const size_t size)
 {
 	clear();
 	_data = ALLOC<byte>(size + 1);
@@ -73,22 +71,22 @@ void Server::network_t::allocData(const size_t size)
 	setDataSize(size);
 }
 
-void Server::network_t::deallocData()
+void Net::Server::Server::network_t::deallocData()
 {
 	_data.free();
 }
 
-byte* Server::network_t::getData() const
+byte* Net::Server::Server::network_t::getData() const
 {
 	return _data.get();
 }
 
-void Server::network_t::reset()
+void Net::Server::Server::network_t::reset()
 {
 	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 }
 
-void Server::network_t::clear()
+void Net::Server::Server::network_t::clear()
 {
 	deallocData();
 	_data_size = NULL;
@@ -96,77 +94,77 @@ void Server::network_t::clear()
 	_data_offset = NULL;
 }
 
-void Server::network_t::setDataSize(const size_t size)
+void Net::Server::Server::network_t::setDataSize(const size_t size)
 {
 	_data_size = size;
 }
 
-size_t Server::network_t::getDataSize() const
+size_t Net::Server::Server::network_t::getDataSize() const
 {
 	return _data_size;
 }
 
-void Server::network_t::setDataFullSize(const size_t size)
+void Net::Server::Server::network_t::setDataFullSize(const size_t size)
 {
 	_data_full_size = size;
 }
 
-size_t Server::network_t::getDataFullSize() const
+size_t Net::Server::Server::network_t::getDataFullSize() const
 {
 	return _data_full_size;
 }
 
-void Server::network_t::SetDataOffset(const size_t offset)
+void Net::Server::Server::network_t::SetDataOffset(const size_t offset)
 {
 	_data_offset = offset;
 }
 
-size_t Server::network_t::getDataOffset() const
+size_t Net::Server::Server::network_t::getDataOffset() const
 {
 	return _data_offset;
 }
 
-bool Server::network_t::dataValid() const
+bool Net::Server::Server::network_t::dataValid() const
 {
 	return _data.valid();
 }
 
-byte* Server::network_t::getDataReceive()
+byte* Net::Server::Server::network_t::getDataReceive()
 {
 	return _dataReceive;
 }
 #pragma endregion
 
 #pragma region Cryption Structure
-void Server::cryption_t::createKeyPair(const size_t size)
+void Net::Server::Server::cryption_t::createKeyPair(const size_t size)
 {
 	RSA.generateKeys(size, 3);
 	setHandshakeStatus(false);
 }
 
-void Server::cryption_t::deleteKeyPair()
+void Net::Server::Server::cryption_t::deleteKeyPair()
 {
 	RSA.deleteKeys();
 	setHandshakeStatus(false);
 }
 
-void Server::cryption_t::setHandshakeStatus(const bool status)
+void Net::Server::Server::cryption_t::setHandshakeStatus(const bool status)
 {
 	RSAHandshake = status;
 }
 
-bool Server::cryption_t::getHandshakeStatus() const
+bool Net::Server::Server::cryption_t::getHandshakeStatus() const
 {
 	return RSAHandshake;
 }
 #pragma endregion
 
-void Server::IncreasePeersCounter()
+void Net::Server::Server::IncreasePeersCounter()
 {
 	++_CounterPeersTable;
 }
 
-void Server::DecreasePeersCounter()
+void Net::Server::Server::DecreasePeersCounter()
 {
 	--_CounterPeersTable;
 
@@ -176,8 +174,8 @@ void Server::DecreasePeersCounter()
 
 struct	 CalcLatency_t
 {
-	Server* server;
-	Server::peerInfo* peer;
+	Net::Server::Server* server;
+	Net::Server::Server::peerInfo* peer;
 };
 
 NET_TIMER(CalcLatency)
@@ -191,13 +189,13 @@ NET_TIMER(CalcLatency)
 	// tmp: disabled till linux support for icmp
 	//	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
 
-	Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
+	Net::Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
 	NET_CONTINUE_TIMER;
 }
 
 NET_TIMER(NTPSyncClock)
 {
-	const auto server = (Server*)param;
+	const auto server = (Net::Server::Server*)param;
 	if (!server) NET_STOP_TIMER;
 
 	tm* tm = localtime(&server->curTime);
@@ -208,7 +206,7 @@ NET_TIMER(NTPSyncClock)
 
 NET_TIMER(NTPReSyncClock)
 {
-	const auto server = (Server*)param;
+	const auto server = (Net::Server::Server*)param;
 	if (!server) NET_STOP_TIMER;
 
 	auto time = Net::Protocol::NTP::Exec(server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
@@ -222,11 +220,11 @@ NET_TIMER(NTPReSyncClock)
 
 	server->curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 
-	Timer::SetTime(server->hReSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
+	Net::Timer::SetTime(server->hReSyncClockNTP, server->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? server->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 	NET_CONTINUE_TIMER;
 }
 
-Server::peerInfo* Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
+Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
 	const auto peer = new NET_IPEER();
@@ -268,7 +266,7 @@ Server::peerInfo* Server::CreatePeer(const sockaddr_in client_addr, const SOCKET
 	return peer;
 }
 
-bool Server::ErasePeer(NET_PEER peer, bool clear)
+bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 {
 	PEER_NOT_VALID(peer,
 		return false;
@@ -332,7 +330,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 	return true;
 }
 
-size_t Server::GetNextPackageSize(NET_PEER peer)
+size_t Net::Server::Server::GetNextPackageSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return NULL;
@@ -341,7 +339,7 @@ size_t Server::GetNextPackageSize(NET_PEER peer)
 	return peer->network.getDataFullSize();
 }
 
-size_t Server::GetReceivedPackageSize(NET_PEER peer)
+size_t Net::Server::Server::GetReceivedPackageSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return NULL;
@@ -350,7 +348,7 @@ size_t Server::GetReceivedPackageSize(NET_PEER peer)
 	return peer->network.getDataSize();
 }
 
-float Server::GetReceivedPackageSizeAsPerc(NET_PEER peer)
+float Net::Server::Server::GetReceivedPackageSizeAsPerc(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return 0.0f;
@@ -372,7 +370,7 @@ float Server::GetReceivedPackageSizeAsPerc(NET_PEER peer)
 	return perc;
 }
 
-void Server::peerInfo::clear()
+void Net::Server::Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
@@ -394,18 +392,18 @@ void Server::peerInfo::clear()
 	lastToken = NULL;
 }
 
-typeLatency Server::peerInfo::getLatency() const
+typeLatency Net::Server::Server::peerInfo::getLatency() const
 {
 	return latency;
 }
 
-IPRef Server::peerInfo::IPAddr() const
+Net::Server::IPRef Net::Server::Server::peerInfo::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(Ws2_32::inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
 }
 
-void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)
+void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -430,39 +428,39 @@ void Server::DisconnectPeer(NET_PEER peer, const int code, const bool skipNotify
 	ErasePeer(peer);
 }
 
-void Server::SetListenSocket(const SOCKET ListenSocket)
+void Net::Server::Server::SetListenSocket(const SOCKET ListenSocket)
 {
 	this->ListenSocket = ListenSocket;
 }
 
-void Server::SetAcceptSocket(const SOCKET AcceptSocket)
+void Net::Server::Server::SetAcceptSocket(const SOCKET AcceptSocket)
 {
 	this->AcceptSocket = AcceptSocket;
 }
 
-void Server::SetRunning(const bool bRunning)
+void Net::Server::Server::SetRunning(const bool bRunning)
 {
 	this->bRunning = bRunning;
 }
 
-SOCKET Server::GetListenSocket() const
+SOCKET Net::Server::Server::GetListenSocket() const
 {
 	return ListenSocket;
 }
 
-SOCKET Server::GetAcceptSocket() const
+SOCKET Net::Server::Server::GetAcceptSocket() const
 {
 	return AcceptSocket;
 }
 
-bool Server::IsRunning() const
+bool Net::Server::Server::IsRunning() const
 {
 	return bRunning;
 }
 
 NET_THREAD(TickThread)
 {
-	const auto server = (Server*)parameter;
+	const auto server = (Net::Server::Server*)parameter;
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[%s] - Tick thread has been started"), SERVERNAME(server));
@@ -481,7 +479,7 @@ NET_THREAD(TickThread)
 
 NET_THREAD(AcceptorThread)
 {
-	const auto server = (Server*)parameter;
+	const auto server = (Net::Server::Server*)parameter;
 	if (!server) return NULL;
 
 	LOG_DEBUG(CSTRING("[%s] - Acceptor thread has been started"), SERVERNAME(server));
@@ -498,7 +496,7 @@ NET_THREAD(AcceptorThread)
 	return NULL;
 }
 
-bool Server::Run()
+bool Net::Server::Server::Run()
 {
 	if (IsRunning())
 		return false;
@@ -639,7 +637,7 @@ bool Server::Run()
 	return true;
 }
 
-bool Server::Close()
+bool Net::Server::Server::Close()
 {
 	if (!IsRunning())
 	{
@@ -677,7 +675,7 @@ bool Server::Close()
 	return true;
 }
 
-void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -734,7 +732,7 @@ void Server::SingleSend(NET_PEER peer, const char* data, size_t size, bool& bPre
 	} while (size > 0);
 }
 
-void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		FREE(data);
@@ -803,7 +801,7 @@ void Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPrevious
 	FREE(data);
 }
 
-void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
 		data.free();
@@ -872,7 +870,7 @@ void Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t size, bool& 
 			data.free();
 		}
 
-void Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -961,7 +959,7 @@ void Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bo
 *	{END PACKAGE}									*		{END PACKAGE}
 *
 */
-void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
+void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1228,7 +1226,7 @@ void Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 struct Receive_t
 {
-	Server* server;
+	Net::Server::Server* server;
 	NET_PEER peer;
 };
 
@@ -1264,7 +1262,7 @@ void OnPeerDelete(void* pdata)
 	peer = nullptr;
 }
 
-void Server::Acceptor()
+void Net::Server::Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
 
@@ -1323,7 +1321,7 @@ void Server::Acceptor()
 *	{END PACKAGE}									*		{END PACKAGE}
 *
  */
-bool Server::DoReceive(NET_PEER peer)
+bool Net::Server::Server::DoReceive(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return true;
@@ -1397,7 +1395,7 @@ bool Server::DoReceive(NET_PEER peer)
 	return false;
 }
 
-bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
+bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 {
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
@@ -1472,7 +1470,7 @@ bool Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 	return true;
 }
 
-void Server::ProcessPackages(NET_PEER peer)
+void Net::Server::Server::ProcessPackages(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1582,7 +1580,7 @@ void Server::ProcessPackages(NET_PEER peer)
 	peer->network.clear();
 }
 
-void Server::ExecutePackage(NET_PEER peer)
+void Net::Server::Server::ExecutePackage(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1987,7 +1985,7 @@ void Server::ExecutePackage(NET_PEER peer)
 	data.free();
 }
 
-void Server::CompressData(BYTE*& data, size_t& size)
+void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
@@ -1998,7 +1996,7 @@ void Server::CompressData(BYTE*& data, size_t& size)
 #endif
 }
 
-void Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
+void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
@@ -2009,7 +2007,7 @@ void Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip
 #endif
 }
 
-void Server::DecompressData(BYTE*& data, size_t& size)
+void Net::Server::Server::DecompressData(BYTE*& data, size_t& size)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
@@ -2020,7 +2018,7 @@ void Server::DecompressData(BYTE*& data, size_t& size)
 #endif
 }
 
-void Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
+void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
@@ -2031,12 +2029,12 @@ void Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool sk
 #endif
 }
 
-NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Server)
+NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Net::Server::Server)
 NET_SERVER_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
 NET_SERVER_DEFINE_PACKAGE(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
 NET_SERVER_END_DATA_PACKAGE
 
-NET_BEGIN_FNC_PKG(Server, RSAHandshake)
+NET_BEGIN_FNC_PKG(Net::Server::Server, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
@@ -2077,7 +2075,7 @@ Package Version;
 NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, Version);
 NET_END_FNC_PKG
 
-NET_BEGIN_FNC_PKG(Server, VersionPackage)
+NET_BEGIN_FNC_PKG(Net::Server::Server, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
@@ -2132,17 +2130,17 @@ else
 }
 NET_END_FNC_PKG
 
-size_t Server::getCountPeers() const
+size_t Net::Server::Server::getCountPeers() const
 {
 	return _CounterPeersTable;
 }
 
-size_t Server::getCountRunningPeerThreads()
+size_t Net::Server::Server::getCountRunningPeerThreads()
 {
 	return PeerPoolManager.count_pools();
 }
 
-bool Server::CreateTOTPSecret(NET_PEER peer)
+bool Net::Server::Server::CreateTOTPSecret(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return false;
@@ -2181,5 +2179,3 @@ bool Server::CreateTOTPSecret(NET_PEER peer)
 
 	return true;
 }
-NET_NAMESPACE_END
-NET_NAMESPACE_END
