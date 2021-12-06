@@ -50,13 +50,9 @@ namespace Net
 			std::vector<peer_threadpool_t*> peer_threadpool;
 			std::mutex* peer_threadpool_mutex;
 
-			peerInfo_t* queue_pop();
-
 			bool check_more_threads_needed();
 			void threapool_push(peer_threadpool_t* pool);
-			void threadpool_manager(peer_threadpool_t* pool);
 			void threadpool_add();
-			peer_threadpool_t* threadpool_get_free_slot_in_target_pool(peer_threadpool_t* from_pool);
 
 			DWORD ms_sleep_time;
 			void (*fncSleep)(DWORD time);
@@ -67,8 +63,19 @@ namespace Net
 			PeerPool_t();
 			~PeerPool_t();
 
+			peerInfo_t* queue_pop();
+
+			std::vector<peer_threadpool_t*>& get_peer_threadpool();
+			std::mutex* get_peer_threadpool_mutex();
+
+			peer_threadpool_t* threadpool_get_free_slot_in_target_pool(peer_threadpool_t* from_pool);
+
 			void set_sleep_time(DWORD ms_sleep_time);
+			DWORD get_sleep_time();
+
 			void set_sleep_function(void (*fncSleep)(DWORD time));
+			void* get_sleep_function();
+
 			void set_max_peers(size_t max_peers);
 
 			void add(peerInfo_t);

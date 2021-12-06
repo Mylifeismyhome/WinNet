@@ -99,9 +99,19 @@ void Net::PeerPool::PeerPool_t::set_sleep_time(DWORD ms_sleep_time)
 	this->ms_sleep_time = ms_sleep_time;
 }
 
+DWORD Net::PeerPool::PeerPool_t::get_sleep_time()
+{
+	return this->ms_sleep_time;
+}
+
 void Net::PeerPool::PeerPool_t::set_sleep_function(void (*fncSleep)(DWORD time))
 {
 	this->fncSleep = fncSleep;
+}
+
+void* Net::PeerPool::PeerPool_t::get_sleep_function()
+{
+	return this->fncSleep;
 }
 
 void Net::PeerPool::PeerPool_t::set_max_peers(size_t max_peers)
@@ -127,8 +137,18 @@ void Net::PeerPool::PeerPool_t::threapool_push(peer_threadpool_t* pool)
 	peer_threadpool.emplace_back(pool);
 }
 
-void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
+struct threadpool_manager_data_t
 {
+	Net::PeerPool::PeerPool_t* pClass;
+	Net::PeerPool::peer_threadpool_t* pool;
+};
+
+NET_THREAD(threadpool_manager)
+{
+	auto data = (threadpool_manager_data_t*)parameter;
+	auto pClass = data->pClass;
+	auto pool = data->pool;
+
 	while (true)
 	{
 		bool take_rest = true;
@@ -137,7 +157,7 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 		{
 			if (peer == nullptr)
 			{
-				auto waiting_peer = this->queue_pop();
+				auto waiting_peer = pClass->queue_pop();
 				if (waiting_peer)
 				{
 					peer = waiting_peer;
@@ -148,20 +168,20 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 					continue;
 				}
 			}
-			
+
 			// Automaticly set to stop if no worker function is set
-			WorkStatus_t ret = WorkStatus_t::STOP;
+			Net::PeerPool::WorkStatus_t ret = Net::PeerPool::WorkStatus_t::STOP;
 
 			auto fncWorkPointer = peer->GetWorker();
 			if (fncWorkPointer)
 			{
-				auto fncWork = reinterpret_cast<WorkStatus_t(*)(void* peer)>(fncWorkPointer);
+				auto fncWork = reinterpret_cast<Net::PeerPool::WorkStatus_t(*)(void* peer)>(fncWorkPointer);
 				ret = (*fncWork)(peer->GetPeer());
 			}
 
 			switch (ret)
 			{
-			case WorkStatus_t::STOP:
+			case Net::PeerPool::WorkStatus_t::STOP:
 			{
 				auto fncCallbackOnDeletePointer = peer->GetCallbackOnDelete();
 				if (fncCallbackOnDeletePointer)
@@ -176,10 +196,10 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 				break;
 			}
 
-			case WorkStatus_t::CONTINUE:
+			case Net::PeerPool::WorkStatus_t::CONTINUE:
 			{
-				const std::lock_guard<std::mutex> lock(*peer_threadpool_mutex);
-				const auto p = threadpool_get_free_slot_in_target_pool(pool);
+				const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
+				const auto p = pClass->threadpool_get_free_slot_in_target_pool(pool);
 				if (p)
 				{
 					// move peer pointer
@@ -200,7 +220,7 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 			}
 
 			// do not take a rest if we want to forward on processing worker function rapidly
-			case WorkStatus_t::FORWARD:
+			case Net::PeerPool::WorkStatus_t::FORWARD:
 			{
 				take_rest = false;
 				break;
@@ -215,35 +235,40 @@ void Net::PeerPool::PeerPool_t::threadpool_manager(peer_threadpool_t* pool)
 		if (pool->num_peers == 0)
 		{
 			// erase from vector
-			const std::lock_guard<std::mutex> lock(*peer_threadpool_mutex);
-			for (auto it = peer_threadpool.begin(); it != peer_threadpool.end(); it++)
+			const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
+			for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
 			{
 				auto p = *it;
 				// compare mem address
 				if (p == pool)
 				{
-					peer_threadpool.erase(it);
+					pClass->get_peer_threadpool().erase(it);
 					break;
 				}
 			}
 
 			delete pool;
 			pool = nullptr;
-			return;
+			return NULL;
 		}
 
 		if (take_rest)
 		{
-			if (fncSleep)
+			auto fncSleepPointer = pClass->get_sleep_function();
+			if (fncSleepPointer)
 			{
-				(*fncSleep)(ms_sleep_time);
+				auto fncSleep = reinterpret_cast<void (*)(DWORD time)>(fncSleepPointer);
+				(*fncSleep)(pClass->get_sleep_time());
 			}
 			else
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(ms_sleep_time));
+				std::this_thread::sleep_for(std::chrono::milliseconds(pClass->get_sleep_time()));
 			}
 		}
 	}
+
+	delete data;
+	return NULL;
 }
 
 void Net::PeerPool::PeerPool_t::threadpool_add()
@@ -251,13 +276,16 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 	peer_threadpool_t* pool = new peer_threadpool_t();
 
 	// add nullptr's to dynamic vector to reserve the memory
-	for(size_t i = 0; i < this->max_peers; i++)
+	for (size_t i = 0; i < this->max_peers; i++)
 		pool->vPeers.push_back(nullptr);
 
 	pool->num_peers = 0;
 
 	// dispatch the thread
-	std::thread(&Net::PeerPool::PeerPool_t::threadpool_manager, this, pool).detach();
+	auto data = new threadpool_manager_data_t();
+	data->pClass = this;
+	data->pool = pool;
+	Net::Thread::Create(threadpool_manager, (LPVOID)data);
 
 	// push to vector
 	threapool_push(pool);
@@ -285,6 +313,16 @@ Net::PeerPool::peerInfo_t* Net::PeerPool::PeerPool_t::queue_pop()
 	auto peer = peer_queue.back();
 	peer_queue.pop_back();
 	return peer;
+}
+
+std::vector<Net::PeerPool::peer_threadpool_t*>& Net::PeerPool::PeerPool_t::get_peer_threadpool()
+{
+	return this->peer_threadpool;
+}
+
+std::mutex* Net::PeerPool::PeerPool_t::get_peer_threadpool_mutex()
+{
+	return this->peer_threadpool_mutex;
 }
 
 void Net::PeerPool::PeerPool_t::add(peerInfo_t info)
@@ -321,8 +359,8 @@ size_t Net::PeerPool::PeerPool_t::count_peers(peer_threadpool_t* pool)
 {
 	size_t peers = 0;
 
-		for (const auto& peer : pool->vPeers)
-			if (peer) peers++;
+	for (const auto& peer : pool->vPeers)
+		if (peer) peers++;
 
 	return peers;
 }

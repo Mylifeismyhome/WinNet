@@ -1,9 +1,9 @@
-#include "WebServer.h"
+#include "WebSocket.h"
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
 NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(WebServer)
+NET_NAMESPACE_BEGIN(WebSocket)
 IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
@@ -169,7 +169,7 @@ void Server::DecreasePeersCounter()
 
 NET_THREAD(LatencyTick)
 {
-	const auto peer = (Server::NET_PEER)parameter;
+	const auto peer = (NET_PEER)parameter;
 	if (!peer) return NULL;
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
@@ -182,7 +182,7 @@ NET_THREAD(LatencyTick)
 struct DoCalcLatency_t
 {
 	Server* server;
-	Server::NET_PEER peer;
+	NET_PEER peer;
 };
 
 NET_TIMER(DoCalcLatency)
@@ -198,10 +198,10 @@ NET_TIMER(DoCalcLatency)
 	NET_CONTINUE_TIMER;
 }
 
-Server::NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
+NET_PEER Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
-	const auto peer = new NET_IPEER();
+	const auto peer = new Net::WebSocket::Server::peerInfo();
 	peer->UniqueID = socket;
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
@@ -326,7 +326,7 @@ bool Server::ErasePeer(NET_PEER peer, bool clear)
 	return true;
 }
 
-void Server::NET_IPEER::clear()
+void Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
 	pSocket = INVALID_SOCKET;
@@ -348,7 +348,7 @@ void Server::NET_IPEER::clear()
 	}
 }
 
-IPRef Server::NET_IPEER::IPAddr() const
+IPRef Server::peerInfo::IPAddr() const
 {
 	const auto buf = ALLOC<char>(INET_ADDRSTRLEN);
 	return IPRef(Ws2_32::inet_ntop(AF_INET, &client_addr.sin_addr, buf, INET_ADDRSTRLEN));
@@ -890,7 +890,7 @@ short Server::Handshake(NET_PEER peer)
 struct Receive_t
 {
 	Server* server;
-	Server::NET_PEER peer;
+	NET_PEER peer;
 };
 
 NET_THREAD(Receive)

@@ -861,10 +861,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WebServer.h" />
+    <ClInclude Include="WebSocket.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="WebServer.cpp" />
+    <ClCompile Include="WebSocket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
