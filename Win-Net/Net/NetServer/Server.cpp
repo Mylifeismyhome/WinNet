@@ -1269,7 +1269,30 @@ void Net::Server::Server::Acceptor()
 	// if client waiting, accept the connection and save the socket
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
-	SetAcceptSocket(Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen));
+
+	SOCKET accept_socket = INVALID_SOCKET;
+	do
+	{
+		accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
+		if (accept_socket == INVALID_SOCKET)
+		{
+#ifdef BUILD_LINUX
+			if (errno != EWOULDBLOCK)
+#else
+			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+#endif
+			{
+#ifdef BUILD_LINUX
+				usleep(FREQUENZ(this));
+#else
+				Kernel32::Sleep(FREQUENZ(this));
+#endif
+			}
+		}
+	} while (accept_socket == INVALID_SOCKET);
+
+	// socket is valid, so set it
+	SetAcceptSocket(accept_socket);
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
