@@ -161,7 +161,7 @@ NET_THREAD(threadpool_manager)
 
 		for (size_t i = 0; i < pClass->get_max_peers(); ++i)
 		{
-			auto peer = pool->vPeers[i];
+			auto& peer = pool->vPeers[i];
 			if (peer == nullptr)
 			{
 				auto waiting_peer = pClass->queue_pop();
@@ -286,7 +286,13 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 {
 	peer_threadpool_t* pool = new peer_threadpool_t();
 
-	pool->vPeers = new Net::PeerPool::peerInfo_t * [this->max_peers];
+	pool->vPeers = new Net::PeerPool::peerInfo_t*[get_max_peers()];
+	for (size_t i = 0; i < get_max_peers(); ++i)
+	{
+		auto& peer = pool->vPeers[i];
+		peer = nullptr;
+	}
+
 	pool->num_peers = 0;
 
 	// dispatch the thread
@@ -308,7 +314,7 @@ Net::PeerPool::peer_threadpool_t* Net::PeerPool::PeerPool_t::threadpool_get_free
 		if (pool == current_pool) continue;
 		for (size_t i = 0; i < get_max_peers(); ++i)
 		{
-			auto peer = pool->vPeers[i];
+			auto& peer = pool->vPeers[i];
 			if (!peer) return pool;
 		}
 	}
@@ -362,7 +368,7 @@ size_t Net::PeerPool::PeerPool_t::count_peers_all()
 	for (const auto& pool : peer_threadpool)
 		for (size_t i = 0; i < get_max_peers(); ++i)
 		{
-			auto peer = pool->vPeers[i];
+			auto& peer = pool->vPeers[i];
 			if (peer) peers++;
 		}
 
@@ -375,7 +381,7 @@ size_t Net::PeerPool::PeerPool_t::count_peers(peer_threadpool_t* pool)
 
 	for (size_t i = 0; i < get_max_peers(); ++i)
 	{
-		auto peer = pool->vPeers[i];
+		auto& peer = pool->vPeers[i];
 		if (peer) peers++;
 	}
 
