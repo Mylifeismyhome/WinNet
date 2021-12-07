@@ -2147,7 +2147,17 @@ size_t Net::Server::Server::getCountPeers() const
 	return _CounterPeersTable;
 }
 
-size_t Net::Server::Server::getCountRunningPeerThreads()
+size_t Net::Server::Server::count_peers_all()
+{
+	return PeerPoolManager.count_peers_all();
+}
+
+size_t Net::Server::Server::count_peers(Net::PeerPool::peer_threadpool_t* pool)
+{
+	return PeerPoolManager.count_peers(pool);
+}
+
+size_t Net::Server::Server::count_pools()
 {
 	return PeerPoolManager.count_pools();
 }

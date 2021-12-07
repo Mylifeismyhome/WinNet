@@ -194,28 +194,6 @@ NET_THREAD(threadpool_manager)
 				delete peer;
 				peer = nullptr;
 				pool->num_peers--;
-
-				// close this thread
-				if (pool->num_peers == 0)
-				{
-					// erase from vector
-					const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
-					for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
-					{
-						auto p = *it;
-						// compare mem address
-						if (p == pool)
-						{
-							pClass->get_peer_threadpool().erase(it);
-							break;
-						}
-					}
-
-					delete pool;
-					pool = nullptr;
-					return NULL;
-				}
-
 				break;
 			}
 
@@ -252,6 +230,27 @@ NET_THREAD(threadpool_manager)
 			default:
 				break;
 			}
+		}
+
+		// close this thread
+		if (pool->num_peers == 0)
+		{
+			// erase from vector
+			const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
+			for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
+			{
+				auto p = *it;
+				// compare mem address
+				if (p == pool)
+				{
+					pClass->get_peer_threadpool().erase(it);
+					break;
+				}
+			}
+
+			delete pool;
+			pool = nullptr;
+			return NULL;
 		}
 
 		if (take_rest)

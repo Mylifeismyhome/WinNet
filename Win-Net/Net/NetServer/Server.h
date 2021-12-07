@@ -315,7 +315,9 @@ namespace Net
 			void DoSend(NET_PEER, int, NET_PACKAGE);
 
 			size_t getCountPeers() const;
-			size_t getCountRunningPeerThreads();
+			size_t count_peers_all();
+			size_t count_peers(Net::PeerPool::peer_threadpool_t* pool);
+			size_t count_pools();
 
 			void Acceptor();
 			bool DoReceive(NET_PEER);
