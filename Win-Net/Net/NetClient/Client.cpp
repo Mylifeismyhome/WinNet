@@ -536,6 +536,7 @@ void Client::ConnectionClosed()
 		bool bBlocked = false;
 		do
 		{
+			Ws2_32::shutdown(GetSocket(), SD_SEND);
 			if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 			{
 #ifdef BUILD_LINUX

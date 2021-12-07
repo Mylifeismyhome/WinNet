@@ -97,6 +97,9 @@ MAKE_IMPORT(netshort);
 
 DEFINE_IMPORT(unsigned __int64, ntohll, unsigned __int64 Value)
 MAKE_IMPORT(Value);
+
+DEFINE_IMPORT(int, shutdown, SOCKET s, int how)
+MAKE_IMPORT(s, how);
 RESOLVE_IMPORT_END;
 #endif
 #endif

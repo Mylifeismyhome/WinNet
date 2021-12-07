@@ -130,7 +130,7 @@ bool Net::PeerPool::PeerPool_t::check_more_threads_needed()
 	const std::lock_guard<std::mutex> lock(*peer_threadpool_mutex);
 	for (const auto& pool : peer_threadpool)
 	{
-		if (pool->num_peers != max_peers)
+		if (count_peers(pool) != max_peers)
 			return false;
 	}
 
@@ -166,10 +166,7 @@ NET_THREAD(threadpool_manager)
 			{
 				auto waiting_peer = pClass->queue_pop();
 				if (waiting_peer)
-				{
 					peer = waiting_peer;
-					pool->num_peers++;
-				}
 
 				// process in next iteration
 				continue;
@@ -198,7 +195,6 @@ NET_THREAD(threadpool_manager)
 
 				delete peer;
 				peer = nullptr;
-				pool->num_peers--;
 				break;
 			}
 
@@ -215,10 +211,7 @@ NET_THREAD(threadpool_manager)
 						if (!target_peer)
 						{
 							target_peer = peer;
-							p->num_peers++;
-
 							peer = nullptr;
-							pool->num_peers--;
 							break;
 						}
 					}
@@ -239,7 +232,7 @@ NET_THREAD(threadpool_manager)
 		}
 
 		// close this thread
-		if (pool->num_peers == 0)
+		if (pClass->count_peers(pool) == 0)
 		{
 			// erase from vector
 			const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
@@ -299,8 +292,6 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 		auto& peer = pool->vPeers[i];
 		peer = nullptr;
 	}
-
-	pool->num_peers = 0;
 
 	// dispatch the thread
 	auto data = new threadpool_manager_data_t();

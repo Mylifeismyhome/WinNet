@@ -158,19 +158,6 @@ bool Net::Server::Server::cryption_t::getHandshakeStatus() const
 }
 #pragma endregion
 
-void Net::Server::Server::IncreasePeersCounter()
-{
-	++_CounterPeersTable;
-}
-
-void Net::Server::Server::DecreasePeersCounter()
-{
-	--_CounterPeersTable;
-
-	if (_CounterPeersTable == INVALID_SIZE)
-		_CounterPeersTable = NULL;
-}
-
 struct	 CalcLatency_t
 {
 	Net::Server::Server* server;
@@ -255,8 +242,6 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	if (CreateTOTPSecret(peer))
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): successfully created TOTP-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
-	IncreasePeersCounter();
-
 	LOG_PEER(CSTRING("[%s] - Peer ('%s'): connected"), SERVERNAME(this), peer->IPAddr().get());
 
 	// callback
@@ -280,6 +265,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 			do
 			{
 				bBlocked = false;
+				Ws2_32::shutdown(peer->pSocket, SD_SEND);
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
@@ -319,8 +305,6 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 		LOG_PEER(CSTRING("[%s] - Peer ('%s'): disconnected"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
-
-		DecreasePeersCounter();
 
 		return true;
 	}
@@ -2150,11 +2134,6 @@ else
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_FNC_PKG
-
-size_t Net::Server::Server::getCountPeers() const
-{
-	return _CounterPeersTable;
-}
 
 void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t info)
 {

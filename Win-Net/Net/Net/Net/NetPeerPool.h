@@ -40,7 +40,6 @@ namespace Net
 		struct peer_threadpool_t
 		{
 			Net::PeerPool::peerInfo_t** vPeers;
-			size_t num_peers = 0;
 		};
 
 		class PeerPool_t

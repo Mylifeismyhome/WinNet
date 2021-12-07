@@ -188,10 +188,6 @@ namespace Net
 			NET_HANDLE_TIMER hReSyncClockNTP;
 
 		private:
-
-			size_t _CounterPeersTable;
-			void IncreasePeersCounter();
-			void DecreasePeersCounter();
 			NET_PEER CreatePeer(sockaddr_in, SOCKET);
 
 			size_t GetNextPackageSize(NET_PEER);
@@ -313,8 +309,6 @@ namespace Net
 			void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, Net::Package::Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 			void DoSend(NET_PEER, int, NET_PACKAGE);
-
-			size_t getCountPeers() const;
 
 			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t);
 			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t*);
