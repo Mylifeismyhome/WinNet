@@ -120,6 +120,11 @@ void Net::PeerPool::PeerPool_t::set_max_peers(size_t max_peers)
 	this->max_peers = max_peers;
 }
 
+size_t Net::PeerPool::PeerPool_t::get_max_peers()
+{
+	return this->max_peers;
+}
+
 bool Net::PeerPool::PeerPool_t::check_more_threads_needed()
 {
 	const std::lock_guard<std::mutex> lock(*peer_threadpool_mutex);
@@ -150,12 +155,13 @@ NET_THREAD(threadpool_manager)
 	auto pClass = data->pClass;
 	auto pool = data->pool;
 
-	while (true)
+	while (data)
 	{
 		bool take_rest = true;
 
-		for (auto& peer : pool->vPeers)
+		for (size_t i = 0; i < pClass->get_max_peers(); ++i)
 		{
+			auto peer = pool->vPeers[i];
 			if (peer == nullptr)
 			{
 				auto waiting_peer = pClass->queue_pop();
@@ -164,10 +170,9 @@ NET_THREAD(threadpool_manager)
 					peer = waiting_peer;
 					pool->num_peers++;
 				}
-				else
-				{
-					continue;
-				}
+
+				// process in next iteration
+				continue;
 			}
 
 			// Automaticly set to stop if no worker function is set
@@ -204,8 +209,9 @@ NET_THREAD(threadpool_manager)
 				if (p)
 				{
 					// move peer pointer
-					for (auto& target_peer : p->vPeers)
+					for (size_t j = 0; j < pClass->get_max_peers(); ++j)
 					{
+						auto target_peer = p->vPeers[j];
 						if (!target_peer)
 						{
 							target_peer = peer;
@@ -248,8 +254,11 @@ NET_THREAD(threadpool_manager)
 				}
 			}
 
-			delete pool;
-			pool = nullptr;
+			delete pool->vPeers;
+			pool->vPeers = nullptr;
+
+			delete data;
+			data = nullptr;
 			return NULL;
 		}
 
@@ -268,8 +277,8 @@ NET_THREAD(threadpool_manager)
 		}
 	}
 
-	LOG("THREAD ENDED");
 	delete data;
+	data = nullptr;
 	return NULL;
 }
 
@@ -277,10 +286,7 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 {
 	peer_threadpool_t* pool = new peer_threadpool_t();
 
-	// add nullptr's to dynamic vector to reserve the memory
-	for (size_t i = 0; i < this->max_peers; i++)
-		pool->vPeers.push_back(nullptr);
-
+	pool->vPeers = new Net::PeerPool::peerInfo_t * [this->max_peers];
 	pool->num_peers = 0;
 
 	// dispatch the thread
@@ -300,8 +306,11 @@ Net::PeerPool::peer_threadpool_t* Net::PeerPool::PeerPool_t::threadpool_get_free
 	for (const auto& pool : peer_threadpool)
 	{
 		if (pool == current_pool) continue;
-		for (const auto& peer : pool->vPeers)
+		for (size_t i = 0; i < get_max_peers(); ++i)
+		{
+			auto peer = pool->vPeers[i];
 			if (!peer) return pool;
+		}
 	}
 
 	return nullptr;
@@ -351,8 +360,11 @@ size_t Net::PeerPool::PeerPool_t::count_peers_all()
 
 	const std::lock_guard<std::mutex> lock(*peer_threadpool_mutex);
 	for (const auto& pool : peer_threadpool)
-		for (const auto& peer : pool->vPeers)
+		for (size_t i = 0; i < get_max_peers(); ++i)
+		{
+			auto peer = pool->vPeers[i];
 			if (peer) peers++;
+		}
 
 	return peers;
 }
@@ -361,8 +373,11 @@ size_t Net::PeerPool::PeerPool_t::count_peers(peer_threadpool_t* pool)
 {
 	size_t peers = 0;
 
-	for (const auto& peer : pool->vPeers)
+	for (size_t i = 0; i < get_max_peers(); ++i)
+	{
+		auto peer = pool->vPeers[i];
 		if (peer) peers++;
+	}
 
 	return peers;
 }

@@ -38,7 +38,7 @@ namespace Net
 
 		struct peer_threadpool_t
 		{
-			std::vector<Net::PeerPool::peerInfo_t*> vPeers;
+			Net::PeerPool::peerInfo_t** vPeers;
 			size_t num_peers = 0;
 		};
 
@@ -77,6 +77,7 @@ namespace Net
 			void* get_sleep_function();
 
 			void set_max_peers(size_t max_peers);
+			size_t get_max_peers();
 
 			void add(peerInfo_t);
 			void add(peerInfo_t*);
