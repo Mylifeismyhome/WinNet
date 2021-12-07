@@ -294,7 +294,11 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 		return;
 	}
 
-	memset(pool->vPeers, NULL, get_max_peers());
+	for (size_t i = 0; i < get_max_peers(); ++i)
+	{
+		auto& peer = pool->vPeers[i];
+		peer = nullptr;
+	}
 
 	pool->num_peers = 0;
 
