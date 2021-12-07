@@ -2,6 +2,7 @@
 #include <Net/assets/thread.h>
 #include <mutex>
 
+NET_DSA_BEGIN
 namespace Net
 {
 	namespace PeerPool
@@ -88,3 +89,4 @@ namespace Net
 		};
 	}
 }
+NET_DSA_END
