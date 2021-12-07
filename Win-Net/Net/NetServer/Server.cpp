@@ -1249,6 +1249,42 @@ void OnPeerDelete(void* pdata)
 	peer = nullptr;
 }
 
+NET_THREAD(PeerStartRoutine)
+{
+	const auto data = (Receive_t*)parameter;
+	if (!data) return NULL;
+
+	auto peer = data->peer;
+	const auto server = data->server;
+
+	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
+	{
+		/* Create new RSA Key Pair */
+		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+
+		const auto PublicKey = peer->cryption.RSA.publicKey();
+
+		Net::Package::Package PKG;
+		PKG.Append(CSTRING("PublicKey"), PublicKey.get());
+		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+	}
+	else
+	{
+		// keep it empty, we get it filled back
+		Net::Package::Package PKG;
+		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
+	}
+
+	/* add peer to peer thread pool */
+	Net::PeerPool::peerInfo_t pInfo;
+	pInfo.SetPeer(parameter);
+	pInfo.SetWorker(&PeerWorker);
+	pInfo.SetCallbackOnDelete(&OnPeerDelete);
+	server->add_to_peer_threadpool(pInfo);
+
+	return NULL;
+}
+
 void Net::Server::Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
@@ -1286,34 +1322,7 @@ void Net::Server::Server::Acceptor()
 	const auto pdata = new Receive_t();
 	pdata->server = this;
 	pdata->peer = CreatePeer(client_addr, accept_socket);
-
-	if (pdata->peer)
-	{
-		if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
-		{
-			/* Create new RSA Key Pair */
-			pdata->peer->cryption.createKeyPair(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
-
-			const auto PublicKey = pdata->peer->cryption.RSA.publicKey();
-
-			Net::Package::Package PKG;
-			PKG.Append(CSTRING("PublicKey"), PublicKey.get());
-			NET_SEND(pdata->peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
-		}
-		else
-		{
-			// keep it empty, we get it filled back
-			Net::Package::Package PKG;
-			NET_SEND(pdata->peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
-		}
-
-		/* add peer to peer thread pool */
-		Net::PeerPool::peerInfo_t pInfo;
-		pInfo.SetPeer(pdata);
-		pInfo.SetWorker(&PeerWorker);
-		pInfo.SetCallbackOnDelete(&OnPeerDelete);
-		PeerPoolManager.add(pInfo);
-	}
+	if (pdata->peer) Net::Thread::Create(PeerStartRoutine, pdata);
 }
 
 /*
@@ -2145,6 +2154,16 @@ NET_END_FNC_PKG
 size_t Net::Server::Server::getCountPeers() const
 {
 	return _CounterPeersTable;
+}
+
+void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t info)
+{
+	PeerPoolManager.add(info);
+}
+
+void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t* pinfo)
+{
+	PeerPoolManager.add(pinfo);
 }
 
 size_t Net::Server::Server::count_peers_all()
