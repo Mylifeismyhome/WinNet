@@ -1,6 +1,7 @@
 #define DEFAULT_MAX_PEER_COUNT 4
 
 #include <Net/Net/NetPeerPool.h>
+#include <Net/assets/manager/logmanager.h>
 
 Net::PeerPool::peerInfo_t::peerInfo_t()
 {
@@ -193,6 +194,28 @@ NET_THREAD(threadpool_manager)
 				delete peer;
 				peer = nullptr;
 				pool->num_peers--;
+
+				// close this thread
+				if (pool->num_peers == 0)
+				{
+					// erase from vector
+					const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
+					for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
+					{
+						auto p = *it;
+						// compare mem address
+						if (p == pool)
+						{
+							pClass->get_peer_threadpool().erase(it);
+							break;
+						}
+					}
+
+					delete pool;
+					pool = nullptr;
+					return NULL;
+				}
+
 				break;
 			}
 
@@ -231,27 +254,6 @@ NET_THREAD(threadpool_manager)
 			}
 		}
 
-		// close this thread
-		if (pool->num_peers == 0)
-		{
-			// erase from vector
-			const std::lock_guard<std::mutex> lock(*pClass->get_peer_threadpool_mutex());
-			for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
-			{
-				auto p = *it;
-				// compare mem address
-				if (p == pool)
-				{
-					pClass->get_peer_threadpool().erase(it);
-					break;
-				}
-			}
-
-			delete pool;
-			pool = nullptr;
-			return NULL;
-		}
-
 		if (take_rest)
 		{
 			auto fncSleepPointer = pClass->get_sleep_function();
@@ -267,6 +269,7 @@ NET_THREAD(threadpool_manager)
 		}
 	}
 
+	LOG("THREAD ENDED");
 	delete data;
 	return NULL;
 }
@@ -327,20 +330,20 @@ std::mutex* Net::PeerPool::PeerPool_t::get_peer_threadpool_mutex()
 
 void Net::PeerPool::PeerPool_t::add(peerInfo_t info)
 {
-	if (check_more_threads_needed())
-		this->threadpool_add();
-
 	const std::lock_guard<std::mutex> lock(*peer_mutex);
 	peer_queue.emplace_back(new peerInfo_t(info));
+
+	if (check_more_threads_needed())
+		this->threadpool_add();
 }
 
 void Net::PeerPool::PeerPool_t::add(peerInfo_t* info)
 {
-	if (check_more_threads_needed())
-		this->threadpool_add();
-
 	const std::lock_guard<std::mutex> lock(*peer_mutex);
 	peer_queue.emplace_back(info);
+
+	if (check_more_threads_needed())
+		this->threadpool_add();
 }
 
 size_t Net::PeerPool::PeerPool_t::count_peers_all()

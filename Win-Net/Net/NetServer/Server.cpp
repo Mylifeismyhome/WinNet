@@ -20,7 +20,6 @@ const char* Net::Server::IPRef::get() const
 Net::Server::Server::Server()
 {
 	SetListenSocket(INVALID_SOCKET);
-	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
 	curTime = NULL;
 	hSyncClockNTP = nullptr;
@@ -433,11 +432,6 @@ void Net::Server::Server::SetListenSocket(const SOCKET ListenSocket)
 	this->ListenSocket = ListenSocket;
 }
 
-void Net::Server::Server::SetAcceptSocket(const SOCKET AcceptSocket)
-{
-	this->AcceptSocket = AcceptSocket;
-}
-
 void Net::Server::Server::SetRunning(const bool bRunning)
 {
 	this->bRunning = bRunning;
@@ -446,11 +440,6 @@ void Net::Server::Server::SetRunning(const bool bRunning)
 SOCKET Net::Server::Server::GetListenSocket() const
 {
 	return ListenSocket;
-}
-
-SOCKET Net::Server::Server::GetAcceptSocket() const
-{
-	return AcceptSocket;
 }
 
 bool Net::Server::Server::IsRunning() const
@@ -503,7 +492,6 @@ bool Net::Server::Server::Run()
 
 	// our sockets for the server
 	SetListenSocket(INVALID_SOCKET);
-	SetAcceptSocket(INVALID_SOCKET);
 
 	// address info for the server to listen to
 	addrinfo* result = nullptr;
@@ -621,6 +609,8 @@ bool Net::Server::Server::Run()
 		}
 	}
 
+	PeerPoolManager.set_max_peers(4);
+
 	PeerPoolManager.set_sleep_time(FREQUENZ(this));
 
 #ifdef BUILD_LINUX
@@ -663,9 +653,6 @@ bool Net::Server::Server::Close()
 
 	if (GetListenSocket())
 		Ws2_32::closesocket(GetListenSocket());
-
-	if (GetAcceptSocket())
-		Ws2_32::closesocket(GetAcceptSocket());
 
 #ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
@@ -1288,18 +1275,20 @@ void Net::Server::Server::Acceptor()
 				Kernel32::Sleep(FREQUENZ(this));
 #endif
 			}
+			else
+			{
+				LOG_ERROR("ACCPET SOCKET NOT VALID");
+				return;
+			}
 		}
 	} while (accept_socket == INVALID_SOCKET);
 
-	// socket is valid, so set it
-	SetAcceptSocket(accept_socket);
+	const auto pdata = new Receive_t();
+	pdata->server = this;
+	pdata->peer = CreatePeer(client_addr, accept_socket);
 
-	if (GetAcceptSocket() != INVALID_SOCKET)
+	if (pdata->peer)
 	{
-		const auto pdata = new Receive_t();
-		pdata->server = this;
-		pdata->peer = CreatePeer(client_addr, GetAcceptSocket());
-
 		if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 		{
 			/* Create new RSA Key Pair */

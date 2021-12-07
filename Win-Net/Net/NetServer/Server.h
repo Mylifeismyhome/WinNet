@@ -205,7 +205,6 @@ namespace Net
 			std::vector<SocketOptionInterface_t*> socketoption;
 
 			SOCKET ListenSocket;
-			SOCKET AcceptSocket;
 
 			bool bRunning;
 
@@ -299,11 +298,9 @@ namespace Net
 			bool Isset_SocketOpt(DWORD) const;
 
 			void SetListenSocket(SOCKET);
-			void SetAcceptSocket(SOCKET);
 			void SetRunning(bool);
 
 			SOCKET GetListenSocket() const;
-			SOCKET GetAcceptSocket() const;
 			bool IsRunning() const;
 
 			bool Run();
