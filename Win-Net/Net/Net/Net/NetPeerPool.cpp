@@ -285,8 +285,15 @@ NET_THREAD(threadpool_manager)
 void Net::PeerPool::PeerPool_t::threadpool_add()
 {
 	peer_threadpool_t* pool = new peer_threadpool_t();
+	if (!pool) return;
 
 	pool->vPeers = new Net::PeerPool::peerInfo_t*[get_max_peers()];
+	if (!pool->vPeers)
+	{
+		delete pool;
+		return;
+	}
+
 	for (size_t i = 0; i < get_max_peers(); ++i)
 	{
 		auto& peer = pool->vPeers[i];
