@@ -157,6 +157,8 @@ namespace Net
 				uint32_t curToken;
 				uint32_t lastToken;
 
+				NET_HANDLE_TIMER hWaitForNetProtocol;
+
 				peerInfo()
 				{
 					UniqueID = INVALID_UID;
@@ -171,6 +173,7 @@ namespace Net
 					totp_secret_len = NULL;
 					curToken = NULL;
 					lastToken = NULL;
+					hWaitForNetProtocol = nullptr;
 				}
 
 				void clear();

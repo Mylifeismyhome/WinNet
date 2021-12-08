@@ -73,11 +73,13 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 	Net::Clock::GetDateA(date);
 
 	// display date & time
-	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 5);
-	sprintf(buffer, CSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	auto buffer = ALLOC<char>(TIME_LENGTH + DATE_LENGTH + 3);
+	sprintf(buffer, CSTRING("'%s %s'"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 2] = '\0';
 	printf(buffer);
 	FREE(buffer);
+
+	printf(CSTRING(" "));
 
 	// display prefix in it specific color
 	const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
@@ -97,9 +99,13 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 
 	// output functionname
 	if (!entry.func.empty())
-		printf(CSTRING("[%s]"), entry.func.data());
+	{
+		printf(CSTRING(" "));
+		printf(CSTRING("'%s'"), entry.func.data());
+	}
 
-	printf(CSTRING(" "));
+	printf(CSTRING(" -> "));
+
 	printf(entry.msg.data());
 	printf(CSTRING("\n"));
 
@@ -109,9 +115,9 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 		if (!entry.func.empty())
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + 23;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + 10;
 			buffer = ALLOC<char>(bsize + 1);
-			sprintf(buffer, CSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), entry.msg.data());
+			sprintf(buffer, CSTRING("'%s %s' [%s] -> %s\n"), date, time, prefix.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogA)
@@ -125,9 +131,9 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 		else
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + entry.func.size() + 12;
 			auto buffer = ALLOC<char>(bsize + 1);
-			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			sprintf(buffer, CSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogA)
@@ -145,9 +151,9 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 		if (OnLogA)
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + entry.func.size() + 12;
 			auto buffer = ALLOC<char>(bsize + 1);
-			sprintf(buffer, CSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			sprintf(buffer, CSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 			(*OnLogA)((int)entry.state, buffer);
 			FREE(buffer);
@@ -169,11 +175,13 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 	Net::Clock::GetDateW(date);
 
 	// display date & time
-	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 5);
-	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 4, CWSTRING("[%s][%s]"), date, time);
-	buffer[TIME_LENGTH + DATE_LENGTH + 4] = '\0';
+	auto buffer = ALLOC<wchar_t>(TIME_LENGTH + DATE_LENGTH + 3);
+	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 2, CWSTRING("'%s %s'"), date, time);
+	buffer[TIME_LENGTH + DATE_LENGTH + 2] = '\0';
 	wprintf(buffer);
 	FREE(buffer);
+
+	wprintf(CWSTRING(" "));
 
 	// display prefix in it specific color
 	const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
@@ -193,9 +201,13 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 
 	// output functionname
 	if (!entry.func.empty())
-		wprintf(CWSTRING("[%s]"), entry.func.data());
+	{
+		wprintf(CWSTRING(" "));
+		wprintf(CWSTRING("'%s'"), entry.func.data());
+	}
 
-	wprintf(CWSTRING(" "));
+	wprintf(CWSTRING(" -> "));
+
 	wprintf(entry.msg.data());
 	wprintf(CWSTRING("\n"));
 
@@ -205,9 +217,9 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 		if (!entry.func.empty())
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + 23;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + 10;
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s] %s\n"), date, time, prefix.data(), entry.msg.data());
+			swprintf(buffer, bsize, CWSTRING("'%s %s' [%s] -> %s\n"), date, time, prefix.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogW)
@@ -221,9 +233,9 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 		else
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + entry.func.size() + 12;
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			swprintf(buffer, bsize, CWSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 
 			if (OnLogW)
@@ -241,9 +253,9 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 		if (OnLogW)
 		{
 			const auto prefix = Net::Console::GetLogStatePrefix(entry.state);
-			const auto bsize = entry.msg.size() + prefix.size() + entry.func.size() + 25;
+			const auto bsize = TIME_LENGTH + DATE_LENGTH + entry.msg.size() + prefix.size() + entry.func.size() + 12;
 			auto buffer = ALLOC<wchar_t>(bsize + 1);
-			swprintf(buffer, bsize, CWSTRING("[%s][%s][%s][%s] %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
+			swprintf(buffer, bsize, CWSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 			(*OnLogW)((int)entry.state, buffer);
 			FREE(buffer);

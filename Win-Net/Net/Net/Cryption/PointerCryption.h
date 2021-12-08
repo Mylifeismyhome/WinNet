@@ -5,7 +5,7 @@
 
 NET_DSA_BEGIN
 
-#define RAND_NUMBER 1337
+#define RAND_NUMBER rand() % (INT_MAX + 1);
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Cryption)
