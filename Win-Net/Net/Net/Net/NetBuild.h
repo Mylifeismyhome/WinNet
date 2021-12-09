@@ -18,6 +18,10 @@
 #define NET_DISABLE_IMPORT_User32
 #endif
 
+#ifdef NET_EXCLUDE_MYSQL_SUPPORT
+#undef NET_USE_MYSQL_SUPPORT
+#endif
+
 /* disable dynamic link */
 #ifdef NET_USE_MYSQL_SUPPORT
 #define CPPCONN_LIB_BUILD
