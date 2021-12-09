@@ -19,6 +19,7 @@ set CL=/MP
 nmake clean
 perl Configure VC-WIN32 --debug --prefix=%CD%\..\..\bin\lib\x86\debug --openssldir=%CD%\..\..\bin\ssl no-shared
 nmake
-nmake install_sw
+nmake test
+nmake install
 
 exit

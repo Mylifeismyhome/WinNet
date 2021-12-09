@@ -19,6 +19,7 @@ set CL=/MP
 nmake clean
 perl Configure VC-WIN64A --debug --prefix=%CD%\..\..\bin\dll\x64\debug --openssldir=%CD%\..\..\bin\ssl
 nmake
-nmake install_sw
+nmake test
+nmake install
 
 exit
