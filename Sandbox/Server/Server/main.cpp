@@ -5,8 +5,8 @@
 #include <Net/assets/manager/logmanager.h>
 
 #ifndef BUILD_LINUX
-#pragma comment(lib, "D:\\Projects\\WinNet\\Win-Net\\bin\\release\\x64\\MD\\NetCore.lib")
-#pragma comment(lib, "D:\\Projects\\WinNet\\Win-Net\\bin\\release\\x64\\MD\\NetServer.lib")
+#pragma comment(lib, "NetCore.lib")
+#pragma comment(lib, "NetServer.lib")
 #endif
 
 int main()
@@ -30,7 +30,7 @@ int main()
 #ifdef BUILD_LINUX
 		usleep(1000);
 #else
-		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d | Peer-Threads: %llu"), server.getCountPeers(), server.getCountRunningPeerThreads()).get().get());
+		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d | Peer-Threads: %llu"), server.count_peers_all(), server.count_pools()).get().get());
 		Sleep(1000);
 #endif
 	}
