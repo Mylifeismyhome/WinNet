@@ -18,13 +18,13 @@ cd Tools
 
 REM PERL
 echo [+] Downloading PERL (5.32.1.1)
-curl https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.msi --output strawberry-perl-5.32.1.1-64bit.msi
+if not exist strawberry-perl-5.32.1.1-64bit.msi curl https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.msi --output strawberry-perl-5.32.1.1-64bit.msi
 echo [+] Installing PERL (5.32.1.1)
 call strawberry-perl-5.32.1.1-64bit.msi
 
 REM NASM
 echo [+] Downloading NASM (2.15.05)
-curl https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-installer-x64.exe --output nasm-2.15.05-installer-x64.exe
+if not exist nasm-2.15.05-installer-x64.exe curl https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-installer-x64.exe --output nasm-2.15.05-installer-x64.exe
 echo [+] Installing NASM (2.15.05)
 call nasm-2.15.05-installer-x64.exe
 
@@ -33,6 +33,8 @@ REM --------------------------------------------------
 
 REM SET UP CONFIG
 REM --------------------------------------------------
+if not exist Config mkdir Config
+
 set /p TOOLS_PATH=[+] Enter Microsoft Visual Studio Build Tools Path: 
 echo %TOOLS_PATH%>%CD%\Config\BUILDTOOLS_PATH
 

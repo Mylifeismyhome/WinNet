@@ -1,6 +1,8 @@
 @echo off
 
-if not exist "Config" mkdir Config
+cd /d %~dp0
+
+if not exist Config mkdir Config
 
 set /p TOOLS_PATH=[+] Enter Microsoft Visual Studio Build Tools Path: 
 echo %TOOLS_PATH%>%CD%\Config\BUILDTOOLS_PATH
