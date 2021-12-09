@@ -283,7 +283,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MTD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -332,7 +332,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MTD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -381,7 +381,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\MDD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>
@@ -434,7 +434,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\MDD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>
@@ -481,7 +481,7 @@
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -531,7 +531,7 @@
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\debug\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -585,7 +585,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MT\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -634,7 +634,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MT\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -683,7 +683,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\MD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -732,7 +732,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\MD\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
@@ -780,7 +780,7 @@
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x86\DLL\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -833,7 +833,7 @@
     <Link>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\release\x64\DLL\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
       <ForceSymbolReferences>
