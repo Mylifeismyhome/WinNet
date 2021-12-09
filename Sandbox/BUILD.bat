@@ -1,58 +1,66 @@
 @echo off
+title Compile WinNet
 
-title Compile WinNet Sandbox
+setlocal enableextensions enabledelayedexpansion
+
+REM Lists
+set Configurations=Debug Debug_with_cipher Release Release_with_cipher
+set Platforms=x86 x64
 
 REM Select Mode
 echo Mode:
-echo 	1. Debug
-echo		2. Debug_with_cipher
-echo		3. Release
-echo		4. Release_with_cipher
+
+set /a it=1
+(for %%a in (%Configurations%) do ( 
+    echo 	!it!. %%a
+	set ConfigurationsIndexed[!it!]=%%a
+	set /a it+=1
+))
+
 echo ---------------------------
-set /p MODE=Select Mode: 
-if %MODE%==1 (
-	set MODE=Debug
-) else if %MODE%==2 (
-	set MODE=Debug_with_cipher
-) else if %MODE%==3 (
-	set MODE=Release
-) else if %MODE%==4 (
-	set MODE=Release_with_cipher
-) else (
-	echo Invalid MODE
+set /p INPUT_MODE=Select Mode: 
+if not defined ConfigurationsIndexed[%INPUT_MODE%] (
+	echo Invalid Mode
 	pause
 	goto :end
+) else (
+	set MODE=!ConfigurationsIndexed[%INPUT_MODE%]!
 )
 
 REM Select Platform
 echo Platform:
-echo 	1. x86
-echo		2. x64
+
+set /a it=1
+(for %%a in (%Platforms%) do ( 
+    echo 	!it!. %%a
+	set PlatformIndexed[!it!]=%%a
+	set /a it+=1
+))
+
 echo ---------------------------
-set /p PLATFORM=Select Platform: 
-if %PLATFORM%==1 (
-	set PLATFORM=x86
-) else if %PLATFORM%==2 (
-	set PLATFORM=x64
-) else (
+set /p INPUT_PLATFORM=Select Platform: 
+if not defined PlatformIndexed[%INPUT_PLATFORM%] (
 	echo Invalid Platform
 	pause
 	goto :end
+) else (
+	set PLATFORM=!PlatformIndexed[%INPUT_PLATFORM%]!
 )
 
 echo -------------------------------------------
-echo Start compiling WinNet Sandbox [%MODE%][%PLATFORM%] :: %date% %time%
+echo Start compiling WinNet [!MODE!][!PLATFORM!] :: %date% %time%
 echo -------------------------------------------
 
 set /p TOOL=<../Config/BUILDTOOLS_PATH
 call "%TOOL%\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-msbuild.exe Sandbox.sln /property:Configuration=%MODE% /property:Platform=%PLATFORM%
+msbuild.exe Sandbox.sln /property:Configuration=!MODE! /property:Platform=!PLATFORM!
 
 echo -------------------------------------------
-echo Done compiling WinNet Sandbox [%MODE%][%PLATFORM%] :: %date% %time%
+echo Done compiling WinNet [!MODE!][!PLATFORM!] :: %date% %time%
 echo -------------------------------------------
 
 pause
 
 :end
+endlocal
