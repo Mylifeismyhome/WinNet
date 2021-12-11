@@ -588,6 +588,7 @@
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName)_static.lib" "$(PlatformTarget)\release\"</Command>
@@ -637,6 +638,7 @@
       <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName)_static.lib" "$(PlatformTarget)\release\"</Command>
