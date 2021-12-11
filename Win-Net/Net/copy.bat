@@ -22,5 +22,5 @@ xcopy "..\..\Net\*.hpp" "..\..\extern\Net\include\" /s /i /q /y /c
 echo ---------- NET XCOPY INCLUDE FILES FINISHED ----------
 
 echo ---------- NET XCOPY LIB FILES ----------
-xcopy "..\..\bin\%1.lib" "..\..\extern\Net\lib\%2" /s /i /q /y /c
+xcopy "..\..\bin\%1" "..\..\extern\Net\lib\%2" /s /i /q /y /c
 echo ---------- NET XCOPY FINISHED ----------
