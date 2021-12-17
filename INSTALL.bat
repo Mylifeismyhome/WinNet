@@ -35,15 +35,15 @@ REM SET UP CONFIG
 REM --------------------------------------------------
 if not exist Config mkdir Config
 
-set /p TOOLS_PATH=[+] Enter Microsoft Visual Studio Build Tools Path: 
+set /p TOOLS_PATH=[+] Enter Microsoft Visual Studio Path: (e. g. C:\Program Files (x86)\Microsoft Visual Studio\2019) 
 echo %TOOLS_PATH%>%CD%\Config\BUILDTOOLS_PATH
 
 REM Add PERL to Environment Scope
-set /p PERL_PATH=[+] Enter PERL Path: 
+set /p PERL_PATH=[+] Enter PERL Path: (e. g. C:\Strawberry\perl\bin)
 setx /M PATH "%PATH%;%PERL_PATH%"
 
 REM Add NASM to Environment Scope
-set /p NASM_PATH=[+] Enter NASM Path: 
+set /p NASM_PATH=[+] Enter NASM Path: (e. g. C:\Users\tobia\AppData\Local\bin\NASM)
 setx /M "PATH" "%PATH%;%NASM_PATH%"
 REM --------------------------------------------------
 
