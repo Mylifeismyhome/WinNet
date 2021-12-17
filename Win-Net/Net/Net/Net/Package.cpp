@@ -304,7 +304,7 @@ void Net::Package::Package::Append(const char* Key, double value)
 		pkg.AddMember(key, v, pkg.GetAllocator());
 }
 
-#ifndef NET_X64
+#ifndef NET_X86
 void Net::Package::Package::Append(const char* Key, size_t value)
 {
 	if (pkg.IsNull())
