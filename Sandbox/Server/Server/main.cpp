@@ -5,8 +5,8 @@
 #include <Net/assets/manager/logmanager.h>
 
 #ifndef BUILD_LINUX
-#pragma comment(lib, "NetCore.lib")
-#pragma comment(lib, "NetServer.lib")
+#pragma comment(lib, "NetCore_static.lib")
+#pragma comment(lib, "NetServer_static.lib")
 #endif
 
 int main()

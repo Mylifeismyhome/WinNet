@@ -13,11 +13,8 @@ cd %CURDIR%
 set /p OPENSSL_SOURCE_DIRNAME=<openssl-version
 cd %OPENSSL_SOURCE_DIRNAME%
 
-REM USE ALL CPU CORES
-set CL=/MP
-
 nmake clean
-perl Configure VC-WIN64A -static --debug --prefix=%CD%\..\..\bin\lib\x64\debug --openssldir=%CD%\..\..\bin\ssl
+perl Configure VC-WIN64A no-shared /MTD --prefix=%CD%\..\..\bin\lib\x64\debug --openssldir=%CD%\..\..\bin\ssl
 nmake
 nmake test
 nmake install
