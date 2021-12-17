@@ -33,7 +33,7 @@ namespace Import
 			{
 				/* Load up Kernel32 Module if not done yet */
 				if (!isLoaded(CSTRING("Kernel32")))
-					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+					if (!Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
 
 				auto ptr = Function(CSTRING("Kernel32"), CSTRING("LoadLibraryA"));
 				if (!ptr.valid()) return false;
@@ -101,7 +101,7 @@ namespace Import
 			{
 				/* Load up Kernel32 Module if not done yet */
 				if (!isLoaded(CSTRING("Kernel32")))
-					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+					if (!Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
 
 				auto ptr = Function(CSTRING("Kernel32"), CSTRING("FreeLibrary"));
 				if (!ptr.valid()) return false;
@@ -141,7 +141,7 @@ namespace Import
 			{
 				/* Load up Kernel32 Module if not done yet */
 				if (!isLoaded(CSTRING("Kernel32")))
-					if (!Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
+					if (!Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY)) break;
 
 				auto ptr = Function(CSTRING("Kernel32"), CSTRING("GetProcAddress"));
 				if (!ptr.valid()) return CPOINTER<void>();

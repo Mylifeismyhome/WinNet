@@ -1,5 +1,18 @@
 #pragma once
 #ifndef BUILD_LINUX
+#include <Net/Net/Net.h>
+#include <Net/Cryption/XOR.h>
+#include <Net/Cryption/PointerCryption.h>
+#include <Net/assets/manager/logmanager.h>
+#include <Net/assets/manager/filemanager.h>
+#include "MemoryModule.h"
+
+#ifdef NET_X64
+#define WINDOWS_MODULE_PATH "C:\\Windows\\System32"
+#else
+#define WINDOWS_MODULE_PATH "C:\\Windows\\SysWOW64"
+#endif
+
 #define X_RESOLVER_TO_STRING(str) RESOLVER_TO_STRING(str)
 #define RESOLVER_TO_STRING(str) #str
 
@@ -13,19 +26,12 @@ static Ret funcName##(__VA_ARGS__) \
 	auto func = (_##funcName)Import::Resolver::Function(CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName).get(); \
 	if (!func) \
 	{ \
-		LOG_ERROR(CSTRING("Failure on resolving %s -> %s"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName); \
+		LOG_ERROR(CSTRING("Failure on resolving %s -> %s [%d]"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName, GetLastError()); \
 	}
 
 #define MAKE_IMPORT(...) \
 	return func(__VA_ARGS__); \
 }
-
-#include <Net/Net/Net.h>
-#include <Net/Cryption/XOR.h>
-#include <Net/Cryption/PointerCryption.h>
-#include <Net/assets/manager/logmanager.h>
-#include <Net/assets/manager/filemanager.h>
-#include "MemoryModule.h"
 
 namespace Import
 {

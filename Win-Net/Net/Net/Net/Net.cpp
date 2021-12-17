@@ -7,15 +7,15 @@
 NET_EXPORT_FUNCTION void Net::load()
 {
 #ifndef NET_DISABLE_IMPORT_KERNEL32
-	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING("C:\\Windows\\System32\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
+	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
 #endif
 
 #ifndef NET_DISABLE_IMPORT_NTDLL
-	Import::Resolver::Load(CSTRING("Ntdll"), CSTRING("C:\\Windows\\System32\\ntdll.dll"));
+	Import::Resolver::Load(CSTRING("Ntdll"), CSTRING(WINDOWS_MODULE_PATH"\\ntdll.dll"));
 #endif
 
 #ifndef NET_DISABLE_IMPORT_WS2_32
-	Import::Resolver::Load(CSTRING("Ws2_32"), CSTRING("C:\\Windows\\System32\\Ws2_32.dll"));
+	Import::Resolver::Load(CSTRING("Ws2_32"), CSTRING(WINDOWS_MODULE_PATH"\\Ws2_32.dll"));
 #endif
 
 	Net::Codes::NetLoadErrorCodes();

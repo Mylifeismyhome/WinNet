@@ -1,6 +1,12 @@
 #pragma once
 #include "NetBuildConfig.h"
 
+#ifdef defined(_WIN64) || defined(__x86_64__)
+#define NET_X64
+#else
+#define NET_X86
+#endif
+
 // disable windows compitable code
 #ifdef BUILD_LINUX
 #define NET_DISABLE_MEMORY_IMPORT_DLL
