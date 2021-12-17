@@ -304,6 +304,7 @@ void Net::Package::Package::Append(const char* Key, double value)
 		pkg.AddMember(key, v, pkg.GetAllocator());
 }
 
+#ifndef NET_X64
 void Net::Package::Package::Append(const char* Key, size_t value)
 {
 	if (pkg.IsNull())
@@ -324,6 +325,7 @@ void Net::Package::Package::Append(const char* Key, size_t value)
 	if (!v.IsNull())
 		pkg.AddMember(key, v, pkg.GetAllocator());
 }
+#endif
 
 void Net::Package::Package::Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
 {
