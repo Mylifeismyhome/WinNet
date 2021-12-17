@@ -4,7 +4,7 @@ title Compile WinNet
 setlocal enableextensions enabledelayedexpansion
 
 REM Lists
-set Configurations=Debug Debug_with_cipher Release Release_with_cipher
+set Configurations=DEBUG DEBUG-CIPHER RELEASE RELEASE-CIPHER
 set Platforms=x86 x64
 
 REM Select Mode
