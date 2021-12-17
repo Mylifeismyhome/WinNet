@@ -261,7 +261,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -311,7 +311,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -361,7 +361,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -411,7 +411,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -461,7 +461,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -512,7 +512,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -562,7 +562,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -611,7 +611,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -660,7 +660,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -709,7 +709,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -758,7 +758,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -808,7 +808,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
