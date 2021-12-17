@@ -40,7 +40,8 @@ namespace Import
 		enum class type_t
 		{
 			RESOLVE_KERNEL32 = 0,
-			RESOLVE_MEMORY
+			RESOLVE_MEMORY,
+			RESOLVE_IAT
 		};
 
 		struct module_t

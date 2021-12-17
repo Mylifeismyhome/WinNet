@@ -80,6 +80,19 @@ namespace Import
 				modules.emplace(std::pair<std::string, module_t>(library, mod));
 				return true;
 			}
+			else
+			{
+				/* load using loadlibrary from IAT */
+				mod.module = LoadLibraryA(path);
+
+				if (mod.module.valid())
+				{
+					strcpy_s(mod.name, library);
+					strcpy_s(mod.path, path);
+					mod.type = type_t::RESOLVE_IAT;
+					modules.emplace(std::pair<std::string, module_t>(library, mod));
+				}
+			}
 
 			return false;
 		}
@@ -158,7 +171,22 @@ namespace Import
 
 			case type_t::RESOLVE_MEMORY:
 				return CPOINTER<void>(::MemoryGetProcAddress((HMEMORYMODULE)mod.module.get(), funcName));
-				break;
+
+
+			case type_t::RESOLVE_IAT:
+			{
+				auto ptr = CPOINTER<void>(GetProcAddress((HMODULE)mod.module.get(), CSTRING("GetProcAddress")));
+				if (!ptr.valid()) return CPOINTER<void>();
+
+				auto fnc = (_GetProcAddress)ptr.get();
+				if (!fnc)
+				{
+					Unload(CSTRING("Kernel32"));
+					break;
+				}
+
+				return CPOINTER<void>(fnc((HMODULE)mod.module.get(), funcName));
+			}
 
 			default:
 				LOG_WARNING(CSTRING("Invalid Type"));
