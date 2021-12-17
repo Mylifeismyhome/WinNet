@@ -1,3 +1,3 @@
 @echo off
-cd %CD%\Win-Net\Net\
+cd %CD%\..\Win-Net\Net\
 call BUILD.bat

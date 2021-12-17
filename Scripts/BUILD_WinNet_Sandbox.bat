@@ -1,3 +1,3 @@
 @echo off
-cd %CD%\Sandbox\
+cd %CD%\..\Sandbox\
 call BUILD.bat

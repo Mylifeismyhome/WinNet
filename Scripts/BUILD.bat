@@ -7,12 +7,12 @@ echo Started Build :: %date% %time%
 echo -------------------------------------------
 
 REM Crypto++
-cd %cd%\extern\crypto++\
+cd %cd%\..\extern\crypto++\
 call BUILD.bat
 cd ../../
 
 REM OpenSSL
-cd %cd%\extern\OpenSSL\src
+cd %cd%\..\extern\OpenSSL\src
 call BUILD.bat
 cd ../../
 

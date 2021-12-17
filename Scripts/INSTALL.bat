@@ -10,6 +10,7 @@ echo Started installation :: %date% %time%
 echo -------------------------------------------
 
 cd /d %~dp0
+cd ..
 
 REM TOOLS REQUIRED - INSTALL THEM FIRST
 REM --------------------------------------------------
