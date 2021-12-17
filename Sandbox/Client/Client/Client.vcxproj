@@ -130,27 +130,39 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\debug</OutDir>
+    <IntDir>$(LibrariesArchitecture)\debug</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-CIPHER|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\release</OutDir>
+    <IntDir>$(LibrariesArchitecture)\release</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-CIPHER|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\release</OutDir>
+    <IntDir>$(LibrariesArchitecture)\release</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\debug</OutDir>
+    <IntDir>$(LibrariesArchitecture)\debug</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-CIPHER|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\release</OutDir>
+    <IntDir>$(LibrariesArchitecture)\release</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-CIPHER|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(LibrariesArchitecture)\release</OutDir>
+    <IntDir>$(LibrariesArchitecture)\release</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG|Win32'">
     <ClCompile>
@@ -173,6 +185,8 @@
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-CIPHER|Win32'">
@@ -196,6 +210,8 @@
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)_cipher$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)_cipher.pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE|Win32'">
@@ -221,6 +237,8 @@
       <AdditionalLibraryDirectories>..\..\..\Win-Net\extern\Net\lib\x86\release\</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-CIPHER|Win32'">
@@ -246,6 +264,8 @@
       <AdditionalLibraryDirectories>..\..\..\Win-Net\extern\Net\lib\x86\release\</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)_cipher$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)_cipher.pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG|x64'">
@@ -270,6 +290,8 @@
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <AdditionalDependencies>
       </AdditionalDependencies>
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-CIPHER|x64'">
@@ -294,6 +316,8 @@
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <AdditionalDependencies>
       </AdditionalDependencies>
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)_cipher$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\debug\$(TargetName)_cipher.pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE|x64'">
@@ -319,6 +343,8 @@
       <AdditionalLibraryDirectories>..\..\..\Win-Net\extern\Net\lib\x64\release\</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-CIPHER|x64'">
@@ -344,6 +370,8 @@
       <AdditionalLibraryDirectories>..\..\..\Win-Net\extern\Net\lib\x64\release\</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies />
+      <OutputFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)_cipher$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(SolutionDir)bin\$(LibrariesArchitecture)\release\$(TargetName)_cipher.pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
