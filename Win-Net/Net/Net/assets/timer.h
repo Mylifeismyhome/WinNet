@@ -18,7 +18,7 @@ namespace Net
 			NET_TimerRet(*func)(void*);
 			void* param;
 			double timer;
-			double goal;
+			double last;
 			bool clear;
 			bool finished;
 			bool bdelete;

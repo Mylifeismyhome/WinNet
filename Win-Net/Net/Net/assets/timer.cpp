@@ -2,11 +2,6 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/assets/thread.h>
 
-static clock_t NetGetClock()
-{
-	return clock();
-}
-
 NET_THREAD(NetTimerThread)
 {
 	if (!parameter)
@@ -27,7 +22,7 @@ NET_THREAD(NetTimerThread)
 		return NULL;
 	}
 
-	timer->goal = NetGetClock() + timer->timer;
+	timer->last = clock();
 
 	while (true)
 	{
@@ -45,7 +40,7 @@ NET_THREAD(NetTimerThread)
 			return NULL;
 		}
 
-		if (timer->goal < NetGetClock())
+		if ((clock() - timer->last) > timer->timer)
 		{
 			if (!(*timer->func)(timer->param))
 			{
@@ -61,7 +56,7 @@ NET_THREAD(NetTimerThread)
 				return NULL;
 			}
 
-			timer->goal = NetGetClock() + timer->timer;
+			timer->last += timer->timer;
 		}
 
 #ifdef BUILD_LINUX
