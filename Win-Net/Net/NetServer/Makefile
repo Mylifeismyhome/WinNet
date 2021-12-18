@@ -4,16 +4,16 @@ INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../ex
 
 # link Library
 define LINK
-    ar rvs NetServer.a bin/*.o
-    ranlib NetServer.a
+	ar rvs NetServer.a bin/*.o
+	ranlib NetServer.a
 endef
 
 # copy Files
 define COPY
-    mkdir -p ../../bin/
+	mkdir -p ../../bin/
 	mkdir -p ../../bin/include/NetServer/
 	cp Server.h ../../bin/include/NetServer/
-    cp NetServer.a ../../bin/
+	cp NetServer.a ../../bin/
 endef
 
 # clean build

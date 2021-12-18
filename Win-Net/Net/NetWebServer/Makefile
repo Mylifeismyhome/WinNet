@@ -4,16 +4,16 @@ INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../ex
 
 # link Library
 define LINK
-    ar rvs NetWebServer.a bin/*.o
-    ranlib NetWebServer.a
+	ar rvs NetWebServer.a bin/*.o
+	ranlib NetWebServer.a
 endef
 
 # copy Files
 define COPY
-    mkdir -p ../../bin/
+    	mkdir -p ../../bin/
 	mkdir -p ../../bin/include/NetWebServer/
-	cp WebServer.h ../../bin/include/NetWebServer/
-    cp NetWebServer.a ../../bin/
+	cp WebSocket.h ../../bin/include/NetWebServer/
+    	cp NetWebServer.a ../../bin/
 endef
 
 # clean build
@@ -24,7 +24,7 @@ endef
 all:
 	mkdir -p bin
 
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c WebServer.cpp -o bin/WebServer.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c WebSocket.cpp -o bin/WebSocket.o
 
 	$(call LINK)
 	$(call COPY)

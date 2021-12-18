@@ -353,7 +353,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 					if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 					{
 #ifdef BUILD_LINUX
-						if (errno != EWOULDBLOCK)
+						if (errno == EWOULDBLOCK)
 #else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -536,7 +536,7 @@ void Client::ConnectionClosed()
 		bool bBlocked = false;
 		do
 		{
-			Ws2_32::shutdown(GetSocket(), SD_SEND);
+			Ws2_32::shutdown(GetSocket(), SOCKET_WR);
 			if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 			{
 #ifdef BUILD_LINUX

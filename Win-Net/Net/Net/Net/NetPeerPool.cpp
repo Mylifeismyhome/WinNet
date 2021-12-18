@@ -55,7 +55,7 @@ void Net::PeerPool::peerInfo_t::SetWorker(WorkStatus_t(*fncWork)(void* peer))
 
 void* Net::PeerPool::peerInfo_t::GetWorker()
 {
-	if (this->fncWork) return this->fncWork;
+	if (this->fncWork) return (void*)this->fncWork;
 	return nullptr;
 }
 
@@ -66,7 +66,7 @@ void Net::PeerPool::peerInfo_t::SetCallbackOnDelete(void (*fncCallbackOnDelete)(
 
 void* Net::PeerPool::peerInfo_t::GetCallbackOnDelete()
 {
-	if (this->fncCallbackOnDelete) return this->fncCallbackOnDelete;
+	if (this->fncCallbackOnDelete) return (void*)this->fncCallbackOnDelete;
 	return nullptr;
 }
 
@@ -112,7 +112,7 @@ void Net::PeerPool::PeerPool_t::set_sleep_function(void (*fncSleep)(DWORD time))
 
 void* Net::PeerPool::PeerPool_t::get_sleep_function()
 {
-	return this->fncSleep;
+	return (void*)this->fncSleep;
 }
 
 void Net::PeerPool::PeerPool_t::set_max_peers(size_t max_peers)

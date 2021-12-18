@@ -8,6 +8,7 @@ define PATH_NET
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetCodes.cpp -o bin/NetCodes.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetString.cpp -o bin/NetString.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetPeerPool.cpp -o bin/NetPeerPool.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/Package.cpp -o bin/Package.o
 endef
 

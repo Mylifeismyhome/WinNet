@@ -262,11 +262,11 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 			do
 			{
 				bBlocked = false;
-				Ws2_32::shutdown(peer->pSocket, SD_SEND);
+				Ws2_32::shutdown(peer->pSocket, SOCKET_WR);
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno != EWOULDBLOCK)
+					if (errno == EWOULDBLOCK)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -467,6 +467,13 @@ NET_THREAD(AcceptorThread)
 	return NULL;
 }
 
+#ifdef BUILD_LINUX
+static void usleep_wrapper(DWORD duration)
+{
+	usleep(duration);
+}
+#endif
+
 bool Net::Server::Server::Run()
 {
 	if (IsRunning())
@@ -517,7 +524,7 @@ bool Net::Server::Server::Run()
 	// Create a SOCKET for connecting to server
 	SetListenSocket(Ws2_32::socket(result->ai_family, result->ai_socktype, result->ai_protocol));
 
-	if (GetListenSocket() == INVALID_SOCKET) 
+	if (GetListenSocket() == INVALID_SOCKET)
 	{
 		LOG_ERROR(CSTRING("'%s' => creation of a listener socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
@@ -560,7 +567,7 @@ bool Net::Server::Server::Run()
 	// start listening for new clients attempting to connect
 	res = Ws2_32::listen(GetListenSocket(), SOMAXCONN);
 
-	if (res == SOCKET_ERROR) 
+	if (res == SOCKET_ERROR)
 	{
 		LOG_ERROR(CSTRING("'%s' => listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
@@ -595,7 +602,7 @@ bool Net::Server::Server::Run()
 	PeerPoolManager.set_sleep_time(FREQUENZ(this));
 
 #ifdef BUILD_LINUX
-	PeerPoolManager.set_sleep_function(&usleep);
+	PeerPoolManager.set_sleep_function(&usleep_wrapper);
 #else
 	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
 #endif;
@@ -1305,7 +1312,7 @@ void Net::Server::Server::Acceptor()
 		if (accept_socket == INVALID_SOCKET)
 		{
 #ifdef BUILD_LINUX
-			if (errno != EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif

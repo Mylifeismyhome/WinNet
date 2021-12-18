@@ -278,7 +278,7 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno != EWOULDBLOCK)
+					if (errno == EWOULDBLOCK)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
