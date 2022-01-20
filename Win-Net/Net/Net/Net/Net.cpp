@@ -4,8 +4,17 @@
 #include <Net/Import/ImportResolver.h>
 #include <Net/Import/Ws2_32.hpp>
 
-NET_EXPORT_FUNCTION void Net::load()
+extern void __Net_Enable_Logging();
+
+NET_EXPORT_FUNCTION void Net::load(int flag)
 {
+#ifndef NET_DISABLE_LOGMANAGER
+	if (flag & NetOptions::ENABLE_LOGGING)
+	{
+		__Net_Enable_Logging();
+	}
+#endif
+
 #ifndef NET_DISABLE_IMPORT_KERNEL32
 	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
 #endif

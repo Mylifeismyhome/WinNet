@@ -24,9 +24,10 @@ CONSTEXPR auto YELLOW = 14;
 CONSTEXPR auto WHITE = 15;
 
 static char __net_output_fname[NET_MAX_PATH] = { 0 };
-static bool __net_output_used()
+static bool __net_logging_enabled = false;
+void __Net_Enable_Logging()
 {
-	return strcmp(__net_output_fname, CSTRING("")) != 0;
+	__net_logging_enabled = true;
 }
 
 // global override able callback
@@ -123,11 +124,8 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			if (OnLogA)
 				(*OnLogA)((int)entry.state, buffer);
 
-			if (__net_output_used())
-			{
-				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-				file.write(buffer);
-			}
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -142,11 +140,8 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			if (OnLogA)
 				(*OnLogA)((int)entry.state, buffer);
 
-			if (__net_output_used())
-			{
-				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-				file.write(buffer);
-			}
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -231,11 +226,8 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			if (OnLogW)
 				(*OnLogW)((int)entry.state, buffer);
 
-			if (__net_output_used())
-			{
-				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-				file.write(buffer);
-			}
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -250,11 +242,8 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			if (OnLogW)
 				(*OnLogW)((int)entry.state, buffer);
 
-			if (__net_output_used())
-			{
-				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-				file.write(buffer);
-			}
+			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+			file.write(buffer);
 
 			FREE(buffer);
 		}
@@ -328,6 +317,9 @@ NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates state)
 
 void Log(const LogStates state, const char* func, const char* msg, ...)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	va_list vaArgs;
 
 #ifdef BUILD_LINUX
@@ -357,6 +349,9 @@ void Log(const LogStates state, const char* func, const char* msg, ...)
 
 void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	const size_t lenfunc = strlen(funcA) + 1;
 	wchar_t* func = new wchar_t[lenfunc];
 	mbstowcs(func, funcA, lenfunc);
@@ -434,6 +429,9 @@ NET_NAMESPACE_BEGIN(Manager)
 NET_NAMESPACE_BEGIN(Log)
 NET_EXPORT_FUNCTION void SetOutputName(const char* name)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	Net::String tmp(name);
 	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
 		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
@@ -463,16 +461,25 @@ NET_EXPORT_FUNCTION void SetOutputName(const char* name)
 
 NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t callback)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	OnLogA = callback;
 }
 
 NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t callback)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	OnLogW = callback;
 }
 
 NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, const char* msg, ...)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	va_list vaArgs;
 
 #ifdef BUILD_LINUX
@@ -502,6 +509,9 @@ NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, c
 
 void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
 {
+	if (!__net_logging_enabled)
+		return;
+
 	const size_t lenfunc = strlen(funcA) + 1;
 	wchar_t* func = new wchar_t[lenfunc];
 	mbstowcs(func, funcA, lenfunc);

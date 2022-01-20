@@ -465,7 +465,13 @@ public:
 ////////////////////////////////////////////////////
 namespace Net
 {
-	NET_EXPORT_FUNCTION void load();
+	enum NetOptions
+	{
+		NONE = 0,
+		ENABLE_LOGGING
+	};
+
+	NET_EXPORT_FUNCTION void load(int flag = NetOptions::NONE);
 	NET_EXPORT_FUNCTION void unload();
 
 	int SocketOpt(SOCKET, int, int, SOCKET_OPT_TYPE, SOCKET_OPT_LEN);
