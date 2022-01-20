@@ -1,12 +1,10 @@
 #pragma once
 #include "NetBuildConfig.h"
 
-#ifndef defined(NET_X64) || defined(NET_X86)
-#ifdef defined(_WIN64) || defined(__x86_64__)
+#if defined _WIN64 || defined __x86_64__
 #define NET_X64
 #else
 #define NET_X86
-#endif
 #endif
 
 // disable windows compitable code
