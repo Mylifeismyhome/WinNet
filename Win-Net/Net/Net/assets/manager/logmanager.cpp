@@ -123,8 +123,11 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			if (OnLogA)
 				(*OnLogA)((int)entry.state, buffer);
 
-			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-			file.write(buffer);
+			if (__net_output_used())
+			{
+				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+				file.write(buffer);
+			}
 
 			FREE(buffer);
 		}
@@ -139,8 +142,11 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			if (OnLogA)
 				(*OnLogA)((int)entry.state, buffer);
 
-			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-			file.write(buffer);
+			if (__net_output_used())
+			{
+				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+				file.write(buffer);
+			}
 
 			FREE(buffer);
 		}
@@ -225,8 +231,11 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			if (OnLogW)
 				(*OnLogW)((int)entry.state, buffer);
 
-			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-			file.write(buffer);
+			if (__net_output_used())
+			{
+				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+				file.write(buffer);
+			}
 
 			FREE(buffer);
 		}
@@ -241,8 +250,11 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			if (OnLogW)
 				(*OnLogW)((int)entry.state, buffer);
 
-			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
-			file.write(buffer);
+			if (__net_output_used())
+			{
+				auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
+				file.write(buffer);
+			}
 
 			FREE(buffer);
 		}
