@@ -11,6 +11,7 @@ NET_TIMER(Test)
 	if (!client) NET_STOP_TIMER;
 
 	Net::Package::Package pkg;
+	pkg.Append(CSTRING("years"), 53);
 	client->DoSend(Packages::PKG_TEST, pkg);
 
 	NET_CONTINUE_TIMER;

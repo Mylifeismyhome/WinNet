@@ -11,6 +11,7 @@ void Server::OnPeerDisconnect(NET_PEER peer, int reason) {}
 void Server::OnPeerUpdate(NET_PEER peer) {}
 
 NET_BEGIN_FNC_PKG(Server, Test)
-LOG("Received Package from Client");
+auto years = pkg.Int(CSTRING("years"));
+LOG(CSTRING("My Friend is %i years old"), years.value());
 DoSend(peer, Packages::PKG_TEST, pkg);
 NET_END_FNC_PKG

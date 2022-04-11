@@ -13,14 +13,14 @@
 
 int main()
 {
-	Net::load();
+	Net::load(Net::ENABLE_LOGGING);
 
 	Client client;
 
 #ifdef _USE_CIPHER_
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
 
-	LOG_WARNING("USING CIPHER");
+	LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
 	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
