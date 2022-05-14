@@ -10,10 +10,10 @@ echo %TOOLS_PATH%>%CD%\Config\BUILDTOOLS_PATH
 
 REM Add PERL to Environment Scope
 set /p PERL_PATH=[+] Enter PERL Path: 
-setx /s PATH "%PATH%;%PERL_PATH%"
+setx /s Path "%Path%;%PERL_PATH%"
 
 REM Add NASM to Environment Scope
 set /p NASM_PATH=[+] Enter NASM Path: 
-setx /s PATH "%PATH%;%NASM_PATH%"
+setx /s Path "%Path%;%NASM_PATH%"
 
 pause
