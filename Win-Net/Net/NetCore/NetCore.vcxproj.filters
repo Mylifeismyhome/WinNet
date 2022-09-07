@@ -186,6 +186,9 @@
     <ClCompile Include="..\Net\Net\NetPeerPool.cpp">
       <Filter>Net</Filter>
     </ClCompile>
+    <ClCompile Include="..\Net\Net\NetJson.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Net\Net\NetString.h">
@@ -306,6 +309,9 @@
       <Filter>Import</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetPeerPool.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Net\NetJson.h">
       <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,6 +5,7 @@
 #include <Net/Protocol/NTP.h>
 #include <Net/Coding/BASE32.h>
 #include <Net/Coding/TOTP.h>
+#include <Net/Net/NetJson.h>
 
 #ifndef BUILD_LINUX
 #pragma comment(lib, "NetCore_static.lib")
@@ -14,6 +15,22 @@
 int main()
 {
 	Net::load(Net::ENABLE_LOGGING);
+
+	Net::Json::Document doc;
+	doc["Test"] = 5;
+	doc["ABC"]["DCE"] = 25.12f;
+
+	Net::Json::Array arr;
+	arr.push(25);
+	arr.push("TEST");
+	arr.push(13.125f);
+
+	doc["ARR"] = arr;
+
+	std::cout << doc["ARR"]->as_array()->operator[](1)->as_string() << std::endl;
+	std::cout << doc["ARR"]->as_array()->at(1)->as_string() << std::endl;
+
+	std::cout << doc.Serialize().data() << std::endl;
 
 	Client client;
 
