@@ -4,51 +4,51 @@
 #include <Net/Net/NetJson.h>
 #include <Net/Cryption/XOR.h>
 
-int Net::Json::Convert::ToInt32(std::string& str)
+int Net::Json::Convert::ToInt32(Net::String& str)
 {
-	return std::stoi(str);
+	return std::stoi(str.get().get());
 }
 
-float Net::Json::Convert::ToFloat(std::string& str)
+float Net::Json::Convert::ToFloat(Net::String& str)
 {
-	return std::stof(str);
+	return std::stof(str.get().get());
 }
 
-double Net::Json::Convert::ToDouble(std::string& str)
+double Net::Json::Convert::ToDouble(Net::String& str)
 {
-	return std::stod(str);
+	return std::stod(str.get().get());
 }
 
-bool Net::Json::Convert::ToBoolean(std::string& str)
+bool Net::Json::Convert::ToBoolean(Net::String& str)
 {
-	if (!strcmp(CSTRING("true"), str.c_str()))
+	if (!strcmp(CSTRING("true"), str.get().get()))
 		return true;
-	else if (!strcmp(CSTRING("false"), str.c_str()))
+	else if (!strcmp(CSTRING("false"), str.get().get()))
 		return false;
 
 	/* todo: throw error */
 	return false;
 }
 
-bool Net::Json::Convert::is_float(std::string& str)
+bool Net::Json::Convert::is_float(Net::String& str)
 {
 	char* end = nullptr;
-	double val = strtof(str.c_str(), &end);
-	return end != str.c_str() && *end == '\0' && val != HUGE_VALF;
+	double val = strtof(str.get().get(), &end);
+	return end != str.get().get() && *end == '\0' && val != HUGE_VALF;
 }
 
-bool Net::Json::Convert::is_double(std::string& str)
+bool Net::Json::Convert::is_double(Net::String& str)
 {
 	char* end = nullptr;
-	double val = strtod(str.c_str(), &end);
-	return end != str.c_str() && *end == '\0' && val != HUGE_VAL;
+	double val = strtod(str.get().get(), &end);
+	return end != str.get().get() && *end == '\0' && val != HUGE_VAL;
 }
 
-bool Net::Json::Convert::is_boolean(std::string& str)
+bool Net::Json::Convert::is_boolean(Net::String& str)
 {
-	if (!strcmp(CSTRING("true"), str.c_str()))
+	if (!strcmp(CSTRING("true"), str.get().get()))
 		return true;
-	else if (!strcmp(CSTRING("false"), str.c_str()))
+	else if (!strcmp(CSTRING("false"), str.get().get()))
 		return true;
 
 	return false;
@@ -559,173 +559,149 @@ bool Net::Json::Object::Append(const char* key, Object value)
 	return __append(key, value, Type::OBJECT);
 }
 
-std::string Net::Json::Object::Serialize(SerializeType type, size_t iterations)
+Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 {
-	std::string out("");
+	Net::String out(CSTRING(""));
 
-	out += (type == SerializeType::FORMATTED ? "{\n" : "{");
+	out += (type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"));
 
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
 		if (tmp->Type() == Type::NULL)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : %s)", tmp->Key(), "null");
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : %s)"), tmp->Key(), CSTRING("null"));
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::STRING)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : "%s")", tmp->Key(), tmp->as_string());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : "%s")"), tmp->Key(), tmp->as_string());
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::INTEGER)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : %i)", tmp->Key(), tmp->as_int());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : %i)"), tmp->Key(), tmp->as_int());
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::FLOAT)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : %F)", tmp->Key(), tmp->as_float());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : %F)"), tmp->Key(), tmp->as_float());
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::DOUBLE)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : %F)", tmp->Key(), tmp->as_double());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : %F)"), tmp->Key(), tmp->as_double());
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::BOOLEAN)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : %s)", tmp->Key(), tmp->as_boolean() ? "true" : "false");
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out.append(CSTRING(R"("%s" : %s)"), tmp->Key(), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::OBJECT)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : )", tmp->Key());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
+			out.append(CSTRING(R"("%s" : )"), tmp->Key());
 			out += tmp->as_object()->Serialize(type, (iterations + 1));
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->Type() == Type::ARRAY)
 		{
-			char str[255];
-			sprintf_s(str, R"("%s" : )", tmp->Key());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
 				{
-					out += '\t';
+					out += CSTRING("\t");
 				}
 			}
 
-			out += str;
+			out.append(CSTRING(R"("%s" : )"), tmp->Key());
 			out += tmp->as_array()->Serialize(type, (iterations + 1));
-			out += (type == SerializeType::FORMATTED) ? ",\n" : ",";
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 	}
 
 	size_t it = 0;
-	if ((it = out.find_last_of(',')) != std::string::npos)
-		out.erase(it);
+	if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
+		out.erase(it, 1);
 
-	if (type == SerializeType::FORMATTED) out += '\n';
+	if (type == SerializeType::FORMATTED) out += CSTRING("\n");
 
 	if (type == SerializeType::FORMATTED)
 	{
 		for (size_t it = 0; it < iterations; ++it)
 		{
-			out += '\t';
+			out += CSTRING("\t");
 		}
 	}
 
-	out += "}";
+	out += CSTRING("}");
 
 	return out;
 }
 
-std::string Net::Json::Object::Stringify(SerializeType type, size_t iterations)
+Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 {
 	return this->Serialize(type, iterations);
 }
 
 /* wrapper */
-bool Net::Json::Object::Deserialize(std::string json)
+bool Net::Json::Object::Deserialize(Net::String json)
 {
 	vector<char*> object_chain = {};
 	auto ret = this->Deserialize(json, object_chain);
@@ -738,15 +714,16 @@ bool Net::Json::Object::Deserialize(std::string json)
 	return ret;
 }
 
-bool Net::Json::Object::Parse(std::string json)
+bool Net::Json::Object::Parse(Net::String json)
 {
 	return this->Deserialize(json);
 }
 
 /* actual deserialization */
-bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chain)
+bool Net::Json::Object::Deserialize(Net::String json, vector<char*>& object_chain)
 {
-	if (json[0] != '{')
+	auto plain = json.get().get();
+	if (memcmp(&plain[0], CSTRING("{"), 1) != 0)
 	{
 		/* not an object */
 		return false;
@@ -756,8 +733,8 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 	size_t v = 0;
 	size_t t = 0;
 	size_t p = 0;
-	std::string lastKey("");
-	std::string lastValue("");
+	Net::String lastKey(CSTRING(""));
+	Net::String lastValue(CSTRING(""));
 	bool bReadValue = false;
 	bool bReadAnotherObject = false;
 	bool bReadArray = false;
@@ -767,7 +744,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		if (!bReadAnotherObject
 			&& !bReadArray
 			&& !bReadValue
-			&& json[i] == '"')
+			&& !memcmp(&plain[i], CSTRING(R"(")"), 1))
 		{
 			if (k != 0)
 			{
@@ -780,7 +757,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		}
 		else if (!bReadAnotherObject
 			&& !bReadArray
-			&& json[i] == ':')
+			&& !memcmp(&plain[i], CSTRING(":"), 1))
 		{
 			/* reading key */
 			if (k != 0)
@@ -796,7 +773,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		}
 		else if (!bReadAnotherObject
 			&& !bReadArray
-			&& json[i] == '{')
+			&& !memcmp(&plain[i], CSTRING("{"), 1))
 		{
 			/* reading key */
 			if (k != 0)
@@ -813,13 +790,13 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		}
 		else if (bReadAnotherObject
 			&& !bReadArray
-			&& json[i] == '{')
+			&& !memcmp(&plain[i], CSTRING("{"), 1))
 		{
 			++p;
 		}
 		else if (bReadAnotherObject
 			&& !bReadArray
-			&& json[i] == '}')
+			&& !memcmp(&plain[i], CSTRING("}"), 1))
 		{
 			/* reading key */
 			if (k != 0)
@@ -836,7 +813,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 
 			lastValue = json.substr(v, i - v + 1);
 
-			object_chain.push_back(_strdup(lastKey.c_str()));
+			object_chain.push_back(_strdup(lastKey.get().get()));
 
 			if (!this->Deserialize(lastValue, object_chain))
 				return false;
@@ -849,7 +826,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		}
 		else if (!bReadArray
 			&& !bReadAnotherObject
-			&& json[i] == '[')
+			&& !memcmp(&plain[i], CSTRING("["), 1))
 		{
 			/* reading key */
 			if (k != 0)
@@ -866,7 +843,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 		}
 		else if (bReadArray
 			&& !bReadAnotherObject
-			&& json[i] == ']')
+			&& !memcmp(&plain[i], CSTRING("]"), 1))
 		{
 			/* reading key */
 			if (k != 0)
@@ -893,16 +870,16 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 					obj = obj[object_chain[i]];
 				}
 
-				obj[lastKey.c_str()] = arr;
+				obj[lastKey.get().get()] = arr;
 			}
 			else
 			{
-				this->operator[](lastKey.c_str()) = arr;
+				this->operator[](lastKey.get().get()) = arr;
 			}
 
 			bReadArray = false;
 		}
-		else if (!bReadAnotherObject && !bReadArray && bReadValue && (json[i] == ',' || json[i] == '}'))
+		else if (!bReadAnotherObject && !bReadArray && bReadValue && (!memcmp(&plain[i], CSTRING(","), 1) || !memcmp(&plain[i], CSTRING("}"), 1)))
 		{
 			/* reading key */
 			if (k != 0)
@@ -918,7 +895,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 			Net::Json::Type type = Net::Json::Type::INTEGER;
 			for (size_t j = 0; j < lastValue.length(); ++j)
 			{
-				if (lastValue[j] == '"')
+				if (!memcmp(&lastValue.get().get()[j], CSTRING(R"(")"), 1))
 				{
 					if (type == Net::Json::Type::STRING)
 					{
@@ -935,9 +912,9 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 			if (type != Net::Json::Type::STRING)
 			{
 				/* remove all whitespaces, breaks and tabulators */
-				lastValue.erase(std::remove(lastValue.begin(), lastValue.end(), '\n'), lastValue.end());
-				lastValue.erase(std::remove(lastValue.begin(), lastValue.end(), '\t'), lastValue.end());
-				lastValue.erase(std::remove(lastValue.begin(), lastValue.end(), ' '), lastValue.end());
+				lastValue.eraseAll(CSTRING("\n"));
+				lastValue.eraseAll(CSTRING("\t"));
+				lastValue.eraseAll(CSTRING(" "));
 			}
 
 			if (type != Net::Json::Type::STRING)
@@ -951,7 +928,7 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 				{
 					for (size_t j = 0; j < lastValue.length(); ++j)
 					{
-						if (lastValue[j] == '.')
+						if (!memcmp(&lastValue.get().get()[j], CSTRING("."), 1))
 						{
 							/* check if is float or a double */
 							if (Convert::is_float(lastValue))
@@ -972,13 +949,10 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 							break;
 						}
 
-						if (lastValue[j] == 'n')
+						if (!memcmp(&lastValue.get().get()[j], CSTRING("null"), 4))
 						{
-							if (!memcmp(&lastValue[j], "null", 4))
-							{
-								type = Net::Json::Type::NULL;
-								break;
-							}
+							type = Net::Json::Type::NULL;
+							break;
 						}
 					}
 				}
@@ -999,61 +973,61 @@ bool Net::Json::Object::Deserialize(std::string json, vector<char*>& object_chai
 			case Net::Json::Type::STRING:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = lastValue.c_str();
+					obj[lastKey.get().get()] = lastValue.get().get();
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = lastValue.c_str();
+				this->operator[](lastKey.get().get()) = lastValue.get().get();
 				break;
 
 			case Net::Json::Type::INTEGER:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = Convert::ToInt32(lastValue);
+					obj[lastKey.get().get()] = Convert::ToInt32(lastValue);
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = Convert::ToInt32(lastValue);
+				this->operator[](lastKey.get().get()) = Convert::ToInt32(lastValue);
 				break;
 
 			case Net::Json::Type::FLOAT:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = Convert::ToFloat(lastValue);
+					obj[lastKey.get().get()] = Convert::ToFloat(lastValue);
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = Convert::ToFloat(lastValue);
+				this->operator[](lastKey.get().get()) = Convert::ToFloat(lastValue);
 				break;
 
 			case Net::Json::Type::DOUBLE:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = Convert::ToDouble(lastValue);
+					obj[lastKey.get().get()] = Convert::ToDouble(lastValue);
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = Convert::ToDouble(lastValue);
+				this->operator[](lastKey.get().get()) = Convert::ToDouble(lastValue);
 				break;
 
 			case Net::Json::Type::BOOLEAN:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = Convert::ToBoolean(lastValue);
+					obj[lastKey.get().get()] = Convert::ToBoolean(lastValue);
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = Convert::ToBoolean(lastValue);
+				this->operator[](lastKey.get().get()) = Convert::ToBoolean(lastValue);
 				break;
 
 			case Net::Json::Type::NULL:
 				if (object_chain.size() > 0)
 				{
-					obj[lastKey.c_str()] = Net::Json::NullValue();
+					obj[lastKey.get().get()] = Net::Json::NullValue();
 					break;
 				}
 
-				this->operator[](lastKey.c_str()) = Net::Json::NullValue();
+				this->operator[](lastKey.get().get()) = Net::Json::NullValue();
 				break;
 
 			default:
@@ -1155,9 +1129,9 @@ size_t Net::Json::Array::size() const
 	return this->value.size();
 }
 
-std::string Net::Json::Array::Serialize(SerializeType type, size_t iterations)
+Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 {
-	std::string out(CSTRING(""));
+	Net::String out(CSTRING(""));
 
 	out += (type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["));
 
@@ -1276,8 +1250,8 @@ std::string Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 	}
 
 	size_t it = 0;
-	if ((it = out.find_last_of(CSTRING(","))) != std::string::npos)
-		out.erase(it);
+	if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
+		out.erase(it, 1);
 
 	if (type == SerializeType::FORMATTED) out += CSTRING("\n");
 
@@ -1294,14 +1268,14 @@ std::string Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 	return out;
 }
 
-std::string Net::Json::Array::Stringify(SerializeType type, size_t iterations)
+Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 {
 	return this->Serialize(type, iterations);
 }
 
-bool Net::Json::Array::Deserialize(std::string json)
+bool Net::Json::Array::Deserialize(Net::String json)
 {
-	if (json[0] != '[')
+	if (json.get().get()[0] != '[')
 	{
 		/* not an array */
 		return false;
@@ -1312,13 +1286,13 @@ bool Net::Json::Array::Deserialize(std::string json)
 	for (size_t i = 1; i < json.length(); ++i)
 	{
 		if (!bReadObject
-			&& json[i] == '{')
+			&& json.get().get()[i] == '{')
 		{
 			v = i;
 			bReadObject = true;
 		}
 		else if (bReadObject
-			&& json[i] == '}')
+			&& json.get().get()[i] == '}')
 		{
 			auto lastValue = json.substr(v, i - v + 1);
 
@@ -1335,16 +1309,16 @@ bool Net::Json::Array::Deserialize(std::string json)
 			i = v + 1;
 		}
 		else if (!bReadObject
-			&& (json[i] == ',' || json[i] == ']'))
+			&& (json.get().get()[i] == ',' || json.get().get()[i] == ']'))
 		{
-			auto value = json.substr(v + 1, i - v - 1);
+			Net::String value = json.substr(v + 1, i - v - 1);
 
 			Net::Json::Type type = Net::Json::Type::INTEGER;
 
 			size_t z = 0;
 			for (size_t j = 0; j < value.length(); ++j)
 			{
-				if (value[j] == '"')
+				if (value.get().get()[j] == '"')
 				{
 					if (type == Net::Json::Type::STRING)
 					{
@@ -1361,9 +1335,9 @@ bool Net::Json::Array::Deserialize(std::string json)
 			if (type != Net::Json::Type::STRING)
 			{
 				/* remove all whitespaces, breaks and tabulators */
-				value.erase(std::remove(value.begin(), value.end(), '\n'), value.end());
-				value.erase(std::remove(value.begin(), value.end(), '\t'), value.end());
-				value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
+				value.eraseAll(CSTRING("\n"));
+				value.eraseAll(CSTRING("\t"));
+				value.eraseAll(CSTRING(" "));
 			}
 
 			/* check for boolean */
@@ -1375,7 +1349,7 @@ bool Net::Json::Array::Deserialize(std::string json)
 			{
 				for (size_t j = 0; j < value.length(); ++j)
 				{
-					if (value[j] == '.')
+					if (value.get().get()[j] == '.')
 					{
 						/* check if is float or a double */
 						if (Convert::is_float(value))
@@ -1398,9 +1372,9 @@ bool Net::Json::Array::Deserialize(std::string json)
 
 					if (type != Net::Json::Type::STRING)
 					{
-						if (value[j] == 'n')
+						if (value.get().get()[j] == 'n')
 						{
-							if (!memcmp(&value[j], "null", 4))
+							if (!memcmp(&value.get().get()[j], CSTRING("null"), 4))
 							{
 								type = Net::Json::Type::NULL;
 								break;
@@ -1413,7 +1387,7 @@ bool Net::Json::Array::Deserialize(std::string json)
 			switch (type)
 			{
 			case Net::Json::Type::STRING:
-				this->push(value.c_str());
+				this->push(value.get().get());
 				break;
 
 			case Net::Json::Type::INTEGER:
@@ -1448,7 +1422,7 @@ bool Net::Json::Array::Deserialize(std::string json)
 	return true;
 }
 
-bool Net::Json::Array::Parse(std::string json)
+bool Net::Json::Array::Parse(Net::String json)
 {
 	return this->Deserialize(json);
 }
@@ -1506,7 +1480,7 @@ void Net::Json::Document::set(Object obj)
 	this->root_obj = obj;
 }
 
-std::string Net::Json::Document::Serialize(SerializeType type)
+Net::String Net::Json::Document::Serialize(SerializeType type)
 {
 	switch (this->m_type)
 	{
@@ -1523,24 +1497,24 @@ std::string Net::Json::Document::Serialize(SerializeType type)
 	return "";
 }
 
-std::string Net::Json::Document::Stringify(SerializeType type)
+Net::String Net::Json::Document::Stringify(SerializeType type)
 {
 	return this->Serialize(type);
 }
 
-bool Net::Json::Document::Deserialize(std::string json)
+bool Net::Json::Document::Deserialize(Net::String json)
 {
 	/* re-init */
 	this->Clear();
 	this->Init();
 
-	if (json[0] == '{')
+	if (json.get().get()[0] == '{')
 	{
 		/* is object */
 		this->m_type = Net::Json::Type::OBJECT;
 		return this->root_obj.Deserialize(json);
 	}
-	else if (json[0] == '[')
+	else if (json.get().get()[0] == '[')
 	{
 		this->m_type = Net::Json::Type::ARRAY;
 		return this->root_array.Deserialize(json);
@@ -1550,7 +1524,7 @@ bool Net::Json::Document::Deserialize(std::string json)
 	return false;
 }
 
-bool Net::Json::Document::Parse(std::string json)
+bool Net::Json::Document::Parse(Net::String json)
 {
 	return this->Deserialize(json);
 }

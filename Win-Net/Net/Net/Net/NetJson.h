@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Net/Net/Net.h>
+#include <Net/Net/NetString.h>
 
 #undef NULL
 
@@ -171,13 +172,13 @@ namespace Net
 		class Convert
 		{
 		public:
-			static int ToInt32(std::string& str);
-			static float ToFloat(std::string& str);
-			static double ToDouble(std::string& str);
-			static bool ToBoolean(std::string& str);
-			static bool is_float(std::string& str);
-			static bool is_double(std::string& str);
-			static bool is_boolean(std::string& str);
+			static int ToInt32(Net::String& str);
+			static float ToFloat(Net::String& str);
+			static double ToDouble(Net::String& str);
+			static bool ToBoolean(Net::String& str);
+			static bool is_float(Net::String& str);
+			static bool is_double(Net::String& str);
+			static bool is_boolean(Net::String& str);
 		};
 
 		enum class Type
@@ -338,15 +339,15 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
-			std::string Serialize(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
-			std::string Stringify(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
-			bool Deserialize(std::string json);
-			bool Parse(std::string json);
+			Net::String Serialize(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
+			Net::String Stringify(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
+			bool Deserialize(Net::String json);
+			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(std::string json, vector<char*>& object_chain);
+			bool Deserialize(Net::String json, vector<char*>& object_chain);
 		};
 
 		class Array : public BasicArray
@@ -372,10 +373,10 @@ namespace Net
 
 			size_t size() const;
 
-			std::string Serialize(SerializeType type, size_t iterations = 0);
-			std::string Stringify(SerializeType type, size_t iterations = 0);
-			bool Deserialize(std::string json);
-			bool Parse(std::string json);
+			Net::String Serialize(SerializeType type, size_t iterations = 0);
+			Net::String Stringify(SerializeType type, size_t iterations = 0);
+			bool Deserialize(Net::String json);
+			bool Parse(Net::String json);
 
 			void Free();
 		};
@@ -400,10 +401,10 @@ namespace Net
 
 			void set(Object obj);
 
-			std::string Serialize(SerializeType type = SerializeType::FORMATTED);
-			std::string Stringify(SerializeType type = SerializeType::FORMATTED);
-			bool Deserialize(std::string json);
-			bool Parse(std::string json);
+			Net::String Serialize(SerializeType type = SerializeType::FORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::FORMATTED);
+			bool Deserialize(Net::String json);
+			bool Parse(Net::String json);
 		};
 	}
 }

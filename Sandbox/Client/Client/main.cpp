@@ -30,7 +30,26 @@ int main()
 	std::cout << doc["ARR"]->as_array()->operator[](1)->as_string() << std::endl;
 	std::cout << doc["ARR"]->as_array()->at(1)->as_string() << std::endl;
 
-	std::cout << doc.Serialize().data() << std::endl;
+	std::cout << doc.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
+
+	// new doc
+	doc = Net::Json::Document();
+	doc.Deserialize(R"({
+        "Test" : 5,
+        "ABC" : {
+                "DCB" : 25.120001
+
+        },
+        "ARR" : [
+                25,
+                "TEST2",
+                13.125000
+
+        ]
+
+})");
+
+	std::cout << doc.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
 
 	Client client;
 
