@@ -3,13 +3,13 @@
 
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKET PKG) { \
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKET& PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
 #define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKET)
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKET&)
 #define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
 
 #define NET_SEND DoSend
@@ -50,7 +50,7 @@
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 NET_DSA_BEGIN
-NET_ABSTRAC_CLASS_BEGIN(Client, Net::Packet::Packet)
+NET_ABSTRAC_CLASS_BEGIN(Client, Net::Packet)
 NET_STRUCT_BEGIN(Network)
 byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> data;
@@ -83,7 +83,7 @@ NET_HANDLE_TIMER hReSyncClockNTP;
 std::recursive_mutex _mutex_send;
 
 NET_STRUCT_BEGIN_CONSTRUCTUR(Network)
-memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+memset(dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 data = nullptr;
 data_size = 0;
 data_full_size = 0;
@@ -95,10 +95,10 @@ latency = -1;
 bLatency = false;
 hCalcLatency = nullptr;
 totp_secret = nullptr;
-totp_secret_len = NULL;
-curToken = NULL;
-lastToken = NULL;
-curTime = NULL;
+totp_secret_len = 0;
+curToken = 0;
+lastToken = 0;
+curTime = 0;
 hSyncClockNTP = nullptr;
 NET_STRUCT_END_CONTRUCTION
 
@@ -234,14 +234,14 @@ float GetReceivedPackageSizeAsPerc() const;
 
 bool bReceiveThread;
 DWORD DoReceive();
-bool CheckDataN(int id, NET_PACKET pkg);
-NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKET pkg) { return false; }
+bool CheckDataN(int id, NET_PACKET& pkg);
+NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKET& pkg) { return false; }
 
 void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-void SingleSend(Net::Packet::Packet_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
-void DoSend(int, NET_PACKET);
+void SingleSend(Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+void DoSend(int, NET_PACKET&);
 
 NET_CLASS_PRIVATE
 bool ValidHeader(bool&);

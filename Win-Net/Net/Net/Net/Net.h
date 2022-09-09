@@ -194,13 +194,13 @@ return true; \
 }
 
 #define NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(const int id, NET_PACKET pkg) \
+bool classname::CheckDataN(const int id, NET_PACKET& pkg) \
 { \
 switch (id) \
 {
 
 #define NET_CLIENT_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(const int id, NET_PACKET pkg) \
+bool classname::CheckData(const int id, NET_PACKET& pkg) \
 { \
 switch (id) \
 {

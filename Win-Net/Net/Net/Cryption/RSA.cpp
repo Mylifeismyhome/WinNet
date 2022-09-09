@@ -98,8 +98,8 @@ void NETRSA::setPublicKey(char* key)
 
 void NETRSA::setPublicKey(const char* key)
 {
-        _PublicKey.free();
-        _PublicKey.init(key);
+	_PublicKey.free();
+	_PublicKey.init(key);
 }
 
 void NETRSA::setPrivateKey(char* key)
@@ -110,8 +110,8 @@ void NETRSA::setPrivateKey(char* key)
 
 void NETRSA::setPrivateKey(const char* key)
 {
-        _PrivateKey.free();
-        _PrivateKey.init(key);
+	_PrivateKey.free();
+	_PrivateKey.init(key);
 }
 
 void NETRSA::deleteKeys()

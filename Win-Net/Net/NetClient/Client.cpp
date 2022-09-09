@@ -75,10 +75,10 @@ Client::Client()
 {
 	SetSocket(INVALID_SOCKET);
 	SetServerAddress(CSTRING(""));
-	SetServerPort(NULL);
+	SetServerPort(0);
 	SetConnected(false);
-	optionBitFlag = NULL;
-	socketOptionBitFlag = NULL;
+	optionBitFlag = 0;
+	socketOptionBitFlag = 0;
 	bReceiveThread = false;
 }
 
@@ -109,7 +109,7 @@ Client::~Client()
 NET_THREAD(Receive)
 {
 	const auto client = (Client*)parameter;
-	if (!client) return NULL;
+	if (!client) return 0;
 
 	client->bReceiveThread = true;
 
@@ -136,7 +136,7 @@ NET_THREAD(Receive)
 	client->bReceiveThread = false;
 
 	LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
-	return NULL;
+	return 0;
 }
 
 bool Client::Isset(const DWORD opt) const
@@ -164,7 +164,7 @@ char* Client::ResolveHostname(const char* name)
 #ifndef BUILD_LINUX
 	WSADATA wsaData;
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (res != NULL)
+	if (res != 0)
 	{
 		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
 		return nullptr;
@@ -185,7 +185,7 @@ char* Client::ResolveHostname(const char* name)
 
 	struct addrinfo* result = nullptr;
 	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
-	if (dwRetval != NULL)
+	if (dwRetval != 0)
 	{
 		LOG_ERROR(CSTRING("[NET] - Host look up has been failed with error %d"), dwRetval);
 #ifndef BUILD_LINUX
@@ -197,7 +197,7 @@ char* Client::ResolveHostname(const char* name)
 	struct sockaddr_in* psockaddrv4 = nullptr;
 	struct sockaddr_in6* psockaddrv6 = nullptr;
 	struct addrinfo* ptr = nullptr;
-	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+	for (ptr = result; ptr != 0; ptr = ptr->ai_next)
 	{
 		bool v6 = false;
 		switch (ptr->ai_family)
@@ -252,7 +252,7 @@ char* Client::ResolveHostname(const char* name)
 
 	const auto len = psockaddrv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN;
 	auto buf = ALLOC<char>(len);
-	memset(buf, NULL, len);
+	memset(buf, 0, len);
 
 	if (psockaddrv6) buf = (char*)Ws2_32::inet_ntop(psockaddrv6->sin6_family, &psockaddrv6->sin6_addr, buf, INET6_ADDRSTRLEN);
 	else buf = (char*)Ws2_32::inet_ntop(psockaddrv4->sin_family, &psockaddrv4->sin_addr, buf, INET_ADDRSTRLEN);
@@ -278,7 +278,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 #ifndef BUILD_LINUX
 	WSADATA wsaData;
 	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (res != NULL)
+	if (res != 0)
 	{
 		LOG_ERROR(CSTRING("[NET] - WSAStartup has been failed with error: %d"), res);
 		return false;
@@ -317,7 +317,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 	}
 
 	struct sockaddr* sockaddr = nullptr;
-	int slen = NULL;
+	int slen = 0;
 	if (v4)
 	{
 		struct sockaddr_in sockaddr4;
@@ -679,10 +679,10 @@ void Client::Network::clear()
 	deleteRSAKeys();
 
 	FREE(totp_secret);
-	totp_secret_len = NULL;
-	curToken = NULL;
-	lastToken = NULL;
-	curTime = NULL;
+	totp_secret_len = 0;
+	curToken = 0;
+	lastToken = 0;
+	curTime = 0;
 	hSyncClockNTP = nullptr;
 	hReSyncClockNTP = nullptr;
 }
@@ -690,7 +690,7 @@ void Client::Network::clear()
 void Client::Network::AllocData(const size_t size)
 {
 	data = ALLOC<byte>(size + 1);
-	memset(data.get(), NULL, size);
+	memset(data.get(), 0, size);
 	data_size = 0;
 	data_full_size = 0;
 	data_offset = 0;
@@ -909,7 +909,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 	data.free();
 }
 
-void Client::SingleSend(Net::Packet::Packet_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Client::SingleSend(Net::RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -985,15 +985,15 @@ void Client::SingleSend(Net::Packet::Packet_RawData_t& data, bool& bPreviousSent
 *	------------------------------------------------------------------------------------------
 *	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
 *		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
-*			{KEY}{...}...								*						-
-*			{IV}{...}...									*						-
+*			{KEY}{...}...						*						-
+*			{IV}{...}...						*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
-*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
-*			{DATA}{...}...								*				{DATA}{...}...
-*	{END PACKAGE}									*		{END PACKAGE}
+*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
+*			{DATA}{...}...						*				{DATA}{...}...
+*	{END PACKAGE}								*		{END PACKAGE}
 *
- */
-void Client::DoSend(const int id, NET_PACKET pkg)
+*/
+void Client::DoSend(const int id, NET_PACKET& pkg)
 {
 	if (!IsConnected())
 		return;
@@ -1004,28 +1004,21 @@ void Client::DoSend(const int id, NET_PACKET pkg)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
-	rapidjson::Document JsonBuffer;
-	JsonBuffer.SetObject();
-	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
-	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
+	Net::Json::Document JsonBuffer;
+	JsonBuffer[CSTRING("ID")] = id;
+	JsonBuffer[CSTRING("CONTENT")] = pkg.Data();
 
-	rapidjson::Value idValue;
-	idValue.SetInt(id);
-	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
+	auto buffer = JsonBuffer.Serialize(Net::Json::SerializeType::NONE);
 
-	/* tmp buffer, later we cast to PBYTE */
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	JsonBuffer.Accept(writer);
-
-	auto dataBufferSize = buffer.GetLength();
+	auto dataBufferSize = buffer.size();
 	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-	memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
+	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
 	dataBuffer.get()[dataBufferSize] = '\0';
-	buffer.Flush();
+	buffer.clear();
 
-	size_t combinedSize = NULL;
+	std::cout << dataBuffer.get() << std::endl;
+
+	size_t combinedSize = 0;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -1077,7 +1070,7 @@ void Client::DoSend(const int id, NET_PACKET pkg)
 
 		if (PKG.HasRawData())
 		{
-			std::vector<Net::Packet::Packet_RawData_t>& rawData = PKG.GetRawData();
+			std::vector<Net::RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -1289,7 +1282,7 @@ DWORD Client::DoReceive()
 		if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
 		{
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 			Disconnect();
 
 #ifdef BUILD_LINUX
@@ -1302,14 +1295,14 @@ DWORD Client::DoReceive()
 		}
 
 		ProcessPackages();
-		memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		return FREQUENZ;
 	}
 
 	// graceful disconnect
 	if (data_size == 0)
 	{
-		memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 		Disconnect();
 		LOG_PEER(CSTRING("Connection has been gracefully closed"));
 		return FREQUENZ;
@@ -1343,9 +1336,9 @@ DWORD Client::DoReceive()
 		}
 	}
 
-	memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+	memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 	ProcessPackages();
-	return NULL;
+	return 0;
 }
 
 bool Client::ValidHeader(bool& use_old_token)
@@ -1649,7 +1642,7 @@ void Client::ExecutePackage()
 
 				// read size
 				CPOINTER<BYTE> key;
-				size_t KeySize = NULL;
+				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < network.data_size; ++y)
 					{
@@ -1680,7 +1673,7 @@ void Client::ExecutePackage()
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = NULL;
+					size_t packageSize = 0;
 					{
 						for (auto y = offset; y < network.data_size; ++y)
 						{
@@ -1699,7 +1692,7 @@ void Client::ExecutePackage()
 						}
 					}
 
-					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1716,7 +1709,7 @@ void Client::ExecutePackage()
 						return;
 					}
 
-					Content.Append(entry);
+					Content.AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1729,7 +1722,7 @@ void Client::ExecutePackage()
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = NULL;
+				size_t packageSize = 0;
 				{
 					for (auto y = offset; y < network.data_size; ++y)
 					{
@@ -1788,7 +1781,7 @@ void Client::ExecutePackage()
 
 				// read size
 				CPOINTER<BYTE> key;
-				size_t KeySize = NULL;
+				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < network.data_size; ++y)
 					{
@@ -1819,7 +1812,7 @@ void Client::ExecutePackage()
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = NULL;
+					size_t packageSize = 0;
 					{
 						for (auto y = offset; y < network.data_size; ++y)
 						{
@@ -1838,7 +1831,7 @@ void Client::ExecutePackage()
 						}
 					}
 
-					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1847,7 +1840,7 @@ void Client::ExecutePackage()
 						entry.set_free(true);
 					}
 
-					Content.Append(entry);
+					Content.AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1860,7 +1853,7 @@ void Client::ExecutePackage()
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = NULL;
+				size_t packageSize = 0;
 				{
 					for (auto y = offset; y < network.data_size; ++y)
 					{
@@ -1905,9 +1898,9 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	Packet PKG;
-	PKG.Parse(reinterpret_cast<char*>(data.get()));
-	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
+	NET_PACKET PKG;
+	PKG.Deserialize(reinterpret_cast<char*>(data.get()));
+	if (!PKG[CSTRING("ID")]->is_int())
 	{
 		data.free();
 		Disconnect();
@@ -1915,7 +1908,7 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG[CSTRING("ID")]->as_int();
 	if (id < 0)
 	{
 		data.free();
@@ -1924,7 +1917,8 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!PKG[CSTRING("CONTENT")]->is_object() 
+		&& !PKG[CSTRING("CONTENT")]->is_array())
 	{
 		data.free();
 		Disconnect();
@@ -1932,8 +1926,17 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	if (PKG[CSTRING("CONTENT")]->is_object())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
+	}
+	else if (PKG[CSTRING("CONTENT")]->is_array())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
+	}
+
+	std::cout << pkg.Stringify().data().data() << std::endl;
+	std::cout << Content.Stringify().data().data() << std::endl;
 
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))
@@ -2034,8 +2037,8 @@ bool Client::CreateTOTPSecret()
 	network.totp_secret[network.totp_secret_len] = '\0';
 	Net::Coding::Base32::encode(network.totp_secret, network.totp_secret_len);
 
-	network.curToken = NULL;
-	network.lastToken = NULL;
+	network.curToken = 0;
+	network.lastToken = 0;
 
 	return true;
 }
@@ -2067,10 +2070,7 @@ if (network.RSAHandshake)
 	return;
 }
 
-NET_JOIN_PACKAGE(pkg, pkgRel);
-
-const auto publicKey = pkgRel.String(CSTRING("PublicKey"));
-if (!publicKey.valid())
+if(!pkg[CSTRING("PublicKey")]->is_string())
 {
 	Disconnect();
 	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
@@ -2078,13 +2078,17 @@ if (!publicKey.valid())
 }
 
 // send our generated Public Key to the Server
-const auto PublicKeyRef = network.RSA.publicKey();
-pkgRel.Append(CSTRING("PublicKey"), PublicKeyRef.get());
-NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkgRel);
-
-network.RSA.setPublicKey(publicKey.value());
+NET_PACKET reply;
+auto MyPublicKey = Net::String(network.RSA.publicKey().get());
+MyPublicKey.replaceAll(CSTRING("\n"), CSTRING("\\n"));
+MyPublicKey.replaceAll(CSTRING("\r"), CSTRING("\\r"));
+const auto MyPublicKeyRef = MyPublicKey.get();
+reply[CSTRING("PublicKey")] = MyPublicKeyRef.get();
+NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
 
 // from now we use the Cryption, synced with Server
+const auto TargetPublicKey = pkg[CSTRING("PublicKey")]->as_string();
+network.RSA.setPublicKey((const char*)TargetPublicKey);
 network.RSAHandshake = true;
 NET_END_FNC_PKG
 
@@ -2102,14 +2106,15 @@ if (network.estabilished)
 	return;
 }
 
-NET_JOIN_PACKAGE(pkg, pkgRel);
+NET_PACKET pkgRel;
+NET_PACKET_JOIN(pkgRel, pkg);
 
 const auto Key = Version::Key().data(); // otherwise we memleak
 
-pkgRel.Append(CSTRING("MajorVersion"), Version::Major());
-pkgRel.Append(CSTRING("MinorVersion"), Version::Minor());
-pkgRel.Append(CSTRING("Revision"), Version::Revision());
-pkgRel.Append(CSTRING("Key"), Key.data());
+pkgRel[CSTRING("MajorVersion")] = Version::Major();
+pkgRel[CSTRING("MinorVersion")] = Version::Minor();
+pkgRel[CSTRING("Revision")] = Version::Revision();
+pkgRel[CSTRING("Key")] = Key.data();
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
 NET_END_FNC_PKG
 
@@ -2140,20 +2145,21 @@ ConnectionClosed();
 
 LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by the Server"));
 
-const auto code = PKG.Int(CSTRING("code"));
-if (!code.valid())
+if (!PKG[CSTRING("code")]->is_int())
 {
 	// Callback
 	OnForcedDisconnect(-1);
 	return;
 }
 
+const auto code = PKG[CSTRING("code")]->as_int();
+
 // callback Different Version
-if (code.value() == NET_ERROR_CODE::NET_ERR_Versionmismatch)
+if (code == NET_ERROR_CODE::NET_ERR_Versionmismatch)
 OnVersionMismatch();
 
 // Callback
-OnForcedDisconnect(code.value());
+OnForcedDisconnect(code);
 NET_END_FNC_PKG
 NET_NAMESPACE_END
 NET_NAMESPACE_END

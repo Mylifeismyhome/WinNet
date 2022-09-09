@@ -1,22 +1,15 @@
 #include <Net/Net/NetPacket.h>
 
-#ifdef DLL
-NET_EXPORT_FUNCTION Net::Packet::Interface* CreatePackage()
+Net::RawData_t::RawData_t()
 {
-	return new Net::Packet::Package();
-}
-#endif
-
-Net::Packet::Packet_RawData_t::Packet_RawData_t()
-{
-	memset(this->_key, NULL, 256);
+	memset(this->_key, 0, 256);
 	this->_data = nullptr;
-	this->_size = NULL;
+	this->_size = 0;
 	this->_free_after_sent = false;
 	this->_valid = false;
 }
 
-Net::Packet::Packet_RawData_t::Packet_RawData_t(const char* name, byte* pointer, const size_t size)
+Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size)
 {
 	strcpy(this->_key, name);
 	this->_data = pointer;
@@ -25,7 +18,7 @@ Net::Packet::Packet_RawData_t::Packet_RawData_t(const char* name, byte* pointer,
 	this->_valid = true;
 }
 
-Net::Packet::Packet_RawData_t::Packet_RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent)
+Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent)
 {
 	strcpy(this->_key, name);
 	this->_data = pointer;
@@ -34,55 +27,55 @@ Net::Packet::Packet_RawData_t::Packet_RawData_t(const char* name, byte* pointer,
 	this->_valid = true;
 }
 
-bool Net::Packet::Packet_RawData_t::valid() const
+bool Net::RawData_t::valid() const
 {
 	return _valid;
 }
 
-byte* Net::Packet::Packet_RawData_t::value() const
+byte* Net::RawData_t::value() const
 {
 	return _data;
 }
 
-byte*& Net::Packet::Packet_RawData_t::value()
+byte*& Net::RawData_t::value()
 {
 	return _data;
 }
 
-size_t Net::Packet::Packet_RawData_t::size() const
+size_t Net::RawData_t::size() const
 {
 	return _size;
 }
 
-size_t& Net::Packet::Packet_RawData_t::size()
+size_t& Net::RawData_t::size()
 {
 	return _size;
 }
 
-void Net::Packet::Packet_RawData_t::set_free(bool free)
+void Net::RawData_t::set_free(bool free)
 {
 	_free_after_sent = free;
 
 }
 
-bool Net::Packet::Packet_RawData_t::do_free() const
+bool Net::RawData_t::do_free() const
 {
 	return _free_after_sent;
 }
 
-const char* Net::Packet::Packet_RawData_t::key() const
+const char* Net::RawData_t::key() const
 {
 	if (_key == nullptr) return CSTRING("");
 	return _key;
 }
 
-void Net::Packet::Packet_RawData_t::set(byte* pointer)
+void Net::RawData_t::set(byte* pointer)
 {
-	if (do_free())  FREE(_data);
+	if (do_free()) FREE(_data);
 	_data = pointer;
 }
 
-void Net::Packet::Packet_RawData_t::free()
+void Net::RawData_t::free()
 {
 	if (!this->_valid) return;
 
@@ -90,246 +83,25 @@ void Net::Packet::Packet_RawData_t::free()
 	if (do_free()) FREE(this->_data);
 
 	this->_data = nullptr;
-	this->_size = NULL;
+	this->_size = 0;
 
 	this->_valid = false;
-}
-
-Net::Packet::Packet::Packet()
-{
-	pkg.SetObject();
 }
 
 Net::Packet::Packet::~Packet()
 {
 	/* free all raw data */
-	for (auto& entry : rawData) entry.free();
+	for (auto& entry : this->raw) entry.free();
 }
 
-void Net::Packet::Packet::Append(const char* Key, rapidjson::Value value)
+Net::Json::Document& Net::Packet::Data()
 {
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		pkg.FindMember(Key)->value = value;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	if (!value.IsNull()) pkg.AddMember(key, value, pkg.GetAllocator());
+	return this->json;
 }
 
-void Net::Packet::Packet::Append(const char* Key, rapidjson::Value& value)
+void Net::Packet::AddRaw(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
 {
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		pkg.FindMember(Key)->value = value;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	if (!value.IsNull()) pkg.AddMember(key, value, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, const char* value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<const char*>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<const char*>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, char* value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<const char*>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<const char*>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, unsigned int value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<unsigned int>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<unsigned int>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, int value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<int>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<int>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, bool value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<bool>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<bool>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, long value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<long>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<long>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, float value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<float>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<float>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-void Net::Packet::Packet::Append(const char* Key, double value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<double>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<double>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-
-#ifndef NET_X86
-void Net::Packet::Packet::Append(const char* Key, size_t value)
-{
-	if (pkg.IsNull())
-		pkg.SetObject();
-
-	if (pkg.HasMember(Key))
-	{
-		rapidjson::Value v;
-		v.Set<size_t>(value);
-		pkg.FindMember(Key)->value = v;
-		return;
-	}
-
-	rapidjson::Value key(Key, pkg.GetAllocator());
-	rapidjson::Value v;
-	v.Set<size_t>(value);
-
-	if (!v.IsNull())
-		pkg.AddMember(key, v, pkg.GetAllocator());
-}
-#endif
-
-void Net::Packet::Packet::Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent)
-{
-	for (auto& entry : rawData)
+	for (auto& entry : this->raw)
 	{
 		if (!strcmp(entry.key(), Key))
 		{
@@ -345,19 +117,19 @@ void Net::Packet::Packet::Append(const char* Key, BYTE* data, const size_t size,
 		}
 	}
 
-	rawData.emplace_back(Net::Packet::Packet_RawData_t(Key, data, size, free_after_sent));
+	this->raw.emplace_back(Net::RawData_t(Key, data, size, free_after_sent));
 }
 
-void Net::Packet::Packet::Append(Net::Packet::Packet_RawData_t& data)
+void Net::Packet::AddRaw(Net::RawData_t& raw)
 {
-	for (auto& entry : rawData)
+	for (auto& entry : this->raw)
 	{
-		if (!strcmp(entry.key(), data.key()))
+		if (!strcmp(entry.key(), raw.key()))
 		{
-			if (data.do_free())
+			if (raw.do_free())
 			{
 				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
-				data.free();
+				raw.free();
 				return;
 			}
 
@@ -366,56 +138,38 @@ void Net::Packet::Packet::Append(Net::Packet::Packet_RawData_t& data)
 		}
 	}
 
-	rawData.emplace_back(data);
+	this->raw.emplace_back(raw);
 }
 
-bool Net::Packet::Packet::Parse(const char* data)
+bool Net::Packet::Deserialize(const char* data)
 {
-	return !this->pkg.Parse(data).HasParseError();
+	return this->json.Deserialize(data);
 }
 
-void Net::Packet::Packet::SetPackage(const rapidjson::Document& doc)
+void Net::Packet::SetJson(Net::Json::Document& doc)
 {
-	this->pkg.CopyFrom(doc, this->pkg.GetAllocator());
+	this->json.Deserialize(doc.Serialize(Net::Json::SerializeType::NONE));
 }
 
-void Net::Packet::Packet::SetPackage(const rapidjson::Value& doc)
+void Net::Packet::SetRaw(const std::vector<Net::RawData_t>& raw)
 {
-	this->pkg.CopyFrom(doc, this->pkg.GetAllocator());
+	this->raw = raw;
 }
 
-void Net::Packet::Packet::SetPackage(const rapidjson::Document::Object& obj)
+std::vector<Net::RawData_t>& Net::Packet::Packet::GetRawData()
 {
-	this->pkg.Set(obj);
-}
-
-void Net::Packet::Packet::SetPackage(const rapidjson::Document::ValueIterator& arr)
-{
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	arr->Accept(writer);
-	this->pkg.Parse(buffer.GetString());
-}
-
-void Net::Packet::Packet::SetRawData(const std::vector<Net::Packet::Packet_RawData_t>& data)
-{
-	rawData = data;
-}
-
-std::vector<Net::Packet::Packet_RawData_t>& Net::Packet::Packet::GetRawData()
-{
-	return rawData;
+	return this->raw;
 }
 
 bool Net::Packet::Packet::HasRawData() const
 {
-	return !rawData.empty();
+	return !this->raw.empty();
 }
 
 size_t Net::Packet::Packet::GetRawDataFullSize() const
 {
-	size_t size = NULL;
-	for (auto& entry : rawData)
+	size_t size = 0;
+	for (auto& entry : this->raw)
 	{
 		size += strlen(NET_RAW_DATA_KEY);
 		size += 1;
@@ -434,380 +188,7 @@ size_t Net::Packet::Packet::GetRawDataFullSize() const
 	return size;
 }
 
-rapidjson::Document& Net::Packet::Packet::GetPackage()
+Net::String Net::Packet::Stringify()
 {
-	return pkg;
-}
-
-std::string Net::Packet::Packet::StringifyPackage() const
-{
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	pkg.Accept(writer);
-	std::string outBuffer = buffer.GetString();
-	return outBuffer;
-}
-
-Net::Packet::Packet_t<const char*> Net::Packet::Packet::String(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, "" };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, "" };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, "" };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, "" };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsString())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a string"), Key);
-		return { false, Key, "" };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetString() };
-}
-
-Net::Packet::Packet_t<int> Net::Packet::Packet::Int(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsInt())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an integer"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetInt() };
-}
-
-Net::Packet::Packet_t<double> Net::Packet::Packet::Double(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsDouble()
-		&& !pkg.FindMember(Key)->value.IsFloat()
-		&& !pkg.FindMember(Key)->value.IsInt())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a double, float or integer"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key, (pkg.FindMember(Key)->value.IsDouble() ? pkg.FindMember(Key)->value.GetDouble() : (pkg.FindMember(Key)->value.IsFloat() ? static_cast<double>(pkg.FindMember(Key)->value.GetFloat()) : static_cast<double>(pkg.FindMember(Key)->value.GetInt()))) };
-}
-
-Net::Packet::Packet_t<float> Net::Packet::Packet::Float(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsFloat()
-		&& !pkg.FindMember(Key)->value.IsInt())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a float or integer"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key,  (pkg.FindMember(Key)->value.IsFloat() ? pkg.FindMember(Key)->value.GetFloat() : static_cast<float>(pkg.FindMember(Key)->value.GetInt())) };
-}
-
-Net::Packet::Packet_t<int64> Net::Packet::Packet::Int64(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsInt64())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an integer of 64 bits"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetInt64() };
-}
-
-Net::Packet::Packet_t<uint> Net::Packet::Packet::UINT(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsUint())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an unsigned integer of 32 bits"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetUint() };
-}
-
-Net::Packet::Packet_t<uint64> Net::Packet::Packet::UINT64(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, 0 };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsUint64())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an unsigned integer of 64 bits"), Key);
-		return { false, Key, 0 };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetUint64() };
-}
-
-Net::Packet::Packet_t<bool> Net::Packet::Packet::Boolean(const char* Key) const
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, false };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, false };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, false };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, false };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsBool())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not a boolean"), Key);
-		return { false, Key, false };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetBool() };
-}
-
-Net::Packet::Packet_t_Object Net::Packet::Packet::Object(const char* Key)
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return { false, Key, rapidjson::Value(rapidjson::kObjectType).GetObjectA() };
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return { false, Key, rapidjson::Value(rapidjson::kObjectType).GetObjectA() };
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kObjectType).GetObjectA() };
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kObjectType).GetObjectA() };
-	}
-
-	if (!pkg.FindMember(Key)->value.IsObject())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an object"), Key);
-		return { false, Key, rapidjson::Value(rapidjson::kObjectType).GetObjectA() };
-	}
-
-	return { true, Key, pkg.FindMember(Key)->value.GetObjectA() };
-}
-
-Net::Packet::Packet_t_Array Net::Packet::Packet::Array(const char* Key)
-{
-	if (pkg.IsArray() && pkg.Empty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The array of this package is empty"));
-		return Net::Packet::Packet_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
-	}
-
-	if (pkg.IsObject() && pkg.ObjectEmpty())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - The object of this package is empty"));
-		return Net::Packet::Packet_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
-	}
-
-	if (!pkg.HasMember(Key))
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Key ('%s') is not a part of this package"), Key);
-		return Net::Packet::Packet_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
-	}
-
-	if (pkg.FindMember(Key)->value.IsNull())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is null"), Key);
-		return Net::Packet::Packet_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
-	}
-
-	if (!pkg.FindMember(Key)->value.IsArray())
-	{
-		LOG_DEBUG(CSTRING("[JSON][PACKAGE] - Value with the key pair of ('%s') is not an array"), Key);
-		return Net::Packet::Packet_t_Array(false, Key, rapidjson::Value(rapidjson::kArrayType).GetArray());
-	}
-
-	return Net::Packet::Packet_t_Array(true, Key, pkg.FindMember(Key)->value.GetArray());
-}
-
-Net::Packet::Binary_t Net::Packet::Packet::Binary(const char* Key)
-{
-	for (auto& entry : rawData)
-	{
-		if (!strcmp(entry.key(), Key))
-			return Net::Packet::Binary_t(&entry, true);
-	}
-
-	return Net::Packet::Binary_t(nullptr, false);
+	return this->json.Serialize(Net::Json::SerializeType::NONE);
 }

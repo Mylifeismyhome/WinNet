@@ -6,12 +6,12 @@
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
 
-#undef NULL
-
 namespace Net
 {
 	namespace Json
 	{
+		class Document;
+
 		template <typename T>
 		class Vector
 		{
@@ -184,7 +184,7 @@ namespace Net
 
 		enum class Type
 		{
-			NULL = 0,
+			NULLVALUE = 0, // fucking C and its NULL macro
 			OBJECT,
 			ARRAY,
 			STRING,
@@ -312,6 +312,7 @@ namespace Net
 			void operator=(const char* value);
 			void operator=(BasicObject& value);
 			void operator=(BasicArray& value);
+			void operator=(Document& value);
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */
@@ -388,6 +389,9 @@ namespace Net
 			Object root_obj;
 			Array root_array;
 
+			bool m_free_root_obj;
+			bool m_free_root_array;
+
 			void Init();
 			void Clear();
 
@@ -395,12 +399,22 @@ namespace Net
 			Document();
 			~Document();
 
+			Type GetType();
+			Object GetRootObject();
+			Array GetRootArray();
+
+			void SetFreeRootObject(bool);
+			void SetFreeRootArray(bool);
+
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](int idx);
 			BasicValueRead At(const char* key);
 			BasicValueRead At(int idx);
 
-			void set(Object obj);
+			void Set(Object obj);
+			void Set(Object* obj);
+			void Set(Array arr);
+			void Set(Array* arr);
 
 			Net::String Serialize(SerializeType type = SerializeType::FORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::FORMATTED);
