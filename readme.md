@@ -1,6 +1,8 @@
-### Author: Tobias Staack
+### Author: *Tobias Staack*
 ---
-## [COMPILATION]
+<br/>
+
+## <span style="color:purple;font-weight: 600">[COMPILATION]</span>
 
 > ## Windows
 > - [x] Static Build
@@ -11,7 +13,7 @@
 > - [x] Static Build
 > - [ ] Shared Build
 ---
-## [BUILD]
+## <span style="color:purple;font-weight: 600">[BUILD]</span>
 > ## Windows
 > ### Requires
 > - nasm
@@ -28,8 +30,8 @@
 > 2. Enter VC Path (as example: C:\Program Files (x86)\Microsoft Visual Studio\2019)
 > 3. Enter perl path (as example: C:\Strawberry)
 > 4. Enter nasm path (as example: C:\Users\Tobias\AppData\Local\bin\NASM)
->> ## ==[WARNING]==
->> it uses 'setx' to set nasm path to system environment.
+>> ## <span style="color:red;font-weight: 800">[WARNING]</span>
+>> it uses '<span style="color:yellow;font-weight: 400">setx</span>' to set nasm path to system environment.
 this batch automatically runs BUILD.bat
 
 > ## Linux
