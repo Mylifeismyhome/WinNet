@@ -54,9 +54,9 @@ Author: Tobias Staack
 	
 	[COMPILATION]
 		- Windows
-			[X] Static Build
-  			[ ] Shared Build
-  			[ ] DLL Only Build
+- [x] Static Build
+- [ ] Shared Build
+- [ ] DLL Only Build
 		
 		- Linux
 			[X] Static Build
