@@ -8,167 +8,168 @@
 
 #undef NULL
 
-template <typename T>
-class vector
-{
-public:
-	vector() : current_size(0), capacity(0), container(nullptr)
-	{}
-
-	vector(const vector<T>& copy) : current_size(0), capacity(0), container(nullptr)
-	{
-		*this = copy;
-	}
-
-	T* get()
-	{
-		return container;
-	}
-
-	T& operator[](const size_t i) const
-	{
-		return container[i];
-	}
-
-	void
-		push_back(
-			const T& value
-		)
-	{
-		if (current_size >= capacity)
-		{
-			if (!capacity)
-				capacity = 1;
-			else
-				capacity = capacity * 2;
-
-			T* new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
-			if (!new_container) return;
-			memset((void*)new_container, 0, sizeof(T) * capacity);
-
-			if (current_size >= 1)
-				memcpy((void*)new_container, container, current_size * sizeof(T));
-
-			if (container != nullptr)
-				free((void*)container);
-
-			container = new_container;
-
-			container[current_size] = value;
-			current_size++;
-		}
-		else
-		{
-			container[current_size] = value;
-			current_size++;
-		}
-	}
-
-	void
-		erase(
-			const size_t erase_index
-		)
-	{
-		if (erase_index >= 0 &&
-			erase_index < current_size)
-		{
-			for (auto i = (erase_index + 1); i < current_size; i++)
-				container[i - 1] = container[i];
-
-			current_size--;
-
-			if (current_size < (capacity / 2))
-			{
-				auto new_container = static_cast<T*>(malloc(sizeof(T) * (capacity / 2)));
-				memset(new_container, 0, sizeof(T) * (capacity / 2));
-
-				if (current_size >= 1)
-					memcpy(new_container, container, current_size * sizeof(T));
-
-				if (container != nullptr)
-					free(container);
-
-				container = new_container;
-				capacity /= 2;
-			}
-		}
-	}
-
-	void
-		insert(
-			const T& value,
-			const size_t index
-		)
-	{
-		if (index >= 0 &&
-			index <= current_size)
-		{
-			if (current_size >= capacity)
-			{
-				if (capacity == 0)
-					capacity = 1;
-				else
-					capacity *= 2;
-
-				auto new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
-				memset(new_container, 0, sizeof(T) * capacity);
-
-				if (current_size >= 1)
-				{
-					memcpy(new_container, container, index * sizeof(T));
-					new_container[index] = value;
-					memcpy(&new_container[index + 1], &container[index], (current_size - index) * sizeof(T));
-				}
-				else
-					new_container[0] = value;
-
-				current_size++;
-			}
-			else
-			{
-				current_size++;
-				for (auto i = (current_size - 1); i < index; i++)
-					container[i] = container[i - 1];
-
-				container[index] = value;
-			}
-		}
-		else if (index >= 0 &&
-			index == current_size)
-			this->push_back(value);
-	}
-
-	[[nodiscard]]
-	int
-		size() const
-	{
-		return static_cast<int>(current_size);
-	}
-
-	void clear()
-	{
-		if (capacity > 0)
-		{
-			if (container)
-				free(container);
-		}
-
-		current_size = 0;
-		capacity = 0;
-		container = nullptr;
-	}
-
-private:
-	size_t current_size;
-	size_t capacity;
-	T* container;
-	void* stack;
-};
-
 namespace Net
 {
 	namespace Json
 	{
+		template <typename T>
+		class Vector
+		{
+		public:
+			Vector() : current_size(0), capacity(0), container(nullptr), stack(nullptr)
+			{
+			}
+
+			Vector(const Vector<T>& copy) : current_size(0), capacity(0), container(nullptr)
+			{
+				*this = copy;
+			}
+
+			T* get()
+			{
+				return container;
+			}
+
+			T& operator[](const size_t i) const
+			{
+				return container[i];
+			}
+
+			void
+				push_back(
+					const T& value
+				)
+			{
+				if (current_size >= capacity)
+				{
+					if (!capacity)
+						capacity = 1;
+					else
+						capacity = capacity * 2;
+
+					T* new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+					if (!new_container) return;
+					memset((void*)new_container, 0, sizeof(T) * capacity);
+
+					if (current_size >= 1)
+						memcpy((void*)new_container, container, current_size * sizeof(T));
+
+					if (container != nullptr)
+						free((void*)container);
+
+					container = new_container;
+
+					container[current_size] = value;
+					current_size++;
+				}
+				else
+				{
+					container[current_size] = value;
+					current_size++;
+				}
+			}
+
+			void
+				erase(
+					const size_t erase_index
+				)
+			{
+				if (erase_index >= 0 &&
+					erase_index < current_size)
+				{
+					for (auto i = (erase_index + 1); i < current_size; i++)
+						container[i - 1] = container[i];
+
+					current_size--;
+
+					if (current_size < (capacity / 2))
+					{
+						auto new_container = static_cast<T*>(malloc(sizeof(T) * (capacity / 2)));
+						memset(new_container, 0, sizeof(T) * (capacity / 2));
+
+						if (current_size >= 1)
+							memcpy(new_container, container, current_size * sizeof(T));
+
+						if (container != nullptr)
+							free(container);
+
+						container = new_container;
+						capacity /= 2;
+					}
+				}
+			}
+
+			void
+				insert(
+					const T& value,
+					const size_t index
+				)
+			{
+				if (index >= 0 &&
+					index <= current_size)
+				{
+					if (current_size >= capacity)
+					{
+						if (capacity == 0)
+							capacity = 1;
+						else
+							capacity *= 2;
+
+						auto new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+						memset(new_container, 0, sizeof(T) * capacity);
+
+						if (current_size >= 1)
+						{
+							memcpy(new_container, container, index * sizeof(T));
+							new_container[index] = value;
+							memcpy(&new_container[index + 1], &container[index], (current_size - index) * sizeof(T));
+						}
+						else
+							new_container[0] = value;
+
+						current_size++;
+					}
+					else
+					{
+						current_size++;
+						for (auto i = (current_size - 1); i < index; i++)
+							container[i] = container[i - 1];
+
+						container[index] = value;
+					}
+				}
+				else if (index >= 0 &&
+					index == current_size)
+					this->push_back(value);
+			}
+
+			[[nodiscard]]
+			int
+				size() const
+			{
+				return static_cast<int>(current_size);
+			}
+
+			void clear()
+			{
+				if (capacity > 0)
+				{
+					if (container)
+						free(container);
+				}
+
+				current_size = 0;
+				capacity = 0;
+				container = nullptr;
+			}
+
+		private:
+			size_t current_size;
+			size_t capacity;
+			T* container;
+			void* stack;
+		};
+
 		class Convert
 		{
 		public:
@@ -203,7 +204,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			vector<void*> value;
+			Vector<void*> value;
 			bool bSharedMemory;
 
 		protected:
@@ -213,15 +214,15 @@ namespace Net
 			BasicObject(bool bSharedMemory = false);
 			~BasicObject();
 
-			vector<void*> Value();
-			void Set(vector<void*> value);
+			Vector<void*> Value();
+			void Set(Vector<void*> value);
 		};
 
 		class BasicArray
 		{
 		protected:
 			Type m_type;
-			vector<void*> value;
+			Vector<void*> value;
 			bool bSharedMemory;
 
 		protected:
@@ -231,8 +232,8 @@ namespace Net
 			BasicArray(bool bSharedMemory = false);
 			~BasicArray();
 
-			vector<void*> Value();
-			void Set(vector<void*> value);
+			Vector<void*> Value();
+			void Set(Vector<void*> value);
 		};
 
 		class Object;
@@ -347,7 +348,7 @@ namespace Net
 			void Free();
 
 		private:
-			bool Deserialize(Net::String json, vector<char*>& object_chain);
+			bool Deserialize(Net::String json, Vector<char*>& object_chain);
 		};
 
 		class Array : public BasicArray

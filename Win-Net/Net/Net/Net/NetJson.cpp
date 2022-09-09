@@ -3,6 +3,7 @@
 */
 #include <Net/Net/NetJson.h>
 #include <Net/Cryption/XOR.h>
+#include <Net/assets/manager/logmanager.h>
 
 int Net::Json::Convert::ToInt32(Net::String& str)
 {
@@ -84,12 +85,12 @@ void Net::Json::BasicObject::__push(void* ptr)
 	value.push_back(ptr);
 }
 
-vector<void*> Net::Json::BasicObject::Value()
+Net::Json::Vector<void*> Net::Json::BasicObject::Value()
 {
 	return this->value;
 }
 
-void Net::Json::BasicObject::Set(vector<void*> value)
+void Net::Json::BasicObject::Set(Vector<void*> value)
 {
 	this->value = value;
 }
@@ -113,12 +114,12 @@ void Net::Json::BasicArray::__push(void* ptr)
 	value.push_back(ptr);
 }
 
-vector<void*> Net::Json::BasicArray::Value()
+Net::Json::Vector<void*> Net::Json::BasicArray::Value()
 {
 	return this->value;
 }
 
-void Net::Json::BasicArray::Set(vector<void*> value)
+void Net::Json::BasicArray::Set(Vector<void*> value)
 {
 	this->value = value;
 }
@@ -714,7 +715,7 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 /* wrapper */
 bool Net::Json::Object::Deserialize(Net::String json)
 {
-	vector<char*> object_chain = {};
+	Vector<char*> object_chain = {};
 	auto ret = this->Deserialize(json, object_chain);
 	for (size_t i = 0; i < object_chain.size(); ++i)
 	{
@@ -731,7 +732,7 @@ bool Net::Json::Object::Parse(Net::String json)
 }
 
 /* actual deserialization */
-bool Net::Json::Object::Deserialize(Net::String json, vector<char*>& object_chain)
+bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chain)
 {
 	if (memcmp(&json.get().get()[0], CSTRING("{"), 1) != 0)
 	{
@@ -952,7 +953,7 @@ bool Net::Json::Object::Deserialize(Net::String json, vector<char*>& object_chai
 							else
 							{
 								/* error */
-								DebugBreak();
+								LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), lastValue.get().get());
 								return false;
 							}
 
@@ -1041,7 +1042,7 @@ bool Net::Json::Object::Deserialize(Net::String json, vector<char*>& object_chai
 				break;
 
 			default:
-				DebugBreak();
+				LOG_ERROR(CSTRING("[Json] - Invalid type"));
 				return false;
 			}
 
@@ -1285,7 +1286,7 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 
 bool Net::Json::Array::Deserialize(Net::String json)
 {
-	if (json.get().get()[0] != '[')
+	if (!memcmp(&json.get().get()[0], CSTRING("["), 1))
 	{
 		/* not an array */
 		return false;
@@ -1296,13 +1297,13 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	for (size_t i = 1; i < json.length(); ++i)
 	{
 		if (!bReadObject
-			&& json.get().get()[i] == '{')
+			&& !memcmp(&json.get().get()[i], CSTRING("{"), 1))
 		{
 			v = i;
 			bReadObject = true;
 		}
 		else if (bReadObject
-			&& json.get().get()[i] == '}')
+			&& !memcmp(&json.get().get()[i], CSTRING("}"), 1))
 		{
 			auto lastValue = json.substr(v, i - v + 1);
 
@@ -1319,7 +1320,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			i = v + 1;
 		}
 		else if (!bReadObject
-			&& (json.get().get()[i] == ',' || json.get().get()[i] == ']'))
+			&& (!memcmp(&json.get().get()[i], CSTRING(","), 1) || !memcmp(&json.get().get()[i], CSTRING("]"), 1)))
 		{
 			Net::String value = json.substr(v + 1, i - v - 1);
 
@@ -1328,7 +1329,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			size_t z = 0;
 			for (size_t j = 0; j < value.length(); ++j)
 			{
-				if (value.get().get()[j] == '"')
+				if (!memcmp(&value.get().get()[j], CSTRING(R"(")"), 1))
 				{
 					if (type == Net::Json::Type::STRING)
 					{
@@ -1359,7 +1360,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			{
 				for (size_t j = 0; j < value.length(); ++j)
 				{
-					if (value.get().get()[j] == '.')
+					if (!memcmp(&value.get().get()[j], CSTRING("."), 1))
 					{
 						/* check if is float or a double */
 						if (Convert::is_float(value))
@@ -1373,7 +1374,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 						else
 						{
 							/* error */
-							DebugBreak();
+							LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), value.get().get());
 							return false;
 						}
 
@@ -1382,13 +1383,10 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 					if (type != Net::Json::Type::STRING)
 					{
-						if (value.get().get()[j] == 'n')
+						if (!memcmp(&value.get().get()[j], CSTRING("null"), 4))
 						{
-							if (!memcmp(&value.get().get()[j], CSTRING("null"), 4))
-							{
-								type = Net::Json::Type::NULL;
-								break;
-							}
+							type = Net::Json::Type::NULL;
+							break;
 						}
 					}
 				}
@@ -1421,7 +1419,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 				break;
 
 			default:
-				DebugBreak();
+				LOG_ERROR(CSTRING("[Json] - Invalid type"));
 				return false;
 			}
 
@@ -1518,13 +1516,13 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	this->Clear();
 	this->Init();
 
-	if (json.get().get()[0] == '{')
+	if (!memcmp(&json.get().get()[0], CSTRING("{"), 1))
 	{
 		/* is object */
 		this->m_type = Net::Json::Type::OBJECT;
 		return this->root_obj.Deserialize(json);
 	}
-	else if (json.get().get()[0] == '[')
+	else if (!memcmp(&json.get().get()[0], CSTRING("["), 1))
 	{
 		this->m_type = Net::Json::Type::ARRAY;
 		return this->root_array.Deserialize(json);
