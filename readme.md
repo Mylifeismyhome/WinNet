@@ -64,18 +64,22 @@ this batch automatically runs BUILD.bat
 > - [x] Client
 > - [x] Server
 > - [x] Websocket
-> - [x] HTTP
-> - [x] HTTPS
-> - [x] MYSQL
-> - [x] Peer Thread Pooling (definable amount of peers inside a thread)
-> - [x] Non-Blocking
-> - [x] NTP
-> - [x] ICMP
-> - [x] JSON
+>> ## Net Features
+>> - [x] Http
+>> - [x] Https
+>> - [x] Json
+>> - [x] Mysql
+>> - [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
+>> - [x] Non-Blocking
+>
+>> ## Protocols
+>> - [x] NTP
+>> - [x] ICMP
+>
 >> ## Communication between Server & Client
 >> - [x] Plain
 >> - [x] Crypted using RSA + AES
 >> - [ ] Compression
 >> - [x] TOTP to abort incoming packets that reached the defined allowed time
 >> - [x] Json for data sharing
->> - [x] raw bytes for file sharing
+>> - [x] Raw bytes for file sharing
