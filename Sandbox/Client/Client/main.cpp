@@ -20,21 +20,23 @@ int main()
 	doc["Test"] = 5;
 	doc["ABC"]["DCE"] = 25.12f;
 
-	Net::Json::Array arr;
-	arr.push(25);
-	arr.push("TEST");
-	arr.push(13.125f);
+	//Net::Json::Array arr;
+	//arr.push(25);
+	//arr.push("TEST");
+	//arr.push(13.125f);
 
-	doc["ARR"] = arr;
+	//doc["ARR"] = arr;
 
-	std::cout << doc["ARR"]->as_array()->operator[](1)->as_string() << std::endl;
-	std::cout << doc["ARR"]->as_array()->at(1)->as_string() << std::endl;
+	/*std::cout << doc["ARR"]->as_array()->operator[](1)->as_string() << std::endl;
+	std::cout << doc["ARR"]->as_array()->at(1)->as_string() << std::endl;*/
 
-	std::cout << doc.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
+	std::cout << doc.Serialize(Net::Json::SerializeType::NONE).get().get() << std::endl;
 
 	// new doc
-	doc = Net::Json::Document();
-	doc.Deserialize(R"({
+	// todo:
+	// Deserialize sometimes not working, need to investigate 
+	auto doc2 = Net::Json::Document();
+	doc2.Deserialize(R"({
         "Test" : 5,
         "ABC" : {
                 "DCB" : 25.120001
@@ -49,7 +51,14 @@ int main()
 
 })");
 
-	std::cout << doc.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
+	std::cout << doc2.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
+
+	Net::unload();
+
+	system("pause");
+	return 0;
+
+	////////////////////
 
 	Client client;
 

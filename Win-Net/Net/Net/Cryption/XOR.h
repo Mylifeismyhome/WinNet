@@ -17,10 +17,14 @@ NET_DSA_BEGIN
 #define CWSTRING(string) WCOMPILETIME_XOR(L##string)
 #endif
 
+#ifdef NET_DISABLE_XOR_STRING_COMPILETIME
+#define CSTRING(string) string
+#else
 #ifdef UNICODE
 #define CSTRING(string) CWSTRING(string)
 #else
 #define CSTRING(string) CASTRING(string)
+#endif
 #endif
 
 NET_NAMESPACE_BEGIN(Net)

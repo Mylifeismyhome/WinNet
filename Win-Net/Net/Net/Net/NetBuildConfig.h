@@ -12,3 +12,4 @@
 #undef NET_SERVER__DISABLE_LOGMANAGER /* enable to disable logmanager for server only */
 #undef NET_WEBSERVER__DISABLE_LOGMANAGER /* enable to disable logmanager for webserver only */
 #undef NET_DISABLE_LOGMANAGER /* enable to disable entire logmanager for every porject */
+#define NET_DISABLE_XOR_STRING_COMPILETIME /* enable to disable xor string at compile time */
