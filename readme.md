@@ -53,11 +53,11 @@ Author: Tobias Staack
 			> this batch automatically runs BUILD.bat
 	
 	[COMPILATION]
-- Windows
+## Windows
 - [x] Static Build
 - [ ] Shared Build
 - [ ] DLL Only Build
 		
-- Linux
+## Linux
 - [x] Static Build
-  - [ ] Shared Build
+- [ ] Shared Build
