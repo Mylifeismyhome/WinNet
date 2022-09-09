@@ -52,3 +52,12 @@ Author: Tobias Staack
 			> [WARNING] it uses 'setx' to set nasm path to system environment.
 			> this batch automatically runs BUILD.bat
 	
+	[COMPILATION]
+		- Windows
+			[X] Static Build
+  			[ ] Shared Build
+  			[ ] DLL Only Build
+		
+		- Linux
+			[X] Static Build
+  			[ ] Shared Build
