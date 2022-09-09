@@ -1,9 +1,20 @@
-Author: Tobias Staack
+### Author: Tobias Staack
 
-	[LINUX]
-		# build dependencies
-		make cryptopp
-		make openssl-download
+### [COMPILATION]
+## Windows
+- [x] Static Build
+- [ ] Shared Build
+- [ ] DLL Only Build
+		
+## Linux
+- [x] Static Build
+- [ ] Shared Build
+
+### [BUILD]
+## Linux
+# build dependencies
+- make cryptopp
+- make openssl-download
 		make openssl-unpack
 		make openssl-configure
 		make openssl-build
@@ -51,13 +62,3 @@ Author: Tobias Staack
 			> enter nasm path (as example: C:\Users\Tobias\AppData\Local\bin\NASM)
 			> [WARNING] it uses 'setx' to set nasm path to system environment.
 			> this batch automatically runs BUILD.bat
-	
-### [COMPILATION]
-## Windows
-- [x] Static Build
-- [ ] Shared Build
-- [ ] DLL Only Build
-		
-## Linux
-- [x] Static Build
-- [ ] Shared Build
