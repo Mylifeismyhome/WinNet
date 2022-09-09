@@ -202,23 +202,24 @@ void String::append(const char* in, ...)
 
 void String::set(String& in, ...)
 {
-	char* ref = in.get().get();
+	auto ref = in.get();
+
 	va_list vaArgs;
 
 #ifdef BUILD_LINUX
 	va_start(vaArgs, ref);
-	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
 	va_end(vaArgs);
 
 	va_start(vaArgs, ref);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
 	va_end(vaArgs);
 #else
 	va_start(vaArgs, ref);
-	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
 	va_end(vaArgs);
 #endif
 
@@ -235,23 +236,23 @@ void String::append(String& in, ...)
 		return;
 	}
 
-	char* ref = in.get().get();
+	auto ref = in.get();
 	va_list vaArgs;
 
 #ifdef BUILD_LINUX
 	va_start(vaArgs, ref);
-	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
 	va_end(vaArgs);
 
 	va_start(vaArgs, ref);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
 	va_end(vaArgs);
 #else
 	va_start(vaArgs, ref);
-	const size_t size = std::vsnprintf(nullptr, 0, ref, vaArgs);
+	const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
 	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), ref, vaArgs);
+	std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
 	va_end(vaArgs);
 #endif
 
