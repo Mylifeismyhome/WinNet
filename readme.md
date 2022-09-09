@@ -15,31 +15,31 @@
 # build dependencies
 - make cryptopp
 - make openssl-download
-		make openssl-unpack
-		make openssl-configure
-		make openssl-build
-		make openssl-install
-		make mysql-download
-		make mysql-install
+- make openssl-unpack
+- make openssl-configure
+- make openssl-build
+- make openssl-install
+- make mysql-download
+- make mysql-install
 		
-		# clean
-		make cryptopp-clean
-		make openssl-clean
-		make mysql-clean
+# clean
+- make cryptopp-clean
+- make openssl-clean
+- make mysql-clean
 		
-		# clean all
-		make clean
+# clean all
+- make clean
 		
-		# build
-		make netcore
-		make netclient
-		make netserver
-		make netwebserver
+# build
+- make netcore
+- make netclient
+- make netserver
+- make netwebserver
 		
-		# build sandbox
-		make sandboxclient
-		make sandboxserver
-		make sandboxwebserver
+# build sandbox
+- make sandboxclient
+- make sandboxserver
+- make sandboxwebserver
 	
 	[WINDOWS]
 	Requires:
