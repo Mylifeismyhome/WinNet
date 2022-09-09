@@ -61,16 +61,19 @@ this batch automatically runs BUILD.bat
 > - make sandboxwebserver
 ---
 > ## Features
-> - [x] Client
-> - [x] Server
-> - [x] Websocket
->> ## Net Features
+>> ## TCP ONLY
+>> #### using WinSocket for Windows build and Unix Socket for Linux build 
+>> - [x] Client
+>> - [x] Server
+>> - [x] Websocket
+>> - [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
+>> - [x] Non-Blocking
+>
+>> ## Net Classes
 >> - [x] Http
 >> - [x] Https
 >> - [x] Json
 >> - [x] Mysql
->> - [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
->> - [x] Non-Blocking
 >
 >> ## Protocols
 >> - [x] NTP
@@ -83,3 +86,7 @@ this batch automatically runs BUILD.bat
 >> - [x] TOTP to abort incoming packets that reached the defined allowed time
 >> - [x] Json for data sharing
 >> - [x] Raw bytes for file sharing
+>
+>> ## Websocket
+>> - [x] Plain
+>> - [x] TLS
