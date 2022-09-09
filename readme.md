@@ -54,10 +54,10 @@ Author: Tobias Staack
 	
 	[COMPILATION]
 		- Windows
-- [x] Static Build
-- [ ] Shared Build
-- [ ] DLL Only Build
+			- [x] Static Build
+			- [ ] Shared Build
+			- [ ] DLL Only Build
 		
 		- Linux
-			[X] Static Build
-  			[ ] Shared Build
+			- [x] Static Build
+  			- [ ] Shared Build
