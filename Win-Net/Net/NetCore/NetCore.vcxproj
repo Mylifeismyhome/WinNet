@@ -910,7 +910,7 @@
     <ClCompile Include="..\Net\Net\NetPeerPool.cpp" />
     <ClCompile Include="..\Net\Net\NetString.cpp" />
     <ClCompile Include="..\Net\Net\NetVersion.cpp" />
-    <ClCompile Include="..\Net\Net\Package.cpp" />
+    <ClCompile Include="..\Net\Net\NetPacket.cpp" />
     <ClCompile Include="..\Net\Protocol\ICMP.cpp" />
     <ClCompile Include="..\Net\Protocol\NTP.cpp" />
   </ItemGroup>
@@ -953,7 +953,7 @@
     <ClInclude Include="..\Net\Net\NetPeerPool.h" />
     <ClInclude Include="..\Net\Net\NetString.h" />
     <ClInclude Include="..\Net\Net\NetVersion.h" />
-    <ClInclude Include="..\Net\Net\Package.h" />
+    <ClInclude Include="..\Net\Net\NetPacket.h" />
     <ClInclude Include="..\Net\Protocol\ICMP.h" />
     <ClInclude Include="..\Net\Protocol\NTP.h" />
   </ItemGroup>

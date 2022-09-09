@@ -394,7 +394,7 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 
 	if (!skipNotify)
 	{
-		Net::Package::Package PKG;
+		Net::Packet::Packet PKG;
 		PKG.Append(CSTRING("code"), code);
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
@@ -845,7 +845,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t
 			data.free();
 		}
 
-void Net::Server::Server::SingleSend(NET_PEER peer, Net::Package::Package_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, Net::Packet::Packet_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -934,7 +934,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::Package::Package_RawDat
 *	{END PACKAGE}									*		{END PACKAGE}
 *
 */
-void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
+void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET pkg)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1018,7 +1018,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 
 		if (PKG.HasRawData())
 		{
-			std::vector<Net::Package::Package_RawData_t>& rawData = PKG.GetRawData();
+			std::vector<Net::Packet::Packet_RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -1040,7 +1040,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
+		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
@@ -1059,26 +1059,26 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
 		/* Append Package Key */
 		SingleSend(peer, NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, Key, aesKeySize, bPreviousSentFailed, sendToken);
 
 		/* Append Package IV */
 		SingleSend(peer, NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, IV, IVSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Data */
@@ -1088,22 +1088,22 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
 
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
 
 				data.set_free(false);
@@ -1111,13 +1111,13 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 	else
 	{
@@ -1138,7 +1138,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			}
 		}
 
-		combinedSize = dataBufferSize + NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + NET_DATA_LEN + NET_PACKAGE_FOOTER_LEN + 4;
+		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + 4;
 
 		// Append Raw data package size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
@@ -1151,13 +1151,13 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		auto bPreviousSentFailed = false;
 
 		/* Append Package Header */
-		SingleSend(peer, NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
 		// Append Package Size Syntax
-		SingleSend(peer, NET_PACKAGE_SIZE, NET_PACKAGE_SIZE_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
 		/* Append Package Data */
 		if (PKG.HasRawData())
@@ -1166,22 +1166,22 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, strlen(NET_RAW_DATA_KEY), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
 				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 
 				const auto rawDataLengthStr = std::to_string(data.size());
 
 				SingleSend(peer, rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data, bPreviousSentFailed, sendToken);
 
 				data.set_free(false);
@@ -1189,13 +1189,13 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKAGE pkg)
 		}
 
 		SingleSend(peer, NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_OPEN, strlen(NET_PACKAGE_BRACKET_OPEN), bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_OPEN, strlen(NET_PACKET_BRACKET_OPEN), bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
-		SingleSend(peer, NET_PACKAGE_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
 		/* Append Package Footer */
-		SingleSend(peer, NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN, bPreviousSentFailed, sendToken);
+		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 }
 
@@ -1271,7 +1271,7 @@ NET_THREAD(PeerStartRoutine)
 
 		const auto PublicKey = peer->cryption.RSA.publicKey();
 
-		Net::Package::Package PKG;
+		Net::Packet::Packet PKG;
 		PKG.Append(CSTRING("PublicKey"), PublicKey.get());
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
@@ -1281,7 +1281,7 @@ NET_THREAD(PeerStartRoutine)
 	else
 	{
 		// keep it empty, we get it filled back
-		Net::Package::Package PKG;
+		Net::Packet::Packet PKG;
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
@@ -1433,34 +1433,34 @@ bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 	{
 		// shift the first bytes to check if we are using the correct token - using old token
-		for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+		for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 			peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
-		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+		if (memcmp(&peer->network.getData()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 		{
 			// shift back
-			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+			for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 
 			// shift the first bytes to check if we are using the correct token - using cur token
-			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+			for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
-			if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+			if (memcmp(&peer->network.getData()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 			{
 				// shift back
-				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 				peer->lastToken = peer->curToken;
 				peer->curToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
 				// shift the first bytes to check if we are using the correct token - using new token
-				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 				// [PROTOCOL] - check header is actually valid
-				if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+				if (memcmp(&peer->network.getData()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 				{
 					peer->network.clear();
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
@@ -1468,7 +1468,7 @@ bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 				}
 
 				// sift back using new token
-				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 				use_old_token = false;
@@ -1476,7 +1476,7 @@ bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 			else
 			{
 				// sift back using cur token
-				for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 					peer->network.getData()[it] = peer->network.getData()[it] ^ peer->curToken;
 
 				use_old_token = false;
@@ -1485,14 +1485,14 @@ bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 		else
 		{
 			// sift back using old token
-			for (size_t it = 0; it < NET_PACKAGE_HEADER_LEN; ++it)
+			for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
 				peer->network.getData()[it] = peer->network.getData()[it] ^ peer->lastToken;
 		}
 	}
 	else
 	{
 		// [PROTOCOL] - check header is actually valid
-		if (memcmp(&peer->network.getData()[0], NET_PACKAGE_HEADER, NET_PACKAGE_HEADER_LEN) != 0)
+		if (memcmp(&peer->network.getData()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 		{
 			peer->network.clear();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameHeader);
@@ -1515,7 +1515,7 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 	if (peer->network.getDataSize() == INVALID_SIZE)
 		return;
 
-	if (peer->network.getDataSize() < NET_PACKAGE_HEADER_LEN) return;
+	if (peer->network.getDataSize() < NET_PACKET_HEADER_LEN) return;
 
 	auto use_old_token = true;
 	bool already_checked = false;
@@ -1526,7 +1526,7 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 		already_checked = true;
 		if (!ValidHeader(peer, use_old_token)) return;
 
-		const size_t start = NET_PACKAGE_HEADER_LEN + NET_PACKAGE_SIZE_LEN + 1;
+		const size_t start = NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + 1;
 		for (size_t i = start; i < peer->network.getDataSize(); ++i)
 		{
 			// shift the bytes
@@ -1534,7 +1534,7 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 				peer->network.getData()[i] = peer->network.getData()[i] ^ (use_old_token ? peer->lastToken : peer->curToken);
 
 			// iterate until we have found the end tag
-			if (!memcmp(&peer->network.getData()[i], NET_PACKAGE_BRACKET_CLOSE, 1))
+			if (!memcmp(&peer->network.getData()[i], NET_PACKET_BRACKET_CLOSE, 1))
 			{
 				peer->network.SetDataOffset(i);
 				const auto size = i - start;
@@ -1586,7 +1586,7 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 	}
 
 	// [PROTOCOL] - check footer is actually valid
-	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - NET_PACKAGE_FOOTER_LEN], NET_PACKAGE_FOOTER, NET_PACKAGE_FOOTER_LEN) != 0)
+	if (memcmp(&peer->network.getData()[peer->network.getDataFullSize() - NET_PACKET_FOOTER_LEN], NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN) != 0)
 	{
 		peer->network.clear();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InvalidFrameFooter);
@@ -1620,7 +1620,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	);
 
 	CPOINTER<BYTE> data;
-	Package Content;
+	Packet Content;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
@@ -1638,7 +1638,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 			// read size
 			for (auto y = offset; y < peer->network.getDataSize(); ++y)
 			{
-				if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+				if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 				{
 					const auto psize = y - offset - 1;
 					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1671,7 +1671,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 			// read size
 			for (auto y = offset; y < peer->network.getDataSize(); ++y)
 			{
-				if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+				if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 				{
 					const auto psize = y - offset - 1;
 					CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1734,7 +1734,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1765,7 +1765,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
-							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+							if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 							{
 								const auto psize = y - offset - 1;
 								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1780,7 +1780,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::Package::Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1813,7 +1813,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1850,7 +1850,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 			}
 
 			// we have reached the end of reading
-			if (offset + NET_PACKAGE_FOOTER_LEN == peer->network.getDataFullSize())
+			if (offset + NET_PACKET_FOOTER_LEN == peer->network.getDataFullSize())
 				break;
 
 		} while (true);
@@ -1872,7 +1872,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1903,7 +1903,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
-							if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+							if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 							{
 								const auto psize = y - offset - 1;
 								CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1918,7 +1918,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::Package::Package_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1944,7 +1944,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						if (!memcmp(&peer->network.getData()[y], NET_PACKAGE_BRACKET_CLOSE, 1))
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
 							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
@@ -1972,7 +1972,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 			}
 
 			// we have reached the end of reading
-			if (offset + NET_PACKAGE_FOOTER_LEN == peer->network.getDataFullSize())
+			if (offset + NET_PACKET_FOOTER_LEN == peer->network.getDataFullSize())
 				break;
 
 		} while (true);
@@ -1984,7 +1984,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
-	Package PKG;
+	Packet PKG;
 	PKG.Parse(reinterpret_cast<char*>(data.get()));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
@@ -2104,7 +2104,7 @@ peer->cryption.setHandshakeStatus(true);
 LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), peer->IPAddr().get());
 
 // keep it empty, we get it filled back
-Package Version;
+Packet Version;
 NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, Version);
 NET_END_FNC_PKG
 
@@ -2144,7 +2144,7 @@ if ((majorVersion.value() == Version::Major())
 {
 	peer->NetVersionMatched = true;
 
-	Package estabilish;
+	Packet estabilish;
 	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage, estabilish);
 
 	peer->estabilished = true;

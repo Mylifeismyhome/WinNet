@@ -7,13 +7,13 @@
 #define PEER peer
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKET PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
 #define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKAGE)
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKET)
 #define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
 
 #define NET_SEND DoSend
@@ -23,7 +23,7 @@
 #define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 #include <Net/Net/NetCodes.h>
 #include <Net/Net/NetVersion.h>
 
@@ -70,7 +70,7 @@ namespace Net
 			const char* get() const;
 		};
 
-		class Server : public Net::Package::Package
+		class Server : public Net::Packet::Packet
 		{
 			struct network_t
 			{
@@ -211,7 +211,7 @@ namespace Net
 			void ProcessPackages(NET_PEER);
 			void ExecutePackage(NET_PEER);
 
-			bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
+			bool CheckDataN(NET_PEER peer, int id, NET_PACKET pkg);
 
 			/* Native Packages */
 			NET_DEF_FNC_PKG(RSAHandshake);
@@ -306,12 +306,12 @@ namespace Net
 			bool Close();
 
 			NET_DEFINE_CALLBACK(void, Tick) {}
-			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKAGE pkg) { return false; }
+			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET pkg) { return false; }
 			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, Net::Package::Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
-			void DoSend(NET_PEER, int, NET_PACKAGE);
+			void SingleSend(NET_PEER, Net::Packet::Packet_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+			void DoSend(NET_PEER, int, NET_PACKET);
 
 			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t);
 			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t*);

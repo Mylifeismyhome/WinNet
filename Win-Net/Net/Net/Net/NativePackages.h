@@ -3,7 +3,7 @@
 #define NET_LAST_PACKAGE_ID Net::NativePackages::PacketTypes::PKG_LAST_PACKAGE
 
 #include <Net/Net/Net.h>
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(NativePackages)

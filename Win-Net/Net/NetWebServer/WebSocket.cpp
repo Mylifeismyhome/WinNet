@@ -1007,7 +1007,7 @@ void Net::WebSocket::Server::Acceptor()
 	}
 }
 
-void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKAGE pkg, const unsigned char opc)
+void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET pkg, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1337,7 +1337,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	}
 	if (OPC == NET_OPCODE_PING)
 	{
-		Net::Package::Package pong;
+		Net::Packet::Packet pong;
 		DoSend(peer, NET_WS_CONTROL_PACKAGE, pong, NET_OPCODE_PONG);
 		peer->network.clear();
 		return;
@@ -1495,7 +1495,7 @@ void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const siz
 
 	if (!data) return;
 
-	Net::Package::Package PKG;
+	Net::Packet::Packet PKG;
 	PKG.Parse(reinterpret_cast<char*>(data));
 	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
 	{
@@ -1516,7 +1516,7 @@ void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const siz
 		return;
 	}
 
-	Net::Package::Package Content;
+	Net::Packet::Packet Content;
 
 	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
 		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());

@@ -6,13 +6,13 @@
 #define PEER peer
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKAGE PKG) { \
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKET PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
 #define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKAGE)
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKET)
 #define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
 
 #define NET_SEND DoSend
@@ -22,7 +22,7 @@
 #define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 #include <Net/Net/NetCodes.h>
 
 #ifndef BUILD_LINUX
@@ -86,7 +86,7 @@ namespace Net
 			const char* get() const;
 		};
 
-		class Server : public Net::Package::Package
+		class Server : public Net::Packet::Packet
 		{
 			struct network_t
 			{
@@ -285,11 +285,11 @@ namespace Net
 			SSL_CTX* ctx;
 			void onSSLTimeout(NET_PEER);
 
-			bool CheckDataN(NET_PEER peer, int id, NET_PACKAGE pkg);
+			bool CheckDataN(NET_PEER peer, int id, NET_PACKET pkg);
 
 			NET_DEFINE_CALLBACK(void, Tick) {}
-			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKAGE pkg) { return false; }
-			void DoSend(NET_PEER, uint32_t, NET_PACKAGE, unsigned char = NET_OPCODE_TEXT);
+			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKET pkg) { return false; }
+			void DoSend(NET_PEER, uint32_t, NET_PACKET, unsigned char = NET_OPCODE_TEXT);
 			void DoSend(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
 			size_t getCountPeers() const;

@@ -13,7 +13,7 @@ NET_INHERITANCE(Client, NET_CLIENT)
 	NET_CALLBACK(void, OnKeysFailed);
 	NET_CALLBACK(void, OnConnectionEstabilished);
 	NET_CALLBACK(void, OnVersionMismatch);
-	NET_CALLBACK(bool, CheckData, int, NET_PACKAGE);
+	NET_CALLBACK(bool, CheckData, int, NET_PACKET);
 
 	NET_HANDLE_TIMER hTimer;
 

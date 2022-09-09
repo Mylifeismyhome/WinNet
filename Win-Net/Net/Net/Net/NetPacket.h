@@ -1,8 +1,8 @@
 #pragma once
-#define NET_PACKAGE Net::Package::Package&
+#define NET_PACKET Net::Packet::Packet&
 
 #define NET_JOIN_PACKAGE(PKGOLD, PKGNEW) \
-	Package PKGNEW; \
+	Packet PKGNEW; \
 	PKGNEW.SetPackage(PKGOLD.GetPackage());
 
 ///////////////////////////////////////////////////////////
@@ -40,9 +40,9 @@ NET_DSA_BEGIN
 
 namespace Net
 {
-	namespace Package
+	namespace Packet
 	{
-		class Package_RawData_t
+		class Packet_RawData_t
 		{
 			char _key[256];
 			byte* _data;
@@ -51,9 +51,9 @@ namespace Net
 			bool _valid;
 
 		public:
-			Package_RawData_t();
-			Package_RawData_t(const char* name, byte* pointer, const size_t size);
-			Package_RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent);
+			Packet_RawData_t();
+			Packet_RawData_t(const char* name, byte* pointer, const size_t size);
+			Packet_RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent);
 
 			bool valid() const;
 			byte* value() const;
@@ -70,29 +70,29 @@ namespace Net
 
 		class Binary_t
 		{
-			Package_RawData_t* ptr_data;
+			Packet_RawData_t* ptr_data;
 			bool is_valid;
 
 		public:
-			Binary_t(Package_RawData_t* ptr_data, bool is_valid)
+			Binary_t(Packet_RawData_t* ptr_data, bool is_valid)
 			{
 				this->ptr_data = ptr_data;
 				this->is_valid = is_valid;
 			}
 
-			Package_RawData_t& data() { return *ptr_data; }
+			Packet_RawData_t& data() { return *ptr_data; }
 			bool valid() const { return is_valid; }
 		};
 
 		template<typename TYPE>
-		class Package_t
+		class Packet_t
 		{
 			bool _valid;
 			char _name[256];
 			TYPE _value;
 
 		public:
-			Package_t(const bool _valid, const char* _name, TYPE _value)
+			Packet_t(const bool _valid, const char* _name, TYPE _value)
 			{
 				this->_valid = _valid;
 				strcpy(this->_name, _name);
@@ -115,14 +115,14 @@ namespace Net
 			}
 		};
 
-		class Package_t_Object
+		class Packet_t_Object
 		{
 			bool _valid;
 			char _name[256];
 			rapidjson::Value _value;
 
 		public:
-			Package_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
+			Packet_t_Object(const bool _valid, const char* _name, rapidjson::Value _value)
 			{
 				this->_valid = _valid;
 				strcpy(this->_name, _name);
@@ -145,14 +145,14 @@ namespace Net
 			}
 		};
 
-		class Package_t_Array
+		class Packet_t_Array
 		{
 			bool _valid;
 			char _name[256];
 			rapidjson::Value _value;
 
 		public:
-			Package_t_Array(const bool _valid, const char* _name, rapidjson::Value::Array _value)
+			Packet_t_Array(const bool _valid, const char* _name, rapidjson::Value::Array _value)
 			{
 				this->_valid = _valid;
 				strcpy(this->_name, _name);
@@ -194,7 +194,7 @@ namespace Net
 			virtual void Append(const char* Key, size_t value) = 0;
 #endif
 			virtual void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) = 0;
-			virtual void Append(Net::Package::Package_RawData_t& data) = 0;
+			virtual void Append(Net::Packet::Packet_RawData_t& data) = 0;
 
 			virtual bool Parse(const char* data) = 0;
 
@@ -202,35 +202,35 @@ namespace Net
 			virtual void SetPackage(const rapidjson::Value& doc) = 0;
 			virtual void SetPackage(const rapidjson::Document::Object& obj) = 0;
 			virtual void SetPackage(const rapidjson::Document::ValueIterator& arr) = 0;
-			virtual void SetRawData(const std::vector<Net::Package::Package_RawData_t>& data) = 0;
+			virtual void SetRawData(const std::vector<Net::Packet::Packet_RawData_t>& data) = 0;
 
-			virtual std::vector<Net::Package::Package_RawData_t>& GetRawData() = 0;
+			virtual std::vector<Net::Packet::Packet_RawData_t>& GetRawData() = 0;
 			virtual bool HasRawData() const = 0;
 			virtual size_t GetRawDataFullSize() const = 0;
 
 			virtual rapidjson::Document& GetPackage() = 0;
 			virtual std::string StringifyPackage() const = 0;
-			virtual Net::Package::Package_t<const char*> String(const char*) const = 0;
-			virtual Net::Package::Package_t<int> Int(const char*) const = 0;
-			virtual Net::Package::Package_t<double> Double(const char*) const = 0;
-			virtual Net::Package::Package_t<float> Float(const char*) const = 0;
-			virtual Net::Package::Package_t<int64> Int64(const char*) const = 0;
-			virtual Net::Package::Package_t<uint> UINT(const char*) const = 0;
-			virtual Net::Package::Package_t<uint64> UINT64(const char*) const = 0;
-			virtual Net::Package::Package_t<bool> Boolean(const char*) const = 0;
-			virtual Net::Package::Package_t_Object Object(const char*) = 0;
-			virtual Net::Package::Package_t_Array Array(const char*) = 0;
-			virtual Net::Package::Binary_t Binary(const char*) = 0;
+			virtual Net::Packet::Packet_t<const char*> String(const char*) const = 0;
+			virtual Net::Packet::Packet_t<int> Int(const char*) const = 0;
+			virtual Net::Packet::Packet_t<double> Double(const char*) const = 0;
+			virtual Net::Packet::Packet_t<float> Float(const char*) const = 0;
+			virtual Net::Packet::Packet_t<int64> Int64(const char*) const = 0;
+			virtual Net::Packet::Packet_t<uint> UINT(const char*) const = 0;
+			virtual Net::Packet::Packet_t<uint64> UINT64(const char*) const = 0;
+			virtual Net::Packet::Packet_t<bool> Boolean(const char*) const = 0;
+			virtual Net::Packet::Packet_t_Object Object(const char*) = 0;
+			virtual Net::Packet::Packet_t_Array Array(const char*) = 0;
+			virtual Net::Packet::Binary_t Binary(const char*) = 0;
 		};
 
-		class Package : public Interface
+		class Packet : public Interface
 		{
 			rapidjson::Document pkg;
-			std::vector<Net::Package::Package_RawData_t> rawData;
+			std::vector<Net::Packet::Packet_RawData_t> rawData;
 
 		public:
-			Package();
-			~Package();
+			Packet();
+			~Packet();
 
 			void Append(const char* Key, rapidjson::Value value) override;
 			void Append(const char* Key, rapidjson::Value& value) override;
@@ -246,7 +246,7 @@ namespace Net
 			void Append(const char* Key, size_t value) override;
 #endif
 			void Append(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true) override;
-			void Append(Net::Package::Package_RawData_t& data) override;
+			void Append(Net::Packet::Packet_RawData_t& data) override;
 
 			bool Parse(const char* data) override;
 
@@ -254,25 +254,25 @@ namespace Net
 			void SetPackage(const rapidjson::Value& doc) override;
 			void SetPackage(const rapidjson::Document::Object& obj) override;
 			void SetPackage(const rapidjson::Document::ValueIterator& arr) override;
-			void SetRawData(const std::vector<Net::Package::Package_RawData_t>& data) override;
+			void SetRawData(const std::vector<Net::Packet::Packet_RawData_t>& data) override;
 
-			std::vector<Net::Package::Package_RawData_t>& GetRawData() override;
+			std::vector<Net::Packet::Packet_RawData_t>& GetRawData() override;
 			bool HasRawData() const override;
 			size_t GetRawDataFullSize() const override;
 
 			rapidjson::Document& GetPackage() override;
 			std::string StringifyPackage() const override;
-			Net::Package::Package_t<const char*> String(const char*) const override;
-			Net::Package::Package_t<int> Int(const char*) const override;
-			Net::Package::Package_t<double> Double(const char*) const override;
-			Net::Package::Package_t<float> Float(const char*) const override;
-			Net::Package::Package_t<int64> Int64(const char*) const override;
-			Net::Package::Package_t<uint> UINT(const char*) const override;
-			Net::Package::Package_t<uint64> UINT64(const char*) const override;
-			Net::Package::Package_t<bool> Boolean(const char*) const override;
-			Net::Package::Package_t_Object Object(const char*) override;
-			Net::Package::Package_t_Array Array(const char*) override;
-			Net::Package::Binary_t Binary(const char*) override;
+			Net::Packet::Packet_t<const char*> String(const char*) const override;
+			Net::Packet::Packet_t<int> Int(const char*) const override;
+			Net::Packet::Packet_t<double> Double(const char*) const override;
+			Net::Packet::Packet_t<float> Float(const char*) const override;
+			Net::Packet::Packet_t<int64> Int64(const char*) const override;
+			Net::Packet::Packet_t<uint> UINT(const char*) const override;
+			Net::Packet::Packet_t<uint64> UINT64(const char*) const override;
+			Net::Packet::Packet_t<bool> Boolean(const char*) const override;
+			Net::Packet::Packet_t_Object Object(const char*) override;
+			Net::Packet::Packet_t_Array Array(const char*) override;
+			Net::Packet::Binary_t Binary(const char*) override;
 		};
 	}
 }

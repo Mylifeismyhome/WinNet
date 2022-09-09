@@ -10,7 +10,7 @@ NET_TIMER(Test)
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
 
-	Net::Package::Package pkg;
+	Net::Packet::Packet pkg;
 	pkg.Append(CSTRING("text"), CSTRING("WinNet"));
 	client->DoSend(Packages::PKG_TEST, pkg);
 

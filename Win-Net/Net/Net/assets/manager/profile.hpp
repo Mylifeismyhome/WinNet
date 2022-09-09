@@ -14,7 +14,7 @@ class Profile_t
 	void* peer;
 
 public:
-	Net::Package::Package* data;
+	Net::Packet::Packet* data;
 	void* ext;
 
 	Profile_t()
@@ -27,7 +27,7 @@ public:
 	Profile_t(void* peer)
 	{
 		this->peer = peer;
-		data = new Net::Package::Package();
+		data = new Net::Packet::Packet();
 		ext = nullptr;
 	}
 
@@ -91,7 +91,7 @@ public:
 		max_entries = 0;
 	}
 
-	Net::Package::Package* Add(void* peer)
+	Net::Packet::Packet* Add(void* peer)
 	{
 		if (!data) return nullptr;
 
@@ -144,7 +144,7 @@ public:
 		}
 	}
 
-	Net::Package::Package* peer(void* peer)
+	Net::Packet::Packet* peer(void* peer)
 	{
 		if (!data) return nullptr;
 

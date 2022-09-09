@@ -3,13 +3,13 @@
 
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKAGE PKG) { \
+#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKET PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_FUNC_PACKAGE }
 #define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
 #define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKAGE)
+#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKET)
 #define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
 
 #define NET_SEND DoSend
@@ -17,7 +17,7 @@
 #define FREQUENZ Isset(NET_OPT_FREQUENZ) ? GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 #include <Net/Net/NetCodes.h>
 #include <Net/Net/NetVersion.h>
 
@@ -50,7 +50,7 @@
 NET_NAMESPACE_BEGIN(Net)
 NET_NAMESPACE_BEGIN(Client)
 NET_DSA_BEGIN
-NET_ABSTRAC_CLASS_BEGIN(Client, Net::Package::Package)
+NET_ABSTRAC_CLASS_BEGIN(Client, Net::Packet::Packet)
 NET_STRUCT_BEGIN(Network)
 byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 CPOINTER<byte> data;
@@ -234,14 +234,14 @@ float GetReceivedPackageSizeAsPerc() const;
 
 bool bReceiveThread;
 DWORD DoReceive();
-bool CheckDataN(int id, NET_PACKAGE pkg);
-NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKAGE pkg) { return false; }
+bool CheckDataN(int id, NET_PACKET pkg);
+NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKET pkg) { return false; }
 
 void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 void SingleSend(CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-void SingleSend(Net::Package::Package_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
-void DoSend(int, NET_PACKAGE);
+void SingleSend(Net::Packet::Packet_RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+void DoSend(int, NET_PACKET);
 
 NET_CLASS_PRIVATE
 bool ValidHeader(bool&);
