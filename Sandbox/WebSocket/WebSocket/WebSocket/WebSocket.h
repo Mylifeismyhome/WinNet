@@ -1,8 +1,8 @@
 #pragma once
 #include <Net/Net/Net.h>
-#include <NetWebServer/WebSocket.h>
+#include <NetWebSocket/WebSocket.h>
 
-NET_INHERITANCE(WebServer, NET_WEB_SERVER)
+NET_INHERITANCE(WebSocket, NET_WEB_SERVER)
 {
 	NET_CALLBACK(void, Tick);
 	NET_CALLBACK(void, OnPeerConnect, NET_PEER);
