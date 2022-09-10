@@ -9,7 +9,7 @@
 
 int main()
 {
-	Net::load();
+	Net::load(Net::ENABLE_LOGGING);
 
 	WebServer server;
 	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });

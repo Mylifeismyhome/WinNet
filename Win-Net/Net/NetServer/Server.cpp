@@ -21,11 +21,11 @@ Net::Server::Server::Server()
 {
 	SetListenSocket(INVALID_SOCKET);
 	SetRunning(false);
-	curTime = NULL;
+	curTime = 0;
 	hSyncClockNTP = nullptr;
 	hReSyncClockNTP = nullptr;
-	optionBitFlag = NULL;
-	socketOptionBitFlag = NULL;
+	optionBitFlag = 0;
+	socketOptionBitFlag = 0;
 }
 
 Net::Server::Server::~Server()
@@ -88,9 +88,9 @@ void Net::Server::Server::network_t::reset()
 void Net::Server::Server::network_t::clear()
 {
 	deallocData();
-	_data_size = NULL;
-	_data_full_size = NULL;
-	_data_offset = NULL;
+	_data_size = 0;
+	_data_full_size = 0;
+	_data_offset = 0;
 }
 
 void Net::Server::Server::network_t::setDataSize(const size_t size)
@@ -316,7 +316,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 size_t Net::Server::Server::GetNextPackageSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return NULL;
+		return 0;
 	);
 
 	return peer->network.getDataFullSize();
@@ -325,7 +325,7 @@ size_t Net::Server::Server::GetNextPackageSize(NET_PEER peer)
 size_t Net::Server::Server::GetReceivedPackageSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
-		return NULL;
+		return 0;
 	);
 
 	return peer->network.getDataSize();
@@ -370,9 +370,9 @@ void Net::Server::Server::peerInfo::clear()
 	cryption.deleteKeyPair();
 
 	FREE(totp_secret);
-	totp_secret_len = NULL;
-	curToken = NULL;
-	lastToken = NULL;
+	totp_secret_len = 0;
+	curToken = 0;
+	lastToken = 0;
 }
 
 typeLatency Net::Server::Server::peerInfo::getLatency() const
@@ -394,8 +394,8 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 
 	if (!skipNotify)
 	{
-		Net::Packet::Packet PKG;
-		PKG.Append(CSTRING("code"), code);
+		NET_PACKET PKG;
+		PKG[CSTRING("code")] = code;
 		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
 	}
 
@@ -434,7 +434,7 @@ bool Net::Server::Server::IsRunning() const
 NET_THREAD(TickThread)
 {
 	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return NULL;
+	if (!server) return 0;
 
 	while (server->IsRunning())
 	{
@@ -446,13 +446,13 @@ NET_THREAD(TickThread)
 #endif
 	}
 
-	return NULL;
+	return 0;
 }
 
 NET_THREAD(AcceptorThread)
 {
 	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return NULL;
+	if (!server) return 0;
 
 	while (server->IsRunning())
 	{
@@ -464,7 +464,7 @@ NET_THREAD(AcceptorThread)
 #endif
 	}
 
-	return NULL;
+	return 0;
 }
 
 #ifdef BUILD_LINUX
@@ -635,7 +635,7 @@ bool Net::Server::Server::Close()
 		hReSyncClockNTP = nullptr;
 	}
 
-	curTime = NULL;
+	curTime = 0;
 
 	SetRunning(false);
 
@@ -840,12 +840,12 @@ void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t
 			break;
 
 		size -= res;
-			} while (size > 0);
+	} while (size > 0);
 
-			data.free();
-		}
+	data.free();
+}
 
-void Net::Server::Server::SingleSend(NET_PEER peer, Net::Packet::Packet_RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
+void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	if (!data.valid()) return;
 
@@ -926,15 +926,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::Packet::Packet_RawData_
 *	---------------------------------------------------------------------------------------------------------------------------------
 *	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
 *		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
-*			{KEY}{...}...								*						-
-*			{IV}{...}...									*						-
+*			{KEY}{...}...						*						-
+*			{IV}{...}...						*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
-*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
-*			{DATA}{...}...								*				{DATA}{...}...
-*	{END PACKAGE}									*		{END PACKAGE}
+*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
+*			{DATA}{...}...						*				{DATA}{...}...
+*	{END PACKAGE}								*		{END PACKAGE}
 *
 */
-void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET pkg)
+void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -949,28 +949,19 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET pkg)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 		sendToken = Net::Coding::TOTP::generateToken(peer->totp_secret, peer->totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
-	rapidjson::Document JsonBuffer;
-	JsonBuffer.SetObject();
-	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
-	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
+	Net::Json::Document doc;
+	doc[CSTRING("ID")] = id;
+	doc[CSTRING("CONTENT")] = pkg.Data();
 
-	rapidjson::Value idValue;
-	idValue.SetInt(id);
-	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
+	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
 
-	/* tmp buffer, later we cast to PBYTE */
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	JsonBuffer.Accept(writer);
-
-	auto dataBufferSize = buffer.GetLength();
+	auto dataBufferSize = buffer.size();
 	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-	memcpy(dataBuffer.get(), buffer.GetString(), dataBufferSize);
+	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
 	dataBuffer.get()[dataBufferSize] = '\0';
-	buffer.Flush();
+	buffer.clear();
 
-	size_t combinedSize = NULL;
+	size_t combinedSize = 0;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
@@ -1018,7 +1009,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET pkg)
 
 		if (PKG.HasRawData())
 		{
-			std::vector<Net::Packet::Packet_RawData_t>& rawData = PKG.GetRawData();
+			std::vector<Net::RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
 				aes.encrypt(data.value(), data.size());
 		}
@@ -1240,12 +1231,12 @@ void OnPeerDelete(void* pdata)
 NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 {
 	const auto data = (Receive_t*)param;
-	if (!data) return NULL;
+	if (!data) return 0;
 
 	auto peer = data->peer;
 	const auto server = data->server;
 
-	if(peer->hWaitForNetProtocol == nullptr) 	NET_STOP_TIMER;
+	if (peer->hWaitForNetProtocol == nullptr) 	NET_STOP_TIMER;
 
 	LOG_PEER(CSTRING("'%s' :: [%s] => might not be using proper protocol"), SERVERNAME(server), peer->IPAddr().get());
 
@@ -1257,7 +1248,7 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 NET_THREAD(PeerStartRoutine)
 {
 	const auto data = (Receive_t*)parameter;
-	if (!data) return NULL;
+	if (!data) return 0;
 
 	auto peer = data->peer;
 	const auto server = data->server;
@@ -1271,8 +1262,8 @@ NET_THREAD(PeerStartRoutine)
 
 		const auto PublicKey = peer->cryption.RSA.publicKey();
 
-		Net::Packet::Packet PKG;
-		PKG.Append(CSTRING("PublicKey"), PublicKey.get());
+		NET_PACKET PKG;
+		PKG[CSTRING("PublicKey")] = PublicKey.get();
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 	}
 	/*
@@ -1281,7 +1272,7 @@ NET_THREAD(PeerStartRoutine)
 	else
 	{
 		// keep it empty, we get it filled back
-		Net::Packet::Packet PKG;
+		NET_PACKET PKG;
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
 	}
 
@@ -1294,7 +1285,7 @@ NET_THREAD(PeerStartRoutine)
 	pInfo.SetCallbackOnDelete(&OnPeerDelete);
 	server->add_to_peer_threadpool(pInfo);
 
-	return NULL;
+	return 0;
 }
 
 void Net::Server::Server::Acceptor()
@@ -1730,7 +1721,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 				// read size
 				CPOINTER<BYTE> key;
-				size_t KeySize = NULL;
+				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -1761,7 +1752,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = NULL;
+					size_t packageSize = 0;
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
@@ -1780,7 +1771,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1796,7 +1787,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						return;
 					}
 
-					Content.Append(entry);
+					Content.AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1809,7 +1800,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = NULL;
+				size_t packageSize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -1868,7 +1859,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 				// read size
 				CPOINTER<BYTE> key;
-				size_t KeySize = NULL;
+				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -1899,7 +1890,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = NULL;
+					size_t packageSize = 0;
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
@@ -1918,7 +1909,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::Packet::Packet_RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1927,7 +1918,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						entry.set_free(true);
 					}
 
-					Content.Append(entry);
+					Content.AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1940,7 +1931,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = NULL;
+				size_t packageSize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -1984,16 +1975,22 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
-	Packet PKG;
-	PKG.Parse(reinterpret_cast<char*>(data.get()));
-	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
+	NET_PACKET PKG;
+	if (!PKG.Deserialize(reinterpret_cast<char*>(data.get())))
+	{
+		data.free();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		return;
+	}
+
+	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 	{
 		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
 		return;
 	}
 
-	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG[CSTRING("ID")]->as_int();
 	if (id < 0)
 	{
 		data.free();
@@ -2001,15 +1998,22 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
-	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
+		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
 	{
 		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
 		return;
 	}
 
-	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	if (PKG[CSTRING("CONTENT")]->is_object())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
+	}
+	else if (PKG[CSTRING("CONTENT")]->is_array())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
+	}
 
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))
@@ -2087,15 +2091,15 @@ if (peer->cryption.getHandshakeStatus())
 	return;
 }
 
-const auto publicKey = PKG.String(CSTRING("PublicKey"));
-if (!publicKey.valid()) // empty
+if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
-peer->cryption.RSA.setPublicKey(publicKey.value());
+const auto TargetPublicKey = PKG[CSTRING("PublicKey")]->as_string();
+peer->cryption.RSA.setPublicKey(TargetPublicKey);
 
 // from now we use the Cryption, synced with Server
 peer->cryption.setHandshakeStatus(true);
@@ -2122,25 +2126,25 @@ if (peer->estabilished)
 	return;
 }
 
-const auto majorVersion = PKG.Int(CSTRING("MajorVersion"));
-const auto minorVersion = PKG.Int(CSTRING("MinorVersion"));
-const auto revision = PKG.Int(CSTRING("Revision"));
-const auto key = PKG.String(CSTRING("Key"));
-
-if (!majorVersion.valid()
-	|| !minorVersion.valid()
-	|| !revision.valid()
-	|| !key.valid())
+if (!(PKG[CSTRING("MajorVersion")] && PKG[CSTRING("MajorVersion")]->is_int())
+	|| !(PKG[CSTRING("MinorVersion")] && PKG[CSTRING("MinorVersion")]->is_int())
+	|| !(PKG[CSTRING("Revision")] && PKG[CSTRING("Revision")]->is_int())
+	|| !(PKG[CSTRING("Key")] && PKG[CSTRING("Key")]->is_string()))
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 	LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid version frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
-if ((majorVersion.value() == Version::Major())
-	&& (minorVersion.value() == Version::Minor())
-	&& (revision.value() == Version::Revision())
-	&& strcmp(key.value(), Version::Key().data().data()) == 0)
+const auto majorVersion = PKG[CSTRING("MajorVersion")]->as_int();
+const auto minorVersion = PKG[CSTRING("MinorVersion")]->as_int();
+const auto revision = PKG[CSTRING("Revision")]->as_int();
+const auto Key = PKG[CSTRING("Key")]->as_string();
+
+if ((majorVersion == Version::Major())
+	&& (minorVersion == Version::Minor())
+	&& (revision == Version::Revision())
+	&& strcmp(Key, Version::Key().data().data()) == 0)
 {
 	peer->NetVersionMatched = true;
 
@@ -2159,7 +2163,7 @@ if ((majorVersion.value() == Version::Major())
 }
 else
 {
-	LOG_PEER(CSTRING("'%s' :: [%s] => sent different values in version frame:\n(%i.%i.%i-%s)"), SERVERNAME(this), peer->IPAddr().get(), majorVersion.value(), minorVersion.value(), revision.value(), key.value());
+	LOG_PEER(CSTRING("'%s' :: [%s] => sent different values in version frame:\n(%i.%i.%i-%s)"), SERVERNAME(this), peer->IPAddr().get(), majorVersion, minorVersion, revision, Key);
 
 	// version or key missmatch, disconnect peer
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
@@ -2171,7 +2175,7 @@ void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t info)
 	PeerPoolManager.add(info);
 }
 
-void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t* pinfo)
+void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t * pinfo)
 {
 	PeerPoolManager.add(pinfo);
 }
@@ -2181,7 +2185,7 @@ size_t Net::Server::Server::count_peers_all()
 	return PeerPoolManager.count_peers_all();
 }
 
-size_t Net::Server::Server::count_peers(Net::PeerPool::peer_threadpool_t* pool)
+size_t Net::Server::Server::count_peers(Net::PeerPool::peer_threadpool_t * pool)
 {
 	return PeerPoolManager.count_peers(pool);
 }
@@ -2225,8 +2229,8 @@ bool Net::Server::Server::CreateTOTPSecret(NET_PEER peer)
 	peer->totp_secret[peer->totp_secret_len] = '\0';
 	Net::Coding::Base32::encode(peer->totp_secret, peer->totp_secret_len);
 
-	peer->curToken = NULL;
-	peer->lastToken = NULL;
+	peer->curToken = 0;
+	peer->lastToken = 0;
 
 	return true;
 }

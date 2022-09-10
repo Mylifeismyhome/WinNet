@@ -164,7 +164,7 @@ virtual type name(__VA_ARGS__)
 #define DEBUG_BREAK __debugbreak();
 
 #define NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET pkg) \
+bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer) \
 	return false; \
@@ -172,7 +172,7 @@ switch (id) \
 {
 
 #define NET_SERVER_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET pkg) \
+bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer || !peer->estabilished) \
 	return false; \

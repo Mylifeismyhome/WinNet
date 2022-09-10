@@ -395,7 +395,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 				if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if(errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -540,7 +540,7 @@ void Client::ConnectionClosed()
 			if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 			{
 #ifdef BUILD_LINUX
-				if(errno == EWOULDBLOCK)
+				if (errno == EWOULDBLOCK)
 #else
 				if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -1004,19 +1004,17 @@ void Client::DoSend(const int id, NET_PACKET& pkg)
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
 		sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 
-	Net::Json::Document JsonBuffer;
-	JsonBuffer[CSTRING("ID")] = id;
-	JsonBuffer[CSTRING("CONTENT")] = pkg.Data();
+	Net::Json::Document doc;
+	doc[CSTRING("ID")] = id;
+	doc[CSTRING("CONTENT")] = pkg.Data();
 
-	auto buffer = JsonBuffer.Serialize(Net::Json::SerializeType::NONE);
+	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
 
 	auto dataBufferSize = buffer.size();
 	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
 	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
 	dataBuffer.get()[dataBufferSize] = '\0';
 	buffer.clear();
-
-	std::cout << dataBuffer.get() << std::endl;
 
 	size_t combinedSize = 0;
 
@@ -1899,8 +1897,15 @@ void Client::ExecutePackage()
 	}
 
 	NET_PACKET PKG;
-	PKG.Deserialize(reinterpret_cast<char*>(data.get()));
-	if (!PKG[CSTRING("ID")]->is_int())
+	if (!PKG.Deserialize(reinterpret_cast<char*>(data.get())))
+	{
+		data.free();
+		Disconnect();
+		LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
+		return;
+	}
+
+	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 	{
 		data.free();
 		Disconnect();
@@ -1917,8 +1922,8 @@ void Client::ExecutePackage()
 		return;
 	}
 
-	if (!PKG[CSTRING("CONTENT")]->is_object() 
-		&& !PKG[CSTRING("CONTENT")]->is_array())
+	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
+		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
 	{
 		data.free();
 		Disconnect();
@@ -1934,9 +1939,6 @@ void Client::ExecutePackage()
 	{
 		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
 	}
-
-	std::cout << pkg.Stringify().data().data() << std::endl;
-	std::cout << Content.Stringify().data().data() << std::endl;
 
 	if (!CheckDataN(id, Content))
 		if (!CheckData(id, Content))
@@ -2041,7 +2043,7 @@ bool Client::CreateTOTPSecret()
 	network.lastToken = 0;
 
 	return true;
-}
+	}
 
 NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(Client)
 NET_CLIENT_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
@@ -2070,7 +2072,7 @@ if (network.RSAHandshake)
 	return;
 }
 
-if(!pkg[CSTRING("PublicKey")]->is_string())
+if (!(pkg[CSTRING("PublicKey")] && pkg[CSTRING("PublicKey")]->is_string()))
 {
 	Disconnect();
 	LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
@@ -2080,15 +2082,13 @@ if(!pkg[CSTRING("PublicKey")]->is_string())
 // send our generated Public Key to the Server
 NET_PACKET reply;
 auto MyPublicKey = Net::String(network.RSA.publicKey().get());
-MyPublicKey.replaceAll(CSTRING("\n"), CSTRING("\\n"));
-MyPublicKey.replaceAll(CSTRING("\r"), CSTRING("\\r"));
 const auto MyPublicKeyRef = MyPublicKey.get();
 reply[CSTRING("PublicKey")] = MyPublicKeyRef.get();
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
 
 // from now we use the Cryption, synced with Server
 const auto TargetPublicKey = pkg[CSTRING("PublicKey")]->as_string();
-network.RSA.setPublicKey((const char*)TargetPublicKey);
+network.RSA.setPublicKey(TargetPublicKey);
 network.RSAHandshake = true;
 NET_END_FNC_PKG
 
@@ -2106,16 +2106,13 @@ if (network.estabilished)
 	return;
 }
 
-NET_PACKET pkgRel;
-NET_PACKET_JOIN(pkgRel, pkg);
-
-const auto Key = Version::Key().data(); // otherwise we memleak
-
-pkgRel[CSTRING("MajorVersion")] = Version::Major();
-pkgRel[CSTRING("MinorVersion")] = Version::Minor();
-pkgRel[CSTRING("Revision")] = Version::Revision();
-pkgRel[CSTRING("Key")] = Key.data();
-NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkgRel);
+NET_PACKET reply;
+reply[CSTRING("MajorVersion")] = Version::Major();
+reply[CSTRING("MinorVersion")] = Version::Minor();
+reply[CSTRING("Revision")] = Version::Revision();
+const auto Key = Version::Key().get();
+reply[CSTRING("Key")] = Key.get();
+NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, reply);
 NET_END_FNC_PKG
 
 NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
@@ -2145,7 +2142,7 @@ ConnectionClosed();
 
 LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by the Server"));
 
-if (!PKG[CSTRING("code")]->is_int())
+if (!(PKG[CSTRING("code")] && PKG[CSTRING("code")]->is_int()))
 {
 	// Callback
 	OnForcedDisconnect(-1);

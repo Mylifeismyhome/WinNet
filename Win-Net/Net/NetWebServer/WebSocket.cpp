@@ -22,8 +22,8 @@ Net::WebSocket::Server::Server()
 	SetListenSocket(INVALID_SOCKET);
 	SetAcceptSocket(INVALID_SOCKET);
 	SetRunning(false);
-	optionBitFlag = NULL;
-	socketOptionBitFlag = NULL;
+	optionBitFlag = 0;
+	socketOptionBitFlag = 0;
 }
 
 Net::WebSocket::Server::~Server()
@@ -113,7 +113,7 @@ void Net::WebSocket::Server::network_t::clear()
 {
 	deallocData();
 	deallocDataFragmented();
-	_data_size = NULL;
+	_data_size = 0;
 }
 
 void Net::WebSocket::Server::network_t::setDataSize(const size_t size)
@@ -162,19 +162,19 @@ void Net::WebSocket::Server::DecreasePeersCounter()
 	--_CounterPeersTable;
 
 	if (_CounterPeersTable == INVALID_SIZE)
-		_CounterPeersTable = NULL;
+		_CounterPeersTable = 0;
 }
 
 NET_THREAD(LatencyTick)
 {
 	const auto peer = (NET_PEER)parameter;
-	if (!peer) return NULL;
+	if (!peer) return 0;
 
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
 	// tmp disabled
 	//peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
 	LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
-	return NULL;
+	return 0;
 }
 
 struct DoCalcLatency_t
@@ -375,7 +375,7 @@ void Net::WebSocket::Server::DisconnectPeer(NET_PEER peer, const int code)
 NET_THREAD(TickThread)
 {
 	const auto server = (Net::WebSocket::Server*)parameter;
-	if (!server) return NULL;
+	if (!server) return 0;
 
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
 	while (server->IsRunning())
@@ -388,13 +388,13 @@ NET_THREAD(TickThread)
 #endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
-	return NULL;
+	return 0;
 }
 
 NET_THREAD(AcceptorThread)
 {
 	const auto server = (Net::WebSocket::Server*)parameter;
-	if (!server) return NULL;
+	if (!server) return 0;
 
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
 	while (server->IsRunning())
@@ -407,7 +407,7 @@ NET_THREAD(AcceptorThread)
 #endif
 	}
 	LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
-	return NULL;
+	return 0;
 }
 
 void Net::WebSocket::Server::SetListenSocket(const SOCKET ListenSocket)
@@ -894,13 +894,13 @@ struct Receive_t
 NET_THREAD(Receive)
 {
 	const auto param = (Receive_t*)parameter;
-	if (!param) return NULL;
+	if (!param) return 0;
 
 	auto peer = param->peer;
 	const auto server = param->server;
 
 	PEER_NOT_VALID_EX(peer, server,
-		return NULL;
+		return 0;
 	);
 
 	/* Handshake */
@@ -918,7 +918,7 @@ NET_THREAD(Receive)
 
 				delete peer;
 				peer = nullptr;
-				return NULL;
+				return 0;
 			}
 			if (res == WebServerHandshake::would_block)
 			{
@@ -938,7 +938,7 @@ NET_THREAD(Receive)
 
 				delete peer;
 				peer = nullptr;
-				return NULL;
+				return 0;
 			}
 			if (res == WebServerHandshake::error)
 			{
@@ -949,7 +949,7 @@ NET_THREAD(Receive)
 
 				delete peer;
 				peer = nullptr;
-				return NULL;
+				return 0;
 			}
 			if (res == WebServerHandshake::success)
 			{
@@ -985,7 +985,7 @@ NET_THREAD(Receive)
 
 	delete peer;
 	peer = nullptr;
-	return NULL;
+	return 0;
 }
 
 void Net::WebSocket::Server::Acceptor()
@@ -1007,7 +1007,7 @@ void Net::WebSocket::Server::Acceptor()
 	}
 }
 
-void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET pkg, const unsigned char opc)
+void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET& pkg, const unsigned char opc)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1020,24 +1020,22 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 
 	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
 
-	rapidjson::Document JsonBuffer;
-	JsonBuffer.SetObject();
-	rapidjson::Value key(CSTRING("CONTENT"), JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(key, PKG.GetPackage(), JsonBuffer.GetAllocator());
-	rapidjson::Value keyID(CSTRING("ID"), JsonBuffer.GetAllocator());
-	rapidjson::Value bRaw(CSTRING("RAW"), JsonBuffer.GetAllocator());
+	Net::Json::Document doc;
+	doc[CSTRING("ID")] = static_cast<int>(id);
+	doc[CSTRING("CONTENT")] = pkg.Data();
+	doc[CSTRING("RAW")] = false;
 
-	rapidjson::Value idValue;
-	idValue.SetInt(id);
-	JsonBuffer.AddMember(keyID, idValue, JsonBuffer.GetAllocator());
-	JsonBuffer.AddMember(bRaw, false, JsonBuffer.GetAllocator());
+	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
 
-	/* Ws2_32::buffer, later we cast to PBYTE */
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	JsonBuffer.Accept(writer);
+	auto dataBufferSize = buffer.size();
+	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
+	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
+	dataBuffer.get()[dataBufferSize] = '\0';
+	buffer.clear();
 
-	EncodeFrame((BYTE*)buffer.GetString(), buffer.GetSize(), peer, opc);
+	EncodeFrame(dataBuffer.reference().get(), dataBufferSize, peer, opc);
+
+	dataBuffer.free();
 }
 
 void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data, size_t size, const unsigned char opc)
@@ -1082,7 +1080,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 
 	const int lastFrameBufferLength = (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : 0);
 
-	size_t in_frame_offset = NULL;
+	size_t in_frame_offset = 0;
 	for (auto i = 0; i < frameCount; i++)
 	{
 		const unsigned char fin = (i != (frameCount - 1) ? 0 : NET_WS_FIN);
@@ -1308,7 +1306,7 @@ DWORD Net::WebSocket::Server::DoReceive(NET_PEER peer)
 		}
 
 	DecodeFrame(peer);
-	return NULL;
+	return 0;
 	}
 
 void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
@@ -1337,7 +1335,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	}
 	if (OPC == NET_OPCODE_PING)
 	{
-		Net::Packet::Packet pong;
+		NET_PACKET pong;
 		DoSend(peer, NET_WS_CONTROL_PACKAGE, pong, NET_OPCODE_PONG);
 		peer->network.clear();
 		return;
@@ -1495,31 +1493,42 @@ void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const siz
 
 	if (!data) return;
 
-	Net::Packet::Packet PKG;
-	PKG.Parse(reinterpret_cast<char*>(data));
-	if (!PKG.GetPackage().HasMember(CSTRING("ID")))
+	NET_PACKET PKG;
+	if (!PKG.Deserialize(reinterpret_cast<char*>(data)))
+	{
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		return;
+	}
+
+	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
 		return;
 	}
 
-	const auto id = PKG.GetPackage().FindMember(CSTRING("ID"))->value.GetInt();
+	const auto id = PKG[CSTRING("ID")]->as_int();
 	if (id < 0)
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
 		return;
 	}
 
-	if (!PKG.GetPackage().HasMember(CSTRING("CONTENT")))
+	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
+		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
 		return;
 	}
 
-	Net::Packet::Packet Content;
-
-	if (!PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.IsNull())
-		Content.SetPackage(PKG.GetPackage().FindMember(CSTRING("CONTENT"))->value.GetObject());
+	NET_PACKET Content;
+	if (PKG[CSTRING("CONTENT")]->is_object())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
+	}
+	else if (PKG[CSTRING("CONTENT")]->is_array())
+	{
+		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
+	}
 
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))
