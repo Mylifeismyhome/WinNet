@@ -1,19 +1,19 @@
-# build NetWebServer
+# build NetWebSocket
 CFLAGS=-std=c++11 -Wall -w -D BUILD_LINUX
 INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # link Library
 define LINK
-	ar rvs NetWebServer.a bin/*.o
-	ranlib NetWebServer.a
+	ar rvs NetWebSocket.a bin/*.o
+	ranlib NetWebSocket.a
 endef
 
 # copy Files
 define COPY
     	mkdir -p ../../bin/
-	mkdir -p ../../bin/include/NetWebServer/
-	cp WebSocket.h ../../bin/include/NetWebServer/
-    	cp NetWebServer.a ../../bin/
+	mkdir -p ../../bin/include/NetWebSocket/
+	cp WebSocket.h ../../bin/include/NetWebSocket/
+    	cp NetWebSocket.a ../../bin/
 endef
 
 # clean build

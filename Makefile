@@ -158,8 +158,8 @@ netserver:
 netclient:
 	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetClient/
 
-netwebserver:
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebServer/
+netwebsocket:
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebSocket/
 
 sandboxserver:
 	${MAKE} -C ${ROOT_DIR}/Sandbox/Server/Server/
@@ -167,8 +167,8 @@ sandboxserver:
 sandboxclient:
 	${MAKE} -C ${ROOT_DIR}/Sandbox/Client/Client/
 
-sandboxwebserver:
-	${MAKE} -C ${ROOT_DIR}/Sandbox/WebServer/WebServer/
+sandboxwebsocket:
+	${MAKE} -C ${ROOT_DIR}/Sandbox/WebSocket/WebSocket/
 
 clean:
 	$(call clean_all)
