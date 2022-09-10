@@ -69,15 +69,51 @@ this batch automatically runs BUILD.bat
 >> - [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
 >> - [x] Non-Blocking
 >
->> ## Net Classes
->> - [x] Http
->> - [x] Https
->> - [x] Json
->> - [x] Mysql
->
->> ## Protocols
+>> ## Classes
+>>> ## Net
+>>> - [x] Http/s
+>>> - [x] String
+>>> - [x] Json
+>>> - [x] Packet
+>>
+>>> ## Database
+>>> - [x] Mysql
+>>
+>>> ## Cryption
+>>> - [x] AES
+>>> - [x] RSA
+>>> - [x] Pointer
+>>> - [x] XOR Runtime & Compiletime
+>>> - [x] BCrypt
+>>
+>>> ## Compression
+>>> - [x] ZLib
+>>
+>>> ## Coding
+>>> - [x] Base32
+>>> - [x] Base64
+>>> - [x] Hex
+>>> - [x] MD5
+>>> - [x] SHA1
+>>
+>>> ## Auth
+>>> - [x] TOTP
+>>
+>>> ## Manager
+>>> - [x] Directory
+>>> - [x] File
+>>> - [x] Logging
+>>
+>>> ## Handler
+>>> - [x] Thread
+>>> - [x] Timer
+>>
+>> ## Implemented Protocols
 >> - [x] NTP
 >> - [x] ICMP
+>
+>> ## Windows
+>>> - [x] Import Resolver
 >
 >> ## Communication between Server & Client
 >> - [x] Plain
