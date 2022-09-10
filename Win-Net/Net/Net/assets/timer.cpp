@@ -23,6 +23,8 @@ static int gettimeofday(struct timeval* tp, struct timezone* tzp)
 	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
 	return 0;
 }
+#else
+#include <sys/time.h>
 #endif
 
 NET_THREAD(NetTimerThread)
