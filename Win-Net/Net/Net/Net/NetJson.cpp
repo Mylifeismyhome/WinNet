@@ -693,8 +693,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			}
 
 			out.append(CSTRING(R"("%s" : )"), tmp->Key());
-			auto tmp_str = tmp->as_object()->Serialize(type, (iterations + 1));
-			out += tmp_str;
+			out += tmp->as_object()->Serialize(type, (iterations + 1));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::ARRAY)
@@ -708,8 +707,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			}
 
 			out.append(CSTRING(R"("%s" : )"), tmp->Key());
-			auto tmp_str = tmp->as_array()->Serialize(type, (iterations + 1));
-			out += tmp_str;
+			out += tmp->as_array()->Serialize(type, (iterations + 1));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 	}
@@ -1180,9 +1178,6 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 		auto tmp = (BasicValue<void*>*)value[i];
 		if (tmp->GetType() == Type::NULLVALUE)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"(%s)"), CSTRING("null"));
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1191,14 +1186,11 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"(%s)"), CSTRING("null"));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::STRING)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"("%s")"), tmp->as_string());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1207,14 +1199,11 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"("%s")"), tmp->as_string());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::INTEGER)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"(%i)"), tmp->as_int());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1223,14 +1212,11 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"(%i)"), tmp->as_int());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::FLOAT)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"(%F)"), tmp->as_float());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1239,14 +1225,11 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"(%F)"), tmp->as_float());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::DOUBLE)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"(%F)"), tmp->as_double());
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1255,14 +1238,11 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"(%F)"), tmp->as_double());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::BOOLEAN)
 		{
-			char str[255];
-			sprintf_s(str, CSTRING(R"(%s)"), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
-
 			if (type == SerializeType::FORMATTED)
 			{
 				for (size_t it = 0; it < iterations + 1; ++it)
@@ -1271,7 +1251,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += str;
+			out += Net::String(CSTRING(R"(%s)"), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::OBJECT)
@@ -1284,8 +1264,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			auto tmp_str = tmp->as_object()->Serialize(type, (iterations + 1));
-			out += tmp_str;
+			out += tmp->as_object()->Serialize(type, (iterations + 1));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 	}

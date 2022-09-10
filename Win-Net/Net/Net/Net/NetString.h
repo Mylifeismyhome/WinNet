@@ -102,7 +102,7 @@ void operator+=(const char in)
 		set(in);
 }
 
-void operator+=(String& in)
+void operator+=(String in)
 {
 	if (size() > 0)
 		append(in);
