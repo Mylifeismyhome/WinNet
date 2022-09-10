@@ -147,7 +147,7 @@ Net::Json::BasicValue<T>::~BasicValue()
 	{
 		auto cast = (BasicValue<char*>*)this;
 		if (cast
-			&& cast->Type() == Type::STRING
+			&& cast->GetType() == Type::STRING
 			&& cast->Value())
 		{
 			delete[] cast->Value();
@@ -227,7 +227,7 @@ T& Net::Json::BasicValue<T>::Value()
 }
 
 template <typename T>
-Net::Json::Type Net::Json::BasicValue<T>::Type()
+Net::Json::Type Net::Json::BasicValue<T>::GetType()
 {
 	return this->m_type;
 }
@@ -235,55 +235,55 @@ Net::Json::Type Net::Json::BasicValue<T>::Type()
 template <typename T>
 bool Net::Json::BasicValue<T>::is_null()
 {
-	return Type() == Type::NULLVALUE;
+	return this->GetType() == Type::NULLVALUE;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_object()
 {
-	return Type() == Type::OBJECT;
+	return this->GetType() == Type::OBJECT;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_array()
 {
-	return Type() == Type::ARRAY;
+	return this->GetType() == Type::ARRAY;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_integer()
 {
-	return Type() == Type::INTEGER;
+	return this->GetType() == Type::INTEGER;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_int()
 {
-	return Type() == Type::INTEGER;
+	return this->GetType() == Type::INTEGER;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_float()
 {
-	return Type() == Type::FLOAT;
+	return this->GetType() == Type::FLOAT;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_double()
 {
-	return Type() == Type::DOUBLE;
+	return this->GetType() == Type::DOUBLE;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_boolean()
 {
-	return Type() == Type::BOOLEAN;
+	return this->GetType() == Type::BOOLEAN;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_string()
 {
-	return Type() == Type::STRING;
+	return this->GetType() == Type::STRING;
 }
 
 template <typename T>
@@ -362,7 +362,7 @@ static Net::Json::BasicValueRead object_to_BasicValueRead(void* ptr, const char*
 	if (!cast) return { nullptr };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Object>*)cast->operator->();
 	if (!cast2) return { nullptr };
-	if (cast2->Type() != Net::Json::Type::OBJECT) return { nullptr };
+	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr };
 	return cast2->Value()[key];
 }
 
@@ -373,7 +373,7 @@ static Net::Json::BasicValueRead object_to_BasicValueRead(void* ptr, int idx)
 	if (!cast) return { nullptr };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Array>*)cast->operator->();
 	if (!cast2) return { nullptr };
-	if (cast2->Type() != Net::Json::Type::ARRAY) return { nullptr };
+	if (cast2->GetType() != Net::Json::Type::ARRAY) return { nullptr };
 	return cast2->Value()[idx];
 }
 
@@ -442,7 +442,7 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 	ptr[len] = 0;
 
 	auto cast = ((BasicValue<char*>*)this->ptr);
-	if (cast->Type() == Type::STRING
+	if (cast->GetType() == Type::STRING
 		&& cast->Value())
 	{
 		delete[] cast->Value();
@@ -551,7 +551,7 @@ template<typename T>
 Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* value)
 {
 	this->__push(value);
-	return;
+	return value;
 }
 
 bool Net::Json::Object::Append(const char* key, int value)
@@ -604,7 +604,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
-		if (tmp->Type() == Type::NULLVALUE)
+		if (tmp->GetType() == Type::NULLVALUE)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -617,7 +617,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : %s)"), tmp->Key(), CSTRING("null"));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::STRING)
+		else if (tmp->GetType() == Type::STRING)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -630,7 +630,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : "%s")"), tmp->Key(), tmp->as_string());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::INTEGER)
+		else if (tmp->GetType() == Type::INTEGER)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -643,7 +643,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : %i)"), tmp->Key(), tmp->as_int());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::FLOAT)
+		else if (tmp->GetType() == Type::FLOAT)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -656,7 +656,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : %F)"), tmp->Key(), tmp->as_float());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::DOUBLE)
+		else if (tmp->GetType() == Type::DOUBLE)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -669,7 +669,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : %F)"), tmp->Key(), tmp->as_double());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::BOOLEAN)
+		else if (tmp->GetType() == Type::BOOLEAN)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -682,7 +682,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			out.append(CSTRING(R"("%s" : %s)"), tmp->Key(), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::OBJECT)
+		else if (tmp->GetType() == Type::OBJECT)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -693,10 +693,11 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			}
 
 			out.append(CSTRING(R"("%s" : )"), tmp->Key());
-			out += tmp->as_object()->Serialize(type, (iterations + 1));
+			auto tmp_str = tmp->as_object()->Serialize(type, (iterations + 1));
+			out += tmp_str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::ARRAY)
+		else if (tmp->GetType() == Type::ARRAY)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -707,7 +708,8 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			}
 
 			out.append(CSTRING(R"("%s" : )"), tmp->Key());
-			out += tmp->as_array()->Serialize(type, (iterations + 1));
+			auto tmp_str = tmp->as_array()->Serialize(type, (iterations + 1));
+			out += tmp_str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 	}
@@ -848,8 +850,11 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 
 			lastValue = json.substr(v, i - v + 1);
 
-			object_chain.push_back(_strdup(lastKey.get().get()));
-
+#ifdef BUILD_LINUX
+                        object_chain.push_back(strdup(lastKey.get().get()));
+#else
+                        object_chain.push_back(_strdup(lastKey.get().get()));
+#endif
 			if (!this->Deserialize(lastValue, object_chain))
 				return false;
 
@@ -1173,7 +1178,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
-		if (tmp->Type() == Type::NULLVALUE)
+		if (tmp->GetType() == Type::NULLVALUE)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"(%s)"), CSTRING("null"));
@@ -1189,7 +1194,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::STRING)
+		else if (tmp->GetType() == Type::STRING)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"("%s")"), tmp->as_string());
@@ -1205,7 +1210,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::INTEGER)
+		else if (tmp->GetType() == Type::INTEGER)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"(%i)"), tmp->as_int());
@@ -1221,7 +1226,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::FLOAT)
+		else if (tmp->GetType() == Type::FLOAT)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"(%F)"), tmp->as_float());
@@ -1237,7 +1242,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::DOUBLE)
+		else if (tmp->GetType() == Type::DOUBLE)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"(%F)"), tmp->as_double());
@@ -1253,7 +1258,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::BOOLEAN)
+		else if (tmp->GetType() == Type::BOOLEAN)
 		{
 			char str[255];
 			sprintf_s(str, CSTRING(R"(%s)"), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
@@ -1269,7 +1274,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
-		else if (tmp->Type() == Type::OBJECT)
+		else if (tmp->GetType() == Type::OBJECT)
 		{
 			if (type == SerializeType::FORMATTED)
 			{
@@ -1279,7 +1284,8 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += tmp->as_object()->Serialize(type, (iterations + 1));
+			auto tmp_str = tmp->as_object()->Serialize(type, (iterations + 1));
+			out += tmp_str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 	}

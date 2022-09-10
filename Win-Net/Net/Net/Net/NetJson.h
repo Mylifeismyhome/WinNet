@@ -262,7 +262,7 @@ namespace Net
 
 			char* Key();
 			T& Value();
-			Type Type();
+			Type GetType();
 
 			bool is_null();
 			bool is_object();
