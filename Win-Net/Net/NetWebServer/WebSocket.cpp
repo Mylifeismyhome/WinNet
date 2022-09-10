@@ -1550,5 +1550,5 @@ size_t Net::WebSocket::Server::getCountPeers() const
 	return _CounterPeersTable;
 }
 
-NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Net::WebSocket::Server)
-NET_SERVER_END_DATA_PACKAGE
+NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(Net::WebSocket::Server)
+NET_DECLARE_PACKET_CALLBACK_END

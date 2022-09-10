@@ -3,14 +3,37 @@
 
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PACKET& PKG) { \
+#define NET_BEGIN_PACKET(cs, fnc) void cs::On##fnc(NET_PACKET& PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
-#define NET_END_FUNC_PACKAGE }
-#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
-#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PACKET&)
-#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+#define NET_END_PACKET }
+#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PACKET&)
+
+#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+bool classname::CheckDataN(const int id, NET_PACKET& pkg) \
+{ \
+switch (id) \
+{
+
+#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+bool classname::CheckData(const int id, NET_PACKET& pkg) \
+{ \
+switch (id) \
+{
+
+#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+    case yyy: \
+    { \
+      On##xxx(pkg); \
+      break; \
+    } \
+
+#define NET_DECLARE_PACKET_CALLBACK_END \
+	default: \
+		return false; \
+} \
+return true; \
+}
 
 #define NET_SEND DoSend
 
@@ -249,11 +272,11 @@ void ProcessPackages();
 void ExecutePackage();
 bool CreateTOTPSecret();
 
-NET_DEF_FNC_PKG(RSAHandshake);
-NET_DEF_FNC_PKG(KeysPackage);
-NET_DEF_FNC_PKG(VersionPackage);
-NET_DEF_FNC_PKG(EstabilishConnectionPackage);
-NET_DEF_FNC_PKG(ClosePackage);
+NET_DEFINE_PACKET(RSAHandshake);
+NET_DEFINE_PACKET(KeysPackage);
+NET_DEFINE_PACKET(VersionPackage);
+NET_DEFINE_PACKET(EstabilishConnectionPackage);
+NET_DEFINE_PACKET(ClosePackage);
 
 NET_CLASS_PROTECTED
 // Callback

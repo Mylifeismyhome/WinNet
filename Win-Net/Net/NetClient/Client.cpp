@@ -2045,14 +2045,14 @@ bool Client::CreateTOTPSecret()
 	return true;
 	}
 
-NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(Client)
-NET_CLIENT_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
-NET_CLIENT_DEFINE_PACKAGE(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
-NET_CLIENT_DEFINE_PACKAGE(EstabilishConnectionPackage, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage)
-NET_CLIENT_DEFINE_PACKAGE(ClosePackage, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage)
-NET_CLIENT_END_DATA_PACKAGE
+NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(Client)
+NET_DEFINE_PACKET_CALLBACK(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
+NET_DEFINE_PACKET_CALLBACK(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
+NET_DEFINE_PACKET_CALLBACK(EstabilishConnectionPackage, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage)
+NET_DEFINE_PACKET_CALLBACK(ClosePackage, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage)
+NET_DECLARE_PACKET_CALLBACK_END
 
-NET_BEGIN_FNC_PKG(Client, RSAHandshake)
+NET_BEGIN_PACKET(Client, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
 	Disconnect();
@@ -2090,9 +2090,9 @@ NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
 const auto TargetPublicKey = pkg[CSTRING("PublicKey")]->as_string();
 network.RSA.setPublicKey(TargetPublicKey);
 network.RSAHandshake = true;
-NET_END_FNC_PKG
+NET_END_PACKET
 
-NET_BEGIN_FNC_PKG(Client, VersionPackage)
+NET_BEGIN_PACKET(Client, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
 	Disconnect();
@@ -2113,9 +2113,9 @@ reply[CSTRING("Revision")] = Version::Revision();
 const auto Key = Version::Key().get();
 reply[CSTRING("Key")] = Key.get();
 NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, reply);
-NET_END_FNC_PKG
+NET_END_PACKET
 
-NET_BEGIN_FNC_PKG(Client, EstabilishConnectionPackage)
+NET_BEGIN_PACKET(Client, EstabilishConnectionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 {
 	Disconnect();
@@ -2134,9 +2134,9 @@ network.estabilished = true;
 // Callback
 // connection has been estabilished, now call entry function
 OnConnectionEstabilished();
-NET_END_FNC_PKG
+NET_END_PACKET
 
-NET_BEGIN_FNC_PKG(Client, ClosePackage)
+NET_BEGIN_PACKET(Client, ClosePackage)
 // connection has been closed
 ConnectionClosed();
 
@@ -2157,6 +2157,6 @@ OnVersionMismatch();
 
 // Callback
 OnForcedDisconnect(code);
-NET_END_FNC_PKG
+NET_END_PACKET
 NET_NAMESPACE_END
 NET_NAMESPACE_END

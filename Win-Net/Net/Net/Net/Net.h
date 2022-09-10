@@ -163,62 +163,6 @@ virtual type name(__VA_ARGS__)
 
 #define DEBUG_BREAK __debugbreak();
 
-#define NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
-{ \
-if(!peer) \
-	return false; \
-switch (id) \
-{
-
-#define NET_SERVER_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
-{ \
-if(!peer || !peer->estabilished) \
-	return false; \
-switch (id) \
-{
-
-#define NET_SERVER_DEFINE_PACKAGE(xxx, yyy) \
-    case yyy: \
-    { \
-      On##xxx(peer, pkg); \
-      break; \
-    }
-
-#define NET_SERVER_END_DATA_PACKAGE \
-	default: \
-		return false; \
-} \
-return true; \
-}
-
-#define NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(const int id, NET_PACKET& pkg) \
-{ \
-switch (id) \
-{
-
-#define NET_CLIENT_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(const int id, NET_PACKET& pkg) \
-{ \
-switch (id) \
-{
-
-#define NET_CLIENT_DEFINE_PACKAGE(xxx, yyy) \
-    case yyy: \
-    { \
-      On##xxx(pkg); \
-      break; \
-    } \
-
-#define NET_CLIENT_END_DATA_PACKAGE \
-	default: \
-		return false; \
-} \
-return true; \
-}
-
 #define NET_INHERITANCE(NAME, CLASS) class NAME final : public CLASS
 #define NET_CLIENT_CLASS(NAME) NET_INHERITANCE(NAME, NET_CLIENT)
 #define NET_SERVER_CLASS(NAME) NET_INHERITANCE(NAME, NET_SERVER)

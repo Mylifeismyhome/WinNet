@@ -1,7 +1,7 @@
 #include "WebServer.h"
 
-NET_SERVER_BEGIN_DATA_PACKAGE(WebServer)
-NET_SERVER_END_DATA_PACKAGE
+NET_DECLARE_PACKET_CALLBACK_BEGIN(WebServer)
+NET_DECLARE_PACKET_CALLBACK_END
 
 void WebServer::Tick() {}
 void WebServer::OnPeerConnect(NET_PEER peer) 

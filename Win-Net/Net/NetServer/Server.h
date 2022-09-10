@@ -7,14 +7,41 @@
 #define PEER peer
 #define PKG pkg
 #define FUNCTION_NAME NET_FUNCTIONNAME
-#define NET_BEGIN_FUNC_PACKAGE(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKET& PKG) { \
+#define NET_BEGIN_PACKET(cs, fnc) void cs::On##fnc(NET_PEER PEER, NET_PACKET& PKG) { \
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
-#define NET_END_FUNC_PACKAGE }
-#define NET_BEGIN_FNC_PKG NET_BEGIN_FUNC_PACKAGE
-#define NET_END_FNC_PKG NET_END_FUNC_PACKAGE
-#define NET_DEF_FUNC_PACKAGE(fnc) void On##fnc(NET_PEER, NET_PACKET&)
-#define NET_DEF_FNC_PKG NET_DEF_FUNC_PACKAGE
+#define NET_END_PACKET }
+#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
+
+#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
+{ \
+if(!peer) \
+	return false; \
+switch (id) \
+{
+
+#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
+{ \
+if(!peer || !peer->estabilished) \
+	return false; \
+switch (id) \
+{
+
+#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+    case yyy: \
+    { \
+      On##xxx(peer, pkg); \
+      break; \
+    }
+
+#define NET_DECLARE_PACKET_CALLBACK_END \
+	default: \
+		return false; \
+} \
+return true; \
+}
 
 #define NET_SEND DoSend
 
@@ -214,8 +241,8 @@ namespace Net
 			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
 
 			/* Native Packages */
-			NET_DEF_FNC_PKG(RSAHandshake);
-			NET_DEF_FNC_PKG(VersionPackage);
+			NET_DEFINE_PACKET(RSAHandshake);
+			NET_DEFINE_PACKET(VersionPackage);
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);

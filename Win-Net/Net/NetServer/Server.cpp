@@ -2066,12 +2066,12 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 #endif
 }
 
-NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(Net::Server::Server)
-NET_SERVER_DEFINE_PACKAGE(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
-NET_SERVER_DEFINE_PACKAGE(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
-NET_SERVER_END_DATA_PACKAGE
+NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(Net::Server::Server)
+NET_DEFINE_PACKET_CALLBACK(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
+NET_DEFINE_PACKET_CALLBACK(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
+NET_DECLARE_PACKET_CALLBACK_END
 
-NET_BEGIN_FNC_PKG(Net::Server::Server, RSAHandshake)
+NET_BEGIN_PACKET(Net::Server::Server, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
@@ -2110,9 +2110,9 @@ LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), p
 // keep it empty, we get it filled back
 Packet Version;
 NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, Version);
-NET_END_FNC_PKG
+NET_END_PACKET
 
-NET_BEGIN_FNC_PKG(Net::Server::Server, VersionPackage)
+NET_BEGIN_PACKET(Net::Server::Server, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
@@ -2168,7 +2168,7 @@ else
 	// version or key missmatch, disconnect peer
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
-NET_END_FNC_PKG
+NET_END_PACKET
 
 void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t info)
 {
