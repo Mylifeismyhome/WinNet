@@ -9,7 +9,8 @@ define PATH_NET
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetVersion.cpp -o bin/NetVersion.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetString.cpp -o bin/NetString.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetPeerPool.cpp -o bin/NetPeerPool.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/Package.cpp -o bin/Package.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetJson.cpp -o bin/NetJson.o
+	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Net/NetPacket.cpp -o bin/NetPacket.o
 endef
 
 # Net/Cryption/
@@ -106,16 +107,26 @@ define COPY
 	cp -r ../Net/ ../../bin/include/
 	find ../../bin/include/ ! -name '*.h' ! -name '*.hpp' -type f -exec rm -f {} +
 
-	cp -r ../../../extern/JSON/ ../../bin/include/
+	# copy mysql c++ connector headers
  	mkdir -p ../../bin/include/MYSQL
  	mkdir -p ../../bin/include/MYSQL/include
-	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/include
-	cp -r ../../../extern/OpenSSL/bin/bin/include ../../bin/
-	cp -r ../../../extern/crypto++/bin/include/ ../../bin/
+	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/include/
+
+	# copy openssl headers
+	cp -r ../../../extern/OpenSSL/bin/bin/include/openssl ../../bin/include
+
+	# copy crypto++ headers
+	cp -r ../../../extern/crypto++/bin/include/cryptopp ../../bin/include/
+
+	# copy BCryppt
 	mkdir -p ../../bin/include/BCrypt
 	cp -r ../../../extern/BCrypt/* ../../bin/include/BCrypt/
+
+	# copy pugiXML
 	mkdir -p ../../bin/include/pugiXML
 	cp -r ../../../extern/pugiXML/Unix/*.hpp ../../bin/include/pugiXML/
+
+	# copy zlib
 	mkdir -p ../../bin/include/ZLib
 	cp -r ../../../extern/ZLib/*.h ../../bin/include/ZLib/
 endef

@@ -3,7 +3,7 @@
 #define NET_PROFILE_DATA Net::Manager::Profile_t
 
 #include <Net/Net/Net.h>
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 #include <mutex>
 
 NET_DSA_BEGIN
@@ -14,7 +14,7 @@ class Profile_t
 	void* peer;
 
 public:
-	Net::Package::Package* data;
+	NET_PACKET* data;
 	void* ext;
 
 	Profile_t()
@@ -27,7 +27,7 @@ public:
 	Profile_t(void* peer)
 	{
 		this->peer = peer;
-		data = new Net::Package::Package();
+		data = new NET_PACKET();
 		ext = nullptr;
 	}
 
@@ -91,7 +91,7 @@ public:
 		max_entries = 0;
 	}
 
-	Net::Package::Package* Add(void* peer)
+	NET_PACKET* Add(void* peer)
 	{
 		if (!data) return nullptr;
 
@@ -144,7 +144,7 @@ public:
 		}
 	}
 
-	Net::Package::Package* peer(void* peer)
+	NET_PACKET* peer(void* peer)
 	{
 		if (!data) return nullptr;
 

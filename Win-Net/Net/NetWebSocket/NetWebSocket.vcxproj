@@ -52,12 +52,12 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{EFBB82EF-8979-483B-B926-AD76721839AE}</ProjectGuid>
+    <ProjectGuid>{80F9040F-0B79-49E9-9628-54D1C9327123}</ProjectGuid>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
-    <RootNamespace>NetCore</RootNamespace>
+    <RootNamespace>NetWebServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>NetCore</ProjectName>
+    <ProjectName>NetWebSocket</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-STATIC|Win32'" Label="Configuration">
@@ -190,67 +190,79 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-STATIC|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-SHARED|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-SHARED|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-DLL|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-DLL|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x86\</OutDir>
     <IntDir>$(ProjectDir)bin\x86\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\x64\</OutDir>
     <IntDir>$(ProjectDir)bin\x64\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG-STATIC|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -262,14 +274,14 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
@@ -283,8 +295,9 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)_static$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MTD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\MTD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -299,7 +312,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -311,14 +324,14 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
@@ -332,8 +345,9 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)_static$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MTD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\MTD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -348,7 +362,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -360,14 +374,14 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
@@ -381,11 +395,10 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\MDD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
-      <LinkTimeCodeGeneration>
-      </LinkTimeCodeGeneration>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\debug\$(AssemblyName).lib" "$(PlatformTarget)\debug\"</Command>
@@ -399,7 +412,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -411,18 +424,16 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -434,11 +445,10 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\MDD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
-      <LinkTimeCodeGeneration>
-      </LinkTimeCodeGeneration>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\debug\$(AssemblyName).lib" "$(PlatformTarget)\debug\"</Command>
@@ -452,7 +462,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -464,14 +474,14 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x86\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
@@ -479,16 +489,17 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\debug\lib;.\..\..\..\extern\MYSQL\lib\x86\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x86\MDD\;.\..\..\..\extern\OpenSSL\lib\x86\Debug\;.\..\..\..\extern\MYSQL\lib\x86\debug\;$(ProjectDir)..\..\bin\debug\x86\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\libs\Debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>ChilkatRel.lib;Crypt32.lib;cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\debug\</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\debug\$(AssemblyName).dll" "$(PlatformTarget)\debug\"</Command>
@@ -502,7 +513,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DEBUG;DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -514,14 +525,14 @@
       </UndefinePreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x64\debug\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
@@ -529,16 +540,17 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\debug\lib;.\..\..\..\extern\MYSQL\lib\x64\debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\debug\x64\MDD\;.\..\..\..\extern\OpenSSL\lib\x64\Debug\;.\..\..\..\extern\MYSQL\lib\x64\debug\;$(ProjectDir)..\..\bin\debug\x64\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\libs\Debug\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\debug\</AdditionalLibraryDirectories>
       <AdditionalDependencies>ChilkatRel.lib;Crypt32.lib;cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\debug\</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\debug\$(AssemblyName).dll" "$(PlatformTarget)\debug\"</Command>
@@ -551,7 +563,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -559,23 +571,22 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -585,11 +596,10 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)_static$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\MT\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
-      <IgnoreAllDefaultLibraries>
-      </IgnoreAllDefaultLibraries>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName)_static.lib" "$(PlatformTarget)\release\"</Command>
@@ -602,7 +612,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-STATIC|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -610,23 +620,22 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -636,11 +645,10 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)_static$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\MT\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
-      <IgnoreAllDefaultLibraries>
-      </IgnoreAllDefaultLibraries>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName)_static.lib" "$(PlatformTarget)\release\"</Command>
@@ -653,7 +661,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -661,23 +669,22 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -687,8 +694,9 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MD\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\MD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -702,7 +710,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-SHARED|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LIB;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -710,23 +718,22 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -736,8 +743,9 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MD\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\MD\</AdditionalLibraryDirectories>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PostBuildEvent>
@@ -747,14 +755,11 @@
       <Command>
       </Command>
     </PreBuildEvent>
-    <ProjectReference>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DEBUG;LIB;NET_LIB_CORE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X86</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x86\</AssemblerListingLocation>
@@ -762,36 +767,36 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x86\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x86\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x86\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x86\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x86\release\lib;.\..\..\..\extern\MYSQL\lib\x86\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x86\MT\;.\..\..\..\extern\OpenSSL\lib\x86\Release\;.\..\..\..\extern\MYSQL\lib\x86\release\;$(ProjectDir)..\..\bin\release\x86\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\libs\Release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>ChilkatRel.lib;Crypt32.lib;cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\release\</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName).dll" "$(PlatformTarget)\release\"</Command>
@@ -800,14 +805,11 @@
       <Command>
       </Command>
     </PreBuildEvent>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RELEASE-DLL|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_CORE;NET_X64</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DLL;%(PreprocessorDefinitions);NET_LIB_WEBSERVER;NET_X64;NET_X64</PreprocessorDefinitions>
       <PrecompiledHeaderOutputFile>
       </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>$(ProjectDir)bin\x64\</AssemblerListingLocation>
@@ -815,38 +817,36 @@
       <XMLDocumentationFileName>$(ProjectDir)bin\x64\</XMLDocumentationFileName>
       <ProgramDataBaseFileName>$(ProjectDir)bin\x64\$(ProjectName).pdb</ProgramDataBaseFileName>
       <BrowseInformationFile>$(ProjectDir)bin\x64\</BrowseInformationFile>
-      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include;.\..\..\..\extern\elzma\</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\extern\;.\..\..\Net\;.\..\..\..\extern\OpenSSL\bin\dll\x64\release\include;.\..\..\..\extern\MYSQL\include;.\..\..\..\extern\crypto++\include</AdditionalIncludeDirectories>
       <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <StringPooling>false</StringPooling>
       <ExceptionHandling>false</ExceptionHandling>
-      <DebugInformationFormat>None</DebugInformationFormat>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;cryptlib.lib;crypt32.lib;User32.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
       <OutputFile>$(ProjectDir)..\..\bin\$(LibrariesArchitecture)\release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\bin\lib\x64\release\lib;.\..\..\..\extern\MYSQL\lib\x64\release\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\crypto++\lib\release\x64\MT\;.\..\..\..\extern\OpenSSL\lib\x64\Release\;.\..\..\..\extern\MYSQL\lib\x64\release\;$(ProjectDir)..\..\bin\release\x64\DLL\</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
-      <ForceSymbolReferences>
-      </ForceSymbolReferences>
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)..\..\bin\libs\Release\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\release\</AdditionalLibraryDirectories>
       <AdditionalDependencies>ChilkatRel.lib;Crypt32.lib;cryptlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\..\..\..\extern\ChilKat\libs\;.\..\..\..\extern\crypto++\lib\release\</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
       <Command>$(SolutionDir)copy.bat "$(PlatformTarget)\release\$(AssemblyName).dll" "$(PlatformTarget)\release\"</Command>
@@ -855,9 +855,6 @@
       <Command>
       </Command>
     </PreBuildEvent>
-    <ProjectReference>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -865,100 +862,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp" />
-    <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\crc32.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\deflate.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzlib.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzread.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\gzwrite.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inffast.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inflate.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\inftrees.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\trees.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\uncompr.c" />
-    <ClCompile Include="..\..\..\extern\ZLib\zutil.c" />
-    <ClCompile Include="..\Net\assets\assets.cpp" />
-    <ClCompile Include="..\Net\assets\manager\dirmanager.cpp" />
-    <ClCompile Include="..\Net\assets\manager\filemanager.cpp" />
-    <ClCompile Include="..\Net\assets\manager\logmanager.cpp" />
-    <ClCompile Include="..\Net\assets\thread.cpp" />
-    <ClCompile Include="..\Net\assets\timer.cpp" />
-    <ClCompile Include="..\Net\assets\web\http.cpp" />
-    <ClCompile Include="..\Net\Coding\TOTP.cpp" />
-    <ClCompile Include="..\Net\Coding\BASE32.cpp" />
-    <ClCompile Include="..\Net\Coding\BASE64.cpp" />
-    <ClCompile Include="..\Net\Coding\Hex.cpp" />
-    <ClCompile Include="..\Net\Coding\MD5.cpp" />
-    <ClCompile Include="..\Net\Coding\SHA1.cpp" />
-    <ClCompile Include="..\Net\Compression\Compression.cpp" />
-    <ClCompile Include="..\Net\Cryption\AES.cpp" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\bcrypt.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_blowfish.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\main.cpp" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\wrapper.c" />
-    <ClCompile Include="..\Net\Cryption\RSA.cpp" />
-    <ClCompile Include="..\Net\Cryption\XOR.cpp" />
-    <ClCompile Include="..\Net\Database\MYSQL.cpp" />
-    <ClCompile Include="..\Net\Import\ImportResolver.cpp" />
-    <ClCompile Include="..\Net\Import\MemoryModule.c" />
-    <ClCompile Include="..\Net\Net\Net.cpp" />
-    <ClCompile Include="..\Net\Net\NetCodes.cpp" />
-    <ClCompile Include="..\Net\Net\NetJson.cpp" />
-    <ClCompile Include="..\Net\Net\NetPeerPool.cpp" />
-    <ClCompile Include="..\Net\Net\NetString.cpp" />
-    <ClCompile Include="..\Net\Net\NetVersion.cpp" />
-    <ClCompile Include="..\Net\Net\NetPacket.cpp" />
-    <ClCompile Include="..\Net\Protocol\ICMP.cpp" />
-    <ClCompile Include="..\Net\Protocol\NTP.cpp" />
+    <ClInclude Include="WebSocket.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Net\assets\assets.h" />
-    <ClInclude Include="..\Net\assets\manager\dirmanager.h" />
-    <ClInclude Include="..\Net\assets\manager\filemanager.h" />
-    <ClInclude Include="..\Net\assets\manager\logmanager.h" />
-    <ClInclude Include="..\Net\assets\manager\profile.hpp" />
-    <ClInclude Include="..\Net\assets\thread.h" />
-    <ClInclude Include="..\Net\assets\timer.h" />
-    <ClInclude Include="..\Net\assets\web\http.h" />
-    <ClInclude Include="..\Net\Coding\TOTP.h" />
-    <ClInclude Include="..\Net\Coding\BASE32.h" />
-    <ClInclude Include="..\Net\Coding\BASE64.h" />
-    <ClInclude Include="..\Net\Coding\Hex.h" />
-    <ClInclude Include="..\Net\Coding\MD5.h" />
-    <ClInclude Include="..\Net\Coding\md5\md5_loc.h" />
-    <ClInclude Include="..\Net\Coding\md5\md5_native.h" />
-    <ClInclude Include="..\Net\Coding\SHA1.h" />
-    <ClInclude Include="..\Net\Compression\Compression.h" />
-    <ClInclude Include="..\Net\Cryption\AES.h" />
-    <ClInclude Include="..\Net\Cryption\CXOR.hpp" />
-    <ClInclude Include="..\Net\Cryption\PointerCryption.h" />
-    <ClInclude Include="..\Net\Cryption\RSA.h" />
-    <ClInclude Include="..\Net\Cryption\XOR.h" />
-    <ClInclude Include="..\Net\Database\MYSQL.h" />
-    <ClInclude Include="..\Net\Import\ImportResolver.h" />
-    <ClInclude Include="..\Net\Import\Kernel32.hpp" />
-    <ClInclude Include="..\Net\Import\MemoryModule.h" />
-    <ClInclude Include="..\Net\Import\Ntdll.hpp" />
-    <ClInclude Include="..\Net\Import\User32.hpp" />
-    <ClInclude Include="..\Net\Import\Ws2_32.hpp" />
-    <ClInclude Include="..\Net\Net\NativePackages.h" />
-    <ClInclude Include="..\Net\Net\Net.h" />
-    <ClInclude Include="..\Net\Net\NetBuild.h" />
-    <ClInclude Include="..\Net\Net\NetBuildConfig.h" />
-    <ClInclude Include="..\Net\Net\NetCodes.h" />
-    <ClInclude Include="..\Net\Net\NetJson.h" />
-    <ClInclude Include="..\Net\Net\NetPeerPool.h" />
-    <ClInclude Include="..\Net\Net\NetString.h" />
-    <ClInclude Include="..\Net\Net\NetVersion.h" />
-    <ClInclude Include="..\Net\Net\NetPacket.h" />
-    <ClInclude Include="..\Net\Protocol\ICMP.h" />
-    <ClInclude Include="..\Net\Protocol\NTP.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Net\Cryption\BCrypt\x86.S" />
+    <ClCompile Include="WebSocket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

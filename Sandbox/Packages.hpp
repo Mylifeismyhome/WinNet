@@ -1,5 +1,5 @@
 #pragma once
-#include <Net/Net/Package.h>
+#include <Net/Net/NetPacket.h>
 
 NET_DEFINE_PACKAGES(Packages,
 	PKG_TEST

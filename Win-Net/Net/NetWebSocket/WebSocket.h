@@ -1,8 +1,7 @@
 #pragma once
-#define NET_SERVER Net::Server::Server
+#define NET_WEB_SERVER Net::WebSocket::Server
 
-#define NET_IPEER Net::Server::Server::peerInfo
-#define NET_PEER Net::Server::Server::peerInfo*
+#define NET_PEER Net::WebSocket::Server::peerInfo*
 
 #define PEER peer
 #define PKG pkg
@@ -52,23 +51,6 @@ return true; \
 #include <Net/Net/Net.h>
 #include <Net/Net/NetPacket.h>
 #include <Net/Net/NetCodes.h>
-#include <Net/Net/NetVersion.h>
-
-#include <Net/Cryption/AES.h>
-#include <Net/Cryption/RSA.h>
-#include <Net/Coding/MD5.h>
-#include <Net/Coding/BASE64.h>
-#include <Net/Coding/BASE32.h>
-#include <Net/Coding/TOTP.h>
-#include <Net/Compression/Compression.h>
-
-//#include <Net/Protocol/ICMP.h>
-#include <Net/Protocol/NTP.h>
-
-#include <Net/assets/thread.h>
-#include <Net/assets/timer.h>
-
-#include <Net/Net/NetPeerPool.h>
 
 #ifndef BUILD_LINUX
 #pragma warning(disable: 4302)
@@ -81,10 +63,44 @@ return true; \
 #define LAST_ERROR Ws2_32::WSAGetLastError()
 #endif
 
+/* Websocket frame protocol operationcodes */
+CONSTEXPR auto NET_OPCODE_CONTINUE = 0x0;
+CONSTEXPR auto NET_OPCODE_TEXT = 0x1;
+CONSTEXPR auto NET_OPCODE_BINARY = 0x2;
+CONSTEXPR auto NET_OPCODE_CLOSE = 0x8;
+CONSTEXPR auto NET_OPCODE_PING = 0x9;
+CONSTEXPR auto NET_OPCODE_PONG = 0xA;
+
+CONSTEXPR auto NET_WS_CONTROL_PACKAGE = -1; // used to send a ping or pong frame
+CONSTEXPR auto NET_WS_FIN = 0x80;
+CONSTEXPR auto NET_WS_OPCODE = 0xF;
+CONSTEXPR auto NET_WS_MASK = 0x7F;
+CONSTEXPR auto NET_WS_PAYLOADLENGTH = 0x7F;
+CONSTEXPR auto NET_WS_CONTROLFRAME = 8;
+CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_16 = 126;
+CONSTEXPR auto NET_WS_PAYLOAD_LENGTH_63 = 127;
+
+#include <Net/Cryption/AES.h>
+#include <Net/Cryption/RSA.h>
+#include <Net/Coding/MD5.h>
+#include <Net/Coding/BASE64.h>
+#include <Net/Coding/SHA1.h>
+#include <Net/Compression/Compression.h>
+
+#include <openssl/err.h>
+
+#include <Net/Protocol/ICMP.h>
+
+#include <Net/assets/thread.h>
+#include <Net/assets/timer.h>
+#include <Net/assets/manager/filemanager.h>
+
+#include <mutex>
+
 NET_DSA_BEGIN
 namespace Net
 {
-	namespace Server
+	namespace WebSocket
 	{
 		class IPRef
 		{
@@ -104,8 +120,8 @@ namespace Net
 				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 				CPOINTER<byte> _data;
 				size_t _data_size;
-				size_t _data_full_size;
-				size_t _data_offset;
+				CPOINTER<byte> _dataFragment;
+				size_t _data_sizeFragment;
 				std::recursive_mutex _mutex_send;
 
 				network_t()
@@ -115,11 +131,16 @@ namespace Net
 				}
 
 				void setData(byte*);
+				void setDataFragmented(byte*);
 
 				void allocData(size_t);
 				void deallocData();
 
+				void allocDataFragmented(size_t);
+				void deallocDataFragmented();
+
 				byte* getData() const;
+				byte* getDataFragmented() const;
 
 				void reset();
 				void clear();
@@ -127,32 +148,13 @@ namespace Net
 				void setDataSize(size_t);
 				size_t getDataSize() const;
 
-				void setDataFullSize(size_t);
-				size_t getDataFullSize() const;
-
-				void SetDataOffset(size_t);
-				size_t getDataOffset() const;
+				void setDataFragmentSize(size_t);
+				size_t getDataFragmentSize() const;
 
 				bool dataValid() const;
+				bool dataFragmentValid() const;
 
 				byte* getDataReceive();
-			};
-
-			struct cryption_t
-			{
-				NET_RSA RSA;
-				bool RSAHandshake; // set to true as soon as we have the public key from the Peer
-
-				cryption_t()
-				{
-					RSAHandshake = false;
-				}
-
-				void createKeyPair(size_t);
-				void deleteKeyPair();
-
-				void setHandshakeStatus(bool);
-				bool getHandshakeStatus() const;
 			};
 
 		public:
@@ -161,30 +163,24 @@ namespace Net
 				NET_UID UniqueID;
 				SOCKET pSocket;
 				struct sockaddr_in client_addr;
+				float lastaction;
 
 				bool estabilished;
 
+				/* network data */
 				network_t network;
-				cryption_t cryption;
 
 				/* Erase Handler */
 				bool bErase;
 
-				/* Net Version */
-				bool NetVersionMatched;
+				/* SSL */
+				SSL* ssl;
+
+				/* Handshake */
+				bool handshake;
 
 				typeLatency latency;
 				NET_HANDLE_TIMER hCalcLatency;
-
-				/* TOTP secret */
-				byte* totp_secret;
-				size_t totp_secret_len;
-
-				/* shift token */
-				uint32_t curToken;
-				uint32_t lastToken;
-
-				NET_HANDLE_TIMER hWaitForNetProtocol;
 
 				peerInfo()
 				{
@@ -193,36 +189,21 @@ namespace Net
 					client_addr = sockaddr_in();
 					estabilished = false;
 					bErase = false;
-					NetVersionMatched = false;
+					ssl = nullptr;
+					handshake = false;
 					latency = -1;
 					hCalcLatency = nullptr;
-					totp_secret = nullptr;
-					totp_secret_len = NULL;
-					curToken = NULL;
-					lastToken = NULL;
-					hWaitForNetProtocol = nullptr;
 				}
 
 				void clear();
-				typeLatency getLatency() const;
 				IPRef IPAddr() const;
 			};
 
 		private:
-			Net::PeerPool::PeerPool_t PeerPoolManager;
-
-		public:
-			/* time */
-			time_t curTime;
-			NET_HANDLE_TIMER hSyncClockNTP;
-			NET_HANDLE_TIMER hReSyncClockNTP;
-
-		private:
+			size_t _CounterPeersTable;
+			void IncreasePeersCounter();
+			void DecreasePeersCounter();
 			NET_PEER CreatePeer(sockaddr_in, SOCKET);
-
-			size_t GetNextPackageSize(NET_PEER);
-			size_t GetReceivedPackageSize(NET_PEER);
-			float GetReceivedPackageSizeAsPerc(NET_PEER);
 
 			DWORD optionBitFlag;
 			std::vector<OptionInterface_t*> option;
@@ -231,31 +212,20 @@ namespace Net
 			std::vector<SocketOptionInterface_t*> socketoption;
 
 			SOCKET ListenSocket;
+			SOCKET AcceptSocket;
 
 			bool bRunning;
+			bool bShuttingDown;
 
-			bool ValidHeader(NET_PEER, bool&);
-			void ProcessPackages(NET_PEER);
-			void ExecutePackage(NET_PEER);
-
-			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
-
-			/* Native Packages */
-			NET_DEFINE_PACKET(RSAHandshake);
-			NET_DEFINE_PACKET(VersionPackage);
-
-			void CompressData(BYTE*&, size_t&);
-			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
-			void DecompressData(BYTE*&, size_t&);
-			void DecompressData(BYTE*&, BYTE*&, size_t&, bool = false);
-			bool CreateTOTPSecret(NET_PEER);
+			void DecodeFrame(NET_PEER);
+			void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
+			void ProcessPackage(NET_PEER, BYTE*, size_t);
 
 		public:
 			Server();
 			virtual ~Server();
 
-			void DisconnectPeer(NET_PEER, int, bool = false);
-			bool ErasePeer(NET_PEER, bool = false);
+			void DisconnectPeer(NET_PEER, int);
 
 			template <class T>
 			void SetOption(Option_t<T> o)
@@ -324,38 +294,42 @@ namespace Net
 			bool Isset_SocketOpt(DWORD) const;
 
 			void SetListenSocket(SOCKET);
+			void SetAcceptSocket(SOCKET);
 			void SetRunning(bool);
 
 			SOCKET GetListenSocket() const;
+			SOCKET GetAcceptSocket() const;
 			bool IsRunning() const;
+
+			bool ErasePeer(NET_PEER, bool = false);
 
 			bool Run();
 			bool Close();
 
-			NET_DEFINE_CALLBACK(void, Tick) {}
-			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET& pkg) { return false; }
-			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
-			void DoSend(NET_PEER, int, NET_PACKET&);
-
-			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t);
-			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t*);
-
-			size_t count_peers_all();
-			size_t count_peers(Net::PeerPool::peer_threadpool_t* pool);
-			size_t count_pools();
-
+			short Handshake(NET_PEER);
 			void Acceptor();
-			bool DoReceive(NET_PEER);
 
+			SSL_CTX* ctx;
+			void onSSLTimeout(NET_PEER);
+
+			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
+
+			NET_DEFINE_CALLBACK(void, Tick) {}
+			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, const int id, NET_PACKET& pkg) { return false; }
+			void DoSend(NET_PEER, uint32_t, NET_PACKET&, unsigned char = NET_OPCODE_TEXT);
+			void DoSend(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
+
+			size_t getCountPeers() const;
+
+			DWORD DoReceive(NET_PEER);
+
+			NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 			NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 
 		protected:
+			/* CALLBACKS */
 			NET_DEFINE_CALLBACK(void, OnPeerConnect, NET_PEER) {}
 			NET_DEFINE_CALLBACK(void, OnPeerDisconnect, NET_PEER, int last_error) {}
-			NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 		};
 	}
 }

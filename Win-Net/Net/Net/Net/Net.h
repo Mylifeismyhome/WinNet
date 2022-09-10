@@ -163,62 +163,6 @@ virtual type name(__VA_ARGS__)
 
 #define DEBUG_BREAK __debugbreak();
 
-#define NET_SERVER_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKAGE pkg) \
-{ \
-if(!peer) \
-	return false; \
-switch (id) \
-{
-
-#define NET_SERVER_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(NET_PEER peer, const int id, NET_PACKAGE pkg) \
-{ \
-if(!peer || !peer->estabilished) \
-	return false; \
-switch (id) \
-{
-
-#define NET_SERVER_DEFINE_PACKAGE(xxx, yyy) \
-    case yyy: \
-    { \
-      On##xxx(peer, pkg); \
-      break; \
-    }
-
-#define NET_SERVER_END_DATA_PACKAGE \
-	default: \
-		return false; \
-} \
-return true; \
-}
-
-#define NET_CLIENT_BEGIN_DATA_PACKAGE_NATIVE(classname) \
-bool classname::CheckDataN(const int id, NET_PACKAGE pkg) \
-{ \
-switch (id) \
-{
-
-#define NET_CLIENT_BEGIN_DATA_PACKAGE(classname) \
-bool classname::CheckData(const int id, NET_PACKAGE pkg) \
-{ \
-switch (id) \
-{
-
-#define NET_CLIENT_DEFINE_PACKAGE(xxx, yyy) \
-    case yyy: \
-    { \
-      On##xxx(pkg); \
-      break; \
-    } \
-
-#define NET_CLIENT_END_DATA_PACKAGE \
-	default: \
-		return false; \
-} \
-return true; \
-}
-
 #define NET_INHERITANCE(NAME, CLASS) class NAME final : public CLASS
 #define NET_CLIENT_CLASS(NAME) NET_INHERITANCE(NAME, NET_CLIENT)
 #define NET_SERVER_CLASS(NAME) NET_INHERITANCE(NAME, NET_SERVER)
@@ -327,8 +271,8 @@ static void Free(T*& data)
 ////////////////////////////////////////////////////
 //    SECTION - Package Prefix & Suffix     //
 //////////////////////////////////////////////////
-#define NET_PACKAGE_BRACKET_OPEN CSTRING("{")
-#define NET_PACKAGE_BRACKET_CLOSE CSTRING("}")
+#define NET_PACKET_BRACKET_OPEN CSTRING("{")
+#define NET_PACKET_BRACKET_CLOSE CSTRING("}")
 
 #define NET_RAW_DATA_KEY CSTRING("{RAW DATA KEY}")
 #define NET_RAW_DATA CSTRING("{RAW DATA}")
@@ -336,13 +280,13 @@ static void Free(T*& data)
 #define NET_DATA CSTRING("{DATA}")
 #define NET_DATA_LEN 6
 
-#define NET_PACKAGE_HEADER CSTRING("{BEGIN PACKAGE}")
-#define NET_PACKAGE_HEADER_LEN 15
-#define NET_PACKAGE_FOOTER CSTRING("{END PACKAGE}")
-#define NET_PACKAGE_FOOTER_LEN 13
+#define NET_PACKET_HEADER CSTRING("{BEGIN PACKAGE}")
+#define NET_PACKET_HEADER_LEN 15
+#define NET_PACKET_FOOTER CSTRING("{END PACKAGE}")
+#define NET_PACKET_FOOTER_LEN 13
 
-#define NET_PACKAGE_SIZE CSTRING("{PACKAGE SIZE}")
-#define NET_PACKAGE_SIZE_LEN 14
+#define NET_PACKET_SIZE CSTRING("{PACKAGE SIZE}")
+#define NET_PACKET_SIZE_LEN 14
 
 // Key is crypted using RSA
 #define NET_AES_KEY CSTRING("{KEY}")

@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="WebSocket\WebSocket.cpp">
+      <Filter>WebSocket</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="config.h" />
+    <ClInclude Include="WebSocket\WebSocket.h">
+      <Filter>WebSocket</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="WebSocket">
+      <UniqueIdentifier>{4737ebd7-1139-4821-88d8-908b19177ce4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
