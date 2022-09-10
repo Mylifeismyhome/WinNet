@@ -45,7 +45,7 @@ return true; \
 
 #define NET_SEND DoSend
 
-#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<SOCKET_OPT_TYPE>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
+#define SERVERNAME(instance) instance->Isset(NET_OPT_NAME) ? instance->GetOption<char*>(NET_OPT_NAME) : NET_OPT_DEFAULT_NAME
 #define SERVERPORT(instance) instance->Isset(NET_OPT_PORT) ? instance->GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT
 #define FREQUENZ(instance) instance->Isset(NET_OPT_FREQUENZ) ? instance->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
