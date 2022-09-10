@@ -87,7 +87,7 @@ Client::~Client()
 	while (bReceiveThread)
 	{
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ);
+		usleep(FREQUENZ * 1000);
 #else
 		Kernel32::Sleep(FREQUENZ);
 #endif
@@ -117,7 +117,7 @@ NET_THREAD(Receive)
 	while (client->IsConnected())
 	{
 #ifdef BUILD_LINUX
-		usleep(client->DoReceive());
+		usleep(client->DoReceive() * 1000);
 #else
 		Kernel32::Sleep(client->DoReceive());
 #endif
@@ -127,7 +127,7 @@ NET_THREAD(Receive)
 	while (client && client->network.bLatency)
 	{
 #ifdef BUILD_LINUX
-		usleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+		usleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) * 1000 : NET_OPT_DEFAULT_FREQUENZ * 1000);
 #else
 		Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
 #endif
@@ -360,7 +360,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 						{
 							bBlocked = true;
 #ifdef BUILD_LINUX
-							usleep(FREQUENZ);
+							usleep(FREQUENZ * 1000);
 #else
 							Kernel32::Sleep(FREQUENZ);
 #endif
@@ -402,7 +402,7 @@ bool Client::Connect(const char* Address, const u_short Port)
 					{
 						bBlocked = true;
 #ifdef BUILD_LINUX
-						usleep(FREQUENZ);
+						usleep(FREQUENZ * 1000);
 #else
 						Kernel32::Sleep(FREQUENZ);
 #endif
@@ -548,7 +548,7 @@ void Client::ConnectionClosed()
 				{
 					bBlocked = true;
 #ifdef BUILD_LINUX
-					usleep(FREQUENZ);
+					usleep(FREQUENZ * 1000);
 #else
 					Kernel32::Sleep(FREQUENZ);
 #endif
@@ -749,7 +749,7 @@ void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ);
+				usleep(FREQUENZ * 1000);
 				continue;
 			}
 			else
@@ -809,7 +809,7 @@ void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed, con
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ);
+				usleep(FREQUENZ * 1000);
 				continue;
 			}
 			else
@@ -873,7 +873,7 @@ void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFa
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ);
+				usleep(FREQUENZ * 1000);
 				continue;
 			}
 			else
@@ -940,7 +940,7 @@ void Client::SingleSend(Net::RawData_t& data, bool& bPreviousSentFailed, const u
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ);
+				usleep(FREQUENZ * 1000);
 				continue;
 			}
 			else

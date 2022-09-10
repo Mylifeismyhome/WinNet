@@ -273,7 +273,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 					{
 						bBlocked = true;
 #ifdef BUILD_LINUX
-						usleep(FREQUENZ(this));
+						usleep(FREQUENZ(this) * 1000);
 #else
 						Kernel32::Sleep(FREQUENZ(this));
 #endif
@@ -440,7 +440,7 @@ NET_THREAD(TickThread)
 	{
 		server->Tick();
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(server));
+		usleep(FREQUENZ(server) * 1000);
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -458,7 +458,7 @@ NET_THREAD(AcceptorThread)
 	{
 		server->Acceptor();
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(server));
+		usleep(FREQUENZ(server) * 1000);
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -470,7 +470,7 @@ NET_THREAD(AcceptorThread)
 #ifdef BUILD_LINUX
 static void usleep_wrapper(DWORD duration)
 {
-	usleep(duration);
+	usleep(duration * 1000);
 }
 #endif
 
@@ -675,7 +675,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this));
+				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -740,7 +740,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this));
+				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -809,7 +809,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this));
+				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -881,7 +881,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this));
+				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -1309,7 +1309,7 @@ void Net::Server::Server::Acceptor()
 #endif
 			{
 #ifdef BUILD_LINUX
-				usleep(FREQUENZ(this));
+				usleep(FREQUENZ(this) * 1000);
 #else
 				Kernel32::Sleep(FREQUENZ(this));
 #endif

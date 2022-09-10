@@ -285,7 +285,7 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 					{
 						bBlocked = true;
 #ifdef BUILD_LINUX
-						usleep(FREQUENZ(this));
+						usleep(FREQUENZ(this) * 1000);
 #else
 						Kernel32::Sleep(FREQUENZ(this));
 #endif
@@ -382,7 +382,7 @@ NET_THREAD(TickThread)
 	{
 		server->Tick();
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(server));
+		usleep(FREQUENZ(server) * 1000);
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -401,7 +401,7 @@ NET_THREAD(AcceptorThread)
 	{
 		server->Acceptor();
 #ifdef BUILD_LINUX
-		usleep(FREQUENZ(server));
+		usleep(FREQUENZ(server) * 1000);
 #else
 		Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -828,7 +828,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ(this));
+						usleep(FREQUENZ(this) * 1000);
 						continue;
 					}
 #else
@@ -923,7 +923,7 @@ NET_THREAD(Receive)
 			if (res == WebServerHandshake::would_block)
 			{
 #ifdef BUILD_LINUX
-				usleep(FREQUENZ(server));
+				usleep(FREQUENZ(server) * 1000);
 #else
 				Kernel32::Sleep(FREQUENZ(server));
 #endif
@@ -974,7 +974,7 @@ NET_THREAD(Receive)
 		const auto restTime = server->DoReceive(peer);
 
 #ifdef BUILD_LINUX
-		usleep(restTime);
+		usleep(restTime * 1000);
 #else
 		Kernel32::Sleep(restTime);
 #endif
@@ -1172,7 +1172,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ(this));
+						usleep(FREQUENZ(this) * 1000);
 						continue;
 					}
 					else
