@@ -12,7 +12,7 @@ NET_TIMER(Test)
 
 	NET_PACKET pkg;
 	pkg[CSTRING("text")] = CSTRING("WinNet");
-	client->DoSend(Packages::PKG_TEST, pkg);
+	client->NET_SEND(Packages::PKG_TEST, pkg);
 
 	NET_CONTINUE_TIMER;
 }
