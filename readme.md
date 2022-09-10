@@ -54,11 +54,11 @@ this batch automatically runs BUILD.bat
 > - make netcore
 > - make netclient
 > - make netserver
-> - make netwebserver		
+> - make netwebsocket	
 > ### build sandbox
 > - make sandboxclient
 > - make sandboxserver
-> - make sandboxwebserver
+> - make sandboxwebsocket
 ---
 > ## Features
 >> ## TCP ONLY
