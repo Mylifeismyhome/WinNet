@@ -14,8 +14,8 @@ static int gettimeofday(struct timeval* tp, struct timezone* tzp)
 	FILETIME    file_time;
 	uint64_t    time;
 
-	GetSystemTime(&system_time);
-	SystemTimeToFileTime(&system_time, &file_time);
+	Kernel32::GetSystemTime(&system_time);
+	Kernel32::SystemTimeToFileTime(&system_time, &file_time);
 	time = ((uint64_t)file_time.dwLowDateTime);
 	time += ((uint64_t)file_time.dwHighDateTime) << 32;
 
