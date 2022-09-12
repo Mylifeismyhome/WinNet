@@ -1,15 +1,9 @@
-export ROOT_DIR=${PWD}
-red:=$(shell tput setaf 1)
-reset:=$(shell tput sgr0)
 
-# console message
-define out
-    $(info $(red)$(1)$(reset))
-endef
+export ROOT_DIR=${PWD}
 
 # build crypto++
 define crypto++
-	$(call out, ********** BUILDING CRYPTO++ **********)
+	@printf "`tput setaf 1`********** BUILDING CRYPTO++ **********`tput sgr0`\n"
 
 	# build
 	${MAKE} -C ${ROOT_DIR}/extern/crypto++/src/ static dynamic cryptest.exe
@@ -29,7 +23,7 @@ endef
 
 # clean crypto++
 define clean_crypto++
-	$(call out, ********** DELETING FILES CREATED BY CRYPTO++ **********)
+      	@printf "`tput setaf 1`********** CLEANING UP CRYPTO++ FILES **********`tput sgr0`\n"
 
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.o
 	rm -f ${ROOT_DIR}/extern/crypto++/src/*.so
@@ -40,47 +34,50 @@ endef
 
 # download openssl
 define download_openssl
-        $(call out, ********** DOWNLOADING OPENSSL REPO FROM GITHUB **********)
+        @printf "`tput setaf 1`********** DOWNLOADING OPENSSL REPO FROM GITHUB **********`tput sgr0`\n"
         ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ download
 endef
 
 # extract openssl
 define extract_openssl
-        $(call out, ********** UNPACKING OPENSSL REPO **********)
+        @printf "`tput setaf 1`********** UNPACKING OPENSSL REPO **********`tput sgr0`\n"
         ${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ extract
 endef
 
 # configure openssl
 define configure_openssl
-	$(call out, ********** CONFIGURING OPENSSL **********)
+        @printf "`tput setaf 1`********** CONFIGURING OPENSSL **********`tput sgr0`\n"
 	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ configure
 endef
 
 # build openssl
 define build_openssl
-	$(call out, ********** BUILDING OPENSSL **********)
+        @printf "`tput setaf 1`********** BUILDING OPENSSL **********`tput sgr0`\n"
 	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -i -k build
 endef
 
 # install openssl
 define install_openssl
-	$(call out, ********** INSTALLING OPENSSL **********)
+        @printf "`tput setaf 1`********** INSTALLING OPENSSL **********`tput sgr0`\n"
 	${MAKE} -C ${ROOT_DIR}/extern/OpenSSL/src/ -i -k install
 endef
 
 # clean openssl
 define clean_openssl
-	$(call out, ********** DELETING OPENSSL **********)
+        @printf "`tput setaf 1`********** CLEANING UP OPENSSL FILES **********`tput sgr0`\n"
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-source.tar.gz
 endef
 
 # download compressed (packaged) mysql library from the official website
 define download_mysql
+        @printf "`tput setaf 1`********** DOWNLOADING MYSQL (C++ CONNECTOR) **********`tput sgr0`\n"
 	wget -O ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz "https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.26-linux-glibc2.12-x86-64bit.tar.gz"
 endef
 
 # install mysql library
 define install_mysql
+        @printf "`tput setaf 1`********** INSTALLING MYSQL (C++ CONNECTOR) **********`tput sgr0`\n"
+
 	mkdir -p ${ROOT_DIR}/extern/MYSQL/tmp/
 	tar zxvf ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz -C ${ROOT_DIR}/extern/MYSQL/tmp/
 	cp -R ${ROOT_DIR}/extern/MYSQL/tmp/*/include/* ${ROOT_DIR}/extern/MYSQL/include/
@@ -90,6 +87,8 @@ endef
 
 # clean mysql installation
 define clean_mysql
+        @printf "`tput setaf 1`********** CLEANING UP MYSQL FILES **********`tput sgr0`\n"
+
 	# installation completed, now delete tmp folder
         rm -r ${ROOT_DIR}/extern/MYSQL/tmp/
 
@@ -99,77 +98,142 @@ endef
 
 # clean all
 define clean_all
-	$(call out, ********** CLEANING ALL **********)
-	$(call clean_crypto++)
-	$(call clean_openssl)
-	$(call clean_mysql)
+        @printf "`tput setaf 1`********** CLEANING UP EVERYTHING **********`tput sgr0`\n"
+	$(clean_crypto++)
+	$(clean_openssl)
+	$(clean_mysql)
+endef
+
+# build netcore
+define build_netcore
+        @printf "`tput setaf 1`********** BUILDING NETCORE **********`tput sgr0`\n"
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetCore/
+endef
+
+# build netclient
+define build_netclient
+        @printf "`tput setaf 1`********** BUILDING NETCLIENT **********`tput sgr0`\n"
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetClient/
+endef
+
+# build netserver
+define build_netserver
+        @printf "`tput setaf 1`********** BUILDING NETSERVER **********`tput sgr0`\n"
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetServer/
+endef
+
+# build netwebsocket
+define build_netwebsocket
+        @printf "`tput setaf 1`********** BUILDING NETWEBSOCKET **********`tput sgr0`\n"
+	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebSocket/
+endef
+
+# build sandboxclient
+define build_sandboxclient
+        @printf "`tput setaf 1`********** BUILDING SANDBOX CLIENT **********`tput sgr0`\n"
+        ${MAKE} -C ${ROOT_DIR}/Sandbox/Client/Client/
+endef
+
+# build sandboxserver
+define build_sandboxserver
+        @printf "`tput setaf 1`********** BUILDING SANDBOX SERVER **********`tput sgr0`\n"
+        ${MAKE} -C ${ROOT_DIR}/Sandbox/Server/Server/
+endef
+
+# build sandboxwebsocket
+define build_sandboxwebsocket
+        @printf "`tput setaf 1`********** BUILDING SANDBOX WEBSOCKET **********`tput sgr0`\n"
+        ${MAKE} -C ${ROOT_DIR}/Sandbox/WebSocket/WebSocket/
 endef
 
 # run task
 all:
-	$(call crypto++)
-	$(call openssl)
+	$(crypto++)
+	$(download_openssl)
+	$(extract_openssl)
+	$(configure_openssl)
+	$(build_openssl)
+	$(install_openssl)
+	$(download_mysql)
+	$(install_mysql)
+	$(clean_all)
+
+	$(build_netcore)
+	$(build_netclient)
+	$(build_netserver)
+	$(build_netwebsocket)
+
+build:
+	$(build_netcore)
+	$(build_netclient)
+	$(build_netserver)
+	$(build_netwebsocket)
+
+sandbox:
+	$(build_sandboxclient)
+	$(build_sandboxserver)
+	$(build_sandboxwebsocket)
 
 openssl-download:
-	$(call download_openssl)
+	$(download_openssl)
 
 openssl-unpack:
-	$(call extract_openssl)
+	$(extract_openssl)
 
 openssl-configure:
-	$(call configure_openssl)
+	$(configure_openssl)
 
 openssl-build:
-	$(call build_openssl)
+	$(build_openssl)
 
 openssl-install:
-	$(call install_openssl)
+	$(install_openssl)
 
 cryptopp:
-	$(call crypto++)
+	$(crypto++)
 
 crypto++:
-	$(call crypto++)
+	$(crypto++)
 
 cryptopp-clean:
-	$(call clean_crypto++)
+	$(clean_crypto++)
 
 crypto++-clean:
-	$(call clean_crypto++)
+	$(clean_crypto++)
 
 openssl-clean:
-	$(call clean_openssl)
+	$(clean_openssl)
 
 mysql-download:
-	$(call download_mysql)
+	$(download_mysql)
 
 mysql-install:
-	$(call install_mysql)
+	$(install_mysql)
 
 mysql-clean:
-	$(call clean_mysql)
+	$(clean_mysql)
 
 netcore:
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetCore/
+	$(build_netcore)
 
 netserver:
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetServer/
+	$(build_netserver)
 
 netclient:
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetClient/
+	$(build_netclient)
 
 netwebsocket:
-	${MAKE} -C ${ROOT_DIR}/Win-Net/Net/NetWebSocket/
+	$(build_netwebsocket)
 
 sandboxserver:
-	${MAKE} -C ${ROOT_DIR}/Sandbox/Server/Server/
+	$(build_sandboxserver)
 
 sandboxclient:
-	${MAKE} -C ${ROOT_DIR}/Sandbox/Client/Client/
+	$(build_sandboxclient)
 
 sandboxwebsocket:
-	${MAKE} -C ${ROOT_DIR}/Sandbox/WebSocket/WebSocket/
+	$(build_sandboxwebsocket)
 
 clean:
-	$(call clean_all)
+	$(clean_all)
 # end
