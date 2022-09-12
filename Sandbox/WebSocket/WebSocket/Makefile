@@ -10,3 +10,7 @@ all:
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c main.cpp -o main.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c WebSocket/WebSocket.cpp -o websocket.o
 	g++ $(CFLAGS) -o bin/WebSocket main.o websocket.o $(LIBRARY_PATH) $(LINKFLAGS)
+
+	# copy output binary file
+	mkdir -p ../../bin
+	cp bin/WebSocket ../../bin

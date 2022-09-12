@@ -10,3 +10,7 @@ all:
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c main.cpp -o main.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c Server/Server.cpp -o server.o
 	g++ $(CFLAGS) -o bin/Server main.o server.o $(LIBRARY_PATH) $(LINKFLAGS)
+
+	# copy output binary file
+	mkdir -p ../../bin
+	cp bin/Server ../../bin/

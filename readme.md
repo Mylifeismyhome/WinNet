@@ -35,6 +35,10 @@
 this batch automatically runs BUILD.bat
 
 > ## Linux
+> ### build all
+> - make all (includes dependencies)
+> - make build
+> - make sandbox
 > ### build dependencies
 > - make cryptopp
 > - make openssl-download
