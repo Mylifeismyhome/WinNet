@@ -206,7 +206,7 @@ bool MYSQL::setup()
 	msqldriver = get_driver_instance();
 	if (!msqldriver)
 	{
-		LOG_ERROR(CSTRING("[MYSQL] - Mysql driver instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Mysql driver instance does not exists"));
 		return false;
 	}
 
@@ -230,7 +230,7 @@ bool MYSQL::connect()
 	catch (sql::SQLException& e)
 	{
 		SetLastError(e.what());
-		LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
+		NET_LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
 	return false;
@@ -250,7 +250,7 @@ bool MYSQL::disconnect()
 	catch (sql::SQLException& e)
 	{
 		SetLastError(e.what());
-		LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
+		NET_LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
 	return false;
@@ -261,7 +261,7 @@ bool MYSQL::reconnect()
 	disconnect();
 	const auto res = connect();
 	if (!res)
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on re-estabilishing connection"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on re-estabilishing connection"));
 
 	return res;
 }
@@ -298,7 +298,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 	lock();
 
 	if(retry)
-		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
+		NET_LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
@@ -312,7 +312,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		}
 
 		FREESTRING(query);
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -329,7 +329,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		}
 
 		FREESTRING(query);
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -346,7 +346,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		}
 
 		FREESTRING(query);
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		unlock();
 		return {};
 	}
@@ -374,7 +374,7 @@ MYSQL_RESULT MYSQL::query(char* query, const bool retry)
 		SetLastError(e.what());
 
 		if(memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
-		LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
+		NET_LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
 	unlock();
@@ -386,7 +386,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 	lock();
 
 	if (retry)
-		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
+		NET_LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
@@ -400,7 +400,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		}
 
 		query.Free();
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -417,7 +417,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		}
 
 		query.Free();
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -434,7 +434,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		}
 
 		query.Free();
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		unlock();
 		return {};
 	}
@@ -462,7 +462,7 @@ MYSQL_RESULT MYSQL::query(MYSQL_QUERY query, const bool retry)
 		SetLastError(e.what());
 
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
-			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
+			NET_LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
 	unlock();
@@ -474,7 +474,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 	lock();
 
 	if (retry)
-		LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
+		NET_LOG_WARNING(CSTRING("[MYSQL] - The previous query has been failed, proccessing the query again."));
 
 	if (!msqldriver)
 	{
@@ -490,7 +490,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		for (auto& curquery : query.Get())
 			curquery.Free();
 
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql driver instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -509,7 +509,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		for (auto& curquery : query.Get())
 			curquery.Free();
 
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection instance does not exists"));
 		unlock();
 		return {};
 	}
@@ -528,7 +528,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		for (auto& curquery : query.Get())
 			curquery.Free();
 
-		LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
+		NET_LOG_ERROR(CSTRING("[MYSQL] - Failure on query, mysql connection is not valid"));
 		unlock();
 		return {};
 	}
@@ -560,7 +560,7 @@ MYSQL_MULTIRESULT MYSQL::multiQuery(MYSQL_MUTLIQUERY query, const bool retry)
 		SetLastError(e.what());
 
 		if (memcmp(e.what(), CSTRING("No result available"), strlen(CSTRING("No result available"))) != 0)
-			LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
+			NET_LOG_ERROR(CSTRING("[MYSQL] - %s => {%i}"), e.what(), e.getErrorCode());
 	}
 
 	unlock();

@@ -107,12 +107,12 @@ void Net::Packet::AddRaw(const char* Key, BYTE* data, const size_t size, const b
 		{
 			if (free_after_sent)
 			{
-				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				NET_LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
 				FREE(data);
 				return;
 			}
 
-			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
+			NET_LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
 			return;
 		}
 	}
@@ -128,12 +128,12 @@ void Net::Packet::AddRaw(Net::RawData_t& raw)
 		{
 			if (raw.do_free())
 			{
-				LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
+				NET_LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
 				raw.free();
 				return;
 			}
 
-			LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
+			NET_LOG_ERROR(CSTRING("Duplicated Key, buffer has not been deleted from heap"));
 			return;
 		}
 	}

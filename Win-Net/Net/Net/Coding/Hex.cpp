@@ -23,7 +23,7 @@ static bool ProcessEncode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& si
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
 		return false;
 	}
 }
@@ -49,7 +49,7 @@ static bool ProcessEncode(CryptoPP::byte*& data, size_t& size)
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_HEX][ENCODE] - %s"), ex.what());
 		return false;
 	}
 }
@@ -75,7 +75,7 @@ static bool ProcessDecode(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& si
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
 		return false;
 	}
 }
@@ -101,7 +101,7 @@ static bool ProcessDecode(CryptoPP::byte*& data, size_t& size)
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_HEX][DECODE] - %s"), ex.what());
 		return false;
 	}
 }

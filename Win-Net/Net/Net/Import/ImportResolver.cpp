@@ -63,12 +63,12 @@ namespace Import
 					break;
 				}
 
-				LOG_ERROR(CSTRING("Unable to resolve memory from file '%s'"), path);
+				NET_LOG_ERROR(CSTRING("Unable to resolve memory from file '%s'"), path);
 				return false;
 			}
 
 			default:
-				LOG_WARNING(CSTRING("Invalid Type"));
+				NET_LOG_WARNING(CSTRING("Invalid Type"));
 				return false;
 			};
 
@@ -135,7 +135,7 @@ namespace Import
 				break;
 
 			default:
-				LOG_WARNING(CSTRING("Invalid Type"));
+				NET_LOG_WARNING(CSTRING("Invalid Type"));
 				return Remove(library);
 			};
 
@@ -189,7 +189,7 @@ namespace Import
 			}
 
 			default:
-				LOG_WARNING(CSTRING("Invalid Type"));
+				NET_LOG_WARNING(CSTRING("Invalid Type"));
 				break;
 			};
 

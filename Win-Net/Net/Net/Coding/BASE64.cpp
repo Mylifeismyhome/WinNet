@@ -88,7 +88,7 @@ static BYTE* Base64_Decode(BYTE* ascii, const size_t len, size_t* flen, const bo
 	{
 		// 2 accesses below would be OOB.
 		// catch empty string, return NULL as result.
-		LOG_ERROR(CSTRING("ERROR: You passed an invalid base64 string (too short). You get NULL back."));
+		NET_LOG_ERROR(CSTRING("ERROR: You passed an invalid base64 string (too short). You get NULL back."));
 		*flen = 0;
 		return nullptr;
 	}
@@ -99,8 +99,8 @@ static BYTE* Base64_Decode(BYTE* ascii, const size_t len, size_t* flen, const bo
 	const auto bin = ALLOC<BYTE>(*flen + 1);
 	if (!bin)
 	{
-		LOG_ERROR(CSTRING("ERROR: unbase64 could not allocate enough memory."));
-		LOG_ERROR(CSTRING("I must stop because I could not get enough"));
+		NET_LOG_ERROR(CSTRING("ERROR: unbase64 could not allocate enough memory."));
+		NET_LOG_ERROR(CSTRING("I must stop because I could not get enough"));
 		return nullptr;
 	}
 

@@ -47,7 +47,7 @@ bool AES::encrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_AES][ENCRPYT] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_AES][ENCRPYT] - %s"), ex.what());
 		return false;
 	}
 }
@@ -106,7 +106,7 @@ bool AES::decrypt(CryptoPP::byte* data, const size_t size, const char* key, cons
 	}
 	catch (const CryptoPP::Exception& ex)
 	{
-		LOG_ERROR(CSTRING("[NET_AES][DECRPYT] - %s"), ex.what());
+		NET_LOG_ERROR(CSTRING("[NET_AES][DECRPYT] - %s"), ex.what());
 		return false;
 	}
 }

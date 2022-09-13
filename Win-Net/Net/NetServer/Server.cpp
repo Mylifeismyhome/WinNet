@@ -225,7 +225,7 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	for (const auto& entry : socketoption)
 	{
 		const auto res = Ws2_32::setsockopt(peer->pSocket, entry->level, entry->opt, entry->value(), entry->optlen());
-		if (res == SOCKET_ERROR) LOG_ERROR(CSTRING("'%s' => unable to apply socket option { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
+		if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("'%s' => unable to apply socket option { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
 	}
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
@@ -237,9 +237,9 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	}
 
 	if (CreateTOTPSecret(peer))
-		LOG_PEER(CSTRING("'%s' :: [%s] => created TOTP-Hash"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => created TOTP-Hash"), SERVERNAME(this), peer->IPAddr().get());
 
-	LOG_PEER(CSTRING("'%s' :: [%s] => connected"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => connected"), SERVERNAME(this), peer->IPAddr().get());
 
 	// callback
 	OnPeerConnect(peer);
@@ -302,7 +302,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 		OnPeerDisconnect(peer, Ws2_32::WSAGetLastError());
 #endif
 
-		LOG_PEER(CSTRING("'%s' :: [%s] => finished"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => finished"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
 
@@ -401,11 +401,11 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 
 	if (code == 0)
 	{
-		LOG_PEER(CSTRING("'%s' :: [%s] => disconnected"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => disconnected"), SERVERNAME(this), peer->IPAddr().get());
 	}
 	else
 	{
-		LOG_PEER(CSTRING("'%s' :: [%s] => disconnected due to the following reason '%s'"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => disconnected due to the following reason '%s'"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 	}
 
 	ErasePeer(peer);
@@ -491,13 +491,13 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("'%s' => [WSAStartup] failed with error: %d"), SERVERNAME(this), res);
+		NET_LOG_ERROR(CSTRING("'%s' => [WSAStartup] failed with error: %d"), SERVERNAME(this), res);
 		return false;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		LOG_ERROR(CSTRING("'%s' => unable to find usable version of [Winsock.dll]"), SERVERNAME(this));
+		NET_LOG_ERROR(CSTRING("'%s' => unable to find usable version of [Winsock.dll]"), SERVERNAME(this));
 		Ws2_32::WSACleanup();
 		return false;
 	}
@@ -514,7 +514,7 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0) {
-		LOG_ERROR(CSTRING("'%s' => [getaddrinfo] failed with error: %d"), SERVERNAME(this), res);
+		NET_LOG_ERROR(CSTRING("'%s' => [getaddrinfo] failed with error: %d"), SERVERNAME(this), res);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -526,7 +526,7 @@ bool Net::Server::Server::Run()
 
 	if (GetListenSocket() == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("'%s' => creation of a listener socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("'%s' => creation of a listener socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -540,7 +540,7 @@ bool Net::Server::Server::Run()
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("'%s' => [ioctlsocket] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("'%s' => [ioctlsocket] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -552,7 +552,7 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, static_cast<int>(result->ai_addrlen));
 
 	if (res == SOCKET_ERROR) {
-		LOG_ERROR(CSTRING("'%s' => [bind] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("'%s' => [bind] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
@@ -569,7 +569,7 @@ bool Net::Server::Server::Run()
 
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("'%s' => listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("'%s' => listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -611,7 +611,7 @@ bool Net::Server::Server::Run()
 	Thread::Create(AcceptorThread, this);
 
 	SetRunning(true);
-	LOG_SUCCESS(CSTRING("'%s' => running on port %d"), SERVERNAME(this), SERVERPORT(this));
+	NET_LOG_SUCCESS(CSTRING("'%s' => running on port %d"), SERVERNAME(this), SERVERPORT(this));
 	return true;
 }
 
@@ -619,7 +619,7 @@ bool Net::Server::Server::Close()
 {
 	if (!IsRunning())
 	{
-		LOG_ERROR(CSTRING("'%s' => server is still running unable to close it"), SERVERNAME(this));
+		NET_LOG_ERROR(CSTRING("'%s' => server is still running unable to close it"), SERVERNAME(this));
 		return false;
 	}
 
@@ -646,7 +646,7 @@ bool Net::Server::Server::Close()
 	Ws2_32::WSACleanup();
 #endif
 
-	LOG_DEBUG(CSTRING("'%s' => finished"), SERVERNAME(this));
+	NET_LOG_DEBUG(CSTRING("'%s' => finished"), SERVERNAME(this));
 	return true;
 }
 
@@ -682,7 +682,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 			{
 				bPreviousSentFailed = true;
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -695,7 +695,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 			{
 				bPreviousSentFailed = true;
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -748,7 +748,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 				bPreviousSentFailed = true;
 				FREE(data);
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -762,7 +762,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 				bPreviousSentFailed = true;
 				FREE(data);
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -817,7 +817,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -831,7 +831,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, CPOINTER<BYTE>& data, size_t
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -889,7 +889,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
@@ -903,7 +903,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -1238,7 +1238,7 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 
 	if (peer->hWaitForNetProtocol == nullptr) 	NET_STOP_TIMER;
 
-	LOG_PEER(CSTRING("'%s' :: [%s] => might not be using proper protocol"), SERVERNAME(server), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => might not be using proper protocol"), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
@@ -1316,7 +1316,7 @@ void Net::Server::Server::Acceptor()
 			}
 			else
 			{
-				LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
+				NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
 				return;
 			}
 		}
@@ -1367,9 +1367,9 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 			ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-			if (ERRNO_ERROR_TRIGGERED) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+			if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-			if (Ws2_32::WSAGetLastError() != 0) LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+			if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 			return true;
@@ -1385,7 +1385,7 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 	{
 		peer->network.reset();
 		ErasePeer(peer);
-		LOG_PEER(CSTRING("'%s' :: [%s] => connection gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => connection gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
 		return true;
 	}
 
@@ -2029,7 +2029,7 @@ void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
 #endif
 	NET_ZLIB::Compress(data, size);
 #ifdef DEBUG
-	LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2040,7 +2040,7 @@ void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, co
 #endif
 	NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION, skip_free);
 #ifdef DEBUG
-	LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2051,7 +2051,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, size_t& size)
 #endif
 	NET_ZLIB::Decompress(data, size);
 #ifdef DEBUG
-	LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2062,7 +2062,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 #endif
 	NET_ZLIB::Decompress(data, out, size, skip_free);
 #ifdef DEBUG
-	LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2075,26 +2075,26 @@ NET_BEGIN_PACKET(Net::Server::Server, RSAHandshake)
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough cipher option is disabled"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough cipher option is disabled"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 if (peer->estabilished)
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough estabilished"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough estabilished"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 if (peer->cryption.getHandshakeStatus())
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received another rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received another rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
 if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
@@ -2105,7 +2105,7 @@ peer->cryption.RSA.setPublicKey(TargetPublicKey);
 peer->cryption.setHandshakeStatus(true);
 
 // RSA Handshake has been finished, keep going with normal process
-LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), peer->IPAddr().get());
+NET_LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), peer->IPAddr().get());
 
 // keep it empty, we get it filled back
 Packet Version;
@@ -2116,13 +2116,13 @@ NET_BEGIN_PACKET(Net::Server::Server, VersionPackage)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => have not received a rsa handshake yet"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => have not received a rsa handshake yet"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 if (peer->estabilished)
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received another version frame"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received another version frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
@@ -2132,7 +2132,7 @@ if (!(PKG[CSTRING("MajorVersion")] && PKG[CSTRING("MajorVersion")]->is_int())
 	|| !(PKG[CSTRING("Key")] && PKG[CSTRING("Key")]->is_string()))
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
-	LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid version frame"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid version frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
@@ -2153,7 +2153,7 @@ if ((majorVersion == Version::Major())
 
 	peer->estabilished = true;
 
-	LOG_PEER(CSTRING("'%s' :: [%s] => estabilished"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => estabilished"), SERVERNAME(this), peer->IPAddr().get());
 
 	Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 	peer->hWaitForNetProtocol = nullptr;
@@ -2163,7 +2163,7 @@ if ((majorVersion == Version::Major())
 }
 else
 {
-	LOG_PEER(CSTRING("'%s' :: [%s] => sent different values in version frame:\n(%i.%i.%i-%s)"), SERVERNAME(this), peer->IPAddr().get(), majorVersion, minorVersion, revision, Key);
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => sent different values in version frame:\n(%i.%i.%i-%s)"), SERVERNAME(this), peer->IPAddr().get(), majorVersion, minorVersion, revision, Key);
 
 	// version or key missmatch, disconnect peer
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);

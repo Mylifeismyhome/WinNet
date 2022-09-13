@@ -37,7 +37,7 @@ bool NETRSA::generateKeys(const size_t num_bits, const int e)
 		const auto bio = BIO_new(BIO_s_mem());
 		if (!bio)
 		{
-			LOG_ERROR(CSTRING("Unable to allocate new BIO"));
+			NET_LOG_ERROR(CSTRING("Unable to allocate new BIO"));
 			return false;
 		}
 
@@ -60,7 +60,7 @@ bool NETRSA::generateKeys(const size_t num_bits, const int e)
 		const auto bio = BIO_new(BIO_s_mem());
 		if (!bio)
 		{
-			LOG_ERROR(CSTRING("Unable to allocate new BIO"));
+			NET_LOG_ERROR(CSTRING("Unable to allocate new BIO"));
 			return false;
 		}
 
@@ -155,7 +155,7 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 	const auto bio = BIO_new(BIO_s_mem());
 	if (!bio)
 	{
-		LOG_ERROR(CSTRING("Unable to allocate new BIO"));
+		NET_LOG_ERROR(CSTRING("Unable to allocate new BIO"));
 		return false;
 	}
 
@@ -186,7 +186,7 @@ bool NETRSA::encrypt(CryptoPP::byte*& data, size_t& size)
 				return true;
 			}
 
-			LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
+			NET_LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
 			FREE(tmpEnc);
 			RSA_free(publicKey);
 		}
@@ -223,7 +223,7 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 	const auto bio = BIO_new(BIO_s_mem());
 	if (!bio)
 	{
-		LOG_ERROR(CSTRING("Unable to allocate new BIO"));
+		NET_LOG_ERROR(CSTRING("Unable to allocate new BIO"));
 		return false;
 	}
 
@@ -254,7 +254,7 @@ bool NETRSA::decrypt(CryptoPP::byte*& data, size_t& size)
 				return true;
 			}
 
-			LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
+			NET_LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
 			FREE(tmpDec);
 			RSA_free(privateKey);
 		}

@@ -307,13 +307,13 @@ static void Free(T*& data)
 #define PEER_VALID(peer) if(peer)
 #define PEER_NOT_VALID(peer, stuff) if(!peer) \
 	{ \
-		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(this)); \
+		NET_LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(this)); \
 		stuff \
 	}
 
 #define PEER_NOT_VALID_EX(peer, server, stuff) if(!peer) \
 	{ \
-		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(server)); \
+		NET_LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(server)); \
 		stuff \
 	}
 

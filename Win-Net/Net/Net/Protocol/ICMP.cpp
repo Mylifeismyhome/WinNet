@@ -296,13 +296,13 @@ char* ResolveHostname(const char* name)
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
+		NET_LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
 		return nullptr;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
 		Ws2_32::WSACleanup();
 		return nullptr;
 	}
@@ -317,7 +317,7 @@ char* ResolveHostname(const char* name)
 	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
 	if (dwRetval != NULL)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Host look up has been failed with error %d"), dwRetval);
+		NET_LOG_ERROR(CSTRING("[ICMP] - Host look up has been failed with error %d"), dwRetval);
 		Ws2_32::WSACleanup();
 		return nullptr;
 	}
@@ -400,13 +400,13 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
+		NET_LOG_ERROR(CSTRING("[ICMP] - WSAStartup has been failed with error: %d"), res);
 		return INVALID_SIZE;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Could not find a usable version of Winsock.dll"));
 		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
@@ -415,7 +415,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	auto v4 = AddrIsV4(addr);
 	if (!v6 && !v4)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Address is neather IPV4 nor IPV6 Protocol"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Address is neather IPV4 nor IPV6 Protocol"));
 		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
@@ -423,7 +423,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	auto con = Ws2_32::socket(v4 ? AF_INET : AF_INET6, SOCK_RAW, v4 ? IPPROTO_ICMP : IPPROTO_ICMP6);
 	if (con == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Unable to create socket"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Unable to create socket"));
 		Ws2_32::WSACleanup();
 		return INVALID_SIZE;
 	}
@@ -456,7 +456,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 		res = Ws2_32::inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
 		if (res != 1)
 		{
-			LOG_ERROR(CSTRING("[ICMP]  - Failure on setting IPV6 Address with error code %d"), res);
+			NET_LOG_ERROR(CSTRING("[ICMP]  - Failure on setting IPV6 Address with error code %d"), res);
 			Ws2_32::freeaddrinfo(localsockaddr);
 			Ws2_32::closesocket(con);
 			Ws2_32::WSACleanup();
@@ -468,7 +468,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 
 	if (!sockaddr)
 	{
-		LOG_ERROR(CSTRING("[ICMP]  - Socket is not being valid"));
+		NET_LOG_ERROR(CSTRING("[ICMP]  - Socket is not being valid"));
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);
 		Ws2_32::WSACleanup();
@@ -498,7 +498,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	icmpbuf = ALLOC<char>(packetlen);
 	if (!icmpbuf)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Unable to allocate enough space for the buffer"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Unable to allocate enough space for the buffer"));
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);
 		Ws2_32::WSACleanup();
@@ -535,7 +535,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = Ws2_32::bind(con, localsockaddr->ai_addr, static_cast<int>(localsockaddr->ai_addrlen));
 	if (rc == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));
+		NET_LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));
 		FREE(icmpbuf);
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);
@@ -562,7 +562,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = Ws2_32::sendto(con, icmpbuf, packetlen, 0, sockaddr, slen);
 	if (rc == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[ICMP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
+		NET_LOG_ERROR(CSTRING("[ICMP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
 		FREE(icmpbuf);
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);
@@ -574,7 +574,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 	rc = WaitForSingleObject((HANDLE)recvol.hEvent, DEFAULT_RECV_TIMEOUT);
 	if (rc == WAIT_FAILED)
 	{
-		LOG_ERROR(CSTRING("[ICMP]  - Waiting for single object failed with error: %d"), WSAGetLastError());
+		NET_LOG_ERROR(CSTRING("[ICMP]  - Waiting for single object failed with error: %d"), WSAGetLastError());
 		FREE(icmpbuf);
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);
@@ -584,7 +584,7 @@ static lt PerformRequest(const char* addr, const bool bRecordRoute)
 
 	if (rc == WAIT_TIMEOUT)
 	{
-		LOG_ERROR(CSTRING("[ICMP]  - Timeout occured!"));
+		NET_LOG_ERROR(CSTRING("[ICMP]  - Timeout occured!"));
 		FREE(icmpbuf);
 		Ws2_32::freeaddrinfo(localsockaddr);
 		Ws2_32::closesocket(con);

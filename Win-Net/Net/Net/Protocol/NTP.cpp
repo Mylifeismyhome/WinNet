@@ -34,13 +34,13 @@ char* ResolveHostname(const char* name)
 	auto res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
+		NET_LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
 		return nullptr;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
+		NET_LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
 		Ws2_32::WSACleanup();
 		return nullptr;
 	}
@@ -55,7 +55,7 @@ char* ResolveHostname(const char* name)
 	const auto dwRetval = Ws2_32::getaddrinfo(name, nullptr, &hints, &result);
 	if (dwRetval != NULL)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Host look up has been failed with error %d"), dwRetval);
+		NET_LOG_ERROR(CSTRING("[NTP] - Host look up has been failed with error %d"), dwRetval);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -162,13 +162,13 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
+		NET_LOG_ERROR(CSTRING("[NTP] - WSAStartup has been failed with error: %d"), res);
 		return {};
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
+		NET_LOG_ERROR(CSTRING("[NTP] - Could not find a usable version of Winsock.dll"));
 		Ws2_32::WSACleanup();
 		return {};
 	}
@@ -178,7 +178,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	auto v4 = AddrIsV4(addr);
 	if (!v6 && !v4)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
+		NET_LOG_ERROR(CSTRING("[NTP] - Address is neather IPV4 nor IPV6 Protocol"));
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -188,7 +188,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	const auto con = Ws2_32::socket(v6 ? AF_INET6 : AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (con == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[NTP] - Unable to create socket, error code: %d"), LAST_ERROR);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -221,7 +221,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 		res = Ws2_32::inet_pton(AF_INET6, addr, &sockaddr6.sin6_addr);
 		if (res != 1)
 		{
-			LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
+			NET_LOG_ERROR(CSTRING("[NTP]  - Failure on setting IPV6 Address with error code %d"), res);
 			Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 			Ws2_32::WSACleanup();
@@ -234,7 +234,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 
 	if (!sockaddr)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
+		NET_LOG_ERROR(CSTRING("[NTP]  - Socket is not being valid"));
 		Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -249,7 +249,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	res = Ws2_32::sendto(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, slen);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[NTP]  - Sending the frame request has been failed with error %d"), LAST_ERROR);
 		Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -260,7 +260,7 @@ static NTPRes PerformRequest(const char* addr, u_short port)
 	res = Ws2_32::recvfrom(con, (char*)&frame, sizeof(NTP_FRAME), 0, sockaddr, &slen);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[NTP]  - Receiving the frame has been failed with error %d"), LAST_ERROR);
 		Ws2_32::closesocket(con);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();

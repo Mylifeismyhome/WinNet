@@ -26,7 +26,7 @@ static Ret funcName##(__VA_ARGS__) \
 	auto func = (_##funcName)Import::Resolver::Function(CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName).get(); \
 	if (!func) \
 	{ \
-		LOG_ERROR(CSTRING("Failure on resolving %s -> %s [%d]"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName, GetLastError()); \
+		NET_LOG_ERROR(CSTRING("Failure on resolving %s -> %s [%d]"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName, GetLastError()); \
 	}
 
 #define MAKE_IMPORT(...) \
