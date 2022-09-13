@@ -2,7 +2,21 @@
 ---
 <br/>
 
-## <span style="color:purple;font-weight: 600">[COMPILATION]</span>
+## <span style="color:purple;font-weight: 600">[BUILD UP ON]</span>
+> - OpenSSL
+> - Crypto++
+> - BCrypt
+> - pugiXML
+> - ZLib
+> - MySQL c++ connector by Oracle
+
+<br/>
+
+---
+
+<br/>
+
+## <span style="color:purple;font-weight: 600">[BUILD OPTIONS]</span>
 
 > ## Windows
 > - [x] Static Build
@@ -12,8 +26,14 @@
 > ## Linux
 > - [x] Static Build
 > - [ ] Shared Build
+
+<br/>
+
 ---
-## <span style="color:purple;font-weight: 600">[BUILD]</span>
+
+<br/>
+
+## <span style="color:purple;font-weight: 600">[HOW TO BUILD IT]</span>
 > ## Windows
 > ### Requires
 > - nasm
@@ -63,8 +83,14 @@ this batch automatically runs BUILD.bat
 > - make sandboxclient
 > - make sandboxserver
 > - make sandboxwebsocket
+
+<br/>
+
 ---
-> ## Features
+
+<br/>
+
+## <span style="color:purple;font-weight: 600">[FEATURES]</span>
 >> ## TCP ONLY
 >> #### using WinSocket for Windows build and Unix Socket for Linux build 
 >> - [x] Client
