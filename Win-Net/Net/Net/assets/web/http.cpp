@@ -185,6 +185,7 @@ std::string& Net::Web::Head::GetRawData()
 void Net::Web::Head::SetHeaderContent(std::string head)
 {
 	headContent = head;
+	ParseHeader(headContent);
 }
 
 std::string& Net::Web::Head::GetHeaderContent()
@@ -487,6 +488,33 @@ std::string Net::Web::Head::GetParameters() const
 	const auto deleteLastSplitPos = params.find_last_of(CSTRING("&"));
 	const auto fixedparams = params.substr(0, deleteLastSplitPos);
 	return fixedparams;
+}
+
+void Net::Web::Head::ParseHeader(std::string& header)
+{
+	for (size_t i = 0, j = 0; i < header.size(); ++i)
+	{
+		if (header[i] == '\n'
+			|| i == header.size() - 1)
+		{
+			auto sub = header.substr(j, (i - j) - 1);
+			
+			for (size_t z = 0; z < sub.size(); ++z)
+			{
+				// first split matters
+				if (sub[z] == ':')
+				{
+					auto key = sub.substr(1, z - 1);
+					auto value = sub.substr(z + 2, (sub.size() - z));
+
+					AddHeader(key.data(), value.data(), value.size());
+					break;
+				}
+			}
+
+			j = i;
+		}
+	}
 }
 
 bool Net::Web::Head::ParseResult()
@@ -1660,6 +1688,21 @@ bool Net::Web::HTTPS::Get()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
+
+			if (!res)
+			{
+				switch (GetResultCode())
+				{
+				case 302:
+					// redirect - use location in header to perform action
+					
+					break;
+
+				default:
+					break;
+				}
+			}
+
 			return res;
 		}
 

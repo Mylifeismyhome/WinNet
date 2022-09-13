@@ -98,6 +98,7 @@ namespace Net
 			std::string STRING_JSON;
 			std::string GetParameters() const;
 
+			void ParseHeader(std::string&);
 			bool ParseResult();
 
 			std::string rawData;

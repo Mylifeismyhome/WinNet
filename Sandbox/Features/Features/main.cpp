@@ -242,11 +242,13 @@ TEST(HTTPS,
 		if(https.Get())
 		{
 			NET_LOG(CSTRING("GET WORKED!"));
+			NET_LOG(https.GetHeaderContent().c_str());
 			NET_LOG(https.GetBodyContent().c_str());
 		}
 		else
 		{
 			NET_LOG(CSTRING("GET FAILED!"));
+			NET_LOG(https.GetHeaderContent().c_str());
 			NET_LOG(https.GetBodyContent().c_str());
 		}
 );
