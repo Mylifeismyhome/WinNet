@@ -189,6 +189,15 @@ std::vector<MYSQL_RESULT> MYSQL_MULTIRESULT::Get() const
 	return results;
 }
 
+MYSQL::MYSQL(const MYSQL_CON conConfig)
+{
+	this->conConfig = conConfig;
+	this->msqldriver = nullptr;
+
+	if (!setup())
+		return;
+}
+
 MYSQL::~MYSQL()
 {
 	if(msqlcon)
@@ -215,12 +224,17 @@ bool MYSQL::setup()
 
 bool MYSQL::connect()
 {
+	if (!msqldriver)
+		return false;
+
 	try
 	{
 		char constr[128];
 		sprintf(constr, CSTRING("tcp://%s:%i"), conConfig.getIP(), conConfig.getPort());
-
-		msqlcon = msqldriver->connect(constr, conConfig.getUsername(), conConfig.getPassword());
+		auto coninfo = sql::SQLString(constr);
+		auto username = sql::SQLString(conConfig.getUsername());
+		auto password = sql::SQLString(conConfig.getPassword());
+		msqlcon = msqldriver->connect(coninfo, username, password);
 		if (!msqlcon)
 			return false;
 

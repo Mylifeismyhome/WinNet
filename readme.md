@@ -81,6 +81,7 @@ this batch automatically runs BUILD.bat
 > - make sandboxclient
 > - make sandboxserver
 > - make sandboxwebsocket
+> - make sandboxfeatures (use it to test functionality of NetCore Features)
 
 <br/>
 
