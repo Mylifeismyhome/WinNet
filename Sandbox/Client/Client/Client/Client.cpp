@@ -2,7 +2,7 @@
 #include <Net/assets/thread.h>
 
 NET_DECLARE_PACKET_CALLBACK_BEGIN(Client)
-NET_DEFINE_PACKET_CALLBACK(Test, Packages::PKG_TEST)
+NET_DEFINE_PACKET_CALLBACK(Test, Sandbox::Packet::PKG_TEST)
 NET_DECLARE_PACKET_CALLBACK_END
 
 NET_TIMER(Test)
@@ -12,7 +12,7 @@ NET_TIMER(Test)
 
 	NET_PACKET pkg;
 	pkg[CSTRING("text")] = CSTRING("WinNet");
-	client->NET_SEND(Packages::PKG_TEST, pkg);
+	client->NET_SEND(Sandbox::Packet::PKG_TEST, pkg);
 
 	NET_CONTINUE_TIMER;
 }
@@ -36,5 +36,5 @@ void Client::OnTimeout() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_PACKET(Client, Test)
-LOG("Received Package from Server");
+NET_LOG("Received Package from Server");
 NET_END_PACKET

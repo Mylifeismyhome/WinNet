@@ -50,7 +50,7 @@ NET_THREAD(NetTimerThread)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 
-	timer->last = (((long long)tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
+	timer->last = static_cast<double>((((long long)tv.tv_sec) * 1000) + (tv.tv_usec / 1000));
 
 	while (true)
 	{

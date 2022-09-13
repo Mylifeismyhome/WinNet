@@ -102,7 +102,7 @@ namespace Net
 			struct network_t
 			{
 				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-				CPOINTER<byte> _data;
+				NET_CPOINTER<byte> _data;
 				size_t _data_size;
 				size_t _data_full_size;
 				size_t _data_offset;
@@ -336,7 +336,7 @@ namespace Net
 			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET& pkg) { return false; }
 			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+			void SingleSend(NET_PEER, NET_CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 			void DoSend(NET_PEER, int, NET_PACKET&);
 

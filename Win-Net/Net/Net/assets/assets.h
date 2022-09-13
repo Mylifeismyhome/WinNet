@@ -47,34 +47,38 @@ CONSTEXPR auto BASE_DATE = 1900;
 // Time
 #define TIMETABLE struct tm
 
-NET_NAMESPACE_BEGIN(Net)
+namespace Net
+{
 #ifndef BUILD_LINUX
-void ShowMessageBox(const char*, const char*, ...);
-void ShowMessageBox(const wchar_t*, const wchar_t*, ...);
+	void ShowMessageBox(const char*, const char*, ...);
+	void ShowMessageBox(const wchar_t*, const wchar_t*, ...);
 #endif
 
-NET_NAMESPACE_BEGIN(Clock)
-double GetClockTime();
-double AddTime(double);
-void GetTimeW(wchar_t*);
-void GetTimeA(char*);
-void GetDateW(wchar_t*);
-void GetDateA(char*);
-NET_NAMESPACE_END
+	namespace Clock
+	{
+		double GetClockTime();
+		double AddTime(double);
+		void GetTimeW(wchar_t*);
+		void GetTimeA(char*);
+		void GetDateW(wchar_t*);
+		void GetDateA(char*);
+	}
 
-NET_NAMESPACE_BEGIN(Math)
-int GetRandNumber(int min, int max);
-NET_NAMESPACE_END
+	namespace Math
+	{
+		int GetRandNumber(int min, int max);
+	}
 
-NET_NAMESPACE_BEGIN(Random)
-NET_EXPORT_FUNCTION void GetRandString(char*& out, size_t len);
-NET_EXPORT_FUNCTION void GetRandStringNew(BYTE * &out, size_t len);
-NET_EXPORT_FUNCTION int GetRandSeed();
-NET_NAMESPACE_END
+	namespace Random
+	{
+		NET_EXPORT_FUNCTION void GetRandString(char*& out, size_t len);
+		NET_EXPORT_FUNCTION void GetRandStringNew(BYTE*& out, size_t len);
+		NET_EXPORT_FUNCTION int GetRandSeed();
+	}
 
-NET_NAMESPACE_BEGIN(Util)
-int roundUp(int, int);
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
+	namespace Util
+	{
+		int roundUp(int, int);
+	}
+}
 NET_DSA_END

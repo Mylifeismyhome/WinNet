@@ -19,11 +19,11 @@ int main()
 
 #ifdef _USE_CIPHER_
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
-	LOG_WARNING(CSTRING("USING CIPHER"));
+	NET_LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
 	if (!server.Run())
-		LOG_ERROR(CSTRING("UNABLE TO RUN SERVER"));
+		NET_LOG_ERROR(CSTRING("UNABLE TO RUN SERVER"));
 
 	while (server.IsRunning())
 	{

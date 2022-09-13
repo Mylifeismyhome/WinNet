@@ -33,10 +33,10 @@ NET_DSA_BEGIN
 				} \
 			}
 
-/*
-* MYSQL_ITER => Iterates through multi results
-* MYSQL_NEXT => Iterates through result rows
-*/
+ /*
+ * MYSQL_ITER => Iterates through multi results
+ * MYSQL_NEXT => Iterates through result rows
+ */
 #define MYSQL_ITER(x, y) for (auto x : y.Get())
 #define MYSQL_NEXT(x) while (x.result->next())
 
@@ -54,128 +54,133 @@ NET_DSA_BEGIN
 #include <vector>
 #include <cstdarg>
 
-/*
-* Connetion config
-*/
-NET_CLASS_BEGIN(MYSQL_CON)
-char conIP[40];
-short conPort;
+ /*
+ * Connetion config
+ */
+	class MYSQL_CON
+{
+	char conIP[40];
+	short conPort;
 
-char conUsername[32];
-char conPassword[256];
-char conDB[32];
+	char conUsername[32];
+	char conPassword[256];
+	char conDB[32];
 
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(MYSQL_CON);
-NET_CLASS_CONSTRUCTUR(MYSQL_CON, const char* ip, const short port, const char* username, const char* password = "", const char* db = "test");
+public:
+	MYSQL_CON();
+	MYSQL_CON(const char* ip, const short port, const char* username, const char* password = "", const char* db = CSTRING("database_name_here"));
 
-char* getIP();
-short getPort() const;
-char* getUsername();
-char* getPassword();
-char* getDB();
-NET_CLASS_END;
+	char* getIP();
+	short getPort() const;
+	char* getUsername();
+	char* getPassword();
+	char* getDB();
+};
 
 /*
 * RESULTS
 */
-NET_CLASS_BEGIN(MYSQL_RESULT)
-bool valid;
-char name[32];
-sql::ResultSet* result;
+class MYSQL_RESULT
+{
+	bool valid;
+	char name[32];
+	sql::ResultSet* result;
 
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(MYSQL_RESULT);
-NET_CLASS_CONSTRUCTUR(MYSQL_RESULT, const char* n, sql::ResultSet* res);
-NET_CLASS_DESTRUCTUR(MYSQL_RESULT);
+public:
+	MYSQL_RESULT();
+	MYSQL_RESULT(const char* n, sql::ResultSet* res);
+	~MYSQL_RESULT();
 
-bool IsValid() const;
-bool Empty() const;
-size_t Count() const;
-sql::ResultSet* Get() const;
-NET_CLASS_END;
+	bool IsValid() const;
+	bool Empty() const;
+	size_t Count() const;
+	sql::ResultSet* Get() const;
+};
 
 /*
 * QUERY
 */
-NET_CLASS_BEGIN(MYSQL_QUERY)
-char name[32];
-char* query;
+class MYSQL_QUERY
+{
+	char name[32];
+	char* query;
 
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(MYSQL_QUERY, const char* n, char* q);
-NET_CLASS_CONSTRUCTUR(MYSQL_QUERY, char* q);
+public:
+	MYSQL_QUERY(const char* n, char* q);
+	MYSQL_QUERY(char* q);
 
-char* Get() const;
-char* getName();
-void Free();
-NET_CLASS_END;
+	char* Get() const;
+	char* getName();
+	void Free();
+};
 
 
 /*
 * MULTI QUERY
 */
-NET_CLASS_BEGIN(MYSQL_MUTLIQUERY)
-std::vector<MYSQL_QUERY> query;
+class MYSQL_MUTLIQUERY
+{
+	std::vector<MYSQL_QUERY> query;
 
-NET_CLASS_PUBLIC
-MYSQL_MUTLIQUERY() = default;
-NET_CLASS_CONSTRUCTUR(MYSQL_MUTLIQUERY, std::vector<MYSQL_QUERY>& q);
+public:
+	MYSQL_MUTLIQUERY() = default;
+	MYSQL_MUTLIQUERY(std::vector<MYSQL_QUERY>& q);
 
-void Add(const char* name, char*& q);
-void Add(const MYSQL_QUERY q);
-void Add(MYSQL_QUERY & q);
-bool IsValid() const;
-std::vector<MYSQL_QUERY> Get() const;
-NET_CLASS_END;
+	void Add(const char* name, char*& q);
+	void Add(const MYSQL_QUERY q);
+	void Add(MYSQL_QUERY& q);
+	bool IsValid() const;
+	std::vector<MYSQL_QUERY> Get() const;
+};
 
 /*
 * MULTI RESULT
 */
-NET_CLASS_BEGIN(MYSQL_MULTIRESULT)
-std::vector<MYSQL_RESULT> results;
-
-NET_CLASS_PUBLIC
-void Add(MYSQL_RESULT res);
-void Add(MYSQL_RESULT & res);
-bool IsValid() const;
-std::vector<MYSQL_RESULT> Get() const;
-NET_CLASS_END;
-
-NET_CLASS_BEGIN(MYSQL)
-sql::Driver* msqldriver = nullptr;
-sql::Connection* msqlcon = nullptr;
-MYSQL_CON conConfig;
-std::recursive_mutex critical;
-
-bool setup();
-
-char* lastError = nullptr;
-
-NET_CLASS_PUBLIC
-explicit MYSQL(const MYSQL_CON conConfig)
+class MYSQL_MULTIRESULT
 {
-	this->conConfig = conConfig;
-	if (!setup())
-		return;
-}
+	std::vector<MYSQL_RESULT> results;
 
-NET_CLASS_DESTRUCTUR(MYSQL);
+public:
+	void Add(MYSQL_RESULT res);
+	void Add(MYSQL_RESULT& res);
+	bool IsValid() const;
+	std::vector<MYSQL_RESULT> Get() const;
+};
 
-bool connect();
-bool disconnect();
-bool reconnect();
+class MYSQL
+{
+	sql::Driver* msqldriver = nullptr;
+	sql::Connection* msqlcon = nullptr;
+	MYSQL_CON conConfig;
+	std::recursive_mutex critical;
 
-void lock();
-void unlock();
+	bool setup();
 
-void SetLastError(const char*);
-char* GetLastError() const;
+	char* lastError = nullptr;
 
-MYSQL_RESULT query(char*, bool = false);
-MYSQL_RESULT query(MYSQL_QUERY, bool = false);
-MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY, bool = false);
-NET_CLASS_END;
+public:
+	explicit MYSQL(const MYSQL_CON conConfig)
+	{
+		this->conConfig = conConfig;
+		if (!setup())
+			return;
+	}
+	~MYSQL();
+
+	bool connect();
+	bool disconnect();
+	bool reconnect();
+
+	void lock();
+	void unlock();
+
+	void SetLastError(const char*);
+	char* GetLastError() const;
+
+	MYSQL_RESULT query(char*, bool = false);
+	MYSQL_RESULT query(MYSQL_QUERY, bool = false);
+	MYSQL_MULTIRESULT multiQuery(MYSQL_MUTLIQUERY, bool = false);
+};
 
 char* SQLString(const char* string, ...);
 

@@ -265,286 +265,290 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 }
 
 #endif
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Console)
+namespace Net
+{
+	namespace Console
+	{
 #ifndef NET_DISABLE_LOGMANAGER
-static bool DisablePrintF = false;
+		static bool DisablePrintF = false;
 #endif
 
-NET_EXPORT_FUNCTION tm TM_GetTime()
-{
-	auto timeinfo = tm();
+		NET_EXPORT_FUNCTION tm TM_GetTime()
+		{
+			auto timeinfo = tm();
 #ifdef BUILD_LINUX
-	time_t tm = time(nullptr);
-	auto p_timeinfo = localtime(&tm);
-	timeinfo = *p_timeinfo;
+			time_t tm = time(nullptr);
+			auto p_timeinfo = localtime(&tm);
+			timeinfo = *p_timeinfo;
 #else
 #ifdef _WIN64
-	auto t = _time64(nullptr);   // get time now
-	_localtime64_s(&timeinfo, &t);
+			auto t = _time64(nullptr);   // get time now
+			_localtime64_s(&timeinfo, &t);
 #else
-	auto t = _time32(nullptr);   // get time now
-	_localtime32_s(&timeinfo, &t);
+			auto t = _time32(nullptr);   // get time now
+			_localtime32_s(&timeinfo, &t);
 #endif
 #endif
-	return timeinfo;
-}
+			return timeinfo;
+		}
 
 #ifndef NET_DISABLE_LOGMANAGER
-NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates state)
-{
-	switch (static_cast<int>(state))
-	{
-	case (int)LogStates::debug:
-		return std::string(CSTRING("DEBUG"));
+		NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates state)
+		{
+			switch (static_cast<int>(state))
+			{
+			case (int)LogStates::debug:
+				return std::string(CSTRING("DEBUG"));
 
-	case (int)LogStates::warning:
-		return std::string(CSTRING("WARNING"));
+			case (int)LogStates::warning:
+				return std::string(CSTRING("WARNING"));
 
-	case (int)LogStates::error:
-		return std::string(CSTRING("ERROR"));
+			case (int)LogStates::error:
+				return std::string(CSTRING("ERROR"));
 
-	case (int)LogStates::success:
-		return std::string(CSTRING("SUCCESS"));
+			case (int)LogStates::success:
+				return std::string(CSTRING("SUCCESS"));
 
-	case (int)LogStates::peer:
-		return std::string(CSTRING("PEER"));
+			case (int)LogStates::peer:
+				return std::string(CSTRING("PEER"));
 
-	default:
-		return std::string(CSTRING("INFO"));
-	}
-}
+			default:
+				return std::string(CSTRING("INFO"));
+			}
+		}
 
-void Log(const LogStates state, const char* func, const char* msg, ...)
-{
-	if (!__net_logging_enabled)
-		return;
+		void Log(const LogStates state, const char* func, const char* msg, ...)
+		{
+			if (!__net_logging_enabled)
+				return;
 
-	va_list vaArgs;
-
-#ifdef BUILD_LINUX
-	va_start(vaArgs, msg);
-	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-	va_end(vaArgs);
-
-	va_start(vaArgs, msg);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
-#else
-	va_start(vaArgs, msg);
-	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
-#endif
-
-	__net_logmanager_array_entry_A_t data;
-	data.state = state;
-	data.func = std::string(func);
-	data.msg = std::string(str.data());
-	data.save = false;
-	std::thread(__net_logmanager_output_log_a, data).detach();
-}
-
-void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
-{
-	if (!__net_logging_enabled)
-		return;
-
-	const size_t lenfunc = strlen(funcA) + 1;
-	wchar_t* func = new wchar_t[lenfunc];
-	mbstowcs(func, funcA, lenfunc);
-
-	va_list vaArgs;
+			va_list vaArgs;
 
 #ifdef BUILD_LINUX
-	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-	va_end(vaArgs);
+			va_start(vaArgs, msg);
+			const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+			va_end(vaArgs);
 
-	va_start(vaArgs, msg);
-	std::vector<wchar_t> str(size + 1);
-	std::vswprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+			va_start(vaArgs, msg);
+			std::vector<char> str(size + 1);
+			std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+			va_end(vaArgs);
 #else
-	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-	std::vector<wchar_t> str(size + 1);
-	std::vswprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+			va_start(vaArgs, msg);
+			const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+			std::vector<char> str(size + 1);
+			std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+			va_end(vaArgs);
 #endif
 
-	__net_logmanager_array_entry_W_t data;
-	data.state = state;
-	data.func = std::wstring(func);
-	data.msg = std::wstring(str.data());
-	data.save = false;
-	std::thread(__net_logmanager_output_log_w, data).detach();
+			__net_logmanager_array_entry_A_t data;
+			data.state = state;
+			data.func = std::string(func);
+			data.msg = std::string(str.data());
+			data.save = false;
+			std::thread(__net_logmanager_output_log_a, data).detach();
+		}
 
-	FREE(func);
-}
+		void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
+		{
+			if (!__net_logging_enabled)
+				return;
 
-NET_EXPORT_FUNCTION void SetPrintF(const bool state)
-{
-	DisablePrintF = !state;
-}
+			const size_t lenfunc = strlen(funcA) + 1;
+			wchar_t* func = new wchar_t[lenfunc];
+			mbstowcs(func, funcA, lenfunc);
 
-NET_EXPORT_FUNCTION bool GetPrintFState()
-{
-	return DisablePrintF;
-}
+			va_list vaArgs;
 
-NET_EXPORT_FUNCTION WORD GetColorFromState(const LogStates state)
-{
-	switch (state)
-	{
-	case LogStates::normal:
-		return WHITE;
+#ifdef BUILD_LINUX
+			va_start(vaArgs, msg);
+			const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+			va_end(vaArgs);
 
-	case LogStates::debug:
-		return LIGHTBLUE;
+			va_start(vaArgs, msg);
+			std::vector<wchar_t> str(size + 1);
+			std::vswprintf(str.data(), str.size(), msg, vaArgs);
+			va_end(vaArgs);
+#else
+			va_start(vaArgs, msg);
+			const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+			std::vector<wchar_t> str(size + 1);
+			std::vswprintf(str.data(), str.size(), msg, vaArgs);
+			va_end(vaArgs);
+#endif
 
-	case LogStates::warning:
-		return MAGENTA;
+			__net_logmanager_array_entry_W_t data;
+			data.state = state;
+			data.func = std::wstring(func);
+			data.msg = std::wstring(str.data());
+			data.save = false;
+			std::thread(__net_logmanager_output_log_w, data).detach();
 
-	case LogStates::error:
-		return LIGHTRED;
+			FREE(func);
+		}
 
-	case LogStates::success:
-		return LIGHTGREEN;
+		NET_EXPORT_FUNCTION void SetPrintF(const bool state)
+		{
+			DisablePrintF = !state;
+		}
 
-	case LogStates::peer:
-		return YELLOW;
+		NET_EXPORT_FUNCTION bool GetPrintFState()
+		{
+			return DisablePrintF;
+		}
 
-	default:
-		return WHITE;
+		NET_EXPORT_FUNCTION WORD GetColorFromState(const LogStates state)
+		{
+			switch (state)
+			{
+			case LogStates::normal:
+				return WHITE;
+
+			case LogStates::debug:
+				return LIGHTBLUE;
+
+			case LogStates::warning:
+				return MAGENTA;
+
+			case LogStates::error:
+				return LIGHTRED;
+
+			case LogStates::success:
+				return LIGHTGREEN;
+
+			case LogStates::peer:
+				return YELLOW;
+
+			default:
+				return WHITE;
+			}
+		}
+#endif
 	}
-}
-#endif
-NET_NAMESPACE_END
 
 #ifndef NET_DISABLE_LOGMANAGER
-NET_NAMESPACE_BEGIN(Manager)
-NET_NAMESPACE_BEGIN(Log)
-NET_EXPORT_FUNCTION void SetOutputName(const char* name)
-{
-	if (!__net_logging_enabled)
-		return;
-
-	Net::String tmp(name);
-	if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
-		|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+	namespace Manager
 	{
-		if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+		namespace Log
 		{
-			strcpy(__net_output_fname, name);
-			strcat(__net_output_fname, CSTRING(".log"));
-		}
-		else
-		{
-			strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
-			strcpy(__net_output_fname, name);
-			strcat(__net_output_fname, CSTRING(".log"));
-			NET_DIRMANAGER::createDir(__net_output_fname);
-		}
-	}
-	else
-	{
-		strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
-		strcat(__net_output_fname, name);
-		strcat(__net_output_fname, CSTRING(".log"));
-	}
-}
+			NET_EXPORT_FUNCTION void SetOutputName(const char* name)
+			{
+				if (!__net_logging_enabled)
+					return;
 
-NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t callback)
-{
-	if (!__net_logging_enabled)
-		return;
+				Net::String tmp(name);
+				if (tmp.find(CSTRING("/")) != NET_STRING_NOT_FOUND
+					|| tmp.find(CSTRING("//")) != NET_STRING_NOT_FOUND
+					|| tmp.find(CSTRING("\\")) != NET_STRING_NOT_FOUND
+					|| tmp.find(CSTRING("\\\\")) != NET_STRING_NOT_FOUND)
+				{
+					if (tmp.find(CSTRING(":")) != NET_STRING_NOT_FOUND)
+					{
+						strcpy(__net_output_fname, name);
+						strcat(__net_output_fname, CSTRING(".log"));
+					}
+					else
+					{
+						strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+						strcpy(__net_output_fname, name);
+						strcat(__net_output_fname, CSTRING(".log"));
+						NET_DIRMANAGER::createDir(__net_output_fname);
+					}
+				}
+				else
+				{
+					strcpy(__net_output_fname, Net::Manager::Directory::homeDir().data());
+					strcat(__net_output_fname, name);
+					strcat(__net_output_fname, CSTRING(".log"));
+				}
+			}
 
-	OnLogA = callback;
-}
+			NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t callback)
+			{
+				if (!__net_logging_enabled)
+					return;
 
-NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t callback)
-{
-	if (!__net_logging_enabled)
-		return;
+				OnLogA = callback;
+			}
 
-	OnLogW = callback;
-}
+			NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t callback)
+			{
+				if (!__net_logging_enabled)
+					return;
 
-NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, const char* msg, ...)
-{
-	if (!__net_logging_enabled)
-		return;
+				OnLogW = callback;
+			}
 
-	va_list vaArgs;
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, const char* msg, ...)
+			{
+				if (!__net_logging_enabled)
+					return;
+
+				va_list vaArgs;
 
 #ifdef BUILD_LINUX
-	va_start(vaArgs, msg);
-	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+				va_end(vaArgs);
 
-	va_start(vaArgs, msg);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				std::vector<char> str(size + 1);
+				std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+				va_end(vaArgs);
 #else
-	va_start(vaArgs, msg);
-	const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
-	std::vector<char> str(size + 1);
-	std::vsnprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				const size_t size = std::vsnprintf(nullptr, 0, msg, vaArgs);
+				std::vector<char> str(size + 1);
+				std::vsnprintf(str.data(), str.size(), msg, vaArgs);
+				va_end(vaArgs);
 #endif
 
-	__net_logmanager_array_entry_A_t data;
-	data.state = state;
-	data.func = std::string(func);
-	data.msg = std::string(str.data());
-	data.save = true;
-	std::thread(__net_logmanager_output_log_a, data).detach();
-}
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = std::string(str.data());
+				data.save = true;
+				std::thread(__net_logmanager_output_log_a, data).detach();
+			}
 
-void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
-{
-	if (!__net_logging_enabled)
-		return;
+			void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
+			{
+				if (!__net_logging_enabled)
+					return;
 
-	const size_t lenfunc = strlen(funcA) + 1;
-	wchar_t* func = new wchar_t[lenfunc];
-	mbstowcs(func, funcA, lenfunc);
+				const size_t lenfunc = strlen(funcA) + 1;
+				wchar_t* func = new wchar_t[lenfunc];
+				mbstowcs(func, funcA, lenfunc);
 
-	va_list vaArgs;
+				va_list vaArgs;
 
 #ifdef BUILD_LINUX
-	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+				va_end(vaArgs);
 
-	va_start(vaArgs, msg);
-	std::vector<wchar_t> str(size + 1);
-	std::vswprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				std::vector<wchar_t> str(size + 1);
+				std::vswprintf(str.data(), str.size(), msg, vaArgs);
+				va_end(vaArgs);
 #else
-	va_start(vaArgs, msg);
-	const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
-	std::vector<wchar_t> str(size + 1);
-	std::vswprintf(str.data(), str.size(), msg, vaArgs);
-	va_end(vaArgs);
+				va_start(vaArgs, msg);
+				const size_t size = std::vswprintf(nullptr, 0, msg, vaArgs);
+				std::vector<wchar_t> str(size + 1);
+				std::vswprintf(str.data(), str.size(), msg, vaArgs);
+				va_end(vaArgs);
 #endif
 
-	__net_logmanager_array_entry_W_t data;
-	data.state = state;
-	data.func = std::wstring(func);
-	data.msg = std::wstring(str.data());
-	data.save = true;
-	std::thread(__net_logmanager_output_log_w, data).detach();
+				__net_logmanager_array_entry_W_t data;
+				data.state = state;
+				data.func = std::wstring(func);
+				data.msg = std::wstring(str.data());
+				data.save = true;
+				std::thread(__net_logmanager_output_log_w, data).detach();
 
-	FREE(func);
+				FREE(func);
+			}
+		}
+	}
+#endif
 }
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-#endif
-NET_NAMESPACE_END

@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 #include <Net/Net/Net.h>
 
 typedef uint16_t WORD;
@@ -186,43 +187,46 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 	Net::Manager::Log::SetOutputName(CSTRING(""));
 #endif
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Console)
-#ifndef NET_DISABLE_LOGMANAGER
-enum class LogStates
+namespace Net
 {
-	normal = 0,
-	debug,
-	warning,
-	error,
-	success,
-	peer
-};
-#endif
-NET_EXPORT_FUNCTION tm TM_GetTime();
+	namespace Console
+	{
 #ifndef NET_DISABLE_LOGMANAGER
-NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates);
-void Log(LogStates, const char*, const char*, ...);
-void Log(LogStates, const char*, const wchar_t*, ...);
-NET_EXPORT_FUNCTION void ChangeStdOutputColor(int);
-
-NET_EXPORT_FUNCTION void SetPrintF(bool);
-NET_EXPORT_FUNCTION bool GetPrintFState();
-NET_EXPORT_FUNCTION WORD GetColorFromState(LogStates);
+		enum class LogStates
+		{
+			normal = 0,
+			debug,
+			warning,
+			error,
+			success,
+			peer
+		};
 #endif
-NET_NAMESPACE_END
-
-NET_NAMESPACE_BEGIN(Manager)
-NET_NAMESPACE_BEGIN(Log)
+		NET_EXPORT_FUNCTION tm TM_GetTime();
 #ifndef NET_DISABLE_LOGMANAGER
-NET_EXPORT_FUNCTION void SetOutputName(const char*);
-NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
-NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
-NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const char*, ...);
-void Log(Console::LogStates, const char*, const wchar_t*, ...);
-#endif
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
+		NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates);
+		void Log(LogStates, const char*, const char*, ...);
+		void Log(LogStates, const char*, const wchar_t*, ...);
+		NET_EXPORT_FUNCTION void ChangeStdOutputColor(int);
 
+		NET_EXPORT_FUNCTION void SetPrintF(bool);
+		NET_EXPORT_FUNCTION bool GetPrintFState();
+		NET_EXPORT_FUNCTION WORD GetColorFromState(LogStates);
+#endif
+	}
+
+	namespace Manager
+	{
+		namespace Log
+		{
+#ifndef NET_DISABLE_LOGMANAGER
+			NET_EXPORT_FUNCTION void SetOutputName(const char*);
+			NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
+			NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const char*, ...);
+			void Log(Console::LogStates, const char*, const wchar_t*, ...);
+#endif
+		}
+	}
+}
 NET_DSA_END

@@ -772,7 +772,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 		else
 			sprintf(host, CSTRING("127.0.0.1:%i"), Isset(NET_OPT_PORT) ? GetOption<u_short>(NET_OPT_PORT) : NET_OPT_DEFAULT_PORT);
 
-		CPOINTER<char> origin;
+		NET_CPOINTER<char> origin;
 		if (Isset(NET_OPT_WS_CUSTOM_HANDSHAKE) ? GetOption<bool>(NET_OPT_WS_CUSTOM_HANDSHAKE) : NET_OPT_DEFAULT_WS_CUSTOM_HANDSHAKE)
 		{
 			const auto originSize = strlen(Isset(NET_OPT_WS_CUSTOM_ORIGIN) ? GetOption<char*>(NET_OPT_WS_CUSTOM_ORIGIN) : NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN);
@@ -781,7 +781,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 		}
 
 		// Create Response
-		CPOINTER<char> buffer(ALLOC<char>(NET_OPT_DEFAULT_MAX_PACKET_SIZE + 1));
+		NET_CPOINTER<char> buffer(ALLOC<char>(NET_OPT_DEFAULT_MAX_PACKET_SIZE + 1));
 		sprintf(buffer.get(), CSTRING("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n"), reinterpret_cast<char*>(enc_Sec_Key));
 
 		/* SSL */
@@ -1028,7 +1028,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
 
 	auto dataBufferSize = buffer.size();
-	CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
+	NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
 	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
 	dataBuffer.get()[dataBufferSize] = '\0';
 	buffer.clear();
@@ -1087,7 +1087,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 		const unsigned char opcode = (i != 0 ? NET_OPCODE_CONTINUE : opc);
 
 		const size_t bufferLength = (i != (frameCount - 1) ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength);
-		CPOINTER<char> buf;
+		NET_CPOINTER<char> buf;
 		size_t totalLength;
 
 		if (bufferLength <= 125)
@@ -1390,7 +1390,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 		NextBits += MaskKeyLength;
 
 		// Decode Payload
-		CPOINTER<byte> Payload(ALLOC<byte>(PayloadLength + 1));
+		NET_CPOINTER<byte> Payload(ALLOC<byte>(PayloadLength + 1));
 		memcpy(Payload.get(), &peer->network.getData()[NextBits], PayloadLength);
 		Payload.get()[PayloadLength] = '\0';
 
@@ -1437,7 +1437,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 		{
 			// append
 			const auto dataFragementSize = strlen(reinterpret_cast<char const*>(peer->network.getDataFragmented()));
-			CPOINTER<byte> tmpDataFragement(ALLOC<byte>(dataFragementSize + 1));
+			NET_CPOINTER<byte> tmpDataFragement(ALLOC<byte>(dataFragementSize + 1));
 			memcpy(tmpDataFragement.get(), peer->network.getDataFragmented(), dataFragementSize);
 			memcpy(&tmpDataFragement.get()[dataFragementSize], peer->network.getData(), peer->network.getDataSize());
 			tmpDataFragement.get()[(peer->network.getDataSize() + dataFragementSize)] = '\0';

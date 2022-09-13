@@ -1,7 +1,7 @@
 #include "Server.h"
 
 NET_DECLARE_PACKET_CALLBACK_BEGIN(Server)
-NET_DEFINE_PACKET_CALLBACK(Test, Packages::PKG_TEST);
+NET_DEFINE_PACKET_CALLBACK(Test, Sandbox::Packet::PKG_TEST);
 NET_DECLARE_PACKET_CALLBACK_END
 
 void Server::Tick() {}
@@ -16,8 +16,8 @@ if (!PKG[CSTRING("text")])
 	return;
 }
 auto text = PKG[CSTRING("text")]->as_string();
-LOG(CSTRING("Hello '%s' from Client"), text);
+NET_LOG(CSTRING("Hello '%s' from Client"), text);
 
 NET_PACKET reply;
-NET_SEND(peer, Packages::PKG_TEST, reply);
+NET_SEND(peer, Sandbox::Packet::PKG_TEST, reply);
 NET_END_PACKET

@@ -48,7 +48,7 @@ namespace Import
 		{
 			char name[MAX_PATH];
 			char path[MAX_PATH];
-			CPOINTER<void> module;
+			NET_CPOINTER<void> module;
 			type_t type;
 		};
 
@@ -57,7 +57,7 @@ namespace Import
 		bool Load(const char* library, const char* path, type_t type = type_t::RESOLVE_KERNEL32);
 		bool Remove(const char* library);
 		bool Unload(const char* library);
-		CPOINTER<void> Function(const char* library, const char* funcName);
+		NET_CPOINTER<void> Function(const char* library, const char* funcName);
 	}
 }
 #endif

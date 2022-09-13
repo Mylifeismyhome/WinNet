@@ -6,7 +6,7 @@ NET_DECLARE_PACKET_CALLBACK_END
 void WebSocket::Tick() {}
 void WebSocket::OnPeerConnect(NET_PEER peer)
 {
-	LOG(CSTRING("CONNECTED"));
+	NET_LOG(CSTRING("CONNECTED"));
 }
 void WebSocket::OnPeerEstabilished(NET_PEER peer) {}
 void WebSocket::OnPeerDisconnect(NET_PEER peer, int reason) {}

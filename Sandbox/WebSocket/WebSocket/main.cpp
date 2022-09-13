@@ -9,14 +9,14 @@
 
 int main()
 {
-	Net::load(Net::ENABLE_LOGGING);
+	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
 	WebSocket ws;
 	ws.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
 	ws.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 
 	if (!ws.Run())
-		LOG_ERROR(CSTRING("UNABLE TO RUN WEBSERVER"));
+		NET_LOG_ERROR(CSTRING("UNABLE TO RUN WEBSERVER"));
 
 	while (ws.IsRunning())
 	{
@@ -28,9 +28,7 @@ int main()
 #endif
 	}
 
-	END_LOG;
-
-	Net::unload();
+	NET_UNLOAD;
 
 	return 0;
 }

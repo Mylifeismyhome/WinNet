@@ -938,7 +938,7 @@
     <ClInclude Include="..\Net\Import\Ntdll.hpp" />
     <ClInclude Include="..\Net\Import\User32.hpp" />
     <ClInclude Include="..\Net\Import\Ws2_32.hpp" />
-    <ClInclude Include="..\Net\Net\NativePackages.h" />
+    <ClInclude Include="..\Net\Net\NetNativePacket.h" />
     <ClInclude Include="..\Net\Net\Net.h" />
     <ClInclude Include="..\Net\Net\NetBuild.h" />
     <ClInclude Include="..\Net\Net\NetBuildConfig.h" />

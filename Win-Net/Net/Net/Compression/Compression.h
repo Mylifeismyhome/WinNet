@@ -1,5 +1,7 @@
 #pragma once
+
 #define NET_ZLIB Net::Compression::ZLib
+
 #include <Net/Net/Net.h>
 #include <ZLib/zlib.h>
 
@@ -12,15 +14,17 @@ enum class ZLIB_CompressionLevel
 	DEFAULT_COMPRESSION = Z_DEFAULT_COMPRESSION
 };
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Compression)
-NET_NAMESPACE_BEGIN(ZLib)
-int Compress(BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION);
-int Compress(BYTE*&, BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION, bool = false);
-int Decompress(BYTE*&, size_t&, bool = false);
-int Decompress(BYTE*&, BYTE*&, size_t&, bool = false);
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
+namespace Net
+{
+	namespace Compression
+	{
+		namespace ZLib
+		{
+			int Compress(BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION);
+			int Compress(BYTE*&, BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION, bool = false);
+			int Decompress(BYTE*&, size_t&, bool = false);
+			int Decompress(BYTE*&, BYTE*&, size_t&, bool = false);
+		}
+	}
+}
 NET_DSA_END

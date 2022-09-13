@@ -80,7 +80,7 @@ namespace Net
 			struct Network
 			{
 				byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-				CPOINTER<byte> data;
+				NET_CPOINTER<byte> data;
 				size_t data_size;
 				size_t data_full_size;
 				size_t data_offset;
@@ -218,7 +218,7 @@ namespace Net
 		private:
 			SOCKET connectSocket;
 			struct addrinfo* connectSocketAddr;
-			CPOINTER<char> ServerAddress;
+			NET_CPOINTER<char> ServerAddress;
 			u_short ServerPort;
 			bool connected;
 
@@ -273,7 +273,7 @@ namespace Net
 		private:
 			void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+			void SingleSend(NET_CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 
 		public:

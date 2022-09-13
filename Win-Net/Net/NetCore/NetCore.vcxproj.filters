@@ -176,9 +176,6 @@
     <ClInclude Include="..\Net\Net\NetPacket.h">
       <Filter>Net</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\Net\NativePackages.h">
-      <Filter>Net</Filter>
-    </ClInclude>
     <ClInclude Include="..\Net\Net\Net.h">
       <Filter>Net</Filter>
     </ClInclude>
@@ -288,6 +285,9 @@
       <Filter>Net</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetJson.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Net\Net\NetNativePacket.h">
       <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>

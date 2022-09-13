@@ -2,7 +2,7 @@
 #include <Net/Net/Net.h>
 #include <NetWebSocket/WebSocket.h>
 
-NET_INHERITANCE(WebSocket, NET_WEB_SERVER)
+NET_CLASS(WebSocket, NET_WEB_SOCKET)
 {
 	NET_CALLBACK(void, Tick);
 	NET_CALLBACK(void, OnPeerConnect, NET_PEER);

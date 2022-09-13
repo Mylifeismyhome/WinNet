@@ -3,8 +3,6 @@
 #include <Net/Cryption/PointerCryption.h>
 #include <Net/Cryption/CXOR.hpp>
 
-NET_DSA_BEGIN
-
 #define RUNTIMEXOR Net::Cryption::XOR
 
 #ifdef BUILD_LINUX
@@ -27,44 +25,50 @@ NET_DSA_BEGIN
 #endif
 #endif
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Cryption)
-NET_CLASS_BEGIN(XOR_UNIQUEPOINTER)
-CPOINTER<char> buffer;
-size_t _length;
-bool bFree;
+NET_DSA_BEGIN
+namespace Net
+{
+	namespace Cryption
+	{
+		class XOR_UNIQUEPOINTER
+		{
+			NET_CPOINTER<char> buffer;
+			size_t _length;
+			bool bFree;
 
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(XOR_UNIQUEPOINTER, char*, size_t, bool)
-NET_CLASS_DESTRUCTUR(XOR_UNIQUEPOINTER)
+		public:
+			XOR_UNIQUEPOINTER(char*, size_t, bool);
+			~XOR_UNIQUEPOINTER();
 
-char* get() const;
-char* data()  const;
-char* str() const;
-size_t length() const;
-size_t size() const;
+			char* get() const;
+			char* data()  const;
+			char* str() const;
+			size_t length() const;
+			size_t size() const;
 
-void free();
-NET_CLASS_END
+			void free();
+		};
 
-NET_CLASS_BEGIN(XOR)
-CPOINTER<char> _buffer;
-size_t _length;
-CPOINTER<size_t> _Key;
+		class XOR
+		{
+			NET_CPOINTER<char> _buffer;
+			size_t _length;
+			NET_CPOINTER<size_t> _Key;
 
-char* encrypt();
-char* decrypt() const;
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(XOR)
-NET_CLASS_CONSTRUCTUR(XOR, char*)
-void init(char*);
-void init(const char*);
-size_t size() const;
-size_t length() const;
-XOR_UNIQUEPOINTER revert(bool = true);
-void free();
-NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
+			char* encrypt();
+			char* decrypt() const;
 
+		public:
+			XOR();
+			XOR(char*);
+
+			void init(char*);
+			void init(const char*);
+			size_t size() const;
+			size_t length() const;
+			XOR_UNIQUEPOINTER revert(bool = true);
+			void free();
+		};
+	}
+}
 NET_DSA_END

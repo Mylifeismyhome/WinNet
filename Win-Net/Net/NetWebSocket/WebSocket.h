@@ -1,5 +1,5 @@
 #pragma once
-#define NET_WEB_SERVER Net::WebSocket::Server
+#define NET_WEB_SOCKET Net::WebSocket::Server
 
 #define NET_PEER Net::WebSocket::Server::peerInfo*
 
@@ -118,9 +118,9 @@ namespace Net
 			struct network_t
 			{
 				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-				CPOINTER<byte> _data;
+				NET_CPOINTER<byte> _data;
 				size_t _data_size;
-				CPOINTER<byte> _dataFragment;
+				NET_CPOINTER<byte> _dataFragment;
 				size_t _data_sizeFragment;
 				std::recursive_mutex _mutex_send;
 

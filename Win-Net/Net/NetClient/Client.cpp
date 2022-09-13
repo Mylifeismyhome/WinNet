@@ -847,7 +847,7 @@ namespace Net
 			FREE(data);
 		}
 
-		void Client::SingleSend(CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
+		void Client::SingleSend(NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 		{
 			if (!GetSocket())
 			{
@@ -1013,7 +1013,7 @@ namespace Net
 			auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
 
 			auto dataBufferSize = buffer.size();
-			CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
+			NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
 			memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
 			dataBuffer.get()[dataBufferSize] = '\0';
 			buffer.clear();
@@ -1027,11 +1027,11 @@ namespace Net
 
 				/* Generate new AES Keypair */
 				size_t aesKeySize = Isset(NET_OPT_CIPHER_AES_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE;
-				CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
+				NET_CPOINTER<BYTE> Key(ALLOC<BYTE>(aesKeySize + 1));
 				Random::GetRandStringNew(Key.reference().get(), aesKeySize);
 				Key.get()[aesKeySize] = '\0';
 
-				CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
+				NET_CPOINTER<BYTE> IV(ALLOC<BYTE>(CryptoPP::AES::BLOCKSIZE + 1));
 				Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 				IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
@@ -1528,7 +1528,7 @@ namespace Net
 
 		void Client::ExecutePackage()
 		{
-			CPOINTER<BYTE> data;
+			NET_CPOINTER<BYTE> data;
 			Packet Content;
 
 			/* Crypt */
@@ -1536,7 +1536,7 @@ namespace Net
 			{
 				auto offset = network.data_offset + 1;
 
-				CPOINTER<BYTE> AESKey;
+				NET_CPOINTER<BYTE> AESKey;
 				size_t AESKeySize;
 
 				// look for key tag
@@ -1550,7 +1550,7 @@ namespace Net
 						if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
-							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 							memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							AESKeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1569,7 +1569,7 @@ namespace Net
 					offset += AESKeySize;
 				}
 
-				CPOINTER<BYTE> AESIV;
+				NET_CPOINTER<BYTE> AESIV;
 				size_t AESIVSize;
 
 				// look for iv tag
@@ -1583,7 +1583,7 @@ namespace Net
 						if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
 							const auto psize = y - offset - 1;
-							CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 							memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
 							AESIVSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1641,7 +1641,7 @@ namespace Net
 						offset += strlen(NET_RAW_DATA_KEY);
 
 						// read size
-						CPOINTER<BYTE> key;
+						NET_CPOINTER<BYTE> key;
 						size_t KeySize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
@@ -1649,7 +1649,7 @@ namespace Net
 								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
 									const auto psize = y - offset - 1;
-									CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
 									KeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1680,7 +1680,7 @@ namespace Net
 									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 									{
 										const auto psize = y - offset - 1;
-										CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 										dataSizeStr.get()[psize] = '\0';
 										packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1729,7 +1729,7 @@ namespace Net
 								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
 									const auto psize = y - offset - 1;
-									CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
 									packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1780,7 +1780,7 @@ namespace Net
 						offset += strlen(NET_RAW_DATA_KEY);
 
 						// read size
-						CPOINTER<BYTE> key;
+						NET_CPOINTER<BYTE> key;
 						size_t KeySize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
@@ -1788,7 +1788,7 @@ namespace Net
 								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
 									const auto psize = y - offset - 1;
-									CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
 									KeySize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1819,7 +1819,7 @@ namespace Net
 									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 									{
 										const auto psize = y - offset - 1;
-										CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 										dataSizeStr.get()[psize] = '\0';
 										packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
@@ -1860,7 +1860,7 @@ namespace Net
 								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
 									const auto psize = y - offset - 1;
-									CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
 									packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
