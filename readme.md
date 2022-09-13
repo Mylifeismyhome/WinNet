@@ -113,7 +113,6 @@ this batch automatically runs BUILD.bat
 >>> - [x] RSA
 >>> - [x] Pointer
 >>> - [x] XOR Runtime & Compiletime
->>> - [x] BCrypt
 >>
 >>> ## Compression
 >>> - [x] ZLib
