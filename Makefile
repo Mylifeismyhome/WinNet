@@ -146,6 +146,12 @@ define build_sandboxwebsocket
         ${MAKE} -C ${ROOT_DIR}/Sandbox/WebSocket/WebSocket/
 endef
 
+# build sandboxfeature
+define build_sandboxfeature
+        @printf "`tput setaf 1`********** BUILDING SANDBOX FEATURE **********`tput sgr0`\n"
+        ${MAKE} -C ${ROOT_DIR}/Sandbox/Feature/Feature/
+endef
+
 # run task
 all:
 	$(crypto++)
@@ -173,6 +179,7 @@ sandbox:
 	$(build_sandboxclient)
 	$(build_sandboxserver)
 	$(build_sandboxwebsocket)
+	$(build_sandboxfeature)
 
 openssl-download:
 	$(download_openssl)
@@ -233,6 +240,9 @@ sandboxclient:
 
 sandboxwebsocket:
 	$(build_sandboxwebsocket)
+	
+sandboxfeature:
+	$(build_sandboxfeature)
 
 clean:
 	$(clean_all)

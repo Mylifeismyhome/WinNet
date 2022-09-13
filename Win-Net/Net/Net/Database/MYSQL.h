@@ -159,12 +159,7 @@ class MYSQL
 	char* lastError = nullptr;
 
 public:
-	explicit MYSQL(const MYSQL_CON conConfig)
-	{
-		this->conConfig = conConfig;
-		if (!setup())
-			return;
-	}
+	MYSQL(const MYSQL_CON conConfig);
 	~MYSQL();
 
 	bool connect();
