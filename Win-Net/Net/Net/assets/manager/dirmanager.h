@@ -16,8 +16,6 @@
 #include <direct.h>
 #endif
 
-NET_DSA_BEGIN
-
 #ifdef UNICODE
 #define NET_FILE_ATTR_ NET_FILE_ATTRW
 
@@ -51,135 +49,138 @@ NET_DSA_BEGIN
 #define NET_WMKDIR _wmkdir
 #endif
 
+NET_DSA_BEGIN
 struct NET_FILE_ATTRW
 {
-        wchar_t name[NET_MAX_PATH];
-        wchar_t path[NET_MAX_PATH];
-        wchar_t fullPath[NET_MAX_PATH];
+	wchar_t name[NET_MAX_PATH];
+	wchar_t path[NET_MAX_PATH];
+	wchar_t fullPath[NET_MAX_PATH];
 
-        size_t size;
-        time_t lastAccess;
-        time_t lastModification;
-        time_t creationTime;
+	size_t size;
+	time_t lastAccess;
+	time_t lastModification;
+	time_t creationTime;
 
- 	NET_FILE_ATTRW() = default;
+	NET_FILE_ATTRW() = default;
 
-	#ifdef BUILD_LINUX
+#ifdef BUILD_LINUX
 	NET_FILE_ATTRW(struct dirent*, wchar_t*);
-	#else
-        _WIN32_FIND_DATAW w32Data;
+#else
+	_WIN32_FIND_DATAW w32Data;
 
-        NET_FILE_ATTRW(_WIN32_FIND_DATAW, wchar_t*);
-        #endif
+	NET_FILE_ATTRW(_WIN32_FIND_DATAW, wchar_t*);
+#endif
 };
 
 struct NET_FILE_ATTRA
 {
-        char name[NET_MAX_PATH];
-        char path[NET_MAX_PATH];
-        char fullPath[NET_MAX_PATH];
+	char name[NET_MAX_PATH];
+	char path[NET_MAX_PATH];
+	char fullPath[NET_MAX_PATH];
 
-        size_t size;
-        time_t lastAccess;
-        time_t lastModification;
-        time_t creationTime;
+	size_t size;
+	time_t lastAccess;
+	time_t lastModification;
+	time_t creationTime;
 
 	NET_FILE_ATTRA() = default;
 
-	#ifdef BUILD_LINUX
+#ifdef BUILD_LINUX
 	NET_FILE_ATTRA(struct dirent*, char*);
-	#else
+#else
 	_WIN32_FIND_DATAA w32Data;
 
-        NET_FILE_ATTRA(_WIN32_FIND_DATAA, char*);
-        #endif
+	NET_FILE_ATTRA(_WIN32_FIND_DATAA, char*);
+#endif
 };
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Manager)
-NET_NAMESPACE_BEGIN(Directory)
-enum class createDirCodes
+namespace Net
 {
-	SUCCESS = 0,
-	ERR,
-	ERR_EXISTS
-};
-
-struct createDirResW_t
-{
-	wchar_t entry[NET_MAX_PATH];
-	int code;
-
-	createDirResW_t(const wchar_t* entry, const createDirCodes code)
+	namespace Manager
 	{
-		wcscpy(this->entry, entry);
-		this->code = (int)code;
-	}
-};
+		namespace Directory
+		{
+			enum class createDirCodes
+			{
+				SUCCESS = 0,
+				ERR,
+				ERR_EXISTS
+			};
 
-struct createDirResW
-{
-	bool error;
-	std::vector<createDirResW_t> failures;
+			struct createDirResW_t
+			{
+				wchar_t entry[NET_MAX_PATH];
+				int code;
 
-	createDirResW(const bool error, const std::vector<createDirResW_t>& failures)
-	{
-		this->error = error;
-		this->failures = failures;
-	}
-};
+				createDirResW_t(const wchar_t* entry, const createDirCodes code)
+				{
+					wcscpy(this->entry, entry);
+					this->code = (int)code;
+				}
+			};
 
-struct createDirResA_t
-{
-	char entry[NET_MAX_PATH];
-	int code;
+			struct createDirResW
+			{
+				bool error;
+				std::vector<createDirResW_t> failures;
 
-	createDirResA_t(const char* entry, const createDirCodes code)
-	{
-		strcpy(this->entry, entry);
-		this->code = (int)code;
-	}
-};
+				createDirResW(const bool error, const std::vector<createDirResW_t>& failures)
+				{
+					this->error = error;
+					this->failures = failures;
+				}
+			};
 
-struct createDirResA
-{
-	bool error;
-	std::vector<createDirResA_t> failures;
+			struct createDirResA_t
+			{
+				char entry[NET_MAX_PATH];
+				int code;
 
-	createDirResA(const bool error, const std::vector<createDirResA_t>& failures)
-	{
-		this->error = error;
-		this->failures = failures;
-	}
-};
+				createDirResA_t(const char* entry, const createDirCodes code)
+				{
+					strcpy(this->entry, entry);
+					this->code = (int)code;
+				}
+			};
 
-bool folderExists(const wchar_t*, bool = false);
-bool folderExists(const char*, bool = false);
+			struct createDirResA
+			{
+				bool error;
+				std::vector<createDirResA_t> failures;
+
+				createDirResA(const bool error, const std::vector<createDirResA_t>& failures)
+				{
+					this->error = error;
+					this->failures = failures;
+				}
+			};
+
+			bool folderExists(const wchar_t*, bool = false);
+			bool folderExists(const char*, bool = false);
 
 #ifdef BUILD_LINUX
-createDirResW createDir(wchar_t*, __mode_t = NET_DEFAULT_MKDIR_MODE);
-createDirResA createDir(char*, __mode_t = NET_DEFAULT_MKDIR_MODE);
+			createDirResW createDir(wchar_t*, __mode_t = NET_DEFAULT_MKDIR_MODE);
+			createDirResA createDir(char*, __mode_t = NET_DEFAULT_MKDIR_MODE);
 #else
-createDirResW createDir(wchar_t*);
-createDirResA createDir(char*);
+			createDirResW createDir(wchar_t*);
+			createDirResA createDir(char*);
 #endif
 
 #ifdef BUILD_LINUX
-bool deleteDir(wchar_t*, bool = false);
-bool deleteDir(char*, bool = false);
+			bool deleteDir(wchar_t*, bool = false);
+			bool deleteDir(char*, bool = false);
 #else
-bool deleteDir(wchar_t*, bool = true, bool = false);
-bool deleteDir(char*, bool = true, bool = false);
+			bool deleteDir(wchar_t*, bool = true, bool = false);
+			bool deleteDir(char*, bool = true, bool = false);
 #endif
 
-void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&, bool = false);
-void scandir(char*, std::vector<NET_FILE_ATTRA>&, bool = false);
-std::wstring homeDirW();
-std::string homeDirA();
-std::wstring currentFileNameW();
-std::string currentFileNameA();
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
-
+			void scandir(wchar_t*, std::vector<NET_FILE_ATTRW>&, bool = false);
+			void scandir(char*, std::vector<NET_FILE_ATTRA>&, bool = false);
+			std::wstring homeDirW();
+			std::string homeDirA();
+			std::wstring currentFileNameW();
+			std::string currentFileNameA();
+		}
+	}
+}
 NET_DSA_END

@@ -121,40 +121,6 @@ typedef unsigned __int64 uint64;
 #endif
 #endif
 
-#define NET_NAMESPACE_BEGIN(n) namespace n {
-#define NET_NAMESPACE_END }
-
-#define NET_CLASS_BEGIN(c) class c {
-#define NET_ABSTRAC_CLASS_BEGIN(c, d) class NET_EXPORT_CLASS c : public d {
-#define NET_CLASS_END };
-#define NET_CLASS_CONSTRUCTUR(a, ...) a(__VA_ARGS__);
-#define NET_CLASS_CONSTRUCTUR_NOEXCEPT(a, ...) a(__VA_ARGS__) NOEXPECT;
-#define NET_CLASS_VCONSTRUCTUR(a, ...) virtual a(__VA_ARGS__);
-#define NET_CLASS_DESTRUCTUR(d) ~d();
-#define NET_CLASS_VDESTRUCTUR(d) virtual ~d();
-#define NET_CLASS_BEGIN_CONSTRUCTUR(a, ...) a(__VA_ARGS__) {
-#define NET_CLASS_BEGIN_VCONSTRUCTUR(a, ...) virtual a(__VA_ARGS__) {
-#define NET_CLASS_BEGIN_DESTRUCTUR(d) ~d() {
-#define NET_CLASS_BEGIN_VDESTRUCTUR(d) virtual ~d() {
-#define NET_CLASS_END_CONTRUCTION }
-#define NET_CLASS_END_DESTRUCTUR }
-#define NET_CLASS_PRIVATE private:
-#define NET_CLASS_PUBLIC public:
-#define NET_CLASS_PROTECTED protected:
-
-#define NET_STRUCT_BEGIN(s) struct s {
-#define NET_ABSTRACT_STRUCT(s, t) struct s : t {
-#define NET_STRUCT_END };
-#define NET_STRUCT_CONSTRUCTUR(c) c();
-#define NET_STRUCT_VCONSTRUCTUR(c) virtual c();
-#define NET_STRUCT_DESTRUCTUR(d) ~d();
-#define NET_STRUCT_VDESTRUCTUR(d) virtual ~d();
-#define NET_STRUCT_BEGIN_CONSTRUCTUR(c) c() {
-#define NET_STRUCT_BEGIN_VCONSTRUCTUR(c) virtual c() {
-#define NET_STRUCT_BEGIN_DESTRUCTUR(d) ~d() {
-#define NET_STRUCT_BEGIN_VDESTRUCTUR(d) virtual ~d() {
-#define NET_STRUCT_END_CONTRUCTION }
-
 #define NET_CALLBACK(type, name, ...) \
 type name(__VA_ARGS__) override;
 
@@ -163,10 +129,11 @@ virtual type name(__VA_ARGS__)
 
 #define DEBUG_BREAK __debugbreak();
 
-#define NET_INHERITANCE(NAME, CLASS) class NAME final : public CLASS
-#define NET_CLIENT_CLASS(NAME) NET_INHERITANCE(NAME, NET_CLIENT)
-#define NET_SERVER_CLASS(NAME) NET_INHERITANCE(NAME, NET_SERVER)
-#define NET_WEBSERVER_CLASS(NAME) NET_INHERITANCE(NAME, NET_WEB_SERVER)
+#define NET_CLASS(NAME, CLASS) class NAME final : public CLASS
+
+#define NET_INITIALIZE(flag) Net::load(flag)
+#define NET_LOAD(flag) Net::load(flag)
+#define NET_UNLOAD Net::unload()
 
 /* DATA STRUCTURE ALIGNEMNT */
 #ifndef BUILD_LINUX
@@ -307,13 +274,13 @@ static void Free(T*& data)
 #define PEER_VALID(peer) if(peer)
 #define PEER_NOT_VALID(peer, stuff) if(!peer) \
 	{ \
-		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(this)); \
+		NET_LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(this)); \
 		stuff \
 	}
 
 #define PEER_NOT_VALID_EX(peer, server, stuff) if(!peer) \
 	{ \
-		LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(server)); \
+		NET_LOG_ERROR(CSTRING("[%s] - Peer has no instance!"), SERVERNAME(server)); \
 		stuff \
 	}
 
@@ -654,27 +621,29 @@ namespace Net
 	bool NET_STRING_IS_NUMBER(const std::string& s);
 }
 
-NET_NAMESPACE_BEGIN(ServerHandshake)
-enum Server_HandshakeRet_t
+namespace ServerHandshake
 {
-	is_not_websocket = 0,
-	is_websocket,
-	error,
-	peer_not_valid,
-	would_block
-};
-NET_NAMESPACE_END
+	enum Server_HandshakeRet_t
+	{
+		is_not_websocket = 0,
+		is_websocket,
+		error,
+		peer_not_valid,
+		would_block
+	};
+}
 
-NET_NAMESPACE_BEGIN(WebServerHandshake)
-enum HandshakeRet_t
+namespace WebServerHandshake
 {
-	success = 0,
-	missmatch,
-	error,
-	peer_not_valid,
-	would_block
-};
-NET_NAMESPACE_END
+	enum HandshakeRet_t
+	{
+		success = 0,
+		missmatch,
+		error,
+		peer_not_valid,
+		would_block
+	};
+}
 
 /* OPTION BIT FLAGS */
 #define NET_OPT_FREQUENZ (1 << 0)
@@ -743,7 +712,7 @@ NET_NAMESPACE_END
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
 #define NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME 60000
 
-#define NOEXPECT
+#define NOEXPECT noexcept
 #define CONSTEXPR const
 
 #define FUNCNAME CSTRING("")

@@ -379,7 +379,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Packages.hpp" />
+    <ClInclude Include="..\..\Packet.hpp" />
     <ClInclude Include="Client\Client.h" />
     <ClInclude Include="config.h" />
   </ItemGroup>

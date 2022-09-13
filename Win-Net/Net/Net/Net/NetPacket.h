@@ -5,22 +5,23 @@ pkg1.SetJson(pkg2.Data()); \
 pkg1.SetRaw(pkg2.GetRawData());
 
 ///////////////////////////////////////////////////////////
-///							///
-///		  FAST PACKAGE ID IMPLEMENTATION	///
-///							///
+///														///
+///		  FAST PACKAGE ID IMPLEMENTATION				///
+///														///
 //////////////////////////////////////////////////////////
 #define NET_DEFINE_PACKAGES(name, first, ...) \
-NET_NAMESPACE_BEGIN(name) \
-enum T##name \
+namespace name \
 { \
-first = NET_LAST_PACKAGE_ID, \
-__VA_ARGS__ \
-}; \
-NET_NAMESPACE_END
+	enum T##name \
+	{ \
+	first = NET_LAST_PACKAGE_ID, \
+	__VA_ARGS__ \
+	}; \
+}
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
-#include <Net/Net/NativePackages.h>
+#include <Net/Net/NetNativePacket.h>
 #include <Net/Net/NetJson.h>
 
 #include <Net/assets/assets.h>

@@ -1,5 +1,5 @@
 #pragma once
-#define NET_WEB_SERVER Net::WebSocket::Server
+#define NET_WEB_SOCKET Net::WebSocket::Server
 
 #define NET_PEER Net::WebSocket::Server::peerInfo*
 
@@ -10,9 +10,9 @@
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_PACKET }
-#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
+#define NET_DECLARE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
 
-#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+#define NET_NATIVE_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer) \
@@ -20,7 +20,7 @@ if(!peer) \
 switch (id) \
 {
 
-#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+#define NET_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer || !peer->estabilished) \
@@ -28,14 +28,14 @@ if(!peer || !peer->estabilished) \
 switch (id) \
 {
 
-#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+#define NET_DEFINE_PACKET(xxx, yyy) \
     case yyy: \
     { \
       On##xxx(peer, pkg); \
       break; \
     }
 
-#define NET_DECLARE_PACKET_CALLBACK_END \
+#define NET_PACKET_DEFINITION_END \
 	default: \
 		return false; \
 } \
@@ -118,9 +118,9 @@ namespace Net
 			struct network_t
 			{
 				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-				CPOINTER<byte> _data;
+				NET_CPOINTER<byte> _data;
 				size_t _data_size;
-				CPOINTER<byte> _dataFragment;
+				NET_CPOINTER<byte> _dataFragment;
 				size_t _data_sizeFragment;
 				std::recursive_mutex _mutex_send;
 

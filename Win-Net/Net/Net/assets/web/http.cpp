@@ -493,7 +493,7 @@ bool Net::Web::Head::ParseResult()
 {
 	if (!network.data.valid())
 	{
-		LOG_ERROR(CSTRING("[Head] - Failure on parsing result, buffer is nullptr"));
+		NET_LOG_ERROR(CSTRING("[Head] - Failure on parsing result, buffer is nullptr"));
 		return false;
 	}
 
@@ -517,7 +517,7 @@ bool Net::Web::Head::ParseResult()
 		const auto resultCode = result.substr(resultCodePos + 9, 3);
 		if (!NET_STRING_IS_NUMBER(resultCode))
 		{
-			LOG_ERROR(CSTRING("[Head] - Result code is not a number!"));
+			NET_LOG_ERROR(CSTRING("[Head] - Result code is not a number!"));
 			return false;
 		}
 
@@ -532,7 +532,7 @@ void Net::Web::Head::ShutdownSocket(int how) const
 	const auto res = shutdown(GetSocket(), how);
 	if (res == SOCKET_ERROR)
 	{
-		LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[Head] - Failed to shutdown connection: %d"), LAST_ERROR);
 		closesocket(GetSocket());
 #ifndef BUILD_LINUX
 		WSACleanup();
@@ -566,7 +566,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 	const auto protoclPos = fullURL.find(CSTRING("://"));
 	if (protoclPos == std::string::npos)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - URL is invalid! (missing Protocol)"));
+		NET_LOG_ERROR(CSTRING("[HTTP] - URL is invalid! (missing Protocol)"));
 		return false;
 	}
 	protocol = fullURL.substr(0, protoclPos);
@@ -596,7 +596,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 	{
 		if (!NET_STRING_IS_NUMBER(tmpport))
 		{
-			LOG_ERROR(CSTRING("[HTTP] - Port is not a number!"));
+			NET_LOG_ERROR(CSTRING("[HTTP] - Port is not a number!"));
 			return false;
 		}
 
@@ -608,7 +608,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 	const auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - WSAStartup failed with error: %d"), iResult);
+		NET_LOG_ERROR(CSTRING("[HTTP] - WSAStartup failed with error: %d"), iResult);
 		return false;
 	}
 #endif
@@ -623,7 +623,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
 	if (host != 0)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
+		NET_LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
 		return false;
 	}
 
@@ -646,182 +646,182 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 			#ifdef BUILD_LINUX
 			if(errno == EACCES)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast addressdress"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast addressdress"));
 				return 0;
 			}
 			if(errno == EWOULDBLOCK)
 				continue;
 			if(errno == EALREADY)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EALREADY"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EALREADY"));
 				return 0;
 			}
 			if(errno == EBADF)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EBADF"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EBADF"));
 				return 0;
 			}
 			if(errno == ECONNRESET)
 			{
-				LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
+				NET_LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
 				return 0;
 			}
 			if(errno == EDESTADDRREQ)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
 				return 0;
 			}
 			if(errno == EFAULT)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
 				return 0;
 			}
 			if(errno == EINTR)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
 				return 0;
 			}
 			if(errno == EINVAL)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
 				return 0;
 			}
 			if(errno == EISCONN)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EISCONN"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EISCONN"));
 				return 0;
 			}
 			if(errno == EMSGSIZE)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
 				return 0;
 			}
 			if(errno == ENOBUFS)
 			{
-				LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
 				return 0;
 			}
 			if(errno == ENOMEM)
 			{
-				LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
 				return 0;
 			}
 			if(errno == ENOTCONN)
 			{
-				LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
 				return 0;
 			}
 			if(errno == ENOTSOCK)
 			{
-				LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
 				return 0;
 			}
 			if(errno == EOPNOTSUPP)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
 				return 0;
 			}
 			if(errno == EPIPE)
 			{
-				LOG_PEER(CSTRING("[HTTP] - EPIPE"));
+				NET_LOG_PEER(CSTRING("[HTTP] - EPIPE"));
 				return 0;
 			}
 			#else
 			if (WSAGetLastError() == WSANOTINITIALISED)
 			{
-				LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
+				NET_LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAENETDOWN)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEACCES)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast address"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEINTR)
 			{
-				LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
+				NET_LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call was canceled through WSACancelBlockingCall()"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEINPROGRESS)
 			{
-				LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
+				NET_LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEFAULT)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAENETRESET)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep - alive activity detecting a failure while the operation was in progress"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAENOBUFS)
 			{
-				LOG_PEER(CSTRING("[HTTP] - No buffer space is available"));
+				NET_LOG_PEER(CSTRING("[HTTP] - No buffer space is available"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAENOTCONN)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAENOTSOCK)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEOPNOTSUPP)
 			{
-				LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
+				NET_LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only receive operations"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAESHUTDOWN)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to send on a socket after shutdown() has been invoked with how set to SD_SEND or SD_BOTH"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEWOULDBLOCK)
 				continue;
 			if (WSAGetLastError() == WSAEMSGSIZE)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket is message oriented, and the message is larger than the maximum supported by the underlying transport"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEHOSTUNREACH)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The remote host cannot be reached from this host at this time"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The remote host cannot be reached from this host at this time"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAEINVAL)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAECONNABORTED)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAECONNRESET)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close. For UDP sockets, the remote host was unable to deliver a previously sent UDP datagram and responded with a Port Unreachable ICMP packet. The application should close the socket as it is no longer usable"));
 				return 0;
 			}
 			if (WSAGetLastError() == WSAETIMEDOUT)
 			{
-				LOG_PEER(CSTRING("[HTTP] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				return 0;
 			}
 			#endif
 
-			LOG_PEER(CSTRING("[HTTP] - Something bad happen... on Send"));
+			NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen... on Send"));
 			return 0;
 		}
 
@@ -872,7 +872,7 @@ size_t Net::Web::HTTP::DoReceive()
 
                                         if (!NET_STRING_IS_NUMBER(cLength))
                                         {
-                                                LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+                                                NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
                                                 return 0;
                                         }
 
@@ -890,42 +890,42 @@ size_t Net::Web::HTTP::DoReceive()
 
 			case ECONNREFUSED:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
                                 return 0;
 
 			case EFAULT:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
                                 return 0;
 
 			case EINTR:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - EINTR"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
                                 return 0;
 
 			case EINVAL:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
                                 return 0;
 
 			case ENOMEM:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
                                 return 0;
 
 			case ENOTCONN:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
                                 return 0;
 
 			case ENOTSOCK:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+                                NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
                                 return 0;
 
 			default:
                                 memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+                                NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
                                 return 0;
 			}
 			#else
@@ -933,52 +933,52 @@ size_t Net::Web::HTTP::DoReceive()
 			{
 			case WSANOTINITIALISED:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
+				NET_LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
 				return 0;
 
 			case WSAENETDOWN:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
 				return 0;
 
 			case WSAEFAULT:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
 				return 0;
 
 			case WSAENOTCONN:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
 				return 0;
 
 			case WSAEINTR:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The (blocking) call was canceled through WSACancelBlockingCall()"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The (blocking) call was canceled through WSACancelBlockingCall()"));
 				return 0;
 
 			case WSAEINPROGRESS:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
+				NET_LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 				return 0;
 
 			case WSAENETRESET:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 				return 0;
 
 			case WSAENOTSOCK:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
 				return 0;
 
 			case WSAEOPNOTSUPP:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
+				NET_LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 				return 0;
 
 			case WSAESHUTDOWN:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 				return 0;
 
 			case WSAEWOULDBLOCK:
@@ -1008,7 +1008,7 @@ size_t Net::Web::HTTP::DoReceive()
 
 					if (!NET_STRING_IS_NUMBER(cLength))
 					{
-						LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+						NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
 						return 0;
 					}
 
@@ -1026,32 +1026,32 @@ size_t Net::Web::HTTP::DoReceive()
 
 			case WSAEMSGSIZE:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The message was too large to fit into the specified buffer and was truncated"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The message was too large to fit into the specified buffer and was truncated"));
 				return 0;
 
 			case WSAEINVAL:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 				return 0;
 
 			case WSAECONNABORTED:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				return 0;
 
 			case WSAETIMEDOUT:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
 				return 0;
 
 			case WSAECONNRESET:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
+				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 				return 0;
 
 			default:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
 			}
 			#endif
@@ -1103,7 +1103,7 @@ bool Net::Web::HTTP::Get()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+			NET_LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
 #ifndef BUILD_LINUX
 			WSACleanup();
 #endif
@@ -1120,7 +1120,7 @@ bool Net::Web::HTTP::Get()
 
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1178,7 +1178,7 @@ bool Net::Web::HTTP::Post()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+			NET_LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
 #ifndef BUILD_LINUX
 			WSACleanup();
 #endif
@@ -1195,7 +1195,7 @@ bool Net::Web::HTTP::Post()
 
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTP] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1303,18 +1303,18 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	// create ctx
 	if ((ctx = SSL_CTX_new(NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failed on creating SSL_CTX Object!"));
+		NET_LOG_ERROR(CSTRING("[HTTPS] - failed on creating SSL_CTX Object!"));
 		return false;
 	}
 
-	LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), GET_SSL_METHOD_NAME(METHOD).data());
+	NET_LOG_DEBUG(CSTRING("[HTTPS] - using %s Methode!"), GET_SSL_METHOD_NAME(METHOD).data());
 
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
 
 	const auto protoclPos = fullURL.find(CSTRING("://"));
 	if (protoclPos == std::string::npos)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - URL is invalid! (missing Protocol)"));
+		NET_LOG_ERROR(CSTRING("[HTTPS] - URL is invalid! (missing Protocol)"));
 		return false;
 	}
 	protocol = fullURL.substr(0, protoclPos);
@@ -1344,7 +1344,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	{
 		if (!NET_STRING_IS_NUMBER(tmpport))
 		{
-			LOG_ERROR(CSTRING("[HTTPS] - Port is not a number!"));
+			NET_LOG_ERROR(CSTRING("[HTTPS] - Port is not a number!"));
 			return false;
 		}
 
@@ -1356,7 +1356,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	const auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - WSAStartup failed with error: %d"), iResult);
+		NET_LOG_ERROR(CSTRING("[HTTPS] - WSAStartup failed with error: %d"), iResult);
 		return false;
 	}
 #endif
@@ -1364,7 +1364,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	connectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - socket failed with error: %ld"), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[HTTPS] - socket failed with error: %ld"), LAST_ERROR);
 #ifndef BUILD_LINUX
 		WSACleanup();
 #endif
@@ -1381,7 +1381,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	const auto host = getaddrinfo(url.data(), port_str, &hints, &connectSocketAddr);
 	if (host != 0)
 	{
-		LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
+		NET_LOG_ERROR(CSTRING("[HTTP] - Could not look up host: %s://%s%s:%i"), protocol.data(), url.data(), path.data(), port);
 		return false;
 	}
 
@@ -1404,22 +1404,22 @@ size_t Net::Web::HTTPS::DoSend(std::string& buffer) const
 			const auto err = SSL_get_error(ssl, res);
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
-				LOG_DEBUG(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
+				NET_LOG_DEBUG(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
 				return 0;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
-				LOG_DEBUG(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
+				NET_LOG_DEBUG(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
 				return 0;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				LOG_DEBUG(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
+				NET_LOG_DEBUG(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
-				LOG_DEBUG(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
+				NET_LOG_DEBUG(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SSL)
@@ -1428,7 +1428,7 @@ size_t Net::Web::HTTPS::DoSend(std::string& buffer) const
 			if (err == SSL_ERROR_WANT_WRITE)
 				continue;
 
-			LOG_DEBUG(CSTRING("[HTTPS] - Something bad happen... on Send"));
+			NET_LOG_DEBUG(CSTRING("[HTTPS] - Something bad happen... on Send"));
 			return 0;
 		}
 	} while (res <= 0);
@@ -1450,25 +1450,25 @@ size_t Net::Web::HTTPS::DoReceive()
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
+				NET_LOG_PEER(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
 				break;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
+				NET_LOG_PEER(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
 				return 0;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
+				NET_LOG_PEER(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				LOG_PEER(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
+				NET_LOG_PEER(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SSL)
@@ -1505,7 +1505,7 @@ size_t Net::Web::HTTPS::DoReceive()
 
 					if (!NET_STRING_IS_NUMBER(cLength))
 					{
-						LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+						NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
 						return 0;
 					}
 
@@ -1523,7 +1523,7 @@ size_t Net::Web::HTTPS::DoReceive()
 			}
 
 			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			LOG_PEER(CSTRING("[HTTPS] - Something bad happen... on Receive"));
+			NET_LOG_PEER(CSTRING("[HTTPS] - Something bad happen... on Receive"));
 			return 0;
 		}
 		ERR_clear_error();
@@ -1570,7 +1570,7 @@ bool Net::Web::HTTPS::Get()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+			NET_LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
 #ifndef BUILD_LINUX
 			WSACleanup();
 #endif
@@ -1590,7 +1590,7 @@ bool Net::Web::HTTPS::Get()
 		/* Create a SSL object */
 		if ((ssl = SSL_new(ctx)) == nullptr)
 		{
-			LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
+			NET_LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
 			return false;
 		}
 
@@ -1615,13 +1615,13 @@ bool Net::Web::HTTPS::Get()
 
 	if (sslRet <= 0)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
 	if(connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
@@ -1681,7 +1681,7 @@ bool Net::Web::HTTPS::Post()
 		connectSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (connectSocket == INVALID_SOCKET)
 		{
-			LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
+			NET_LOG_ERROR(CSTRING("[HTTP] - socket failed with error: %ld"), LAST_ERROR);
 #ifndef BUILD_LINUX
 			WSACleanup();
 #endif
@@ -1701,7 +1701,7 @@ bool Net::Web::HTTPS::Post()
 		/* Create a SSL object */
 		if ((ssl = SSL_new(ctx)) == nullptr)
 		{
-			LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
+			NET_LOG_ERROR(CSTRING("[HTTPS] - failure on creating ssl object"));
 			return false;
 		}
 
@@ -1726,13 +1726,13 @@ bool Net::Web::HTTPS::Post()
 
 	if(sslRet <= 0)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 
 	if (connectSocket == INVALID_SOCKET)
 	{
-		LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
+		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
 	}
 

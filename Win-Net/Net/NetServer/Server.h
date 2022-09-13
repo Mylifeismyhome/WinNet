@@ -11,9 +11,9 @@
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_PACKET }
-#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
+#define NET_DECLARE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
 
-#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+#define NET_NATIVE_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer) \
@@ -21,7 +21,7 @@ if(!peer) \
 switch (id) \
 {
 
-#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+#define NET_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer || !peer->estabilished) \
@@ -29,14 +29,14 @@ if(!peer || !peer->estabilished) \
 switch (id) \
 {
 
-#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+#define NET_DEFINE_PACKET(xxx, yyy) \
     case yyy: \
     { \
       On##xxx(peer, pkg); \
       break; \
     }
 
-#define NET_DECLARE_PACKET_CALLBACK_END \
+#define NET_PACKET_DEFINITION_END \
 	default: \
 		return false; \
 } \
@@ -102,7 +102,7 @@ namespace Net
 			struct network_t
 			{
 				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-				CPOINTER<byte> _data;
+				NET_CPOINTER<byte> _data;
 				size_t _data_size;
 				size_t _data_full_size;
 				size_t _data_offset;
@@ -241,8 +241,8 @@ namespace Net
 			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
 
 			/* Native Packages */
-			NET_DEFINE_PACKET(RSAHandshake);
-			NET_DEFINE_PACKET(VersionPackage);
+			NET_DECLARE_PACKET(RSAHandshake);
+			NET_DECLARE_PACKET(VersionPackage);
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
@@ -336,7 +336,7 @@ namespace Net
 			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET& pkg) { return false; }
 			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
+			void SingleSend(NET_PEER, NET_CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
 			void DoSend(NET_PEER, int, NET_PACKET&);
 

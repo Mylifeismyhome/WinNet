@@ -1,9 +1,9 @@
 #pragma once
 #include <Net/Net/Net.h>
 #include <NetClient/Client.h>
-#include "..//..//..//Packages.hpp"
+#include "..//..//..//Packet.hpp"
 
-NET_INHERITANCE(Client, NET_CLIENT)
+NET_CLASS(Client, NET_CLIENT)
 {
 	NET_CALLBACK(void, OnConnected);
 	NET_CALLBACK(void, OnDisconnected);
@@ -17,5 +17,5 @@ NET_INHERITANCE(Client, NET_CLIENT)
 
 	NET_HANDLE_TIMER hTimer;
 
-	NET_DEFINE_PACKET(Test);
+	NET_DECLARE_PACKET(Test);
 };

@@ -67,7 +67,7 @@ namespace Net
 		struct Network_t
 		{
 			byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
-			CPOINTER<byte> data;
+			NET_CPOINTER<byte> data;
 			size_t data_size;
 			size_t data_full_size;
 

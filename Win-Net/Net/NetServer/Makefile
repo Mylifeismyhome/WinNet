@@ -1,6 +1,6 @@
 # build NetServer
 CFLAGS=-std=c++11 -Wall -w -D BUILD_LINUX
-INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
+INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # link Library
 define LINK
@@ -26,6 +26,6 @@ all:
 
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c Server.cpp -o bin/Server.o
 
-	$(call LINK)
-	$(call COPY)
-	$(call CLEAN)
+	$(LINK)
+	$(COPY)
+	$(CLEAN)

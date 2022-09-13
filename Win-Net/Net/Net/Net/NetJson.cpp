@@ -482,7 +482,7 @@ void Net::Json::BasicValueRead::operator=(Document& value)
 
 	default:
 		// error
-		LOG_ERROR(CSTRING("[Json] - Unable to copy document => invalid type"));
+		NET_LOG_ERROR(CSTRING("[Json] - Unable to copy document => invalid type"));
 		break;
 	}
 }
@@ -980,7 +980,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 							else
 							{
 								/* error */
-								LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), lastValue.get().get());
+								NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), lastValue.get().get());
 								return false;
 							}
 
@@ -1069,7 +1069,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 				break;
 
 			default:
-				LOG_ERROR(CSTRING("[Json] - Invalid type"));
+				NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
 				return false;
 			}
 
@@ -1383,7 +1383,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 						else
 						{
 							/* error */
-							LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), value.get().get());
+							NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), value.get().get());
 							return false;
 						}
 
@@ -1428,7 +1428,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 				break;
 
 			default:
-				LOG_ERROR(CSTRING("[Json] - Invalid type"));
+				NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
 				return false;
 			}
 

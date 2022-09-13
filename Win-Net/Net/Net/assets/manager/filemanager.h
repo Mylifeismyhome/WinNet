@@ -30,110 +30,118 @@ NET_DSA_BEGIN
 
 #define ERRORCODEDESC_LEN 256
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Manager)
-enum class ErrorCodes
+namespace Net
 {
-	ERR_OK = 0,
-	ERR_PERM,
-	ERR_NOENT,
-	ERR_SRCH,
-	ERR_INTR,
-	ERR_IO,
-	ERR_NXIO,
-	ERR_2BIG,
-	ERR_NOEXEC,
-	ER_RBADF,
-	ERR_CHILD,
-	ERR_AGAIN,
-	ERR_NOMEM,
-	ERR_ACCES,
-	ERR_FAULT,
-	ERR_NOTBLK,
-	ERR_BUSY,
-	ERR_EXIST,
-	ERR_XDEV,
-	ERR_NODEV,
-	ERR_NOTDIR,
-	ERR_ISDIR,
-	ERR_INVAL,
-	ERR_NFILE,
-	ERR_MFILE,
-	ERR_NOTTY,
-	ERR_TXTBSY,
-	ERR_FBIG,
-	ERR_NOSPC,
-	ERR_SPIPE,
-	ERR_ROFS,
-	ERR_MLINK,
-	ERR_PIPE,
-	ERR_DOM,
-	ERR_RANGE
-};
+	namespace Manager
+	{
+		enum class ErrorCodes
+		{
+			ERR_OK = 0,
+			ERR_PERM,
+			ERR_NOENT,
+			ERR_SRCH,
+			ERR_INTR,
+			ERR_IO,
+			ERR_NXIO,
+			ERR_2BIG,
+			ERR_NOEXEC,
+			ER_RBADF,
+			ERR_CHILD,
+			ERR_AGAIN,
+			ERR_NOMEM,
+			ERR_ACCES,
+			ERR_FAULT,
+			ERR_NOTBLK,
+			ERR_BUSY,
+			ERR_EXIST,
+			ERR_XDEV,
+			ERR_NODEV,
+			ERR_NOTDIR,
+			ERR_ISDIR,
+			ERR_INVAL,
+			ERR_NFILE,
+			ERR_MFILE,
+			ERR_NOTTY,
+			ERR_TXTBSY,
+			ERR_FBIG,
+			ERR_NOSPC,
+			ERR_SPIPE,
+			ERR_ROFS,
+			ERR_MLINK,
+			ERR_PIPE,
+			ERR_DOM,
+			ERR_RANGE
+		};
 
-NET_CLASS_BEGIN(FileManagerErrorRef)
-char buffer[ERRORCODEDESC_LEN];
+		class FileManagerErrorRef
+		{
+			char buffer[ERRORCODEDESC_LEN];
 
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(FileManagerErrorRef, ErrorCodes);
-NET_CLASS_DESTRUCTUR(FileManagerErrorRef);
+		public:
+			FileManagerErrorRef(ErrorCodes);
+			~FileManagerErrorRef();
 
-char* get();
-char* data();
-char* str();
-NET_CLASS_END
+			char* get();
+			char* data();
+			char* str();
+		};
 
-NET_CLASS_BEGIN(FileManagerW)
-wchar_t fname[NET_MAX_PATH];
-FILE* file;
-uint8_t Mode;
-errno_t err;
+		class FileManagerW
+		{
+			wchar_t fname[NET_MAX_PATH];
+			FILE* file;
+			uint8_t Mode;
+			errno_t err;
 
-bool getFileBuffer(BYTE*&, size_t&) const;
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(FileManagerW, const wchar_t*, uint8_t = NET_FILE_READWRITE_APPEND)
-NET_CLASS_DESTRUCTUR(FileManagerW)
-bool openFile();
-void closeFile();
-bool CanOpenFile();
-bool file_exists();
-bool read(BYTE*&, size_t&);
-bool read(char*&);
-bool write(BYTE*, size_t);
-bool write(const char*);
-bool write(const wchar_t*);
-bool size(size_t&);
-void clear()const;
-void close();
-ErrorCodes getLastError() const;
-FileManagerErrorRef ErrorDescription(ErrorCodes) const;
-NET_CLASS_END
-NET_CLASS_BEGIN(FileManagerA)
-char fname[NET_MAX_PATH];
-FILE* file;
-uint8_t Mode;
-errno_t err;
+			bool getFileBuffer(BYTE*&, size_t&) const;
 
-bool getFileBuffer(BYTE*&, size_t&) const;
-NET_CLASS_PUBLIC
-NET_CLASS_CONSTRUCTUR(FileManagerA, const char*, uint8_t = NET_FILE_READWRITE_APPEND)
-NET_CLASS_DESTRUCTUR(FileManagerA)
-bool openFile();
-void closeFile();
-bool CanOpenFile();
-bool file_exists();
-bool read(BYTE*&, size_t&);
-bool read(char*&);
-bool write(BYTE*, size_t);
-bool write(const char*);
-bool write(const wchar_t*);
-bool size(size_t&);
-void clear()const;
-void close();
-ErrorCodes getLastError() const;
-FileManagerErrorRef ErrorDescription(ErrorCodes) const;
-NET_CLASS_END
-NET_NAMESPACE_END
-NET_NAMESPACE_END
+		public:
+			FileManagerW(const wchar_t*, uint8_t = NET_FILE_READWRITE_APPEND);
+			~FileManagerW();
 
+			bool openFile();
+			void closeFile();
+			bool CanOpenFile();
+			bool file_exists();
+			bool read(BYTE*&, size_t&);
+			bool read(char*&);
+			bool write(BYTE*, size_t);
+			bool write(const char*);
+			bool write(const wchar_t*);
+			bool size(size_t&);
+			void clear()const;
+			void close();
+			ErrorCodes getLastError() const;
+			FileManagerErrorRef ErrorDescription(ErrorCodes) const;
+		};
+
+		class FileManagerA
+		{
+			char fname[NET_MAX_PATH];
+			FILE* file;
+			uint8_t Mode;
+			errno_t err;
+
+			bool getFileBuffer(BYTE*&, size_t&) const;
+		public:
+			FileManagerA(const char*, uint8_t = NET_FILE_READWRITE_APPEND);
+			~FileManagerA();
+
+			bool openFile();
+			void closeFile();
+			bool CanOpenFile();
+			bool file_exists();
+			bool read(BYTE*&, size_t&);
+			bool read(char*&);
+			bool write(BYTE*, size_t);
+			bool write(const char*);
+			bool write(const wchar_t*);
+			bool size(size_t&);
+			void clear()const;
+			void close();
+			ErrorCodes getLastError() const;
+			FileManagerErrorRef ErrorDescription(ErrorCodes) const;
+		};
+	}
+}
 NET_DSA_END

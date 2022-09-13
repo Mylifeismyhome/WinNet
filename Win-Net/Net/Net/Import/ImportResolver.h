@@ -26,7 +26,7 @@ static Ret funcName##(__VA_ARGS__) \
 	auto func = (_##funcName)Import::Resolver::Function(CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName).get(); \
 	if (!func) \
 	{ \
-		LOG_ERROR(CSTRING("Failure on resolving %s -> %s [%d]"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName, GetLastError()); \
+		NET_LOG_ERROR(CSTRING("Failure on resolving %s -> %s [%d]"), CSTRING(X_RESOLVER_TO_STRING(IMPORT_NAME)), #funcName, GetLastError()); \
 	}
 
 #define MAKE_IMPORT(...) \
@@ -48,7 +48,7 @@ namespace Import
 		{
 			char name[MAX_PATH];
 			char path[MAX_PATH];
-			CPOINTER<void> module;
+			NET_CPOINTER<void> module;
 			type_t type;
 		};
 
@@ -57,7 +57,7 @@ namespace Import
 		bool Load(const char* library, const char* path, type_t type = type_t::RESOLVE_KERNEL32);
 		bool Remove(const char* library);
 		bool Unload(const char* library);
-		CPOINTER<void> Function(const char* library, const char* funcName);
+		NET_CPOINTER<void> Function(const char* library, const char* funcName);
 	}
 }
 #endif

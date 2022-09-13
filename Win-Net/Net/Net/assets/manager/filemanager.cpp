@@ -80,377 +80,379 @@ static Net::Manager::FileManagerErrorRef GetErrorDescription(const Net::Manager:
 	return Net::Manager::FileManagerErrorRef(code);
 }
 
-NET_NAMESPACE_BEGIN(Net)
-NET_NAMESPACE_BEGIN(Manager)
-FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
+namespace Net
 {
+	namespace Manager
+	{
+		FileManagerErrorRef::FileManagerErrorRef(ErrorCodes code)
+		{
 #ifdef BUILD_LINUX
-	strerror_r((int)code, buffer, ERRORCODEDESC_LEN);
+			strerror_r((int)code, buffer, ERRORCODEDESC_LEN);
 #else
-	strerror_s(buffer, ERRORCODEDESC_LEN, (int)code);
+			strerror_s(buffer, ERRORCODEDESC_LEN, (int)code);
 #endif
-}
+		}
 
-FileManagerErrorRef::~FileManagerErrorRef()
-{
-	memset(buffer, NULL, ERRORCODEDESC_LEN);
-}
+		FileManagerErrorRef::~FileManagerErrorRef()
+		{
+			memset(buffer, NULL, ERRORCODEDESC_LEN);
+		}
 
-char* FileManagerErrorRef::get()
-{
-	return buffer;
-}
+		char* FileManagerErrorRef::get()
+		{
+			return buffer;
+		}
 
-char* FileManagerErrorRef::data()
-{
-	return buffer;
-}
+		char* FileManagerErrorRef::data()
+		{
+			return buffer;
+		}
 
-char* FileManagerErrorRef::str()
-{
-	return buffer;
-}
+		char* FileManagerErrorRef::str()
+		{
+			return buffer;
+		}
 
-FileManagerW::FileManagerW(const wchar_t* fname, const uint8_t Mode)
-{
-	err = (errno_t)ErrorCodes::ERR_OK;
-	file = nullptr;
-	wcscpy(this->fname, fname);
-	this->Mode = Mode;
-}
+		FileManagerW::FileManagerW(const wchar_t* fname, const uint8_t Mode)
+		{
+			err = (errno_t)ErrorCodes::ERR_OK;
+			file = nullptr;
+			wcscpy(this->fname, fname);
+			this->Mode = Mode;
+		}
 
-FileManagerW::~FileManagerW()
-{
-	closeFile();
-}
+		FileManagerW::~FileManagerW()
+		{
+			closeFile();
+		}
 
-bool FileManagerW::openFile()
-{
-	file = wOpenFile(fname, GetModeW(Mode));
-	if(!file)
-	{
-		err = errno;
-		file = wOpenFile(fname, GetModeW(NET_FILE_WRITE));
-		close();
-		err = errno;
-		file = wOpenFile(fname, GetModeW(Mode));
-	}
-	return file != nullptr;
-}
+		bool FileManagerW::openFile()
+		{
+			file = wOpenFile(fname, GetModeW(Mode));
+			if (!file)
+			{
+				err = errno;
+				file = wOpenFile(fname, GetModeW(NET_FILE_WRITE));
+				close();
+				err = errno;
+				file = wOpenFile(fname, GetModeW(Mode));
+			}
+			return file != nullptr;
+		}
 
-void FileManagerW::closeFile()
-{
-	if (file)
-	{
-		fclose(file);
-		file = nullptr;
-	}
-}
+		void FileManagerW::closeFile()
+		{
+			if (file)
+			{
+				fclose(file);
+				file = nullptr;
+			}
+		}
 
-bool FileManagerW::CanOpenFile()
-{
-	file = wOpenFile(fname, GetModeW(NET_FILE_READ));
-	err = errno;
-	const auto status = ((file != nullptr) ? true : false);
-	closeFile();
-	return status;
-}
+		bool FileManagerW::CanOpenFile()
+		{
+			file = wOpenFile(fname, GetModeW(NET_FILE_READ));
+			err = errno;
+			const auto status = ((file != nullptr) ? true : false);
+			closeFile();
+			return status;
+		}
 
-bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size) const
-{
-	fseek(file, 0, SEEK_END);
-	const auto size = static_cast<size_t>(ftell(file));
-	rewind(file);
+		bool FileManagerW::getFileBuffer(BYTE*& out_data, size_t& out_size) const
+		{
+			fseek(file, 0, SEEK_END);
+			const auto size = static_cast<size_t>(ftell(file));
+			rewind(file);
 
-	auto buffer = ALLOC<BYTE>(size + 1);
-	const auto read = fread(buffer, 1, size, file);
-	if (read != size)
-	{
-		FREE(buffer);
-		return false;
-	}
+			auto buffer = ALLOC<BYTE>(size + 1);
+			const auto read = fread(buffer, 1, size, file);
+			if (read != size)
+			{
+				FREE(buffer);
+				return false;
+			}
 
-	buffer[read] = '\0';
-	out_data = buffer;
-	out_size = read;
+			buffer[read] = '\0';
+			out_data = buffer;
+			out_size = read;
 
-	return true;
-}
+			return true;
+		}
 
-bool FileManagerW::file_exists()
-{
-	return CanOpenFile();
-}
+		bool FileManagerW::file_exists()
+		{
+			return CanOpenFile();
+		}
 
-bool FileManagerW::read(BYTE*& out_data, size_t& out_size)
-{
-	if (file_exists())
-	{
-		if (!openFile())
+		bool FileManagerW::read(BYTE*& out_data, size_t& out_size)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
+
+				const auto ret = getFileBuffer(out_data, out_size);
+				close();
+				return ret;
+			}
+
 			return false;
+		}
 
-		const auto ret = getFileBuffer(out_data, out_size);
-		close();
-		return ret;
-	}
+		bool FileManagerW::read(char*& out_data)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
 
-	return false;
-}
+				BYTE* out_byte = nullptr;
+				size_t out_size = NULL;
+				const auto res = getFileBuffer(out_byte, out_size);
+				out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
+				close();
+				return res;
+			}
 
-bool FileManagerW::read(char*& out_data)
-{
-	if (file_exists())
-	{
-		if (!openFile())
 			return false;
+		}
 
-		BYTE* out_byte = nullptr;
-		size_t out_size = NULL;
-		const auto res = getFileBuffer(out_byte, out_size);
-		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
-		close();
-		return res;
-	}
+		bool FileManagerW::write(BYTE* data, const size_t size)
+		{
+			if (!openFile())
+				return false;
 
-	return false;
-}
+			const auto written = fwrite(data, 1, size, file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerW::write(BYTE* data, const size_t size)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerW::write(const char* str)
+		{
+			if (!openFile())
+				return false;
 
-	const auto written = fwrite(data, 1, size, file);
-	close();
-	return written != NULL;
-}
+			const auto written = fwrite(str, 1, strlen(str), file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerW::write(const char* str)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerW::write(const wchar_t* str)
+		{
+			if (!openFile())
+				return false;
 
-	const auto written = fwrite(str, 1, strlen(str), file);
-	close();
-	return written != NULL;
-}
+			const auto written = fwrite(str, 2, wcslen(str), file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerW::write(const wchar_t* str)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerW::size(size_t& size)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
 
-	const auto written = fwrite(str, 2, wcslen(str), file);
-	close();
-	return written != NULL;
-}
+				fseek(file, 0, SEEK_END);
+				const auto size = static_cast<size_t>(ftell(file));
+				rewind(file);
+				return true;
+			}
 
-bool FileManagerW::size(size_t& size)
-{
-	if (file_exists())
-	{
-		if (!openFile())
 			return false;
+		}
 
-		fseek(file, 0, SEEK_END);
-		const auto size = static_cast<size_t>(ftell(file));
-		rewind(file);
-		return true;
-	}
+		void FileManagerW::clear() const
+		{
+			fflush(file);
+		}
 
-	return false;
-}
+		void FileManagerW::close()
+		{
+			closeFile();
+		}
 
-void FileManagerW::clear() const
-{
-	fflush(file);
-}
+		ErrorCodes FileManagerW::getLastError() const
+		{
+			return (ErrorCodes)err;
+		}
 
-void FileManagerW::close()
-{
-	closeFile();
-}
+		FileManagerErrorRef FileManagerW::ErrorDescription(const ErrorCodes code) const
+		{
+			return GetErrorDescription(code);
+		}
 
-ErrorCodes FileManagerW::getLastError() const
-{
-	return (ErrorCodes)err;
-}
+		FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
+		{
+			err = (errno_t)ErrorCodes::ERR_OK;
+			file = nullptr;
+			strcpy(this->fname, fname);
+			this->Mode = Mode;
+		}
 
-FileManagerErrorRef FileManagerW::ErrorDescription(const ErrorCodes code) const
-{
-	return GetErrorDescription(code);
-}
+		FileManagerA::~FileManagerA()
+		{
+			closeFile();
+		}
 
-FileManagerA::FileManagerA(const char* fname, const uint8_t Mode)
-{
-	err = (errno_t)ErrorCodes::ERR_OK;
-	file = nullptr;
-	strcpy(this->fname, fname);
-	this->Mode = Mode;
-}
+		bool FileManagerA::openFile()
+		{
+			file = OpenFile(fname, GetModeA(Mode));
+			err = errno;
+			if (!file)
+			{
+				file = OpenFile(fname, GetModeA(NET_FILE_WRITE));
+				err = errno;
+				close();
+				file = OpenFile(fname, GetModeA(Mode));
+				err = errno;
+			}
+			return file != nullptr;
+		}
 
-FileManagerA::~FileManagerA()
-{
-	closeFile();
-}
+		void FileManagerA::closeFile()
+		{
+			if (file)
+			{
+				fclose(file);
+				file = nullptr;
+			}
+		}
 
-bool FileManagerA::openFile()
-{
-	file = OpenFile(fname, GetModeA(Mode));
-	err = errno;
-	if (!file)
-	{
-		file = OpenFile(fname, GetModeA(NET_FILE_WRITE));
-		err = errno;
-		close();
-		file = OpenFile(fname, GetModeA(Mode));
-		err = errno;
-	}
-	return file != nullptr;
-}
+		bool FileManagerA::CanOpenFile()
+		{
+			file = OpenFile(fname, GetModeA(NET_FILE_READ));
+			err = errno;
+			const auto status = ((file != nullptr) ? true : false);
+			closeFile();
+			return status;
+		}
 
-void FileManagerA::closeFile()
-{
-	if(file)
-	{
-		fclose(file);
-		file = nullptr;
-	}
-}
+		bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size) const
+		{
+			fseek(file, 0, SEEK_END);
+			const auto size = static_cast<size_t>(ftell(file));
+			rewind(file);
 
-bool FileManagerA::CanOpenFile()
-{
-	file = OpenFile(fname, GetModeA(NET_FILE_READ));
-	err = errno;
-	const auto status = ((file != nullptr) ? true : false);
-	closeFile();
-	return status;
-}
+			auto buffer = ALLOC<BYTE>(size + 1);
+			const auto read = fread(buffer, 1, size, file);
+			if (read != size)
+			{
+				FREE(buffer);
+				return false;
+			}
 
-bool FileManagerA::getFileBuffer(BYTE*& out_data, size_t& out_size) const
-{
-	fseek(file, 0, SEEK_END);
-	const auto size = static_cast<size_t>(ftell(file));
-	rewind(file);
+			buffer[read] = '\0';
+			out_data = buffer;
+			out_size = read;
 
-	auto buffer = ALLOC<BYTE>(size + 1);
-	const auto read = fread(buffer, 1, size, file);
-	if (read != size)
-	{
-		FREE(buffer);
-		return false;
-	}
+			return true;
+		}
 
-	buffer[read] = '\0';
-	out_data = buffer;
-	out_size = read;
+		bool FileManagerA::file_exists()
+		{
+			return CanOpenFile();
+		}
 
-	return true;
-}
+		bool FileManagerA::read(BYTE*& out_data, size_t& out_size)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
 
-bool FileManagerA::file_exists()
-{
-	return CanOpenFile();
-}
+				const auto ret = getFileBuffer(out_data, out_size);
+				close();
+				return ret;
+			}
 
-bool FileManagerA::read(BYTE*& out_data, size_t& out_size)
-{
-	if (file_exists())
-	{
-		if (!openFile())
 			return false;
+		}
 
-		const auto ret = getFileBuffer(out_data, out_size);
-		close();
-		return ret;
-	}
+		bool FileManagerA::read(char*& out_data)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
 
-	return false;
-}
+				BYTE* out_byte = nullptr;
+				size_t out_size = NULL;
+				const auto res = getFileBuffer(out_byte, out_size);
+				out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
+				close();
+				return res;
+			}
 
-bool FileManagerA::read(char*& out_data)
-{
-	if (file_exists())
-	{
-		if (!openFile())
 			return false;
+		}
 
-		BYTE* out_byte = nullptr;
-		size_t out_size = NULL;
-		const auto res = getFileBuffer(out_byte, out_size);
-		out_data = res ? reinterpret_cast<char*>(out_byte) : nullptr;
-		close();
-		return res;
-	}
+		bool FileManagerA::write(BYTE* data, const size_t size)
+		{
+			if (!openFile())
+				return false;
 
-	return false;
-}
+			const auto written = fwrite(data, 1, size, file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerA::write(BYTE* data, const size_t size)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerA::write(const char* str)
+		{
+			if (!openFile())
+				return false;
 
-	const auto written = fwrite(data, 1, size, file);
-	close();
-	return written != NULL;
-}
+			const auto written = fwrite(str, 1, strlen(str), file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerA::write(const char* str)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerA::write(const wchar_t* str)
+		{
+			if (!openFile())
+				return false;
 
-	const auto written = fwrite(str, 1, strlen(str), file);
-	close();
-	return written != NULL;
-}
+			const auto written = fwrite(str, 2, wcslen(str), file);
+			close();
+			return written != NULL;
+		}
 
-bool FileManagerA::write(const wchar_t* str)
-{
-	if (!openFile())
-		return false;
+		bool FileManagerA::size(size_t& size)
+		{
+			if (file_exists())
+			{
+				if (!openFile())
+					return false;
 
-	const auto written = fwrite(str, 2, wcslen(str), file);
-	close();
-	return written != NULL;
-}
+				fseek(file, 0, SEEK_END);
+				const auto size = static_cast<size_t>(ftell(file));
+				rewind(file);
+				return true;
+			}
 
-bool FileManagerA::size(size_t& size)
-{
-	if (file_exists())
-	{
-		if (!openFile())
 			return false;
+		}
 
-		fseek(file, 0, SEEK_END);
-		const auto size = static_cast<size_t>(ftell(file));
-		rewind(file);
-		return true;
+		void FileManagerA::clear() const
+		{
+			fflush(file);
+		}
+
+		void FileManagerA::close()
+		{
+			closeFile();
+		}
+
+		ErrorCodes FileManagerA::getLastError() const
+		{
+			return (ErrorCodes)err;
+		}
+
+		FileManagerErrorRef FileManagerA::ErrorDescription(const ErrorCodes code) const
+		{
+			return GetErrorDescription(code);
+		}
 	}
-
-	return false;
 }
-
-void FileManagerA::clear() const
-{
-	fflush(file);
-}
-
-void FileManagerA::close()
-{
-	closeFile();
-}
-
-ErrorCodes FileManagerA::getLastError() const
-{
-	return (ErrorCodes)err;
-}
-
-FileManagerErrorRef FileManagerA::ErrorDescription(const ErrorCodes code) const
-{
-	return GetErrorDescription(code);
-}
-NET_NAMESPACE_END
-NET_NAMESPACE_END
 NET_POP

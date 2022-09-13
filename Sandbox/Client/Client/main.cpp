@@ -16,63 +16,19 @@ int main()
 {
 	Net::load(Net::ENABLE_LOGGING);
 
-//	Net::Json::Document doc;
-//	doc["Test"] = 5;
-//	doc["ABC"]["DCE"] = 25.12f;
-//
-//	Net::Json::Array arr;
-//	arr.push(25);
-//	arr.push("TEST");
-//	arr.push(13.125f);
-//
-//	doc["ARR"] = arr;
-//
-//	std::cout << doc["ARR"]->as_array()->operator[](1)->as_string() << std::endl;
-//	std::cout << doc["ARR"]->as_array()->at(1)->as_string() << std::endl;
-//
-//	std::cout << doc.Serialize(Net::Json::SerializeType::NONE).get().get() << std::endl;
-//
-//	// new doc
-//	// todo:
-//	// Deserialize sometimes not working, need to investigate 
-//	auto doc2 = Net::Json::Document();
-//	doc2.Deserialize(R"({
-//        "Test" : 5,
-//        "ABC" : {
-//                "DCB" : 25.120001
-//
-//        },
-//        "ARR" : [
-//                25,
-//                "TEST2",
-//                13.125000
-//
-//        ]
-//
-//})");
-//
-//	std::cout << doc2.Serialize(Net::Json::SerializeType::FORMATTED).get().get() << std::endl;
-//
-//	Net::unload();
-//
-//	system("pause");
-//	return 0;
-
-	////////////////////
-
 	Client client;
 
 #ifdef _USE_CIPHER_
 	client.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
 
-	LOG_WARNING(CSTRING("USING CIPHER"));
+	NET_LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
 	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{
-		LOG_ERROR(CSTRING("Connection timeout"));
+		NET_LOG_ERROR(CSTRING("Connection timeout"));
 	}
 	else
 	{
