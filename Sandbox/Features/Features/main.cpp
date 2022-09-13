@@ -263,12 +263,12 @@ TEST(TIMER,
 );
 
 TEST(DATABASE,
-		MYSQL_CON cfg(CSTRING("localhost"), 3306, CSTRING("root"), CSTRING(""), CSTRING("test"));
-		MYSQL mysql(cfg);
-		if (mysql.connect()) // mysql connector throwing error
-		{
-			NET_LOG(CSTRING("MYSQL CONNECTED!"));
-		}
+		//MYSQL_CON cfg(CSTRING("localhost"), 3306, CSTRING("root"), CSTRING(""), CSTRING("test"));
+		//MYSQL mysql(cfg);
+		//if (mysql.connect()) // mysql connector throwing error
+		//{
+		//	NET_LOG(CSTRING("MYSQL CONNECTED!"));
+		//}
 );
 
 TEST(NTP,
