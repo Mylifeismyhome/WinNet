@@ -5,8 +5,6 @@
 ## <span style="color:purple;font-weight: 600">[BUILD UP ON]</span>
 > - OpenSSL
 > - Crypto++
-> - BCrypt
-> - pugiXML
 > - ZLib
 > - MySQL c++ connector by Oracle
 

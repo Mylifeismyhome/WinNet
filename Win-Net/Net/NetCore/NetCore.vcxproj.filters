@@ -31,14 +31,8 @@
     <Filter Include="Database">
       <UniqueIdentifier>{f5c1da9e-6263-4b05-bb5e-c73d987d314f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Cryption\BCrypt">
-      <UniqueIdentifier>{d84f6382-ee02-4f16-96a8-e37048f82143}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Import">
       <UniqueIdentifier>{d3668493-a839-44a7-9586-d7720675e3c6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="pugiXML">
-      <UniqueIdentifier>{3f17bf2a-0acc-4217-a3b5-a28b7340883d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Protocol">
       <UniqueIdentifier>{ec0b1025-b567-4bad-abfb-9b1ac795f88f}</UniqueIdentifier>
@@ -111,21 +105,6 @@
     <ClCompile Include="..\Net\Cryption\AES.cpp">
       <Filter>Cryption</Filter>
     </ClCompile>
-    <ClCompile Include="..\Net\Cryption\BCrypt\main.cpp">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Cryption\BCrypt\wrapper.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Cryption\BCrypt\bcrypt.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_blowfish.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c">
-      <Filter>Cryption\BCrypt</Filter>
-    </ClCompile>
     <ClCompile Include="..\Net\Compression\Compression.cpp">
       <Filter>Compression</Filter>
     </ClCompile>
@@ -173,9 +152,6 @@
     </ClCompile>
     <ClCompile Include="..\Net\Protocol\NTP.cpp">
       <Filter>Protocol</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp">
-      <Filter>pugiXML</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Import\MemoryModule.c">
       <Filter>Import</Filter>
@@ -314,10 +290,5 @@
     <ClInclude Include="..\Net\Net\NetJson.h">
       <Filter>Net</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Net\Cryption\BCrypt\x86.S">
-      <Filter>Cryption\BCrypt</Filter>
-    </None>
   </ItemGroup>
 </Project>

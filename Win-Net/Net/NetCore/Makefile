@@ -1,6 +1,6 @@
 # build NetCore
 CFLAGS=-std=c++11 -Wall -w -D BUILD_LINUX
-INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/BCrypt -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
+INCLUDE_PATH=-I ../ -I ../../../extern/ -I ../../../extern/crypto++/bin/include/ -I ../../../extern/OpenSSL/bin/bin/include
 
 # Net/Net/
 define PATH_NET
@@ -19,10 +19,6 @@ define PATH_CRYPTION
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/PointerCryption.h -o bin/PointerCryption.h.gch
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/AES.cpp -o bin/AES.o
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/RSA.cpp -o bin/RSA.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/bcrypt.c -o bin/bcrypt.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/crypt_blowfish.c -o bin/crypt_blowfish.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/crypt_gensalt.c -o bin/crypt_gensalt.o
-	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Cryption/BCrypt/wrapper.c -o bin/wrapper.o
 endef
 
 # Net/Compression/
@@ -70,11 +66,6 @@ define PATH_DATABASE
 	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 $(INCLUDE_PATH) -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
 endef
 
-# pugiXML
-define PUGIXML
-	g++ $(CFLAGS) -c ../../../extern/pugiXML/Unix/pugixml.cpp --output bin/pugixml.o
-endef
-
 # extract files from crypto++
 define EXTRACT_CRYPTOPP
 	cd bin/cryptopp && ar x ../../../../../extern/crypto++/bin/lib/libcryptopp.a
@@ -118,14 +109,6 @@ define COPY
 	# copy crypto++ headers
 	cp -r ../../../extern/crypto++/bin/include/cryptopp ../../bin/include/
 
-	# copy BCryppt
-	mkdir -p ../../bin/include/BCrypt
-	cp -r ../../../extern/BCrypt/* ../../bin/include/BCrypt/
-
-	# copy pugiXML
-	mkdir -p ../../bin/include/pugiXML
-	cp -r ../../../extern/pugiXML/Unix/*.hpp ../../bin/include/pugiXML/
-
 	# copy zlib
 	mkdir -p ../../bin/include/ZLib
 	cp -r ../../../extern/ZLib/*.h ../../bin/include/ZLib/
@@ -144,23 +127,21 @@ all:
 	mkdir -p bin/openssl/libssl
 	mkdir -p bin/mysql
 
-	$(call PATH_NET)
-	$(call PATH_MANAGER)
-	$(call PATH_WEB)
-	$(call PATH_ASSETS)
-	$(call PATH_CODING)
-	$(call PATH_CRYPTION)
-	$(call PATH_COMPRESSION)
-	$(call PATH_PROTOCOL)
-	$(call PATH_DATABASE)
+	$(PATH_NET)
+	$(PATH_MANAGER)
+	$(PATH_WEB)
+	$(PATH_ASSETS)
+	$(PATH_CODING)
+	$(PATH_CRYPTION)
+	$(PATH_COMPRESSION)
+	$(PATH_PROTOCOL)
+	$(PATH_DATABASE)
 
-	$(call PUGIXML)
+	$(EXTRACT_CRYPTOPP)
+	$(EXTRACT_OPENSSL)
+	$(EXTRACT_MYSQL)
 
-	$(call EXTRACT_CRYPTOPP)
-	$(call EXTRACT_OPENSSL)
-	$(call EXTRACT_MYSQL)
-
-	$(call LINK)
-	$(call COPY)
-	$(call CLEAN)
+	$(LINK)
+	$(COPY)
+	$(CLEAN)
 

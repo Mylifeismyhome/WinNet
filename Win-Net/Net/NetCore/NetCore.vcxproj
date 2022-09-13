@@ -865,7 +865,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\extern\pugiXML\Windows\pugixml.cpp" />
     <ClCompile Include="..\..\..\extern\ZLib\adler32.c" />
     <ClCompile Include="..\..\..\extern\ZLib\compress.c" />
     <ClCompile Include="..\..\..\extern\ZLib\crc32.c" />
@@ -894,11 +893,6 @@
     <ClCompile Include="..\Net\Coding\SHA1.cpp" />
     <ClCompile Include="..\Net\Compression\Compression.cpp" />
     <ClCompile Include="..\Net\Cryption\AES.cpp" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\bcrypt.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_blowfish.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\crypt_gensalt.c" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\main.cpp" />
-    <ClCompile Include="..\Net\Cryption\BCrypt\wrapper.c" />
     <ClCompile Include="..\Net\Cryption\RSA.cpp" />
     <ClCompile Include="..\Net\Cryption\XOR.cpp" />
     <ClCompile Include="..\Net\Database\MYSQL.cpp" />
@@ -956,9 +950,6 @@
     <ClInclude Include="..\Net\Net\NetPacket.h" />
     <ClInclude Include="..\Net\Protocol\ICMP.h" />
     <ClInclude Include="..\Net\Protocol\NTP.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Net\Cryption\BCrypt\x86.S" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
