@@ -10,9 +10,9 @@
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_PACKET }
-#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
+#define NET_DECLARE_PACKET(fnc) void On##fnc(NET_PEER, NET_PACKET&)
 
-#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+#define NET_NATIVE_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckDataN(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer) \
@@ -20,7 +20,7 @@ if(!peer) \
 switch (id) \
 {
 
-#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+#define NET_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckData(NET_PEER peer, const int id, NET_PACKET& pkg) \
 { \
 if(!peer || !peer->estabilished) \
@@ -28,14 +28,14 @@ if(!peer || !peer->estabilished) \
 switch (id) \
 {
 
-#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+#define NET_DEFINE_PACKET(xxx, yyy) \
     case yyy: \
     { \
       On##xxx(peer, pkg); \
       break; \
     }
 
-#define NET_DECLARE_PACKET_CALLBACK_END \
+#define NET_PACKET_DEFINITION_END \
 	default: \
 		return false; \
 } \

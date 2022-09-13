@@ -13,5 +13,5 @@ NET_CLASS(Server, NET_SERVER)
 	NET_CALLBACK(bool, CheckData, NET_PEER, int, NET_PACKET&);
 
 public:
-	NET_DEFINE_PACKET(Test);
+	NET_DECLARE_PACKET(Test);
 };

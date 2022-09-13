@@ -7,28 +7,28 @@
 	const char* NET_FUNCTIONNAME = CASTRING("On"#fnc);
 
 #define NET_END_PACKET }
-#define NET_DEFINE_PACKET(fnc) void On##fnc(NET_PACKET&)
+#define NET_DECLARE_PACKET(fnc) void On##fnc(NET_PACKET&)
 
-#define NET_DECLARE_PACKET_CALLBACK_NATIVE_BEGIN(classname) \
+#define NET_NATIVE_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckDataN(const int id, NET_PACKET& pkg) \
 { \
 switch (id) \
 {
 
-#define NET_DECLARE_PACKET_CALLBACK_BEGIN(classname) \
+#define NET_PACKET_DEFINITION_BEGIN(classname) \
 bool classname::CheckData(const int id, NET_PACKET& pkg) \
 { \
 switch (id) \
 {
 
-#define NET_DEFINE_PACKET_CALLBACK(xxx, yyy) \
+#define NET_DEFINE_PACKET(xxx, yyy) \
     case yyy: \
     { \
       On##xxx(pkg); \
       break; \
     } \
 
-#define NET_DECLARE_PACKET_CALLBACK_END \
+#define NET_PACKET_DEFINITION_END \
 	default: \
 		return false; \
 } \
@@ -285,11 +285,11 @@ namespace Net
 			void ExecutePackage();
 			bool CreateTOTPSecret();
 
-			NET_DEFINE_PACKET(RSAHandshake);
-			NET_DEFINE_PACKET(KeysPackage);
-			NET_DEFINE_PACKET(VersionPackage);
-			NET_DEFINE_PACKET(EstabilishConnectionPackage);
-			NET_DEFINE_PACKET(ClosePackage);
+			NET_DECLARE_PACKET(RSAHandshake);
+			NET_DECLARE_PACKET(KeysPackage);
+			NET_DECLARE_PACKET(VersionPackage);
+			NET_DECLARE_PACKET(EstabilishConnectionPackage);
+			NET_DECLARE_PACKET(ClosePackage);
 
 		protected:
 			NET_DEFINE_CALLBACK(void, OnConnected) {}

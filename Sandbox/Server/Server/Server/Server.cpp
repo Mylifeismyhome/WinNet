@@ -1,8 +1,8 @@
 #include "Server.h"
 
-NET_DECLARE_PACKET_CALLBACK_BEGIN(Server)
-NET_DEFINE_PACKET_CALLBACK(Test, Sandbox::Packet::PKG_TEST);
-NET_DECLARE_PACKET_CALLBACK_END
+NET_PACKET_DEFINITION_BEGIN(Server)
+NET_DEFINE_PACKET(Test, Sandbox::Packet::PKG_TEST);
+NET_PACKET_DEFINITION_END
 
 void Server::Tick() {}
 void Server::OnPeerConnect(NET_PEER peer) {}
