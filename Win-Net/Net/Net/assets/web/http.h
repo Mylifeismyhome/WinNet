@@ -42,7 +42,7 @@ namespace Net
 			virtual std::string& GetHeaderContent() = 0;
 			virtual std::string& GetBodyContent() = 0;
 			virtual std::string& GetRawData() = 0;
-			virtual int GetResultCode() const = 0;
+			virtual int GetResponseCode() const = 0;
 
 			virtual void URL_Encode(char*&) const = 0;
 			virtual void URL_Encode(std::string&) const = 0;
@@ -56,9 +56,15 @@ namespace Net
 			virtual void AddParam(const char*, const char*) = 0;
 			virtual void SetJSON(const char*) = 0;
 
-			virtual void AddHeader(const char*, char*, size_t = INVALID_SIZE) = 0;
-			virtual void AddHeader(const char*, const char*, size_t = INVALID_SIZE) = 0;
-			virtual void AddHeader(const char*, unsigned char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddRequestHeader(const char*, char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddRequestHeader(const char*, const char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddRequestHeader(const char*, unsigned char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddResponseHeader(const char*, char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddResponseHeader(const char*, const char*, size_t = INVALID_SIZE) = 0;
+			virtual void AddResponseHeader(const char*, unsigned char*, size_t = INVALID_SIZE) = 0;
+
+			virtual HeaderData_t* GetRequestHeader(const char*) = 0;
+			virtual HeaderData_t* GetResponseHeader(const char*) = 0;
 
 			virtual bool Get() = 0;
 			virtual bool Post() = 0;
@@ -66,12 +72,12 @@ namespace Net
 
 		struct Network_t
 		{
+			Network_t();
+
 			byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
 			NET_CPOINTER<byte> data;
 			size_t data_size;
 			size_t data_full_size;
-
-			Network_t();
 
 			void AllocData(size_t);
 			void clearData();
@@ -85,7 +91,8 @@ namespace Net
 			std::string path;
 			short port;
 			Network_t network;
-			std::vector<HeaderData_t> headerData;
+			std::vector<HeaderData_t> requestHeaderData;
+			std::vector<HeaderData_t> responseHeaderData;
 
 			SOCKET connectSocket;
 			struct addrinfo* connectSocketAddr;
@@ -104,14 +111,14 @@ namespace Net
 			std::string rawData;
 			std::string headContent;
 			std::string bodyContent;
-			int resultCode;
+			int responseCode;
 
 			void ShutdownSocket(int = SOCKET_RDWR) const;
 
 			void SetRawData(std::string);
 			void SetHeaderContent(std::string);
 			void SetBodyContent(std::string);
-			void SetResultCode(int);
+			void SetResponseCode(int);
 
 			SOCKET GetSocket() const;
 
@@ -127,7 +134,7 @@ namespace Net
 			std::string& GetHeaderContent() override;
 			std::string& GetBodyContent() override;
 			std::string& GetRawData() override;
-			int GetResultCode() const override;
+			int GetResponseCode() const override;
 
 			void URL_Encode(char*&) const override;
 			void URL_Encode(std::string&) const override;
@@ -141,9 +148,15 @@ namespace Net
 			void AddParam(const char*, const char*) override;
 			void SetJSON(const char*) override;
 
-			void AddHeader(const char*, char*, size_t = INVALID_SIZE) override;
-			void AddHeader(const char*, const char*, size_t = INVALID_SIZE) override;
-			void AddHeader(const char*, unsigned char*, size_t = INVALID_SIZE) override;
+			void AddRequestHeader(const char*, char*, size_t = INVALID_SIZE) override;
+			void AddRequestHeader(const char*, const char*, size_t = INVALID_SIZE) override;
+			void AddRequestHeader(const char*, unsigned char*, size_t = INVALID_SIZE) override;
+			void AddResponseHeader(const char*, char*, size_t = INVALID_SIZE) override;
+			void AddResponseHeader(const char*, const char*, size_t = INVALID_SIZE) override;
+			void AddResponseHeader(const char*, unsigned char*, size_t = INVALID_SIZE) override;
+
+			HeaderData_t* GetRequestHeader(const char*) override;
+			HeaderData_t* GetResponseHeader(const char*) override;
 		};
 
 		class NET_EXPORT_CLASS HTTP : public Head
@@ -152,9 +165,12 @@ namespace Net
 
 			bool Init(const char*);
 			bool Inited;
+			void Unload();
 
 			size_t DoSend(std::string&) const;
 			size_t DoReceive();
+
+			bool HandleRedirection();
 
 		public:
 			explicit HTTP(const char*);
@@ -172,12 +188,16 @@ namespace Net
 			friend class Head;
 			SSL_CTX* ctx;
 			SSL* ssl;
+			ssl::NET_SSL_METHOD method;
 
 			bool Init(const char*, ssl::NET_SSL_METHOD);
 			bool Inited;
+			void Unload();
 
 			size_t DoSend(std::string&) const;
 			size_t DoReceive();
+
+			bool HandleRedirection();
 
 		public:
 			explicit HTTPS(const char*, ssl::NET_SSL_METHOD = ssl::NET_SSL_METHOD::NET_SSL_METHOD_TLS);

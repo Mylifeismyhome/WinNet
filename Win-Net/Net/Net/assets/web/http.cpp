@@ -110,14 +110,17 @@ Net::Web::Head::Head()
 	rawData = std::string();
 	headContent = std::string();
 	bodyContent = std::string();
-	resultCode = -1;
+	responseCode = -1;
 
 	connectSocket = SOCKET();
 	connectSocketAddr = nullptr;
 
+	requestHeaderData.clear();
+	responseHeaderData.clear();
+
 	// Default Header
-	AddHeader(CSTRING("Content-Type"), CSTRING("application/x-www-form-urlencoded"));
-	AddHeader(CSTRING("User-Agent"), NET_USER_AGENT);
+	AddRequestHeader(CSTRING("Content-Type"), CSTRING("application/x-www-form-urlencoded"));
+	AddRequestHeader(CSTRING("User-Agent"), NET_USER_AGENT);
 }
 
 Net::Web::Head::~Head()
@@ -131,10 +134,11 @@ Net::Web::Head::~Head()
 	STRING_Parameters.clear();
 
 	// append header data
-	for (auto& entry : headerData)
+	for (auto& entry : requestHeaderData)
 		entry.free();
 
-	headerData.clear();
+	requestHeaderData.clear();
+	responseHeaderData.clear();
 }
 
 SOCKET Net::Web::Head::GetSocket() const
@@ -162,14 +166,14 @@ short Net::Web::Head::GetPort() const
 	return port;
 }
 
-void Net::Web::Head::SetResultCode(const int code)
+void Net::Web::Head::SetResponseCode(const int code)
 {
-	resultCode = code;
+	responseCode = code;
 }
 
-int Net::Web::Head::GetResultCode() const
+int Net::Web::Head::GetResponseCode() const
 {
-	return resultCode;
+	return responseCode;
 }
 
 void Net::Web::Head::SetRawData(std::string raw)
@@ -350,26 +354,10 @@ void Net::Web::Head::URL_Decode(std::string& buffer) const
 	buffer = ascii;
 }
 
-void Net::Web::Head::AddHeader(const char* key, char* value, const size_t size)
+void Net::Web::Head::AddRequestHeader(const char* key, char* value, const size_t size)
 {
 	// rewrite existening data
-	for(auto& entry : headerData)
-	{
-		if(!strcmp(key, entry.key))
-		{
-			entry.free();
-			entry = HeaderData_t(key, value, size);
-			return;
-		}
-	}
-
-	headerData.emplace_back(HeaderData_t(key, value, size));
-}
-
-void Net::Web::Head::AddHeader(const char* key, const char* value, const size_t size)
-{
-	// rewrite existening data
-	for (auto& entry : headerData)
+	for (auto& entry : requestHeaderData)
 	{
 		if (!strcmp(key, entry.key))
 		{
@@ -379,13 +367,13 @@ void Net::Web::Head::AddHeader(const char* key, const char* value, const size_t 
 		}
 	}
 
-	headerData.emplace_back(HeaderData_t(key, value, size));
+	requestHeaderData.emplace_back(HeaderData_t(key, value, size));
 }
 
-void Net::Web::Head::AddHeader(const char* key, unsigned char* value, const size_t size)
+void Net::Web::Head::AddRequestHeader(const char* key, const char* value, const size_t size)
 {
 	// rewrite existening data
-	for (auto& entry : headerData)
+	for (auto& entry : requestHeaderData)
 	{
 		if (!strcmp(key, entry.key))
 		{
@@ -395,7 +383,97 @@ void Net::Web::Head::AddHeader(const char* key, unsigned char* value, const size
 		}
 	}
 
-	headerData.emplace_back(HeaderData_t(key, value, size));
+	requestHeaderData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddRequestHeader(const char* key, unsigned char* value, const size_t size)
+{
+	// rewrite existening data
+	for (auto& entry : requestHeaderData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+
+	requestHeaderData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddResponseHeader(const char* key, char* value, const size_t size)
+{
+	// rewrite existening data
+	for (auto& entry : responseHeaderData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+
+	responseHeaderData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddResponseHeader(const char* key, const char* value, const size_t size)
+{
+	// rewrite existening data
+	for (auto& entry : responseHeaderData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+
+	responseHeaderData.emplace_back(HeaderData_t(key, value, size));
+}
+
+void Net::Web::Head::AddResponseHeader(const char* key, unsigned char* value, const size_t size)
+{
+	// rewrite existening data
+	for (auto& entry : responseHeaderData)
+	{
+		if (!strcmp(key, entry.key))
+		{
+			entry.free();
+			entry = HeaderData_t(key, value, size);
+			return;
+		}
+	}
+
+	responseHeaderData.emplace_back(HeaderData_t(key, value, size));
+}
+
+Net::Web::HeaderData_t* Net::Web::Head::GetRequestHeader(const char* key)
+{
+	for (auto& entry : requestHeaderData)
+	{
+		if (!strcmp(entry.key, key))
+		{
+			return &entry;
+		}
+	}
+
+	return nullptr;
+}
+
+Net::Web::HeaderData_t* Net::Web::Head::GetResponseHeader(const char* key)
+{
+	for (auto& entry : responseHeaderData)
+	{
+		if (!strcmp(entry.key, key))
+		{
+			return &entry;
+		}
+	}
+
+	return nullptr;
 }
 
 void Net::Web::Head::AddParam(const char* tag, int value)
@@ -498,7 +576,7 @@ void Net::Web::Head::ParseHeader(std::string& header)
 			|| i == header.size() - 1)
 		{
 			auto sub = header.substr(j, (i - j) - 1);
-			
+
 			for (size_t z = 0; z < sub.size(); ++z)
 			{
 				// first split matters
@@ -507,7 +585,7 @@ void Net::Web::Head::ParseHeader(std::string& header)
 					auto key = sub.substr(1, z - 1);
 					auto value = sub.substr(z + 2, (sub.size() - z));
 
-					AddHeader(key.data(), value.data(), value.size());
+					AddResponseHeader(key.data(), value.data(), value.size());
 					break;
 				}
 			}
@@ -539,20 +617,20 @@ bool Net::Web::Head::ParseResult()
 		SetBodyContent(result.substr(bodyContentPos + 4));
 
 	// Get Result Code
-	const auto resultCodePos = result.find_first_of(CSTRING("HTTP/1.1"));
-	if (resultCodePos != std::string::npos)
+	const auto responseCodePos = result.find_first_of(CSTRING("HTTP/1.1"));
+	if (responseCodePos != std::string::npos)
 	{
-		const auto resultCode = result.substr(resultCodePos + 9, 3);
-		if (!NET_STRING_IS_NUMBER(resultCode))
+		const auto responseCode = result.substr(responseCodePos + 9, 3);
+		if (!NET_STRING_IS_NUMBER(responseCode))
 		{
 			NET_LOG_ERROR(CSTRING("[Head] - Result code is not a number!"));
 			return false;
 		}
 
-		SetResultCode(std::stoi(resultCode));
+		SetResponseCode(std::stoi(responseCode));
 	}
 
-	return GetResultCode() == 200;
+	return GetResponseCode() == 200;
 }
 
 void Net::Web::Head::ShutdownSocket(int how) const
@@ -576,15 +654,7 @@ Net::Web::HTTP::HTTP(const char* url)
 
 Net::Web::HTTP::~HTTP()
 {
-#ifndef BUILD_LINUX
-	WSACleanup();
-#endif
-
-	if (connectSocketAddr)
-	{
-		freeaddrinfo(connectSocketAddr);
-		connectSocketAddr = nullptr;
-	}
+	this->Unload();
 }
 
 bool Net::Web::HTTP::Init(const char* curl)
@@ -658,6 +728,19 @@ bool Net::Web::HTTP::Init(const char* curl)
 	return true;
 }
 
+void Net::Web::HTTP::Unload()
+{
+#ifndef BUILD_LINUX
+	WSACleanup();
+#endif
+
+	if (connectSocketAddr)
+	{
+		freeaddrinfo(connectSocketAddr);
+		connectSocketAddr = nullptr;
+	}
+}
+
 bool Net::Web::HTTP::IsInited() const
 {
 	return Inited;
@@ -671,90 +754,90 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 		const auto res = Ws2_32::send(GetSocket(), buffer.data(), static_cast<int>(buffer.length()), 0);
 		if (res == SOCKET_ERROR)
 		{
-			#ifdef BUILD_LINUX
-			if(errno == EACCES)
+#ifdef BUILD_LINUX
+			if (errno == EACCES)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - The requested address is a broadcast address, but the appropriate flag was not set. Call setsockopt() with the SO_BROADCAST socket option to enable use of the broadcast addressdress"));
 				return 0;
 			}
-			if(errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)
 				continue;
-			if(errno == EALREADY)
+			if (errno == EALREADY)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EALREADY"));
 				return 0;
 			}
-			if(errno == EBADF)
+			if (errno == EBADF)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EBADF"));
 				return 0;
 			}
-			if(errno == ECONNRESET)
+			if (errno == ECONNRESET)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - ECONNRESET"));
 				return 0;
 			}
-			if(errno == EDESTADDRREQ)
+			if (errno == EDESTADDRREQ)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EDESTADDRREQ"));
 				return 0;
 			}
-			if(errno == EFAULT)
+			if (errno == EFAULT)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
 				return 0;
 			}
-			if(errno == EINTR)
+			if (errno == EINTR)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
 				return 0;
 			}
-			if(errno == EINVAL)
+			if (errno == EINVAL)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
 				return 0;
 			}
-			if(errno == EISCONN)
+			if (errno == EISCONN)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EISCONN"));
 				return 0;
 			}
-			if(errno == EMSGSIZE)
+			if (errno == EMSGSIZE)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EMSGSIZE"));
 				return 0;
 			}
-			if(errno == ENOBUFS)
+			if (errno == ENOBUFS)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOBUFS"));
 				return 0;
 			}
-			if(errno == ENOMEM)
+			if (errno == ENOMEM)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
 				return 0;
 			}
-			if(errno == ENOTCONN)
+			if (errno == ENOTCONN)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
 				return 0;
 			}
-			if(errno == ENOTSOCK)
+			if (errno == ENOTSOCK)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
 				return 0;
 			}
-			if(errno == EOPNOTSUPP)
+			if (errno == EOPNOTSUPP)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EOPNOTSUPP"));
 				return 0;
 			}
-			if(errno == EPIPE)
+			if (errno == EPIPE)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - EPIPE"));
 				return 0;
 			}
-			#else
+#else
 			if (WSAGetLastError() == WSANOTINITIALISED)
 			{
 				NET_LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
@@ -847,7 +930,7 @@ size_t Net::Web::HTTP::DoSend(std::string& buffer) const
 				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been dropped, because of a network failure or because the system on the other end went down without notice"));
 				return 0;
 			}
-			#endif
+#endif
 
 			NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen... on Send"));
 			return 0;
@@ -870,93 +953,93 @@ size_t Net::Web::HTTP::DoReceive()
 		data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 		if (data_size == SOCKET_ERROR)
 		{
-			#ifdef BUILD_LINUX
+#ifdef BUILD_LINUX
 			switch (errno)
 			{
 			case EWOULDBLOCK:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 
-                                // read until we have the Content-Length
-                                if (network.data_full_size == 0)
-                                {
-                                        if (!network.data.valid()) continue;
-                                        std::string tmpBuffer(reinterpret_cast<char*>(network.data.get()));
-                                        if (tmpBuffer.empty()) continue;
+				// read until we have the Content-Length
+				if (network.data_full_size == 0)
+				{
+					if (!network.data.valid()) continue;
+					std::string tmpBuffer(reinterpret_cast<char*>(network.data.get()));
+					if (tmpBuffer.empty()) continue;
 
-                                        // get the header length
-                                        const auto headerLength = tmpBuffer.find(CSTRING("\r\n\r\n"));
-                                        if (headerLength != std::string::npos)
-                                                continue;
+					// get the header length
+					const auto headerLength = tmpBuffer.find(CSTRING("\r\n\r\n"));
+					if (headerLength != std::string::npos)
+						continue;
 
-                                        const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
-                                        if (cLPos == std::string::npos)
-                                                continue;
+					const auto cLPos = tmpBuffer.find(CSTRING("Content-Length:"));
+					if (cLPos == std::string::npos)
+						continue;
 
-                                        const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
-                                        if (breakPos == std::string::npos)
-                                                continue;
+					const auto breakPos = tmpBuffer.find_first_of('\r', cLPos);
+					if (breakPos == std::string::npos)
+						continue;
 
-                                        const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
+					const auto cLength = tmpBuffer.substr(cLPos + sizeof("Content-Length:"), (breakPos - cLPos - sizeof("Content-Length:")));
 
-                                        if (!NET_STRING_IS_NUMBER(cLength))
-                                        {
-                                                NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
-                                                return 0;
-                                        }
+					if (!NET_STRING_IS_NUMBER(cLength))
+					{
+						NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen on reading content-length"));
+						return 0;
+					}
 
-                                        const auto contentLength = std::stoi(cLength);
+					const auto contentLength = std::stoi(cLength);
 
-                                        // re-alloc
-                                        network.data_full_size = contentLength + headerLength;
-                                        const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
-                                        memcpy(newBuffer, network.data.get(), network.data_size);
-                                        newBuffer[network.data_full_size] = '\0';
-                                        network.data = newBuffer;
-                                }
+					// re-alloc
+					network.data_full_size = contentLength + headerLength;
+					const auto newBuffer = ALLOC<BYTE>(network.data_full_size + 1);
+					memcpy(newBuffer, network.data.get(), network.data_size);
+					newBuffer[network.data_full_size] = '\0';
+					network.data = newBuffer;
+				}
 
-                                continue;
+				continue;
 
 			case ECONNREFUSED:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
-                                return 0;
+				NET_LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
+				return 0;
 
 			case EFAULT:
 				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
-                                return 0;
+				NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
+				return 0;
 
 			case EINTR:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
+				return 0;
 
 			case EINVAL:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
+				return 0;
 
 			case ENOMEM:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
+				return 0;
 
 			case ENOTCONN:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
+				return 0;
 
 			case ENOTSOCK:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
+				return 0;
 
 			default:
-                                memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-                                NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
-                                return 0;
+				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
+				return 0;
 			}
-			#else
+#else
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -1082,7 +1165,7 @@ size_t Net::Web::HTTP::DoReceive()
 				NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
 			}
-			#endif
+#endif
 		}
 
 		if (data_size == 0)
@@ -1119,6 +1202,53 @@ size_t Net::Web::HTTP::DoReceive()
 		}
 	} while (data_size > 0);
 	return network.data_size;
+}
+
+bool Net::Web::HTTP::HandleRedirection()
+{
+	switch (GetResponseCode())
+	{
+	case 301:
+	case 302:
+	case 307:
+	case 308:
+	{
+		// redirect - use location in header to perform action
+		auto Location = GetResponseHeader(CSTRING("Location"));
+		if (!Location)
+		{
+			NET_LOG_DEBUG(CSTRING("[HTTP] - %i require redirection"), GetResponseCode());
+			NET_LOG_ERROR(CSTRING("[HTTP] - Missing Location in Header"));
+			break;
+		}
+
+		NET_LOG_DEBUG(CSTRING("[HTTP] - %i redirecting to '%s'"), GetResponseCode(), Location->value);
+
+		// Re-Init Client
+		this->Unload();
+		if (!this->Init(Location->value))
+		{
+			return false;
+		}
+
+		// re-perform action
+		return true;
+	}
+
+	case 303:
+	{
+		NET_LOG_DEBUG(CSTRING("[HTTP] - 303 URI moved and use a Get request to perform this action"));
+		break;
+	}
+
+	case 305:
+	{
+		NET_LOG_ERROR(CSTRING("[HTTP] - Use a Proxy (NOT SUPPORTED IN NET YET)"));
+		break;
+	}
+	}
+
+	return false;
 }
 
 bool Net::Web::HTTP::Get()
@@ -1164,7 +1294,7 @@ bool Net::Web::HTTP::Get()
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
 	// append header data
-	for (const auto& entry : headerData)
+	for (const auto& entry : requestHeaderData)
 	{
 		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
@@ -1186,6 +1316,14 @@ bool Net::Web::HTTP::Get()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
+
+			if (!res)
+			{
+				// true => re-perform action
+				if (HandleRedirection())
+					return this->Get();
+			}
+
 			return res;
 		}
 
@@ -1242,7 +1380,7 @@ bool Net::Web::HTTP::Post()
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
 	// append header data
-	for (const auto& entry : headerData)
+	for (const auto& entry : requestHeaderData)
 	{
 		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
@@ -1275,6 +1413,14 @@ bool Net::Web::HTTP::Post()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
+
+			if (!res)
+			{
+				// true => re-perform action
+				if (HandleRedirection())
+					return this->Post();
+			}
+
 			return res;
 		}
 
@@ -1285,7 +1431,7 @@ bool Net::Web::HTTP::Post()
 	return false;
 }
 
-Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
+Net::Web::HTTPS::HTTPS(const char* url, const ssl::NET_SSL_METHOD METHOD)
 {
 	ctx = nullptr;
 	ssl = nullptr;
@@ -1296,30 +1442,10 @@ Net::Web::HTTPS::HTTPS(const char* url, const  ssl::NET_SSL_METHOD METHOD)
 
 Net::Web::HTTPS::~HTTPS()
 {
-#ifndef BUILD_LINUX
-	WSACleanup();
-#endif
-
-	if (ssl)
-	{
-		SSL_free(ssl);
-		ssl = nullptr;
-	}
-
-	if (ctx)
-	{
-		SSL_CTX_free(ctx);
-		ctx = nullptr;
-	}
-
-	if(connectSocketAddr)
-	{
-		freeaddrinfo(connectSocketAddr);
-		connectSocketAddr = nullptr;
-	}
+	this->Unload();
 }
 
-bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
+bool Net::Web::HTTPS::Init(const char* curl, const ssl::NET_SSL_METHOD METHOD)
 {
 	const auto fullURL = std::string(curl);
 
@@ -1327,6 +1453,8 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	SSL_library_init();
 	SSLeay_add_ssl_algorithms();
 	SSL_load_error_strings();
+
+	this->method = METHOD;
 
 	// create ctx
 	if ((ctx = SSL_CTX_new(NET_CREATE_SSL_OBJECT(METHOD))) == nullptr)
@@ -1414,6 +1542,31 @@ bool Net::Web::HTTPS::Init(const char* curl, const  ssl::NET_SSL_METHOD METHOD)
 	}
 
 	return true;
+}
+
+void Net::Web::HTTPS::Unload()
+{
+#ifndef BUILD_LINUX
+	WSACleanup();
+#endif
+
+	if (ssl)
+	{
+		SSL_free(ssl);
+		ssl = nullptr;
+	}
+
+	if (ctx)
+	{
+		SSL_CTX_free(ctx);
+		ctx = nullptr;
+	}
+
+	if (connectSocketAddr)
+	{
+		freeaddrinfo(connectSocketAddr);
+		connectSocketAddr = nullptr;
+	}
 }
 
 bool Net::Web::HTTPS::IsInited() const
@@ -1587,6 +1740,56 @@ size_t Net::Web::HTTPS::DoReceive()
 	return network.data_size;
 }
 
+bool Net::Web::HTTPS::HandleRedirection()
+{
+	switch (GetResponseCode())
+	{
+	case 301:
+	case 302:
+	case 307:
+	case 308:
+	{
+		// redirect - use location in header to perform action
+		auto Location = GetResponseHeader(CSTRING("Location"));
+		if (!Location)
+		{
+			NET_LOG_DEBUG(CSTRING("[HTTPS] - %i require redirection"), GetResponseCode());
+			NET_LOG_ERROR(CSTRING("[HTTPS] - Missing Location in Header"));
+			break;
+		}
+
+		NET_LOG_DEBUG(CSTRING("[HTTPS] - %i redirecting to '%s'"), GetResponseCode(), Location->value);
+
+		// Re-Init Client
+		this->Unload();
+		if (!this->Init(Location->value, this->method))
+		{
+			return false;
+		}
+
+		// re-perform action
+		return true;
+	}
+
+	case 303:
+	{
+		NET_LOG_DEBUG(CSTRING("[HTTPS] - 303 URI moved and use a Get request to perform this action"));
+		break;
+	}
+
+	case 305:
+	{
+		NET_LOG_ERROR(CSTRING("[HTTPS] - Use a Proxy (NOT SUPPORTED IN NET YET)"));
+		break;
+	}
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
 bool Net::Web::HTTPS::Get()
 {
 	if (!IsInited())
@@ -1647,7 +1850,7 @@ bool Net::Web::HTTPS::Get()
 		return false;
 	}
 
-	if(connectSocket == INVALID_SOCKET)
+	if (connectSocket == INVALID_SOCKET)
 	{
 		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
@@ -1666,7 +1869,7 @@ bool Net::Web::HTTPS::Get()
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
 	// append header data
-	for (const auto& entry : headerData)
+	for (const auto& entry : requestHeaderData)
 	{
 		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
@@ -1691,16 +1894,9 @@ bool Net::Web::HTTPS::Get()
 
 			if (!res)
 			{
-				switch (GetResultCode())
-				{
-				case 302:
-					// redirect - use location in header to perform action
-					
-					break;
-
-				default:
-					break;
-				}
+				// true => re-perform action
+				if (HandleRedirection())
+					return this->Get();
 			}
 
 			return res;
@@ -1767,7 +1963,7 @@ bool Net::Web::HTTPS::Post()
 		}
 	}
 
-	if(sslRet <= 0)
+	if (sslRet <= 0)
 	{
 		NET_LOG_ERROR(CSTRING("[HTTPS] - failure on connecting ssl object to host: %s://%s%s:%i"), GetProtocol().data(), GetURL().data(), GetPath().data(), GetPort());
 		return false;
@@ -1795,7 +1991,7 @@ bool Net::Web::HTTPS::Post()
 	req.append(CSTRING("Host: "));
 	req.append(GetURL());
 	// append header data
-	for (const auto& entry : headerData)
+	for (const auto& entry : requestHeaderData)
 	{
 		req.append(CSTRING("\r\n"));
 		req.append(entry.key);
@@ -1828,6 +2024,14 @@ bool Net::Web::HTTPS::Post()
 			// Parse the result
 			const auto res = ParseResult();
 			network.clearData();
+
+			if (!res)
+			{
+				// true => re-perform action
+				if (HandleRedirection())
+					return this->Post();
+			}
+
 			return res;
 		}
 
