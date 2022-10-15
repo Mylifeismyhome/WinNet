@@ -309,7 +309,7 @@ int main()
 
 	//doc["available_server"] = arr;
 
-	if (!doc.Deserialize(R"({"abc":"abcdefg","e":1337,"f":999})"))
+	if (!doc.Deserialize(R"({"abc":"abcdefg","e":{"lol":1337},"f":999})"))
 	{
 		NET_LOG("FUCK");
 	}

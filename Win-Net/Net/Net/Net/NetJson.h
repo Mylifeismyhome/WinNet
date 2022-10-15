@@ -334,7 +334,7 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
-			bool DeserializeAny(Net::String& key, Net::String& value);
+			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain);
 
 		public:
 			Object(bool bSharedMemory = false);
