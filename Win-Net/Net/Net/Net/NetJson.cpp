@@ -974,7 +974,32 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			if (c == ':')
 			{
 				// read the key
-				lastKey = json.substr(v + 1, i - v - 2);
+				size_t kb = 0; // begin
+				size_t ke = 0; // end
+				for (size_t j = v; j < i; ++j)
+				{
+					auto d = ref.get()[j];
+					if (d == '"')
+					{
+						if (kb != 0)
+						{
+							ke = j;
+							break;
+						}
+						else
+						{
+							kb = j;
+						}
+					}
+				}
+
+				if (!kb || !ke)
+				{
+					// @todo: add error message {invalid key}
+					return false;
+				}
+
+				lastKey = json.substr(kb + 1, ke - kb - 1);
 
 				flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
 				flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
@@ -1650,19 +1675,20 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	this->Clear();
 	this->Init();
 
-	if (!memcmp(&json.get().get()[0], CSTRING("{"), 1))
+	if (json.get().get()[0] == '{' && json.get().get()[json.length() - 1] == '}')
 	{
 		/* is object */
 		this->m_type = Net::Json::Type::OBJECT;
 		return this->root_obj.Deserialize(json);
 	}
-	else if (!memcmp(&json.get().get()[0], CSTRING("["), 1))
+	else if (json.get().get()[0] == '[' && json.get().get()[json.length() - 1] == ']')
 	{
 		this->m_type = Net::Json::Type::ARRAY;
 		return this->root_array.Deserialize(json);
 	}
 
 	/* error */
+	// @todo: add error message
 	return false;
 }
 
