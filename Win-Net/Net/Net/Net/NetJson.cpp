@@ -756,330 +756,496 @@ bool Net::Json::Object::Parse(Net::String json)
 }
 
 /* actual deserialization */
-bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chain)
+bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value)
 {
-	if (json.get().get()[0] != 123) // {
+	// we have to figure out what kind of type the data is from
+	// we start with treating it as an integer
+	Net::Json::Type type = Net::Json::Type::INTEGER;
+
+	if (Convert::is_boolean(value))
 	{
-		/* not an object */
-		return false;
+		type = Net::Json::Type::BOOLEAN;
 	}
-
-	size_t k = 0;
-	size_t v = 0;
-	size_t t = 0;
-	size_t p = 0;
-	Net::String lastKey(CSTRING(""));
-	Net::String lastValue(CSTRING(""));
-	bool bReadValue = false;
-	bool bReadAnotherObject = false;
-	bool bReadArray = false;
-	for (size_t i = 1; i < json.size(); ++i)
+	else if (!memcmp(value.get().get(), CSTRING("null"), 4))
 	{
-		/* beginning of a key */
-		if (!bReadAnotherObject
-			&& !bReadArray
-			&& !bReadValue
-			&& json.get().get()[i] == 34 /* " */)
+		type = Net::Json::Type::NULLVALUE;
+	}
+	else
+	{
+		// find out if there is any string or floating number to read
+
+		uint8_t flag = 0;
+		size_t v = 0; // begin for substr
+		auto ref = value.get();
+		for (size_t i = 0; i < value.size(); ++i)
 		{
-			if (k != 0)
+			auto c = ref.get()[i];
+
+			if ((flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 			{
-				lastKey = json.substr(k + 1, i - k - 1);
-				k = 0;
-				continue;
-			}
-
-			k = i;
-		}
-		else if (!bReadAnotherObject
-			&& !bReadArray
-			&& json.get().get()[i] == 58 /* : */)
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			v = i;
-			bReadValue = true;
-			bReadAnotherObject = false;
-			bReadArray = false;
-		}
-		else if (!bReadAnotherObject
-			&& !bReadArray
-			&& json.get().get()[i] == 123 /* { */)
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			/* another object */
-			v = i;
-			bReadAnotherObject = true;
-			bReadValue = false;
-			bReadArray = false;
-		}
-		else if (bReadAnotherObject
-			&& !bReadArray
-			&& json.get().get()[i] == 123 /* { */)
-		{
-			++p;
-		}
-		else if (bReadAnotherObject
-			&& !bReadArray
-			&& json.get().get()[i] == 125 /* } */)
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			if (t < p)
-			{
-				++t;
-				continue;
-			}
-
-			lastValue = json.substr(v, i - v + 1);
-
-#ifdef BUILD_LINUX
-			object_chain.push_back(strdup(lastKey.get().get()));
-#else
-			object_chain.push_back(_strdup(lastKey.get().get()));
-#endif
-			if (!this->Deserialize(lastValue, object_chain))
-				return false;
-
-			object_chain.erase(object_chain.size() - 1);
-
-			bReadAnotherObject = false;
-			t = 0;
-			p = 0;
-		}
-		else if (!bReadArray
-			&& !bReadAnotherObject
-			&& json.get().get()[i] == 91 /* [ */)
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			/* reading array */
-			v = i;
-			bReadArray = true;
-			bReadAnotherObject = false;
-			bReadValue = false;
-		}
-		else if (bReadArray
-			&& !bReadAnotherObject
-			&& json.get().get()[i] == 93 /* ] */)
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			lastValue = json.substr(v, i - v + 1);
-
-			Net::Json::Array arr(true);
-			auto x = lastValue.get();
-			auto a = strdup(x.get());
-			if (!arr.Deserialize(lastValue))
-			{
-				/* error */
-				return false;
-			}
-
-			Net::Json::BasicValueRead obj(nullptr);
-			if (object_chain.size() > 0)
-			{
-				obj = { this->operator[](object_chain[0]) };
-				for (size_t i = 1; i < object_chain.size(); ++i)
+				// end of string reading
+				if (c == '"')
 				{
-					obj = obj[object_chain[i]];
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+					type = Net::Json::Type::STRING;
+
+					auto str = value.substr(v + 1, i - v - 1);
+					this->operator[](key.get().get()) = str;
+					return true; // early exit because there won't be anything left to read
 				}
 
-				obj[lastKey.get().get()] = arr;
+				// keep reading the string
+				continue;
 			}
 			else
 			{
-				this->operator[](lastKey.get().get()) = arr;
-			}
-
-			bReadArray = false;
-		}
-		else if (!bReadAnotherObject && !bReadArray && bReadValue
-			&& (json.get().get()[i] == 44 /* , */ || json.get().get()[i] == 125 /* } */))
-		{
-			/* reading key */
-			if (k != 0)
-			{
-				/* error */
-				return false;
-			}
-
-			lastValue = json.substr(v + 1, i - v - 1);
-
-			size_t z = 0;
-
-			Net::Json::Type type = Net::Json::Type::INTEGER;
-			for (size_t j = 0; j < lastValue.length(); ++j)
-			{
-				if (lastValue.get().get()[j] == 34) // " 
+				// check if there is any string to read
+				if (c == '"')
 				{
-					if (type == Net::Json::Type::STRING)
+					flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+					v = i;
+				}
+
+				// check if there is a dot that identifies a floating number
+				if (c == '.')
+				{
+					if (Convert::is_double(value))
 					{
-						lastValue = lastValue.substr(z + 1, j - z - 1);
-						break;
+						type = Net::Json::Type::DOUBLE;
+					}
+					else if (Convert::is_float(value))
+					{
+						type = Net::Json::Type::FLOAT;
 					}
 
-					type = Net::Json::Type::STRING;
-					z = j;
-					continue;
+					break;
 				}
 			}
-
-			if (type != Net::Json::Type::STRING)
-			{
-				/* remove all whitespaces, breaks and tabulators */
-				lastValue.eraseAll(CSTRING("\n"));
-				lastValue.eraseAll(CSTRING("\t"));
-				lastValue.eraseAll(CSTRING(" "));
-			}
-
-			if (type != Net::Json::Type::STRING)
-			{
-				/* check for boolean */
-				if (Convert::is_boolean(lastValue))
-				{
-					type = Net::Json::Type::BOOLEAN;
-				}
-				else
-				{
-					for (size_t j = 0; j < lastValue.length(); ++j)
-					{
-						if (lastValue.get().get()[j] == 46) // .
-						{
-							/* check if is float or a double */
-							if (Convert::is_float(lastValue))
-							{
-								type = Net::Json::Type::FLOAT;
-							}
-							else if (Convert::is_double(lastValue))
-							{
-								type = Net::Json::Type::DOUBLE;
-							}
-							else
-							{
-								/* error */
-								NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), lastValue.get().get());
-								return false;
-							}
-
-							break;
-						}
-
-						if (!memcmp(&lastValue.get().get()[j], CSTRING("null"), 4))
-						{
-							type = Net::Json::Type::NULLVALUE;
-							break;
-						}
-					}
-				}
-			}
-
-			Net::Json::BasicValueRead obj(nullptr);
-			if (object_chain.size() > 0)
-			{
-				obj = { this->operator[](object_chain[0]) };
-				for (size_t i = 1; i < object_chain.size(); ++i)
-				{
-					obj = obj[object_chain[i]];
-				}
-			}
-
-			switch (type)
-			{
-			case Net::Json::Type::STRING:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = lastValue.get().get();
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = lastValue.get().get();
-				break;
-
-			case Net::Json::Type::INTEGER:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = Convert::ToInt32(lastValue);
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = Convert::ToInt32(lastValue);
-				break;
-
-			case Net::Json::Type::FLOAT:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = Convert::ToFloat(lastValue);
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = Convert::ToFloat(lastValue);
-				break;
-
-			case Net::Json::Type::DOUBLE:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = Convert::ToDouble(lastValue);
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = Convert::ToDouble(lastValue);
-				break;
-
-			case Net::Json::Type::BOOLEAN:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = Convert::ToBoolean(lastValue);
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = Convert::ToBoolean(lastValue);
-				break;
-
-			case Net::Json::Type::NULLVALUE:
-				if (object_chain.size() > 0)
-				{
-					obj[lastKey.get().get()] = Net::Json::NullValue();
-					break;
-				}
-
-				this->operator[](lastKey.get().get()) = Net::Json::NullValue();
-				break;
-
-			default:
-				NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
-				return false;
-			}
-
-			bReadValue = false;
-			v = 0;
 		}
 	}
+
+	switch (type)
+	{
+	case Net::Json::Type::INTEGER:
+		this->operator[](key.get().get()) = Convert::ToInt32(value);
+		break;
+
+	case Net::Json::Type::BOOLEAN:
+		this->operator[](key.get().get()) = Convert::ToBoolean(value);
+		break;
+
+	case Net::Json::Type::DOUBLE:
+		this->operator[](key.get().get()) = Convert::ToDouble(value);
+		break;
+
+	case Net::Json::Type::FLOAT:
+		this->operator[](key.get().get()) = Convert::ToFloat(value);
+		break;
+
+	case Net::Json::Type::NULLVALUE:
+		this->operator[](key.get().get()) = Net::Json::NullValue();
+		break;
+
+	default:
+		NET_LOG_ERROR(CSTRING("INVALID TYPE"));
+		return false;
+	}
+
+	return true;
+}
+
+bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
+{
+	if (json.get().get()[0] != '{')
+	{
+		std::cout << "NOT AN OBJECT" << std::endl;
+		return false;
+	}
+
+	if (json.get().get()[json.length() - 1] != '}')
+	{
+		std::cout << "NOT AN OBJECT2" << std::endl;
+		return false;
+	}
+
+	uint8_t flag = 0;
+	size_t v = 0; // begin for substr
+	auto ref = json.get();
+
+	Net::String lastKey;
+	for (size_t i = 1; i < json.size() - 1; ++i)
+	{
+		auto c = ref.get()[i];
+
+		if ((flag & (int)EDeserializeFlag::FLAG_READING_KEY))
+		{
+			// read till we reach the common splitter for an object
+			if (c == ':')
+			{
+				// read the key
+				lastKey = json.substr(v + 1, i - v - 2);
+	
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
+				flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
+
+				v = i + 1;
+			}
+		}
+		else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
+		{
+			// read till we reach the next seperator
+			if (c == ',')
+			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+				Net::String value = json.substr(v, i - v);
+				if (!DeserializeAny(lastKey, value))
+				{
+
+				}
+			}
+			// or read till we reach the end
+			else if (i == json.length() - 2)
+			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+				Net::String value = json.substr(v, i - v + 1);
+				if (!DeserializeAny(lastKey, value))
+				{
+
+				}
+			}
+		}
+		else
+		{
+			// read key
+			flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
+			v = i;
+		}
+	}
+
+//	if (json.get().get()[0] != 123) // {
+//	{
+//		/* not an object */
+//		return false;
+//	}
+//
+//	size_t k = 0;
+//	size_t v = 0;
+//	size_t t = 0;
+//	size_t p = 0;
+//	Net::String lastKey(CSTRING(""));
+//	Net::String lastValue(CSTRING(""));
+//	bool bReadValue = false;
+//	bool bReadAnotherObject = false;
+//	bool bReadArray = false;
+//	for (size_t i = 1; i < json.size(); ++i)
+//	{
+//		/* beginning of a key */
+//		if (!bReadAnotherObject
+//			&& !bReadArray
+//			&& !bReadValue
+//			&& json.get().get()[i] == 34 /* " */)
+//		{
+//			if (k != 0)
+//			{
+//				lastKey = json.substr(k + 1, i - k - 1);
+//				k = 0;
+//				continue;
+//			}
+//
+//			k = i;
+//		}
+//		else if (!bReadAnotherObject
+//			&& !bReadArray
+//			&& json.get().get()[i] == 58 /* : */)
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			v = i;
+//			bReadValue = true;
+//			bReadAnotherObject = false;
+//			bReadArray = false;
+//		}
+//		else if (!bReadAnotherObject
+//			&& !bReadArray
+//			&& json.get().get()[i] == 123 /* { */)
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			/* another object */
+//			v = i;
+//			bReadAnotherObject = true;
+//			bReadValue = false;
+//			bReadArray = false;
+//		}
+//		else if (bReadAnotherObject
+//			&& !bReadArray
+//			&& json.get().get()[i] == 123 /* { */)
+//		{
+//			++p;
+//		}
+//		else if (bReadAnotherObject
+//			&& !bReadArray
+//			&& json.get().get()[i] == 125 /* } */)
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			if (t < p)
+//			{
+//				++t;
+//				continue;
+//			}
+//
+//			lastValue = json.substr(v, i - v + 1);
+//
+//#ifdef BUILD_LINUX
+//			object_chain.push_back(strdup(lastKey.get().get()));
+//#else
+//			object_chain.push_back(_strdup(lastKey.get().get()));
+//#endif
+//			if (!this->Deserialize(lastValue, object_chain))
+//				return false;
+//
+//			object_chain.erase(object_chain.size() - 1);
+//
+//			bReadAnotherObject = false;
+//			t = 0;
+//			p = 0;
+//		}
+//		else if (!bReadArray
+//			&& !bReadAnotherObject
+//			&& json.get().get()[i] == 91 /* [ */)
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			/* reading array */
+//			v = i;
+//			bReadArray = true;
+//			bReadAnotherObject = false;
+//			bReadValue = false;
+//		}
+//		else if (bReadArray
+//			&& !bReadAnotherObject
+//			&& json.get().get()[i] == 93 /* ] */)
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			lastValue = json.substr(v, i - v + 1);
+//
+//			Net::Json::Array arr(true);
+//			auto x = lastValue.get();
+//			auto a = strdup(x.get());
+//			if (!arr.Deserialize(lastValue))
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			Net::Json::BasicValueRead obj(nullptr);
+//			if (object_chain.size() > 0)
+//			{
+//				obj = { this->operator[](object_chain[0]) };
+//				for (size_t i = 1; i < object_chain.size(); ++i)
+//				{
+//					obj = obj[object_chain[i]];
+//				}
+//
+//				obj[lastKey.get().get()] = arr;
+//			}
+//			else
+//			{
+//				this->operator[](lastKey.get().get()) = arr;
+//			}
+//
+//			bReadArray = false;
+//		}
+//		else if (!bReadAnotherObject && !bReadArray && bReadValue
+//			&& (json.get().get()[i] == 44 /* , */ || json.get().get()[i] == 125 /* } */))
+//		{
+//			/* reading key */
+//			if (k != 0)
+//			{
+//				/* error */
+//				return false;
+//			}
+//
+//			lastValue = json.substr(v + 1, i - v - 1);
+//
+//			size_t z = 0;
+//
+//			Net::Json::Type type = Net::Json::Type::INTEGER;
+//			for (size_t j = 0; j < lastValue.length(); ++j)
+//			{
+//				if (lastValue.get().get()[j] == 34) // " 
+//				{
+//					if (type == Net::Json::Type::STRING)
+//					{
+//						lastValue = lastValue.substr(z + 1, j - z - 1);
+//						break;
+//					}
+//
+//					type = Net::Json::Type::STRING;
+//					z = j;
+//					continue;
+//				}
+//			}
+//
+//			if (type != Net::Json::Type::STRING)
+//			{
+//				/* remove all whitespaces, breaks and tabulators */
+//				lastValue.eraseAll(CSTRING("\n"));
+//				lastValue.eraseAll(CSTRING("\t"));
+//				lastValue.eraseAll(CSTRING(" "));
+//			}
+//
+//			if (type != Net::Json::Type::STRING)
+//			{
+//				/* check for boolean */
+//				if (Convert::is_boolean(lastValue))
+//				{
+//					type = Net::Json::Type::BOOLEAN;
+//				}
+//				else
+//				{
+//					for (size_t j = 0; j < lastValue.length(); ++j)
+//					{
+//						if (lastValue.get().get()[j] == 46) // .
+//						{
+//							/* check if is float or a double */
+//							if (Convert::is_float(lastValue))
+//							{
+//								type = Net::Json::Type::FLOAT;
+//							}
+//							else if (Convert::is_double(lastValue))
+//							{
+//								type = Net::Json::Type::DOUBLE;
+//							}
+//							else
+//							{
+//								/* error */
+//								NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), lastValue.get().get());
+//								return false;
+//							}
+//
+//							break;
+//						}
+//
+//						if (!memcmp(&lastValue.get().get()[j], CSTRING("null"), 4))
+//						{
+//							type = Net::Json::Type::NULLVALUE;
+//							break;
+//						}
+//					}
+//				}
+//			}
+//
+//			Net::Json::BasicValueRead obj(nullptr);
+//			if (object_chain.size() > 0)
+//			{
+//				obj = { this->operator[](object_chain[0]) };
+//				for (size_t i = 1; i < object_chain.size(); ++i)
+//				{
+//					obj = obj[object_chain[i]];
+//				}
+//			}
+//
+//			switch (type)
+//			{
+//			case Net::Json::Type::STRING:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = lastValue.get().get();
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = lastValue.get().get();
+//				break;
+//
+//			case Net::Json::Type::INTEGER:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = Convert::ToInt32(lastValue);
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = Convert::ToInt32(lastValue);
+//				break;
+//
+//			case Net::Json::Type::FLOAT:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = Convert::ToFloat(lastValue);
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = Convert::ToFloat(lastValue);
+//				break;
+//
+//			case Net::Json::Type::DOUBLE:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = Convert::ToDouble(lastValue);
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = Convert::ToDouble(lastValue);
+//				break;
+//
+//			case Net::Json::Type::BOOLEAN:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = Convert::ToBoolean(lastValue);
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = Convert::ToBoolean(lastValue);
+//				break;
+//
+//			case Net::Json::Type::NULLVALUE:
+//				if (object_chain.size() > 0)
+//				{
+//					obj[lastKey.get().get()] = Net::Json::NullValue();
+//					break;
+//				}
+//
+//				this->operator[](lastKey.get().get()) = Net::Json::NullValue();
+//				break;
+//
+//			default:
+//				NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
+//				return false;
+//			}
+//
+//			bReadValue = false;
+//			v = 0;
+//		}
+//	}
 
 	return true;
 }

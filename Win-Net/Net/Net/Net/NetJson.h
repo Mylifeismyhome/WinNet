@@ -320,7 +320,9 @@ namespace Net
 			FLAG_READING_OBJECT = (1 << 0),
 			FLAG_READING_ARRAY = (1 << 1),
 			FLAG_READING_STRING = (1 << 2),
-			FLAG_READING_ANY = (1 << 3)
+			FLAG_READING_ANY = (1 << 3),
+			FLAG_READING_KEY = (1 << 4), // for parsing object only
+			FLAG_READING_VALUE = (1 << 5) // for parsing object only
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */
@@ -331,6 +333,8 @@ namespace Net
 
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
+
+			bool DeserializeAny(Net::String& key, Net::String& value);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -357,7 +361,7 @@ namespace Net
 			void Free();
 
 		private:
-			bool Deserialize(Net::String json, Vector<char*>& object_chain);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain);
 		};
 
 		class Array : public BasicArray
