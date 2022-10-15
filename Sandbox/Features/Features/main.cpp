@@ -296,41 +296,41 @@ int main()
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
 	Net::Json::Document doc;
-	if (!doc.Deserialize(R"({
- 	"available_server": [{
- 			"server_name": "mainserver",
- 			"server_address": "164.68.127.226",
- 			"server_port": 7100
- 		},
- 		{
- 			"server_name": "updateserver",
- 			"server_address": "164.68.127.226",
- 			"server_port": 7101
- 		},
-	[{
- 			"server_name": "mainserver",
- 			"server_address": "164.68.127.226",
- 			"server_port": 7100
- 		},
- 		{
- 			"server_name": "updateserver",
- 			"server_address": "164.68.127.226",
- 			"server_port": 7101
- 		}
- 	]
- 	]
- })"))
+
+	//Net::Json::Array arr;
+
+	//for (int i = 0; i < 2; ++i)
+	//{
+	//	Net::Json::Object obj(true);
+	//	obj["server_name"] = "test";
+	//	obj["server_address"] = i;
+	//	arr.push(obj);
+	//}
+
+	//doc["available_server"] = arr;
+
+	if (!doc.Deserialize(R"({"test":[[{"a":5}],{"b":7},{"e":10},{"c":5},{"d":10}]})"))
 	{
 		NET_LOG("FUCK");
 	}
 
-	auto str = doc.Stringify();
-	NET_LOG(str.data().data());
+	NET_LOG("%s", doc.Stringify().data().data());
 
-	if (doc["available_server"][2]->is_array())
+	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)
 	{
-		NET_LOG("FUCK2");
-	}
+		auto obj = doc[CSTRING("available_server")]->as_array()->at(it);
+
+		if (!(
+			obj[CSTRING("server_name")] && obj[CSTRING("server_name")]->is_string()
+			&& obj[CSTRING("server_address")] && obj[CSTRING("server_address")]->is_string()
+			&& obj[CSTRING("server_port")] && obj[CSTRING("server_port")]->is_int()
+			))
+		{
+			continue;
+		}
+
+		NET_LOG(obj[CSTRING("server_name")]->as_string());
+	}*/
 
 	while (1);
 	//RUN(Basic);

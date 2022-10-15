@@ -758,7 +758,7 @@ bool Net::Json::Object::Parse(Net::String json)
 /* actual deserialization */
 bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chain)
 {
-	if(json.get().get()[0] != 123) // {
+	if (json.get().get()[0] != 123) // {
 	{
 		/* not an object */
 		return false;
@@ -1172,7 +1172,7 @@ size_t Net::Json::Array::size() const
 
 Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 {
-	Net::String out(CSTRING(""));
+	Net::String out;
 
 	out += (type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["));
 
@@ -1285,9 +1285,9 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 		}
 	}
 
-	size_t it = 0;
-	if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
-		out.erase(it, 1);
+	//size_t it = 0;
+	//if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
+	//	out.erase(it, 1);
 
 	if (type == SerializeType::FORMATTED) out += CSTRING("\n");
 
@@ -1300,7 +1300,6 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 	}
 
 	out += CSTRING("]");
-
 	return out;
 }
 
@@ -1311,168 +1310,318 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 
 bool Net::Json::Array::Deserialize(Net::String json)
 {
-	if (json.get().get()[0] != 91) // [
+	if (json.get().get()[0] != '[')
 	{
+		std::cout << "NOT ARRAY" << std::endl;
 		/* not an array */
 		return false;
 	}
 
-	size_t v = 0;
-	bool bReadObject = false;
-	bool bReadArray = false;
-	for (size_t i = 1; i < json.length(); ++i)
+	if (json.get().get()[json.length() - 1] != ']')
 	{
-		if (!bReadObject && !bReadArray
-			&& json.get().get()[i] == 123) // {
-		{
-			v = i;
-			bReadObject = true;
-		}
-		else if (bReadObject
-			&& json.get().get()[i] == 125) // }
-		{
-			auto lastValue = json.substr(v, i - v + 1);
+		std::cout << "NOT ARRAY2" << std::endl;
+		/* not an array */
+		return false;
+	}
 
-			Net::Json::Object obj(true);
-			if (!obj.Deserialize(lastValue))
+	uint8_t flag = 0;
+	enum class EDeserializeFlag
+	{
+		FLAG_READING_OBJECT = (1 << 0),
+		FLAG_READING_ARRAY = (1 << 1),
+		FLAG_READING_STRING = (1 << 2),
+		FLAG_READING_ANY = (1 << 3)
+	};
+
+	static bool b = false;
+	if (!b)
+	{
+		json = R"([1337,52,4])";
+		b = true;
+	}
+
+	size_t v = 0; // begin for substr
+	auto ref = json.get();
+	for (size_t i = 1; i < json.length() - 1; ++i)
+	{
+		auto c = ref.get()[i];
+
+		if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+		{
+			// end of object reading
+			if (c == '}')
 			{
-				/* error */
-				return false;
-			}
-			this->push(obj);
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
 
-			bReadObject = false;
-			v = i + 2;
-			i = v + 1;
-		}
-		else if (!bReadObject && !bReadArray && json.get().get()[i] == 91) // [
-		{
-			bReadArray = true;
-			v = i;
-		}
-		else if (bReadArray && json.get().get()[i] == 93) // ]
-		{
-			auto lastValue = json.substr(v, i - v + 1);
-
-			Net::Json::Array arr(true);
-			if (!arr.Deserialize(lastValue))
-			{
-				/* error */
-				return false;
-			}
-			this->push(arr);
-
-			bReadArray = false;
-			v = i + 2;
-			i = v + 1;
-		}
-		else if (!bReadObject && !bReadArray
-			&& (json.get().get()[i] == 44 /* , */))
-		{
-			Net::String value = json.substr(v + 1, i - v - 1);
-
-			Net::Json::Type type = Net::Json::Type::INTEGER;
-
-			size_t z = 0;
-			for (size_t j = 0; j < value.length(); ++j)
-			{
-				if (value.get().get()[j] == 34) // "
+				auto object = json.substr(v, i - v + 1);
+				Net::Json::Object obj(true);
+				if (!obj.Deserialize(object))
 				{
-					if (type == Net::Json::Type::STRING)
-					{
-						value = value.substr(z + 1, j - z - 1);
-						break;
-					}
-
-					type = Net::Json::Type::STRING;
-					z = j;
-					continue;
+					/* error */
+					std::cout << "UNABEL TO DESERIALIZE OBJECT" << std::endl;
+					return false;
 				}
+				this->push(obj);
 			}
 
-			if (type != Net::Json::Type::STRING)
+			// keep reading the object
+			continue;
+		}
+		else if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
+		{
+			// end of array reading
+			if (c == ']')
 			{
-				/* remove all whitespaces, breaks and tabulators */
-				value.eraseAll(CSTRING("\n"));
-				value.eraseAll(CSTRING("\t"));
-				value.eraseAll(CSTRING(" "));
-			}
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
 
-			/* check for boolean */
-			if (Convert::is_boolean(value))
-			{
-				type = Net::Json::Type::BOOLEAN;
-			}
-			else
-			{
-				for (size_t j = 0; j < value.length(); ++j)
+				auto array = json.substr(v, i - v + 1);
+				Net::Json::Array arr(true);
+				if (!arr.Deserialize(array))
 				{
-					if (value.get().get()[j] == 46) // .
-					{
-						/* check if is float or a double */
-						if (Convert::is_float(value))
-						{
-							type = Net::Json::Type::FLOAT;
-						}
-						else if (Convert::is_double(value))
-						{
-							type = Net::Json::Type::DOUBLE;
-						}
-						else
-						{
-							/* error */
-							NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), value.get().get());
-							return false;
-						}
-
-						break;
-					}
-
-					if (type != Net::Json::Type::STRING)
-					{
-						if (!memcmp(&value.get().get()[j], CSTRING("null"), 4))
-						{
-							type = Net::Json::Type::NULLVALUE;
-							break;
-						}
-					}
+					/* error */
+					std::cout << "UNABEL TO DESERIALIZE ARRAY" << std::endl;
+					return false;
 				}
+				this->push(arr);
 			}
 
-			switch (type)
+			// keep reading the array
+			continue;
+		}
+		else if ((flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+		{
+			// end of string reading
+			if (c == '"')
 			{
-			case Net::Json::Type::STRING:
-				this->push(value.get().get());
-				break;
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
 
-			case Net::Json::Type::INTEGER:
-				this->push(Convert::ToInt32(value));
-				break;
-
-			case Net::Json::Type::FLOAT:
-				this->push(Convert::ToFloat(value));
-				break;
-
-			case Net::Json::Type::DOUBLE:
-				this->push(Convert::ToDouble(value));
-				break;
-
-			case Net::Json::Type::BOOLEAN:
-				this->push(Convert::ToBoolean(value));
-				break;
-
-			case Net::Json::Type::NULLVALUE:
-				this->push(Net::Json::NullValue());
-				break;
-
-			default:
-				NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
-				return false;
+				auto str = json.substr(v + 1, i - v - 1);
+				this->push(str);
 			}
 
-			v = i + 1;
+			// keep reading the string
+			continue;
+		}
+		else if ((flag & (int)EDeserializeFlag::FLAG_READING_ANY))
+		{
+			// read anything till we reach a seperator
+			if (c == ',')
+			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
+
+				auto str = json.substr(v, i - v);
+				std::cout << str << std::endl;
+			}
+			// or read anything till we reach the end
+			else if (i == json.length() - 2)
+			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
+
+				auto str = json.substr(v, i - v + 1);
+				std::cout << str << std::endl;
+			}
+
+			// keep reading
+			continue;
+		}
+		else
+		{
+			// check if there is any object to read
+			if (c == '{')
+			{
+				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
+				v = i;
+				continue;
+			}
+
+			// check if there is any array to read
+			else if (c == '[')
+			{
+				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+				v = i;
+				continue;
+			}
+
+			// check if there is any string to read
+			else if (c == '"')
+			{
+				flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+				v = i;
+				continue;
+			}
+			
+			// we are neither reading an object, array or string
+			// so we do read anything untill we can process it
+			flag |= (int)EDeserializeFlag::FLAG_READING_ANY;
+			v = i;
+
+			// check if we reached the end
+			if (i == json.length() - 2)
+			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
+
+				auto str = json.substr(v, i - v + 1);
+				std::cout << str << std::endl;
+			}
 		}
 	}
+
+	//size_t v = 0;
+	//bool bReadObject = false;
+	//bool bReadArray = false;
+	//for (size_t i = 1; i < json.length(); ++i)
+	//{
+	//	if (!bReadObject && !bReadArray
+	//		&& json.get().get()[i] == 123) // {
+	//	{
+	//		v = i;
+	//		bReadObject = true;
+	//	}
+	//	else if (bReadObject
+	//		&& json.get().get()[i] == 125) // }
+	//	{
+	//		auto lastValue = json.substr(v, i - v + 1);
+
+	//		Net::Json::Object obj(true);
+	//		if (!obj.Deserialize(lastValue))
+	//		{
+	//			/* error */
+	//			return false;
+	//		}
+	//		this->push(obj);
+
+	//		bReadObject = false;
+	//		v = i + 2;
+	//		i = v + 1;
+	//	}
+	//	else if (!bReadObject && !bReadArray && json.get().get()[i] == 91) // [
+	//	{
+	//		bReadArray = true;
+	//		v = i;
+	//	}
+	//	else if (bReadArray && json.get().get()[i] == 93) // ]
+	//	{
+	//		auto lastValue = json.substr(v, i - v + 1);
+
+	//		Net::Json::Array arr(true);
+	//		if (!arr.Deserialize(lastValue))
+	//		{
+	//			/* error */
+	//			return false;
+	//		}
+	//		this->push(arr);
+
+	//		bReadArray = false;
+	//		v = i + 2;
+	//		i = v + 1;
+	//	}
+	//	else if (!bReadObject && !bReadArray
+	//		&& (json.get().get()[i] == 44 /* , */))
+	//	{
+	//		Net::String value = json.substr(v + 1, i - v - 1);
+
+	//		Net::Json::Type type = Net::Json::Type::INTEGER;
+
+	//		size_t z = 0;
+	//		for (size_t j = 0; j < value.length(); ++j)
+	//		{
+	//			if (value.get().get()[j] == 34) // "
+	//			{
+	//				if (type == Net::Json::Type::STRING)
+	//				{
+	//					value = value.substr(z + 1, j - z - 1);
+	//					break;
+	//				}
+
+	//				type = Net::Json::Type::STRING;
+	//				z = j;
+	//				continue;
+	//			}
+	//		}
+
+	//		if (type != Net::Json::Type::STRING)
+	//		{
+	//			/* remove all whitespaces, breaks and tabulators */
+	//			value.eraseAll(CSTRING("\n"));
+	//			value.eraseAll(CSTRING("\t"));
+	//			value.eraseAll(CSTRING(" "));
+	//		}
+
+	//		/* check for boolean */
+	//		if (Convert::is_boolean(value))
+	//		{
+	//			type = Net::Json::Type::BOOLEAN;
+	//		}
+	//		else
+	//		{
+	//			for (size_t j = 0; j < value.length(); ++j)
+	//			{
+	//				if (value.get().get()[j] == 46) // .
+	//				{
+	//					/* check if is float or a double */
+	//					if (Convert::is_float(value))
+	//					{
+	//						type = Net::Json::Type::FLOAT;
+	//					}
+	//					else if (Convert::is_double(value))
+	//					{
+	//						type = Net::Json::Type::DOUBLE;
+	//					}
+	//					else
+	//					{
+	//						/* error */
+	//						NET_LOG_ERROR(CSTRING("[Json] - Unable to define type from value {%s}"), value.get().get());
+	//						return false;
+	//					}
+
+	//					break;
+	//				}
+
+	//				if (type != Net::Json::Type::STRING)
+	//				{
+	//					if (!memcmp(&value.get().get()[j], CSTRING("null"), 4))
+	//					{
+	//						type = Net::Json::Type::NULLVALUE;
+	//						break;
+	//					}
+	//				}
+	//			}
+	//		}
+
+	//		switch (type)
+	//		{
+	//		case Net::Json::Type::STRING:
+	//			this->push(value.get().get());
+	//			break;
+
+	//		case Net::Json::Type::INTEGER:
+	//			this->push(Convert::ToInt32(value));
+	//			break;
+
+	//		case Net::Json::Type::FLOAT:
+	//			this->push(Convert::ToFloat(value));
+	//			break;
+
+	//		case Net::Json::Type::DOUBLE:
+	//			this->push(Convert::ToDouble(value));
+	//			break;
+
+	//		case Net::Json::Type::BOOLEAN:
+	//			this->push(Convert::ToBoolean(value));
+	//			break;
+
+	//		case Net::Json::Type::NULLVALUE:
+	//			this->push(Net::Json::NullValue());
+	//			break;
+
+	//		default:
+	//			NET_LOG_ERROR(CSTRING("[Json] - Invalid type"));
+	//			return false;
+	//		}
+
+	//		v = i + 1;
+	//	}
+	//}
 
 	return true;
 }
