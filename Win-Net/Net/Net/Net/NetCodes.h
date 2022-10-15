@@ -9,12 +9,12 @@
 #define NET_ERROR_LAST_CODE Net::Codes::NET_ERROR_CODE_T::LAST_NET_ERROR_CODE
 
 #define NET_DEFINE_ERROR_CODE(name, ...) \
-NET_NAMESPACE_BEGIN(name) \
+namespace name { \
 enum T##name \
 { \
 __VA_ARGS__ \
 }; \
-NET_NAMESPACE_END
+}
 
 #include <Net/Net/NetString.h>
 
