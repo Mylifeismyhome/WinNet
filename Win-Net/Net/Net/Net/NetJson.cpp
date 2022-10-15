@@ -758,8 +758,6 @@ bool Net::Json::Object::Parse(Net::String json)
 /* actual deserialization */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
 {
-	std::cout << value.get().get() << std::endl;
-
 	// object detected
 	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
 	{
@@ -945,6 +943,15 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	return true;
 }
 
+/*
+* @Todo: Add better parsing error detection
+* How it is working in its current state
+*	- reading till the common seperator ':' reached
+*		- then extracting the key & value from each other
+*	- processing the value
+*		- using recursive method to parse object chain
+*		- creating an array object on parsing array
+*/
 bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
 {
 	if (json.get().get()[0] != '{')
