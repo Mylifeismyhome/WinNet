@@ -1308,6 +1308,72 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 	return this->Serialize(type, iterations);
 }
 
+bool Net::Json::Array::DeserializeAny(Net::String& str)
+{
+	// we have to figure out what kind of type the data is from
+	// we start with treating it as an integer
+	Net::Json::Type type = Net::Json::Type::INTEGER;
+
+	if (Convert::is_boolean(str))
+	{
+		type = Net::Json::Type::BOOLEAN;
+	}
+	else if (!memcmp(str.get().get(), CSTRING("null"), 4))
+	{
+		type = Net::Json::Type::NULLVALUE;
+	}
+	else
+	{
+		// make sure we are having a floating number
+		for (size_t i = 0; i < str.size(); ++i)
+		{
+			auto c = str.get().get()[i];
+			if (c == '.')
+			{
+				if (Convert::is_double(str))
+				{
+					type = Net::Json::Type::DOUBLE;
+				}
+				else if (Convert::is_float(str))
+				{
+					type = Net::Json::Type::FLOAT;
+				}
+
+				break;
+			}
+		}
+	}
+
+	switch (type)
+	{
+	case Net::Json::Type::INTEGER:
+		this->push(Convert::ToInt32(str));
+		break;
+
+	case Net::Json::Type::BOOLEAN:
+		this->push(Convert::ToBoolean(str));
+		break;
+
+	case Net::Json::Type::DOUBLE:
+		this->push(Convert::ToDouble(str));
+		break;
+
+	case Net::Json::Type::FLOAT:
+		this->push(Convert::ToFloat(str));
+		break;
+
+	case Net::Json::Type::NULLVALUE:
+		this->push(Net::Json::NullValue());
+		break;
+
+	default:
+		NET_LOG_ERROR(CSTRING("INVALID TYPE"));
+		return false;
+	}
+
+	return true;
+}
+
 bool Net::Json::Array::Deserialize(Net::String json)
 {
 	if (json.get().get()[0] != '[')
@@ -1411,64 +1477,8 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 				Net::String str = json.substr(v, i - v);
 
-				// we have to figure out what kind of type the data is from
-				// we start with treating it as an integer
-				Net::Json::Type type = Net::Json::Type::INTEGER;
-
-				if (Convert::is_boolean(str))
+				if (!DeserializeAny(str))
 				{
-					type = Net::Json::Type::BOOLEAN;
-				}
-				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
-				{
-					type = Net::Json::Type::NULLVALUE;
-				}
-				else
-				{
-					// make sure we are having a floating number
-					for (size_t i = 0; i < str.size(); ++i)
-					{
-						auto c = str.get().get()[i];
-						if (c == '.')
-						{
-							if (Convert::is_double(str))
-							{
-								type = Net::Json::Type::DOUBLE;
-							}
-							else if (Convert::is_float(str))
-							{
-								type = Net::Json::Type::FLOAT;
-							}
-
-							break;
-						}
-					}
-				}
-
-				switch (type)
-				{
-				case Net::Json::Type::INTEGER:
-					this->push(Convert::ToInt32(str));
-					break;
-
-				case Net::Json::Type::BOOLEAN:
-					this->push(Convert::ToBoolean(str));
-					break;
-
-				case Net::Json::Type::DOUBLE:
-					this->push(Convert::ToDouble(str));
-					break;
-
-				case Net::Json::Type::FLOAT:
-					this->push(Convert::ToFloat(str));
-					break;
-
-				case Net::Json::Type::NULLVALUE:
-					this->push(Net::Json::NullValue());
-					break;
-
-				default:
-					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
 					return false;
 				}
 			}
@@ -1479,64 +1489,8 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 				Net::String str = json.substr(v, i - v + 1);
 			
-				// we have to figure out what kind of type the data is from
-				// we start with treating it as an integer
-				Net::Json::Type type = Net::Json::Type::INTEGER;
-
-				if (Convert::is_boolean(str))
+				if (!DeserializeAny(str))
 				{
-					type = Net::Json::Type::BOOLEAN;
-				}
-				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
-				{
-					type = Net::Json::Type::NULLVALUE;
-				}
-				else
-				{
-					// make sure we are having a floating number
-					for (size_t i = 0; i < str.size(); ++i)
-					{
-						auto c = str.get().get()[i];
-						if (c == '.')
-						{
-							if (Convert::is_double(str))
-							{
-								type = Net::Json::Type::DOUBLE;
-							}
-							else if (Convert::is_float(str))
-							{
-								type = Net::Json::Type::FLOAT;
-							}
-
-							break;
-						}
-					}
-				}
-
-				switch (type)
-				{
-				case Net::Json::Type::INTEGER:
-					this->push(Convert::ToInt32(str));
-					break;
-
-				case Net::Json::Type::BOOLEAN:
-					this->push(Convert::ToBoolean(str));
-					break;
-
-				case Net::Json::Type::DOUBLE:
-					this->push(Convert::ToDouble(str));
-					break;
-
-				case Net::Json::Type::FLOAT:
-					this->push(Convert::ToFloat(str));
-					break;
-
-				case Net::Json::Type::NULLVALUE:
-					this->push(Net::Json::NullValue());
-					break;
-
-				default:
-					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
 					return false;
 				}
 			}
@@ -1582,64 +1536,8 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 				Net::String str = json.substr(v, i - v + 1);
 
-				// we have to figure out what kind of type the data is from
-				// we start with treating it as an integer
-				Net::Json::Type type = Net::Json::Type::INTEGER;
-
-				if (Convert::is_boolean(str))
+				if (!DeserializeAny(str))
 				{
-					type = Net::Json::Type::BOOLEAN;
-				}
-				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
-				{
-					type = Net::Json::Type::NULLVALUE;
-				}
-				else
-				{
-					// make sure we are having a floating number
-					for (size_t i = 0; i < str.size(); ++i)
-					{
-						auto c = str.get().get()[i];
-						if (c == '.')
-						{
-							if (Convert::is_double(str))
-							{
-								type = Net::Json::Type::DOUBLE;
-							}
-							else if (Convert::is_float(str))
-							{
-								type = Net::Json::Type::FLOAT;
-							}
-
-							break;
-						}
-					}
-				}
-
-				switch (type)
-				{
-				case Net::Json::Type::INTEGER:
-					this->push(Convert::ToInt32(str));
-					break;
-
-				case Net::Json::Type::BOOLEAN:
-					this->push(Convert::ToBoolean(str));
-					break;
-
-				case Net::Json::Type::DOUBLE:
-					this->push(Convert::ToDouble(str));
-					break;
-
-				case Net::Json::Type::FLOAT:
-					this->push(Convert::ToFloat(str));
-					break;
-
-				case Net::Json::Type::NULLVALUE:
-					this->push(Net::Json::NullValue());
-					break;
-
-				default:
-					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
 					return false;
 				}
 			}

@@ -357,6 +357,8 @@ namespace Net
 			template <typename T>
 			bool emplace_back(T value, Type type);
 
+			bool DeserializeAny(Net::String&);
+
 		public:
 			Array(bool bSharedMemory = false);
 			~Array();
