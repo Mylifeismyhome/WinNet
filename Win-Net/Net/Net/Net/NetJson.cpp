@@ -758,6 +758,8 @@ bool Net::Json::Object::Parse(Net::String json)
 /* actual deserialization */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
 {
+	std::cout << value.get().get() << std::endl;
+
 	// object detected
 	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
 	{
@@ -784,6 +786,28 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 		{
 			obj = obj[object_chain[i]];
 		}
+	}
+
+	// array detected
+	if (value.get().get()[0] == '[' && value.get().get()[value.length() - 1] == ']')
+	{
+		Net::Json::Array arr(true);
+		if (!arr.Deserialize(value))
+		{
+			// @todo: add logging
+			return false;
+		}
+
+		if (object_chain.size() > 0)
+		{
+			obj[key.get().get()] = arr;
+		}
+		else
+		{
+			this->operator[](key.get().get()) = arr;
+		}
+
+		return true;
 	}
 
 	// we have to figure out what kind of type the data is from
@@ -960,26 +984,69 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 		}
 		else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
 		{
-			// read till we reach the next seperator
-			if (c == ',')
+			if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
 			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-				Net::String value = json.substr(v, i - v);
-				if (!DeserializeAny(lastKey, value, object_chain))
+				// end of reading arry
+				if (c == ']')
 				{
-					return false;
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+					Net::String value = json.substr(v, i - v + 1);
+					if (!DeserializeAny(lastKey, value, object_chain))
+					{
+						return false;
+					}
 				}
 			}
-			// or read till we reach the end
-			else if (i == json.length() - 2)
+			else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
 			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-				Net::String value = json.substr(v, i - v + 1);
-				if (!DeserializeAny(lastKey, value, object_chain))
+				// end of reading object
+				if (c == '}')
 				{
-					return false;
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+					Net::String value = json.substr(v, i - v + 1);
+					if (!DeserializeAny(lastKey, value, object_chain))
+					{
+						return false;
+					}
+				}
+			}
+			else
+			{
+				// detected an array, read it
+				if (c == '[')
+				{
+					flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+				}
+				// detected an object, read it
+				else if (c == '{')
+				{
+					flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
+				}
+				// read till we reach the next seperator
+				else if (c == ',')
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+					Net::String value = json.substr(v, i - v);
+					if (!DeserializeAny(lastKey, value, object_chain))
+					{
+						return false;
+					}
+				}
+				// or read till we reach the end
+				else if (i == json.length() - 2)
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+					Net::String value = json.substr(v, i - v + 1);
+					if (!DeserializeAny(lastKey, value, object_chain))
+					{
+						return false;
+					}
 				}
 			}
 		}
