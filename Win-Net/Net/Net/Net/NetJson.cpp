@@ -758,7 +758,7 @@ bool Net::Json::Object::Parse(Net::String json)
 /* actual deserialization */
 bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chain)
 {
-	if (memcmp(&json.get().get()[0], CSTRING("{"), 1) != 0)
+	if(json.get().get()[0] != 123) // {
 	{
 		/* not an object */
 		return false;
@@ -779,7 +779,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		if (!bReadAnotherObject
 			&& !bReadArray
 			&& !bReadValue
-			&& !memcmp(&json.get().get()[i], CSTRING(R"(")"), 1))
+			&& json.get().get()[i] == 34 /* " */)
 		{
 			if (k != 0)
 			{
@@ -792,7 +792,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		}
 		else if (!bReadAnotherObject
 			&& !bReadArray
-			&& !memcmp(&json.get().get()[i], CSTRING(":"), 1))
+			&& json.get().get()[i] == 58 /* : */)
 		{
 			/* reading key */
 			if (k != 0)
@@ -808,7 +808,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		}
 		else if (!bReadAnotherObject
 			&& !bReadArray
-			&& !memcmp(&json.get().get()[i], CSTRING("{"), 1))
+			&& json.get().get()[i] == 123 /* { */)
 		{
 			/* reading key */
 			if (k != 0)
@@ -825,13 +825,13 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		}
 		else if (bReadAnotherObject
 			&& !bReadArray
-			&& !memcmp(&json.get().get()[i], CSTRING("{"), 1))
+			&& json.get().get()[i] == 123 /* { */)
 		{
 			++p;
 		}
 		else if (bReadAnotherObject
 			&& !bReadArray
-			&& !memcmp(&json.get().get()[i], CSTRING("}"), 1))
+			&& json.get().get()[i] == 125 /* } */)
 		{
 			/* reading key */
 			if (k != 0)
@@ -849,9 +849,9 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 			lastValue = json.substr(v, i - v + 1);
 
 #ifdef BUILD_LINUX
-                        object_chain.push_back(strdup(lastKey.get().get()));
+			object_chain.push_back(strdup(lastKey.get().get()));
 #else
-                        object_chain.push_back(_strdup(lastKey.get().get()));
+			object_chain.push_back(_strdup(lastKey.get().get()));
 #endif
 			if (!this->Deserialize(lastValue, object_chain))
 				return false;
@@ -864,7 +864,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		}
 		else if (!bReadArray
 			&& !bReadAnotherObject
-			&& !memcmp(&json.get().get()[i], CSTRING("["), 1))
+			&& json.get().get()[i] == 91 /* [ */)
 		{
 			/* reading key */
 			if (k != 0)
@@ -881,7 +881,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 		}
 		else if (bReadArray
 			&& !bReadAnotherObject
-			&& !memcmp(&json.get().get()[i], CSTRING("]"), 1))
+			&& json.get().get()[i] == 93 /* ] */)
 		{
 			/* reading key */
 			if (k != 0)
@@ -919,7 +919,8 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 
 			bReadArray = false;
 		}
-		else if (!bReadAnotherObject && !bReadArray && bReadValue && (!memcmp(&json.get().get()[i], CSTRING(","), 1) || !memcmp(&json.get().get()[i], CSTRING("}"), 1)))
+		else if (!bReadAnotherObject && !bReadArray && bReadValue
+			&& (json.get().get()[i] == 44 /* , */ || json.get().get()[i] == 125 /* } */))
 		{
 			/* reading key */
 			if (k != 0)
@@ -935,7 +936,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 			Net::Json::Type type = Net::Json::Type::INTEGER;
 			for (size_t j = 0; j < lastValue.length(); ++j)
 			{
-				if (!memcmp(&lastValue.get().get()[j], CSTRING(R"(")"), 1))
+				if (lastValue.get().get()[j] == 34) // " 
 				{
 					if (type == Net::Json::Type::STRING)
 					{
@@ -968,7 +969,7 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 				{
 					for (size_t j = 0; j < lastValue.length(); ++j)
 					{
-						if (!memcmp(&lastValue.get().get()[j], CSTRING("."), 1))
+						if (lastValue.get().get()[j] == 46) // .
 						{
 							/* check if is float or a double */
 							if (Convert::is_float(lastValue))
@@ -1269,6 +1270,19 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			out += tmp->as_object()->Serialize(type, (iterations + 1));
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
+		else if (tmp->GetType() == Type::ARRAY)
+		{
+			if (type == SerializeType::FORMATTED)
+			{
+				for (size_t it = 0; it < iterations + 1; ++it)
+				{
+					out += CSTRING("\t");
+				}
+			}
+
+			out += tmp->as_array()->Serialize(type, (iterations + 1));
+			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
+		}
 	}
 
 	size_t it = 0;
@@ -1297,7 +1311,7 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 
 bool Net::Json::Array::Deserialize(Net::String json)
 {
-	if(json.get().get()[0] != 91) // [
+	if (json.get().get()[0] != 91) // [
 	{
 		/* not an array */
 		return false;
@@ -1305,9 +1319,10 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 	size_t v = 0;
 	bool bReadObject = false;
+	bool bReadArray = false;
 	for (size_t i = 1; i < json.length(); ++i)
 	{
-		if (!bReadObject
+		if (!bReadObject && !bReadArray
 			&& json.get().get()[i] == 123) // {
 		{
 			v = i;
@@ -1330,7 +1345,28 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			v = i + 2;
 			i = v + 1;
 		}
-		else if (!bReadObject
+		else if (!bReadObject && !bReadArray && json.get().get()[i] == 91) // [
+		{
+			bReadArray = true;
+			v = i;
+		}
+		else if (bReadArray && json.get().get()[i] == 93) // ]
+		{
+			auto lastValue = json.substr(v, i - v + 1);
+
+			Net::Json::Array arr(true);
+			if (!arr.Deserialize(lastValue))
+			{
+				/* error */
+				return false;
+			}
+			this->push(arr);
+
+			bReadArray = false;
+			v = i + 2;
+			i = v + 1;
+		}
+		else if (!bReadObject && !bReadArray
 			&& (json.get().get()[i] == 44 /* , */))
 		{
 			Net::String value = json.substr(v + 1, i - v - 1);
@@ -1340,7 +1376,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			size_t z = 0;
 			for (size_t j = 0; j < value.length(); ++j)
 			{
-				if(value.get().get()[j] == 34) // "
+				if (value.get().get()[j] == 34) // "
 				{
 					if (type == Net::Json::Type::STRING)
 					{
@@ -1371,7 +1407,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			{
 				for (size_t j = 0; j < value.length(); ++j)
 				{
-					if (!memcmp(&value.get().get()[j], CSTRING("."), 1))
+					if (value.get().get()[j] == 46) // .
 					{
 						/* check if is float or a double */
 						if (Convert::is_float(value))

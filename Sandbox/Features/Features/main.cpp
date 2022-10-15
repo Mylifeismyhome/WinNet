@@ -306,13 +306,33 @@ int main()
  			"server_name": "updateserver",
  			"server_address": "164.68.127.226",
  			"server_port": 7101
+ 		},
+	[{
+ 			"server_name": "mainserver",
+ 			"server_address": "164.68.127.226",
+ 			"server_port": 7100
+ 		},
+ 		{
+ 			"server_name": "updateserver",
+ 			"server_address": "164.68.127.226",
+ 			"server_port": 7101
  		}
+ 	]
  	]
  })"))
 	{
 		NET_LOG("FUCK");
 	}
 
+	auto str = doc.Stringify();
+	NET_LOG(str.data().data());
+
+	if (doc["available_server"][2]->is_array())
+	{
+		NET_LOG("FUCK2");
+	}
+
+	while (1);
 	//RUN(Basic);
 	//RUN(Hex);
 	//RUN(Base32);
