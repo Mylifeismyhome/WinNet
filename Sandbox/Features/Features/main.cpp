@@ -4,6 +4,7 @@
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
+#include <Net/Net/NetJson.h>
 
 // coding
 #include <Net/Coding/Hex.h>
@@ -294,21 +295,39 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	RUN(Basic);
-	RUN(Hex);
-	RUN(Base32);
-	RUN(Base64);
-	RUN(MD5);
-	RUN(SHA1);
-	RUN(TOTP);
-	RUN(AES);
-	RUN(rsa);
-	RUN(Directory);
-	RUN(HTTP);
-	RUN(HTTPS);
-	RUN(TIMER);
-	//RUN(DATABASE);
-	RUN(NTP);
+	Net::Json::Document doc;
+	if (!doc.Deserialize(R"({
+ 	"available_server": [{
+ 			"server_name": "mainserver",
+ 			"server_address": "164.68.127.226",
+ 			"server_port": 7100
+ 		},
+ 		{
+ 			"server_name": "updateserver",
+ 			"server_address": "164.68.127.226",
+ 			"server_port": 7101
+ 		}
+ 	]
+ })"))
+	{
+		NET_LOG("FUCK");
+	}
+
+	//RUN(Basic);
+	//RUN(Hex);
+	//RUN(Base32);
+	//RUN(Base64);
+	//RUN(MD5);
+	//RUN(SHA1);
+	//RUN(TOTP);
+	//RUN(AES);
+	//RUN(rsa);
+	//RUN(Directory);
+	//RUN(HTTP);
+	//RUN(HTTPS);
+	//RUN(TIMER);
+	////RUN(DATABASE);
+	//RUN(NTP);
 
 	NET_UNLOAD;
 

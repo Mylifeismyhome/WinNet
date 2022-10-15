@@ -893,6 +893,8 @@ bool Net::Json::Object::Deserialize(Net::String json, Vector<char*>& object_chai
 			lastValue = json.substr(v, i - v + 1);
 
 			Net::Json::Array arr(true);
+			auto x = lastValue.get();
+			auto a = strdup(x.get());
 			if (!arr.Deserialize(lastValue))
 			{
 				/* error */
@@ -1295,7 +1297,7 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 
 bool Net::Json::Array::Deserialize(Net::String json)
 {
-	if (!memcmp(&json.get().get()[0], CSTRING("["), 1))
+	if(json.get().get()[0] != 91) // [
 	{
 		/* not an array */
 		return false;
@@ -1306,13 +1308,13 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	for (size_t i = 1; i < json.length(); ++i)
 	{
 		if (!bReadObject
-			&& !memcmp(&json.get().get()[i], CSTRING("{"), 1))
+			&& json.get().get()[i] == 123) // {
 		{
 			v = i;
 			bReadObject = true;
 		}
 		else if (bReadObject
-			&& !memcmp(&json.get().get()[i], CSTRING("}"), 1))
+			&& json.get().get()[i] == 125) // }
 		{
 			auto lastValue = json.substr(v, i - v + 1);
 
@@ -1329,7 +1331,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			i = v + 1;
 		}
 		else if (!bReadObject
-			&& (!memcmp(&json.get().get()[i], CSTRING(","), 1) || !memcmp(&json.get().get()[i], CSTRING("]"), 1)))
+			&& (json.get().get()[i] == 44 /* , */))
 		{
 			Net::String value = json.substr(v + 1, i - v - 1);
 
@@ -1338,7 +1340,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			size_t z = 0;
 			for (size_t j = 0; j < value.length(); ++j)
 			{
-				if (!memcmp(&value.get().get()[j], CSTRING(R"(")"), 1))
+				if(value.get().get()[j] == 34) // "
 				{
 					if (type == Net::Json::Type::STRING)
 					{
