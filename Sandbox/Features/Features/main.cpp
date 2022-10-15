@@ -309,24 +309,11 @@ int main()
 
 	//doc["available_server"] = arr;
 
-	if (!doc.Deserialize(R"({
-	"abc": "abcdefg",
-	"e": {
-		"lol": 1337,
-		"abc": 133.5
-	},
-	"n": [1, 23, 4, 5, 6, {
-		"hurensohn": "test\n\n"
-	}],
-	"f": 999
-})"))
+	if (!doc.Deserialize(R"({"test":[[[]]]})"))
 	{
 		NET_LOG("FUCK");
 	}
 
-	doc["abc"] = R"(abc
-
-dde)";
 	NET_LOG("%s", doc.Stringify().data().data());
 
 	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)

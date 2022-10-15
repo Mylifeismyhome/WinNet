@@ -353,8 +353,8 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
-			Net::String Serialize(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
-			Net::String Stringify(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
+			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
+			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			bool Deserialize(Net::String json);
 			bool Parse(Net::String json);
 
@@ -430,8 +430,8 @@ namespace Net
 			void Set(Array arr);
 			void Set(Array* arr);
 
-			Net::String Serialize(SerializeType type = SerializeType::FORMATTED);
-			Net::String Stringify(SerializeType type = SerializeType::FORMATTED);
+			Net::String Serialize(SerializeType type = SerializeType::NONE);
+			Net::String Stringify(SerializeType type = SerializeType::NONE);
 			bool Deserialize(Net::String json);
 			bool Parse(Net::String json);
 		};
