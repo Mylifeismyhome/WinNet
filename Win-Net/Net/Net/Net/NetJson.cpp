@@ -965,13 +965,13 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 {
 	if (json.get().get()[0] != '{')
 	{
-		std::cout << "NOT AN OBJECT" << std::endl;
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to start with '{' in '%s'"), json.get().get());
 		return false;
 	}
 
 	if (json.get().get()[json.length() - 1] != '}')
 	{
-		std::cout << "NOT AN OBJECT2" << std::endl;
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to end with '}' in '%s'"), json.get().get());
 		return false;
 	}
 
@@ -1463,9 +1463,15 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	// remove any whitespaces
 	//json.eraseAll(" ");
 
-	if (json.get().get()[0] != '[' && json.get().get()[json.length() - 1] != ']')
+	if (json.get().get()[0] != '[')
 	{
-		// @todo: add message
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected string to start with '[' in '%s'"), json.get().get());
+		return false;
+	}
+
+	if (json.get().get()[json.length() - 1] != ']')
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected string to start with ']' in '%s'"), json.get().get());
 		return false;
 	}
 
@@ -1500,8 +1506,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 					Net::Json::Object obj(true);
 					if (!obj.Deserialize(object))
 					{
-						/* error */
-						std::cout << "UNABEL TO DESERIALIZE OBJECT" << std::endl;
+						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Error on deserializing object in '%s'"), json.get().get());
 						return false;
 					}
 					this->push(obj);
@@ -1533,8 +1538,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 					Net::Json::Array arr(true);
 					if (!arr.Deserialize(array))
 					{
-						/* error */
-						std::cout << "UNABEL TO DESERIALIZE ARRAY" << std::endl;
+						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Error on deserializing array in '%s'"), json.get().get());
 						return false;
 					}
 					this->push(arr);
