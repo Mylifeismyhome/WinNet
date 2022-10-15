@@ -324,6 +324,9 @@ int main()
 		NET_LOG("FUCK");
 	}
 
+	doc["abc"] = R"(abc
+
+dde)";
 	NET_LOG("%s", doc.Stringify().data().data());
 
 	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)

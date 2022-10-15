@@ -597,7 +597,7 @@ bool Net::Json::Object::Append(const char* key, Object value)
 
 Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 {
-	Net::String out(CSTRING(""));
+	Net::String out = CSTRING("");
 
 	out += (type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"));
 
@@ -627,7 +627,10 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out.append(CSTRING(R"("%s" : "%s")"), tmp->Key(), tmp->as_string());
+			Net::String str(tmp->as_string());
+			str.replaceAll(CSTRING("\n"), CSTRING("\\n"));
+
+			out.append(CSTRING(R"("%s" : "%s")"), tmp->Key(), str.get().get());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::INTEGER)
@@ -1184,7 +1187,7 @@ size_t Net::Json::Array::size() const
 
 Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 {
-	Net::String out;
+	Net::String out = CSTRING("");
 
 	out += (type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["));
 
@@ -1214,7 +1217,10 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 				}
 			}
 
-			out += Net::String(CSTRING(R"("%s")"), tmp->as_string());
+			Net::String str(tmp->as_string());
+			str.replaceAll(CSTRING("\n"), CSTRING("\\n"));
+
+			out += str;
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::INTEGER)
@@ -1297,9 +1303,9 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 		}
 	}
 
-	//size_t it = 0;
-	//if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
-	//	out.erase(it, 1);
+	size_t it = 0;
+	if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
+		out.erase(it, 1);
 
 	if (type == SerializeType::FORMATTED) out += CSTRING("\n");
 
