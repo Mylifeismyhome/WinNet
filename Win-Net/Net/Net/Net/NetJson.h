@@ -315,6 +315,14 @@ namespace Net
 			void operator=(Document& value);
 		};
 
+		enum class EDeserializeFlag
+		{
+			FLAG_READING_OBJECT = (1 << 0),
+			FLAG_READING_ARRAY = (1 << 1),
+			FLAG_READING_STRING = (1 << 2),
+			FLAG_READING_ANY = (1 << 3)
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -350,14 +358,6 @@ namespace Net
 
 		private:
 			bool Deserialize(Net::String json, Vector<char*>& object_chain);
-		};
-
-		enum class EDeserializeFlag
-		{
-			FLAG_READING_OBJECT = (1 << 0),
-			FLAG_READING_ARRAY = (1 << 1),
-			FLAG_READING_STRING = (1 << 2),
-			FLAG_READING_ANY = (1 << 3)
 		};
 
 		class Array : public BasicArray
