@@ -1374,6 +1374,9 @@ bool Net::Json::Array::DeserializeAny(Net::String& str)
 	return true;
 }
 
+/*
+* @Todo: Add better parsing error detection
+*/
 bool Net::Json::Array::Deserialize(Net::String json)
 {
 	if (json.get().get()[0] != '[')
@@ -1391,18 +1394,11 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	}
 
 	uint8_t flag = 0;
-	enum class EDeserializeFlag
-	{
-		FLAG_READING_OBJECT = (1 << 0),
-		FLAG_READING_ARRAY = (1 << 1),
-		FLAG_READING_STRING = (1 << 2),
-		FLAG_READING_ANY = (1 << 3)
-	};
 
 	static bool b = false;
 	if (!b)
 	{
-		json = R"([1337,[{"a":5}],52,4,"test",null,{"b":1}])";
+		json = R"([1337,[{"a":5}],52,4.237,"test",null,{"b":1}])";
 		b = true;
 	}
 

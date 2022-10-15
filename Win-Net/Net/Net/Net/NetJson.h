@@ -352,6 +352,14 @@ namespace Net
 			bool Deserialize(Net::String json, Vector<char*>& object_chain);
 		};
 
+		enum class EDeserializeFlag
+		{
+			FLAG_READING_OBJECT = (1 << 0),
+			FLAG_READING_ARRAY = (1 << 1),
+			FLAG_READING_STRING = (1 << 2),
+			FLAG_READING_ANY = (1 << 3)
+		};
+
 		class Array : public BasicArray
 		{
 			template <typename T>
