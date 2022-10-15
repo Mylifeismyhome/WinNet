@@ -315,6 +315,16 @@ namespace Net
 			void operator=(Document& value);
 		};
 
+		enum class EDeserializeFlag
+		{
+			FLAG_READING_OBJECT = (1 << 0),
+			FLAG_READING_ARRAY = (1 << 1),
+			FLAG_READING_STRING = (1 << 2),
+			FLAG_READING_ANY = (1 << 3),
+			FLAG_READING_KEY = (1 << 4), // for parsing object only
+			FLAG_READING_VALUE = (1 << 5) // for parsing object only
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -323,6 +333,8 @@ namespace Net
 
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
+
+			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -341,21 +353,23 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
-			Net::String Serialize(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
-			Net::String Stringify(SerializeType type = SerializeType::FORMATTED, size_t iterations = 0);
+			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
+			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			bool Deserialize(Net::String json);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(Net::String json, Vector<char*>& object_chain);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain);
 		};
 
 		class Array : public BasicArray
 		{
 			template <typename T>
 			bool emplace_back(T value, Type type);
+
+			bool DeserializeAny(Net::String&);
 
 		public:
 			Array(bool bSharedMemory = false);
@@ -416,12 +430,10 @@ namespace Net
 			void Set(Array arr);
 			void Set(Array* arr);
 
-			Net::String Serialize(SerializeType type = SerializeType::FORMATTED);
-			Net::String Stringify(SerializeType type = SerializeType::FORMATTED);
+			Net::String Serialize(SerializeType type = SerializeType::NONE);
+			Net::String Stringify(SerializeType type = SerializeType::NONE);
 			bool Deserialize(Net::String json);
 			bool Parse(Net::String json);
 		};
 	}
 }
-
-#define null Net::Json::NullValue();

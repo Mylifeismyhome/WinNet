@@ -1262,9 +1262,18 @@ NET_THREAD(PeerStartRoutine)
 
 		const auto PublicKey = peer->cryption.RSA.publicKey();
 
+		size_t b64len = PublicKey.size();
+		BYTE* b64 = new BYTE[b64len + 1];
+		memcpy(b64, PublicKey.data(), b64len);
+		b64[b64len] = 0;
+
+		Net::Coding::Base64::encode(b64, b64len);
+
 		NET_PACKET PKG;
-		PKG[CSTRING("PublicKey")] = PublicKey.get();
+		PKG[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+
+		FREE(b64);
 	}
 	/*
 		version -> all other
@@ -2098,11 +2107,20 @@ if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // e
 	return;
 }
 
-const auto TargetPublicKey = PKG[CSTRING("PublicKey")]->as_string();
-peer->cryption.RSA.setPublicKey(TargetPublicKey);
-
 // from now we use the Cryption, synced with Server
-peer->cryption.setHandshakeStatus(true);
+{
+	size_t b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
+	BYTE* b64 = new BYTE[b64len + 1];
+	memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
+	b64[b64len] = 0;
+
+	Net::Coding::Base64::decode(b64, b64len);
+
+	peer->cryption.RSA.setPublicKey(reinterpret_cast<char*>(b64));
+	peer->cryption.setHandshakeStatus(true);
+
+	FREE(b64);
+}
 
 // RSA Handshake has been finished, keep going with normal process
 NET_LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), peer->IPAddr().get());

@@ -2083,15 +2083,34 @@ namespace Net
 
 		// send our generated Public Key to the Server
 		NET_PACKET reply;
-		auto MyPublicKey = Net::String(network.RSA.publicKey().get());
-		const auto MyPublicKeyRef = MyPublicKey.get();
-		reply[CSTRING("PublicKey")] = MyPublicKeyRef.get();
+		auto MyPublicKey = network.RSA.publicKey();
+
+		size_t b64len = MyPublicKey.size();
+		BYTE* b64 = new BYTE[b64len + 1];
+		memcpy(b64, MyPublicKey.data(), b64len);
+		b64[b64len] = 0;
+
+		Net::Coding::Base64::encode(b64, b64len);
+
+		reply[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
 		NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
 
+		FREE(b64);
+
 		// from now we use the Cryption, synced with Server
-		const auto TargetPublicKey = pkg[CSTRING("PublicKey")]->as_string();
-		network.RSA.setPublicKey(TargetPublicKey);
-		network.RSAHandshake = true;
+		{
+			b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
+			b64 = new BYTE[b64len + 1];
+			memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
+			b64[b64len] = 0;
+
+			Net::Coding::Base64::decode(b64, b64len);
+
+			network.RSA.setPublicKey(reinterpret_cast<char*>(b64));
+			network.RSAHandshake = true;
+
+			FREE(b64);
+		}
 		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, VersionPackage);
