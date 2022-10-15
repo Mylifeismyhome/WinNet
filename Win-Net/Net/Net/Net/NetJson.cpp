@@ -758,6 +758,9 @@ bool Net::Json::Object::Parse(Net::String json)
 /* actual deserialization */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
 {
+	// remove any whitespaces
+	value.eraseAll(" ");
+
 	// object detected
 	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
 	{
@@ -1394,6 +1397,9 @@ bool Net::Json::Array::DeserializeAny(Net::String& str)
 */
 bool Net::Json::Array::Deserialize(Net::String json)
 {
+	// remove any whitespaces
+	json.eraseAll(" ");
+
 	if (json.get().get()[0] != '[')
 	{
 		std::cout << "NOT ARRAY" << std::endl;
