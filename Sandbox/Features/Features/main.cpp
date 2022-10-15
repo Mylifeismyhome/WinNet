@@ -309,7 +309,7 @@ int main()
 
 	//doc["available_server"] = arr;
 
-	if (!doc.Deserialize(R"({"test":[[[]]]})"))
+	if (!doc.Deserialize(R"({"available_server":[{"server_name":"mainserver","server_address":"164.68.127.226","server_port":7100},{"server_name":"updateserver","server_address":"164.68.127.226","server_port":7101}]})"))
 	{
 		NET_LOG("FUCK");
 	}

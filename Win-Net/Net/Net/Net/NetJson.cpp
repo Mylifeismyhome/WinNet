@@ -1357,6 +1357,34 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 
 bool Net::Json::Array::DeserializeAny(Net::String& str)
 {
+	// object detected
+	auto a = str.get();
+	auto b = a.get();
+	if (str.get().get()[0] == '{' && str.get().get()[str.length() - 1] == '}')
+	{
+		Net::Json::Object obj(true);
+		if (!obj.Deserialize(str))
+		{
+			// @todo: add logging
+			return false;
+		}
+		this->push(obj);
+		return true;
+	}
+
+	// array detected
+	if (str.get().get()[0] == '[' && str.get().get()[str.length() - 1] == ']')
+	{
+		Net::Json::Array arr(true);
+		if (!arr.Deserialize(str))
+		{
+			// @todo: add logging
+			return false;
+		}
+		this->push(arr);
+		return true;
+	}
+
 	// we have to figure out what kind of type the data is from
 	// we start with treating it as an integer
 	Net::Json::Type type = Net::Json::Type::INTEGER;
@@ -1530,41 +1558,12 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			// keep reading the string
 			continue;
 		}
-		else if ((flag & (int)EDeserializeFlag::FLAG_READING_ANY))
-		{
-			// read anything till we reach a seperator
-			if (c == ',')
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-
-				Net::String str = json.substr(v, i - v);
-
-				if (!DeserializeAny(str))
-				{
-					return false;
-				}
-			}
-			// or read anything till we reach the end
-			else if (i == json.length() - 2)
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-
-				Net::String str = json.substr(v, i - v + 1);
-
-				if (!DeserializeAny(str))
-				{
-					return false;
-				}
-			}
-
-			// keep reading
-			continue;
-		}
 		else
 		{
 			// check if there is any object to read
 			if (c == '{')
 			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
 				v = i;
 				++obj_count;
@@ -1574,6 +1573,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			// check if there is any array to read
 			else if (c == '[')
 			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
 				v = i;
 				++arr_count;
@@ -1583,8 +1583,40 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			// check if there is any string to read
 			else if (c == '"')
 			{
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 				flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
 				v = i;
+				continue;
+			}
+
+			if ((flag & (int)EDeserializeFlag::FLAG_READING_ANY))
+			{
+				// read anything till we reach a seperator
+				if (c == ',')
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
+
+					Net::String str = json.substr(v, i - v);
+
+					if (!DeserializeAny(str))
+					{
+						return false;
+					}
+				}
+				// or read anything till we reach the end
+				else if (i == json.length() - 2)
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
+
+					Net::String str = json.substr(v, i - v + 1);
+
+					if (!DeserializeAny(str))
+					{
+						return false;
+					}
+				}
+
+				// keep reading
 				continue;
 			}
 
