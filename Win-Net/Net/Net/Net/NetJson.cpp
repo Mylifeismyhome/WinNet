@@ -1336,7 +1336,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	static bool b = false;
 	if (!b)
 	{
-		json = R"([1337,52,4])";
+		json = R"([1337,[{"a":5}],52,4,"test",null,{"b":1}])";
 		b = true;
 	}
 
@@ -1409,16 +1409,136 @@ bool Net::Json::Array::Deserialize(Net::String json)
 			{
 				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 
-				auto str = json.substr(v, i - v);
-				std::cout << str << std::endl;
+				Net::String str = json.substr(v, i - v);
+
+				// we have to figure out what kind of type the data is from
+				// we start with treating it as an integer
+				Net::Json::Type type = Net::Json::Type::INTEGER;
+
+				if (Convert::is_boolean(str))
+				{
+					type = Net::Json::Type::BOOLEAN;
+				}
+				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
+				{
+					type = Net::Json::Type::NULLVALUE;
+				}
+				else
+				{
+					// make sure we are having a floating number
+					for (size_t i = 0; i < str.size(); ++i)
+					{
+						auto c = str.get().get()[i];
+						if (c == '.')
+						{
+							if (Convert::is_double(str))
+							{
+								type = Net::Json::Type::DOUBLE;
+							}
+							else if (Convert::is_float(str))
+							{
+								type = Net::Json::Type::FLOAT;
+							}
+
+							break;
+						}
+					}
+				}
+
+				switch (type)
+				{
+				case Net::Json::Type::INTEGER:
+					this->push(Convert::ToInt32(str));
+					break;
+
+				case Net::Json::Type::BOOLEAN:
+					this->push(Convert::ToBoolean(str));
+					break;
+
+				case Net::Json::Type::DOUBLE:
+					this->push(Convert::ToDouble(str));
+					break;
+
+				case Net::Json::Type::FLOAT:
+					this->push(Convert::ToFloat(str));
+					break;
+
+				case Net::Json::Type::NULLVALUE:
+					this->push(Net::Json::NullValue());
+					break;
+
+				default:
+					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
+					return false;
+				}
 			}
 			// or read anything till we reach the end
 			else if (i == json.length() - 2)
 			{
 				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 
-				auto str = json.substr(v, i - v + 1);
-				std::cout << str << std::endl;
+				Net::String str = json.substr(v, i - v + 1);
+			
+				// we have to figure out what kind of type the data is from
+				// we start with treating it as an integer
+				Net::Json::Type type = Net::Json::Type::INTEGER;
+
+				if (Convert::is_boolean(str))
+				{
+					type = Net::Json::Type::BOOLEAN;
+				}
+				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
+				{
+					type = Net::Json::Type::NULLVALUE;
+				}
+				else
+				{
+					// make sure we are having a floating number
+					for (size_t i = 0; i < str.size(); ++i)
+					{
+						auto c = str.get().get()[i];
+						if (c == '.')
+						{
+							if (Convert::is_double(str))
+							{
+								type = Net::Json::Type::DOUBLE;
+							}
+							else if (Convert::is_float(str))
+							{
+								type = Net::Json::Type::FLOAT;
+							}
+
+							break;
+						}
+					}
+				}
+
+				switch (type)
+				{
+				case Net::Json::Type::INTEGER:
+					this->push(Convert::ToInt32(str));
+					break;
+
+				case Net::Json::Type::BOOLEAN:
+					this->push(Convert::ToBoolean(str));
+					break;
+
+				case Net::Json::Type::DOUBLE:
+					this->push(Convert::ToDouble(str));
+					break;
+
+				case Net::Json::Type::FLOAT:
+					this->push(Convert::ToFloat(str));
+					break;
+
+				case Net::Json::Type::NULLVALUE:
+					this->push(Net::Json::NullValue());
+					break;
+
+				default:
+					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
+					return false;
+				}
 			}
 
 			// keep reading
@@ -1449,19 +1569,79 @@ bool Net::Json::Array::Deserialize(Net::String json)
 				v = i;
 				continue;
 			}
-			
+
 			// we are neither reading an object, array or string
 			// so we do read anything untill we can process it
 			flag |= (int)EDeserializeFlag::FLAG_READING_ANY;
-			v = i;
+			v = (c == ',') ? i + 1 : i;
 
 			// check if we reached the end
 			if (i == json.length() - 2)
 			{
 				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 
-				auto str = json.substr(v, i - v + 1);
-				std::cout << str << std::endl;
+				Net::String str = json.substr(v, i - v + 1);
+
+				// we have to figure out what kind of type the data is from
+				// we start with treating it as an integer
+				Net::Json::Type type = Net::Json::Type::INTEGER;
+
+				if (Convert::is_boolean(str))
+				{
+					type = Net::Json::Type::BOOLEAN;
+				}
+				else if (!memcmp(str.get().get(), CSTRING("null"), 4))
+				{
+					type = Net::Json::Type::NULLVALUE;
+				}
+				else
+				{
+					// make sure we are having a floating number
+					for (size_t i = 0; i < str.size(); ++i)
+					{
+						auto c = str.get().get()[i];
+						if (c == '.')
+						{
+							if (Convert::is_double(str))
+							{
+								type = Net::Json::Type::DOUBLE;
+							}
+							else if (Convert::is_float(str))
+							{
+								type = Net::Json::Type::FLOAT;
+							}
+
+							break;
+						}
+					}
+				}
+
+				switch (type)
+				{
+				case Net::Json::Type::INTEGER:
+					this->push(Convert::ToInt32(str));
+					break;
+
+				case Net::Json::Type::BOOLEAN:
+					this->push(Convert::ToBoolean(str));
+					break;
+
+				case Net::Json::Type::DOUBLE:
+					this->push(Convert::ToDouble(str));
+					break;
+
+				case Net::Json::Type::FLOAT:
+					this->push(Convert::ToFloat(str));
+					break;
+
+				case Net::Json::Type::NULLVALUE:
+					this->push(Net::Json::NullValue());
+					break;
+
+				default:
+					NET_LOG_ERROR(CSTRING("INVALID TYPE"));
+					return false;
+				}
 			}
 		}
 	}
