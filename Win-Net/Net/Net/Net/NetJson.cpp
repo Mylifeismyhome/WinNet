@@ -901,7 +901,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				Net::String value = json.substr(v, i - v);
 				if (!DeserializeAny(lastKey, value))
 				{
-
+					return false;
 				}
 			}
 			// or read till we reach the end
@@ -912,7 +912,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				Net::String value = json.substr(v, i - v + 1);
 				if (!DeserializeAny(lastKey, value))
 				{
-
+					return false;
 				}
 			}
 		}
