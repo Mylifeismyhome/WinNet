@@ -437,5 +437,3 @@ namespace Net
 		};
 	}
 }
-
-#define null Net::Json::NullValue();
