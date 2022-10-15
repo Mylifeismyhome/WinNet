@@ -1376,6 +1376,12 @@ bool Net::Json::Array::DeserializeAny(Net::String& str)
 
 /*
 * @Todo: Add better parsing error detection
+* How it is working in its current state
+*	- reading object and parsing it using the object deserializer
+*	- reading array and parsing it using recursive method
+*	- reading string
+*	- reading anything
+*		- converting anything into int, float, double, boolean and null value
 */
 bool Net::Json::Array::Deserialize(Net::String json)
 {
@@ -1394,14 +1400,6 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	}
 
 	uint8_t flag = 0;
-
-	static bool b = false;
-	if (!b)
-	{
-		json = R"([1337,[{"a":5}],52,4.237,"test",null,{"b":1}])";
-		b = true;
-	}
-
 	size_t v = 0; // begin for substr
 	auto ref = json.get();
 	for (size_t i = 1; i < json.length() - 1; ++i)
