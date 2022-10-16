@@ -310,7 +310,7 @@ int main()
 	//doc["available_server"] = arr;
 
 	//if (!obj.Deserialize(R"({"test":1337,"aka":{"tt":35,"best":1337},"\"HUN\"\"D":[1,2]})"))
-	if (!obj.Deserialize(R"({"test":"HALLO\"OLLA","abc":abc})"))
+	if (!obj.Deserialize(R"({"test":"HALLO\"OLLA","abc":0123456789})"))
 	{
 		NET_LOG("FUCK");
 	}

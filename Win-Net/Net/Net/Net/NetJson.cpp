@@ -922,7 +922,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	{
 		m_type = Net::Json::Type::INTEGER;
 
-		static char m_NumberPattern[] = "0123456789";
+		static const char* m_NumberPattern = CSTRING("0123456789");
 		for (size_t i = 0, j = 0; i < value.size(); ++i)
 		{
 			auto c = refValue.get()[i];
@@ -949,9 +949,9 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			}
 
 			bool m_isNumber = false;
-			for (auto& np : m_NumberPattern)
+			for (size_t z = 0; z < Net::Compiletime::strlen(m_NumberPattern) + 1; ++z)
 			{
-				if (c == np)
+				if (c == static_cast<char>(m_NumberPattern[z]))
 				{
 					m_isNumber = true;
 				}
