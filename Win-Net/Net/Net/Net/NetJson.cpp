@@ -996,13 +996,6 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	size_t obj_count = 0;
 	auto ref = json.get();
 
-	Net::String lastKey;
-
-	/*
-	* Since we did check the start and end to match its syntax that does define an object
-	* so we can skip the first and last character for the further parsing
-	*/
-
 	/*
 	* So an object is seperated in its key and value pair
 	* first scan for the key and detect its syntax that deals as the seperator (':')
@@ -1010,6 +1003,10 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
 	v = 0;
 
+	/*
+	* Since we did check the start and end to match its syntax that does define an object
+	* so we can skip the first and last character for the further parsing
+	*/
 	for (size_t i = 1; i < json.size() - 2; ++i)
 	{
 		auto c = ref.get()[i];
@@ -1060,8 +1057,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				* now we have determinated the key, but the value is not determinated yet
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
-				lastKey = json.substr(v + 1, i - v - 1);
-				std::cout << " KEY: " << lastKey.get().get() << std::endl;
+				auto key = json.substr(v + 1, i - v - 1);
+				std::cout << " KEY: " << key << std::endl;
 
 				flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE;
 				v = i;
