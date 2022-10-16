@@ -976,6 +976,8 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 *			- it reads the entire object or array and stores it as value (use recursive for further analyses)
 *			- it realises if any splitters are missing or if too many have been placed
 *				- it does not do this very accurate but good enough
+*			- it checks if the key is a string
+*			- it checks if the key contains any double-qoutes and if it does then it checks if they are escaped
 */
 bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
 {
@@ -1091,7 +1093,41 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
 				auto key = json.substr(v + 1, i - v - 1);
+				auto len = strlen(key);
 				std::cout << " KEY: " << key << std::endl;
+
+				/*
+				* a key in the json language must be a string
+				* and should be unique in each element
+				*/
+				if (key[0] != '"')
+				{
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key[0]);
+					return false;
+				}
+
+				if (key[len - 1] != '"')
+				{
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key[len - 1]);
+					return false;
+				}
+
+				/*
+				* walk through the key and make sure there are no non-escaped double-qoutes
+				*/
+				for (int j = 1; j < len - 1; ++j)
+				{
+					auto ec = key[j];
+					if (ec == '"')
+					{
+						if ((j - 1) < 0
+							|| key[j - 1] != '\\')
+						{
+							NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key contains double-qoutes that are not escaped ... double-qoutes inside a key must be escaped with '\\'"));
+							return false;
+						}
+					}
+				}
 
 				flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE;
 				v = i;
