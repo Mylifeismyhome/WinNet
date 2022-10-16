@@ -968,6 +968,14 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 *	- processing the value
 *		- using recursive method to parse object chain
 *		- creating an array object on parsing array
+* 
+*	Rework:
+*		- What does it do so far:
+*			- it checks if the json string starts of with '{' and ends with '}'
+*			- it reads the single elements inside of the object and checks for its split that determinate the key and the value
+*			- it reads the entire object or array and stores it as value (use recursive for further analyses)
+*			- it realises if any splitters are missing or if too many have been placed
+*				- it does not do this very accurate but good enough
 */
 bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
 {
@@ -1037,13 +1045,38 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			}
 
 			/*
+			* Spotted beginning of an array
+			* now read it fully before further analysing
+			*/
+			if (c == '[')
+			{
+				++arr_count;
+				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+			}
+			else if (c == ']')
+			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY)
+					|| arr_count == 0)
+				{
+					// we got an ending curly for an arry but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '[' ... got ']'"));
+					return false;
+				}
+
+				--arr_count;
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+			}
+
+			/*
 			* Seperator spotted
-			* now walk balk to determinate the key
+			* now walk back to determinate the key
 			* and walk forward to determinate the value
 			* to determinate the value walk till we reach the syntax that defines the seperation between elements inside an object
 			* or simply till we reach the end, this will be the case if there is only one element
 			*/
-			if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT) && c == ':')
+			if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT) 
+				&& !(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY) 
+				&& c == ':')
 			{
 				if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE)
 				{
@@ -1071,10 +1104,11 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			if (c == ',' || (i == json.size() - 3))
 			{
 				/*
-				* keep going until we read the entire object
+				* keep going until we read the entire object or array
 				* only stop if we reached eof
 				*/
-				if (c == ',' && (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+				if (c == ',' 
+					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT || flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
 				{
 					continue;
 				}
@@ -1094,6 +1128,13 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				{
 					// we got another seperator for an element but missing the end curly for an object
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '}' ... got ',' OR 'EOF'"));
+					return false;
+				}
+
+				if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY) && arr_count > 0)
+				{
+					// we got another seperator for an element but missing the end curly for an array
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected ']' ... got ',' OR 'EOF'"));
 					return false;
 				}
 
