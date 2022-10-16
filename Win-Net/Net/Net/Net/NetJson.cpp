@@ -1013,8 +1013,17 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					}
 				}
 
-				if (!kb || !ke)
+				// if both are zero then the key is not a string
+				if (!kb && !ke)
 				{
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected key to be type of string in object in '%s'"), json.get().get());
+					m_parsing_failed = true;
+					break;
+				}
+				// if one of them are zero then the string never closed
+				else if (!kb || !ke)
+				{
+					NET_LOG_ERROR(CSTRING(R"([Net::Json::Object] -> Expected another '"' in key in object in '%s')"), json.get().get());
 					m_parsing_failed = true;
 					break;
 				}
