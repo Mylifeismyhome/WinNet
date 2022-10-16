@@ -758,13 +758,19 @@ bool Net::Json::Object::Parse(Net::String json)
 	return this->Deserialize(json);
 }
 
-/* actual deserialization */
+/*
+* Object is split into key and value
+* this function does get it both in seperate to deserialize its nested parts
+*/
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
 {
 	// remove any whitespaces
 	//value.eraseAll(" ");
 
-	// object detected
+	/*
+	* value is another object
+	* use recursive to parse it
+	*/
 	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
 	{
 #ifdef BUILD_LINUX
@@ -795,7 +801,9 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 		}
 	}
 
-	// array detected
+	/*
+	* Array spotted, use the array deserializer
+	*/
 	if (value.get().get()[0] == '[' && value.get().get()[value.length() - 1] == ']')
 	{
 		Net::Json::Array arr(true);
@@ -963,17 +971,22 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 */
 bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
 {
+	/*
+	* Since we are passing the json string into an object deserializer
+	* we will check for the syntax that does define an object in the json language at the beginning and end
+	* if not then abort the parsing
+	*/
 	if (json.get().get()[0] != '{')
 	{
 		this->Free();
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to start with '{' in '%s'"), json.get().get());
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), json.get().get()[0]);
 		return false;
 	}
 
 	if (json.get().get()[json.length() - 1] != '}')
 	{
 		this->Free();
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to end with '}' in '%s'"), json.get().get());
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), json.get().get()[json.length() - 1]);
 		return false;
 	}
 
@@ -984,180 +997,262 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	auto ref = json.get();
 
 	Net::String lastKey;
-	for (size_t i = 1; i < json.size() - 1; ++i)
+
+	/*
+	* Since we did check the start and end to match its syntax that does define an object
+	* so we can skip the first and last character for the further parsing
+	*/
+
+	/*
+	* So an object is seperated in its key and value pair
+	* first scan for the key and detect its syntax that deals as the seperator (':')
+	*/
+	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
+	v = 0;
+
+	for (size_t i = 2; i < json.size() - 2; ++i)
 	{
 		auto c = ref.get()[i];
 
-		if ((flag & (int)EDeserializeFlag::FLAG_READING_KEY))
+		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
-			// read till we reach the common splitter for an object
-			if (c == ':')
+			/*
+			* Spotted beginning of an object
+			* now read it fully before further analysing
+			*/
+			if (c == '{')
 			{
-				// read the key
-				size_t kb = 0; // begin
-				size_t ke = 0; // end
-				for (size_t j = v; j < i; ++j)
+				++obj_count;
+				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
+			}
+			else if (c == '}')
+			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT)
+					|| obj_count == 0)
 				{
-					auto d = ref.get()[j];
-					if (d == '"')
-					{
-						if (kb != 0)
-						{
-							ke = j;
-							break;
-						}
-						else
-						{
-							kb = j;
-						}
-					}
-				}
-
-				// if both are zero then the key is not a string
-				if (!kb && !ke)
-				{
-					this->Free();
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected key to be type of string in object in '%s'"), json.get().get());
-					return false;
-				}
-				// if one of them are zero then the string never closed
-				else if (!kb || !ke)
-				{
-					this->Free();
-					NET_LOG_ERROR(CSTRING(R"([Net::Json::Object] -> Expected another '"' in key in object in '%s')"), json.get().get());
+					// we got an ending curly for an object but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '{' ... got '}'"));
 					return false;
 				}
 
-				lastKey = json.substr(kb + 1, ke - kb - 1);
+				--obj_count;
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+			}
 
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
-				flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
+			/*
+			* Seperator spotted
+			* now walk balk to determinate the key
+			* and walk forward to determinate the value
+			* to determinate the value walk till we reach the syntax that defines the seperation between elements inside an object
+			* or simply till we reach the end, this will be the case if there is only one element
+			*/
+			if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT) && c == ':')
+			{
+				if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE)
+				{
+					// we got a seperator for key and value pair but were reading the value?
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the value of the element ... got another ':' instead"));
+					return false;
+				}
 
-				v = i + 1;
+				/*
+				* the last key is obviously the last position at which we set the flag to reading the key
+				* now we have determinated the key, but the value is not determinated yet
+				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
+				*/
+				lastKey = json.substr(v + 1, i - v - 1);
+				std::cout << " KEY: " << lastKey.get().get() << std::endl;
+
+				flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE;
+				v = i;
+			}
+
+			/*
+			* check for the syntax that seperates elements inside an object
+			* or check if we have reached eof (end of file)
+			*/
+			if (c == ',' || (i == json.size() - 2))
+			{
+				/*
+				* Spotted seperator for an element
+				* now determinate the value
+				*/
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE))
+				{
+					// we got a seperator for an element but missing the splitter for the key and value pair
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the elements key ... instead got ',' OR 'EOF'"));
+					return false;
+				}
+
+				if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT) && obj_count > 0)
+				{
+					// we got another seperator for an element but missing the end curly for an object
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '}' ... got ',' OR 'EOF'"));
+					return false;
+				}
+
+				auto value = json.substr(v + 1, i - v - 1);
+				std::cout << " VALUE: " << value << std::endl;
+
+				/*
+				* value determinated
+				* now remove the flag
+				*/
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE;
+				v = i;
 			}
 		}
-		else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
-		{
-			if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
-			{
-				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
-				{
-					if (c == '}')
-					{
-						this->Free();
-						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character '}' in '%s'"), json.get().get());
-						return false;
-					}
-				}
 
-				if (c == '[')
-				{
-					// another array spotted
-					++arr_count;
-					continue;
-				}
+		//if ((flag & (int)EDeserializeFlag::FLAG_READING_KEY))
+		//{
+		//	// read till we reach the common splitter for an object
+		//	if (c == ':')
+		//	{
+		//		// read the key
+		//		size_t kb = 0; // begin
+		//		size_t ke = 0; // end
+		//		for (size_t j = v; j < i; ++j)
+		//		{
+		//			auto d = ref.get()[j];
+		//			if (d == '"')
+		//			{
+		//				if (kb != 0)
+		//				{
+		//					ke = j;
+		//					break;
+		//				}
+		//				else
+		//				{
+		//					kb = j;
+		//				}
+		//			}
+		//		}
 
-				// end of reading arry
-				if (c == ']')
-				{
-					--arr_count;
-					if (arr_count == 0)
-					{
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+		//		// if both are zero then the key is not a string
+		//		if (!kb && !ke)
+		//		{
+		//			this->Free();
+		//			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected key to be type of string in object in '%s'"), json.get().get());
+		//			return false;
+		//		}
+		//		// if one of them are zero then the string never closed
+		//		else if (!kb || !ke)
+		//		{
+		//			this->Free();
+		//			NET_LOG_ERROR(CSTRING(R"([Net::Json::Object] -> Expected another '"' in key in object in '%s')"), json.get().get());
+		//			return false;
+		//		}
 
-						Net::String value = json.substr(v, i - v + 1);
-						if (!DeserializeAny(lastKey, value, object_chain))
-						{
-							this->Free();
-							return false;
-						}
-					}
-				}
-			}
-			else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
-			{
-				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
-				{
-					if (c == ']')
-					{
-						this->Free();
-						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character ']' in '%s'"), json.get().get());
-						return false;
-					}
-				}
+		//		lastKey = json.substr(kb + 1, ke - kb - 1);
 
-				if (c == '{')
-				{
-					// another object spotted
-					++obj_count;
-					continue;
-				}
+		//		flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
+		//		flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
 
-				// end of reading object
-				if (c == '}')
-				{
-					--obj_count;
-					if (obj_count == 0)
-					{
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+		//		v = i + 1;
+		//	}
+		//}
+		//else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
+		//{
+		//	if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
+		//	{
+		//		if (c == '[')
+		//		{
+		//			// another array spotted
+		//			++arr_count;
+		//			continue;
+		//		}
 
-						Net::String value = json.substr(v, i - v + 1);
-						if (!DeserializeAny(lastKey, value, object_chain))
-						{
-							this->Free();
-							return false;
-						}
-					}
-				}
-			}
-			else
-			{
-				// detected an array, read it
-				if (c == '[')
-				{
-					flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
-					++arr_count;
-				}
-				// detected an object, read it
-				else if (c == '{')
-				{
-					flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
-					++obj_count;
-				}
-				// read till we reach the next seperator
-				else if (c == ',')
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+		//		// end of reading arry
+		//		if (c == ']')
+		//		{
+		//			--arr_count;
+		//			if (arr_count == 0)
+		//			{
+		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
 
-					Net::String value = json.substr(v, i - v);
-					if (!DeserializeAny(lastKey, value, object_chain))
-					{
-						this->Free();
-						return false;
-					}
-				}
-				// or read till we reach the end
-				else if (i == json.length() - 2)
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+		//				Net::String value = json.substr(v, i - v + 1);
+		//				if (!DeserializeAny(lastKey, value, object_chain))
+		//				{
+		//					this->Free();
+		//					return false;
+		//				}
+		//			}
+		//		}
+		//	}
+		//	else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+		//	{
+		//		if (c == '{')
+		//		{
+		//			// another object spotted
+		//			++obj_count;
+		//			continue;
+		//		}
 
-					Net::String value = json.substr(v, i - v + 1);
-					if (!DeserializeAny(lastKey, value, object_chain))
-					{
-						this->Free();
-						return false;
-					}
-				}
-			}
-		}
-		else
-		{
-			// read key
-			flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
-			v = i;
-		}
+		//		// end of reading object
+		//		if (c == '}')
+		//		{
+		//			--obj_count;
+		//			if (obj_count == 0)
+		//			{
+		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+		//				Net::String value = json.substr(v, i - v + 1);
+		//				if (!DeserializeAny(lastKey, value, object_chain))
+		//				{
+		//					this->Free();
+		//					return false;
+		//				}
+		//			}
+		//		}
+		//	}
+		//	else
+		//	{
+		//		// detected an array, read it
+		//		if (c == '[')
+		//		{
+		//			flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+		//			++arr_count;
+		//		}
+		//		// detected an object, read it
+		//		else if (c == '{')
+		//		{
+		//			flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
+		//			++obj_count;
+		//		}
+		//		// read till we reach the next seperator
+		//		else if (c == ',')
+		//		{
+		//			flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+		//			Net::String value = json.substr(v, i - v);
+		//			if (!DeserializeAny(lastKey, value, object_chain))
+		//			{
+		//				this->Free();
+		//				return false;
+		//			}
+		//		}
+		//		// or read till we reach the end
+		//		else if (i == json.length() - 2)
+		//		{
+		//			flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+
+		//			Net::String value = json.substr(v, i - v + 1);
+		//			if (!DeserializeAny(lastKey, value, object_chain))
+		//			{
+		//				this->Free();
+		//				return false;
+		//			}
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	// read key
+		//	flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
+		//	v = i;
+		//}
 	}
 
 	if (arr_count > 0)

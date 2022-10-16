@@ -317,12 +317,12 @@ namespace Net
 
 		enum class EDeserializeFlag
 		{
-			FLAG_READING_OBJECT = (1 << 0),
-			FLAG_READING_ARRAY = (1 << 1),
-			FLAG_READING_STRING = (1 << 2),
-			FLAG_READING_ANY = (1 << 3),
-			FLAG_READING_KEY = (1 << 4), // for parsing object only
-			FLAG_READING_VALUE = (1 << 5) // for parsing object only
+			FLAG_READING_OBJECT = (1 << 0), // reading an object
+			FLAG_READING_ARRAY = (1 << 1), // reading an array
+			FLAG_READING_STRING = (1 << 2), // reading a string
+			FLAG_READING_ANY = (1 << 3), // read anything and determinate its type
+			FLAG_READING_ELEMENT = (1 << 4), // reading an element inside an object
+			FLAG_READING_ELEMENT_VALUE = (1 << 5) // reading an element's value inside an object
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */

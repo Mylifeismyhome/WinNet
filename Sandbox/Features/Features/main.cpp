@@ -295,7 +295,7 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	Net::Json::Document doc;
+	Net::Json::Object obj;
 
 	//Net::Json::Array arr;
 
@@ -309,12 +309,12 @@ int main()
 
 	//doc["available_server"] = arr;
 
-	if (!doc.Deserialize(R"({"tes":5,"arr":[1,23,4,5]})"))
+	if (!obj.Deserialize(R"({"test":1337,"aka":{"tt":35},"best":1337})"))
 	{
 		NET_LOG("FUCK");
 	}
 
-	NET_LOG("%s", doc.Stringify().data().data());
+	NET_LOG("%s", obj.Stringify().data().data());
 
 	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)
 	{
