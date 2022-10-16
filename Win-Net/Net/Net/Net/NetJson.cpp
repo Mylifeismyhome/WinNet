@@ -1010,7 +1010,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
 	v = 0;
 
-	for (size_t i = 2; i < json.size() - 2; ++i)
+	for (size_t i = 1; i < json.size() - 2; ++i)
 	{
 		auto c = ref.get()[i];
 
@@ -1071,8 +1071,17 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			* check for the syntax that seperates elements inside an object
 			* or check if we have reached eof (end of file)
 			*/
-			if (c == ',' || (i == json.size() - 2))
+			if (c == ',' || (i == json.size() - 3))
 			{
+				/*
+				* keep going until we read the entire object
+				* only stop if we reached eof
+				*/
+				if (c == ',' && (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+				{
+					continue;
+				}
+
 				/*
 				* Spotted seperator for an element
 				* now determinate the value
@@ -1091,7 +1100,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					return false;
 				}
 
-				auto value = json.substr(v + 1, i - v - 1);
+				auto value = (i == json.size() - 3) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
 				std::cout << " VALUE: " << value << std::endl;
 
 				/*
