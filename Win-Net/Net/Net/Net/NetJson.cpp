@@ -759,35 +759,55 @@ bool Net::Json::Object::Parse(Net::String json)
 }
 
 /*
-* Object is split into key and value
-* this function does get it both in seperate to deserialize its nested parts
+* this method will validate the value
+* also, it will push it to the memory
+* it uses recursive calls to deserialize children from object's and array's
 */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
 {
-	// remove any whitespaces
-	//value.eraseAll(" ");
+	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
 	/*
-	* value is another object
-	* use recursive to parse it
+	* validate the object, if it is one
 	*/
-	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
 	{
+		if (value.get().get()[0] == '{')
+		{
+			m_type = Net::Json::Type::OBJECT;
+		}
+
+		if (value.get().get()[value.length() - 1] == '}'
+			&& m_type != Net::Json::Type::OBJECT)
+		{
+			// we got an ending curly for an object, but missing the starting curly
+			return false;
+		}
+		else if (value.get().get()[value.length() - 1] != '}'
+			&& m_type == Net::Json::Type::OBJECT)
+		{
+			// we got a starting curly for an object, but missing the ending curly
+			return false;
+		}
+		else if (m_type == Net::Json::Type::OBJECT)
+		{
+			// object seem to be fine, now call it's deserializer
+
 #ifdef BUILD_LINUX
-		object_chain.push_back(strdup(key.get().get()));
+			object_chain.push_back(strdup(key.get().get()));
 #else
-		object_chain.push_back(_strdup(key.get().get()));
+			object_chain.push_back(_strdup(key.get().get()));
 #endif
 
-		// need this line otherwise empty objects do not work
-		this->operator[](key.get().get()) = Net::Json::Object();
+			// need this line otherwise empty objects do not work
+			this->operator[](key.get().get()) = Net::Json::Object();
 
-		if (!this->Deserialize(value, object_chain))
-			return false;
+			if (!this->Deserialize(value, object_chain))
+				return false;
 
-		object_chain.erase(object_chain.size() - 1);
+			object_chain.erase(object_chain.size() - 1);
 
-		return true;
+			return true;
+		}
 	}
 
 	// with object chain
@@ -802,28 +822,84 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	}
 
 	/*
-	* Array spotted, use the array deserializer
+	* validate the string, if it is one
 	*/
-	if (value.get().get()[0] == '[' && value.get().get()[value.length() - 1] == ']')
 	{
-		Net::Json::Array arr(true);
-		if (!arr.Deserialize(value))
+		if (value.get().get()[0] == '"')
 		{
-			// @todo: add logging
+			m_type = Net::Json::Type::STRING;
+		}
+
+		if (value.get().get()[value.length() - 1] == '"'
+			&& m_type != Net::Json::Type::STRING)
+		{
+			// we got an ending double-qoute for a string, but missing the starting
 			return false;
 		}
-
-		if (object_chain.size() > 0)
+		else if (value.get().get()[value.length() - 1] != '"'
+			&& m_type == Net::Json::Type::STRING)
 		{
-			obj[key.get().get()] = arr;
+			// we got a starting double-qoute for a string, but missing the ending
+			return false;
 		}
-		else
+		else if (m_type == Net::Json::Type::STRING)
 		{
-			this->operator[](key.get().get()) = arr;
-		}
+			/*
+			* walk through the string and make sure there are no non-escaped double-qoutes
+			*/
+			for (int j = 1; j < value.length() - 1; ++j)
+			{
+				auto ec = value.get().get()[j];
+				if (ec == '"')
+				{
+					if ((j - 1) < 0
+						|| value.get().get()[j - 1] != '\\')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... string contains double-qoutes that are not escaped ... double-qoutes inside a string must be escaped with '\\'"));
+						return false;
+					}
+				}
+			}
 
-		return true;
+			// obtain the string from the json-string without the double-qoutes
+			auto str = value.substr(1, value.length() - 2);
+
+			if (object_chain.size() > 0)
+			{
+				obj[key.get().get()] = str;
+			}
+			else
+			{
+				this->operator[](key.get().get()) = str;
+			}
+
+			return true;
+		}
 	}
+
+	///*
+	//* Array spotted, use the array deserializer
+	//*/
+	//if (value.get().get()[0] == '[' && value.get().get()[value.length() - 1] == ']')
+	//{
+	//	Net::Json::Array arr(true);
+	//	if (!arr.Deserialize(value))
+	//	{
+	//		// @todo: add logging
+	//		return false;
+	//	}
+
+	//	if (object_chain.size() > 0)
+	//	{
+	//		obj[key.get().get()] = arr;
+	//	}
+	//	else
+	//	{
+	//		this->operator[](key.get().get()) = arr;
+	//	}
+
+	//	return true;
+	//}
 
 	// we have to figure out what kind of type the data is from
 	// we start with treating it as an integer
@@ -1106,16 +1182,16 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					return false;
 				}
 
-				if (key.get().get()[key.size() - 1] != '"')
+				if (key.get().get()[key.length() - 1] != '"')
 				{
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key.get().get()[key.size() - 1]);
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key.get().get()[key.length() - 1]);
 					return false;
 				}
 
 				/*
 				* walk through the key and make sure there are no non-escaped double-qoutes
 				*/
-				for (int j = 1; j < key.size() - 1; ++j)
+				for (int j = 1; j < key.length() - 1; ++j)
 				{
 					auto ec = key.get().get()[j];
 					if (ec == '"')
@@ -1128,6 +1204,9 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 						}
 					}
 				}
+
+				// obtain the string from the json-string without the double-qoutes
+				key = key.substr(1, key.length() - 2);
 
 				flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT_VALUE;
 				v = i;
