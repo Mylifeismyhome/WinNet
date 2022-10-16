@@ -1006,6 +1006,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	size_t obj_count = 0;
 	auto ref = json.get();
 
+	Net::String key(CSTRING(""));
+
 	/*
 	* So an object is seperated in its key and value pair
 	* first scan for the key and detect its syntax that deals as the seperator (':')
@@ -1092,36 +1094,34 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				* now we have determinated the key, but the value is not determinated yet
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
-				auto key = json.substr(v + 1, i - v - 1);
-				auto len = strlen(key);
-				std::cout << " KEY: " << key << std::endl;
+				key = json.substr(v + 1, i - v - 1);
 
 				/*
 				* a key in the json language must be a string
 				* and should be unique in each element
 				*/
-				if (key[0] != '"')
+				if (key.get().get()[0] != '"')
 				{
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key[0]);
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key.get().get()[0]);
 					return false;
 				}
 
-				if (key[len - 1] != '"')
+				if (key.get().get()[key.size() - 1] != '"')
 				{
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key[len - 1]);
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key.get().get()[key.size() - 1]);
 					return false;
 				}
 
 				/*
 				* walk through the key and make sure there are no non-escaped double-qoutes
 				*/
-				for (int j = 1; j < len - 1; ++j)
+				for (int j = 1; j < key.size() - 1; ++j)
 				{
-					auto ec = key[j];
+					auto ec = key.get().get()[j];
 					if (ec == '"')
 					{
 						if ((j - 1) < 0
-							|| key[j - 1] != '\\')
+							|| key.get().get()[j - 1] != '\\')
 						{
 							NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key contains double-qoutes that are not escaped ... double-qoutes inside a key must be escaped with '\\'"));
 							return false;
@@ -1174,8 +1174,18 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					return false;
 				}
 
-				auto value = (i == json.size() - 3) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
-				std::cout << " VALUE: " << value << std::endl;
+				Net::String value = (i == json.size() - 3) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
+			
+				/*
+				* pass the value to the DeserializeAny method
+				* that method will take any value and further analyse its type
+				* it will use recursive to deserialize further object's or array's
+				*/
+				if (!DeserializeAny(key, value, object_chain))
+				{
+					// no need to display error message, the method will do it
+					return false;
+				}
 
 				/*
 				* value determinated
@@ -1185,170 +1195,19 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				v = i;
 			}
 		}
-
-		//if ((flag & (int)EDeserializeFlag::FLAG_READING_KEY))
-		//{
-		//	// read till we reach the common splitter for an object
-		//	if (c == ':')
-		//	{
-		//		// read the key
-		//		size_t kb = 0; // begin
-		//		size_t ke = 0; // end
-		//		for (size_t j = v; j < i; ++j)
-		//		{
-		//			auto d = ref.get()[j];
-		//			if (d == '"')
-		//			{
-		//				if (kb != 0)
-		//				{
-		//					ke = j;
-		//					break;
-		//				}
-		//				else
-		//				{
-		//					kb = j;
-		//				}
-		//			}
-		//		}
-
-		//		// if both are zero then the key is not a string
-		//		if (!kb && !ke)
-		//		{
-		//			this->Free();
-		//			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected key to be type of string in object in '%s'"), json.get().get());
-		//			return false;
-		//		}
-		//		// if one of them are zero then the string never closed
-		//		else if (!kb || !ke)
-		//		{
-		//			this->Free();
-		//			NET_LOG_ERROR(CSTRING(R"([Net::Json::Object] -> Expected another '"' in key in object in '%s')"), json.get().get());
-		//			return false;
-		//		}
-
-		//		lastKey = json.substr(kb + 1, ke - kb - 1);
-
-		//		flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
-		//		flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
-
-		//		v = i + 1;
-		//	}
-		//}
-		//else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
-		//{
-		//	if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
-		//	{
-		//		if (c == '[')
-		//		{
-		//			// another array spotted
-		//			++arr_count;
-		//			continue;
-		//		}
-
-		//		// end of reading arry
-		//		if (c == ']')
-		//		{
-		//			--arr_count;
-		//			if (arr_count == 0)
-		//			{
-		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
-		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-		//				Net::String value = json.substr(v, i - v + 1);
-		//				if (!DeserializeAny(lastKey, value, object_chain))
-		//				{
-		//					this->Free();
-		//					return false;
-		//				}
-		//			}
-		//		}
-		//	}
-		//	else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
-		//	{
-		//		if (c == '{')
-		//		{
-		//			// another object spotted
-		//			++obj_count;
-		//			continue;
-		//		}
-
-		//		// end of reading object
-		//		if (c == '}')
-		//		{
-		//			--obj_count;
-		//			if (obj_count == 0)
-		//			{
-		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
-		//				flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-		//				Net::String value = json.substr(v, i - v + 1);
-		//				if (!DeserializeAny(lastKey, value, object_chain))
-		//				{
-		//					this->Free();
-		//					return false;
-		//				}
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		// detected an array, read it
-		//		if (c == '[')
-		//		{
-		//			flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
-		//			++arr_count;
-		//		}
-		//		// detected an object, read it
-		//		else if (c == '{')
-		//		{
-		//			flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
-		//			++obj_count;
-		//		}
-		//		// read till we reach the next seperator
-		//		else if (c == ',')
-		//		{
-		//			flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-		//			Net::String value = json.substr(v, i - v);
-		//			if (!DeserializeAny(lastKey, value, object_chain))
-		//			{
-		//				this->Free();
-		//				return false;
-		//			}
-		//		}
-		//		// or read till we reach the end
-		//		else if (i == json.length() - 2)
-		//		{
-		//			flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-		//			Net::String value = json.substr(v, i - v + 1);
-		//			if (!DeserializeAny(lastKey, value, object_chain))
-		//			{
-		//				this->Free();
-		//				return false;
-		//			}
-		//		}
-		//	}
-		//}
-		//else
-		//{
-		//	// read key
-		//	flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
-		//	v = i;
-		//}
 	}
 
 	if (arr_count > 0)
 	{
 		this->Free();
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another ']' to close the array in '%s'"), json.get().get());
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad format ... expected 'arr_count' to be zero"));
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
 		this->Free();
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another '}' to close the object in '%s'"), json.get().get());
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad format ... expected 'obj_count' to be zero"));
 		return false;
 	}
 
