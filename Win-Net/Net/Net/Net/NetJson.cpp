@@ -965,17 +965,17 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 {
 	if (json.get().get()[0] != '{')
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to start with '{' in '%s'"), json.get().get());
 		return false;
 	}
 
 	if (json.get().get()[json.length() - 1] != '}')
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected string to end with '}' in '%s'"), json.get().get());
 		return false;
 	}
-
-	bool m_parsing_failed = false;
 
 	uint8_t flag = 0;
 	size_t v = 0; // begin for substr
@@ -1016,16 +1016,16 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				// if both are zero then the key is not a string
 				if (!kb && !ke)
 				{
+					this->Free();
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected key to be type of string in object in '%s'"), json.get().get());
-					m_parsing_failed = true;
-					break;
+					return false;
 				}
 				// if one of them are zero then the string never closed
 				else if (!kb || !ke)
 				{
+					this->Free();
 					NET_LOG_ERROR(CSTRING(R"([Net::Json::Object] -> Expected another '"' in key in object in '%s')"), json.get().get());
-					m_parsing_failed = true;
-					break;
+					return false;
 				}
 
 				lastKey = json.substr(kb + 1, ke - kb - 1);
@@ -1044,9 +1044,9 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				{
 					if (c == '}')
 					{
+						this->Free();
 						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character '}' in '%s'"), json.get().get());
-						m_parsing_failed = true;
-						break;
+						return false;
 					}
 				}
 
@@ -1069,8 +1069,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 						Net::String value = json.substr(v, i - v + 1);
 						if (!DeserializeAny(lastKey, value, object_chain))
 						{
-							m_parsing_failed = true;
-							break;
+							this->Free();
+							return false;
 						}
 					}
 				}
@@ -1081,9 +1081,9 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				{
 					if (c == ']')
 					{
+						this->Free();
 						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character ']' in '%s'"), json.get().get());
-						m_parsing_failed = true;
-						break;
+						return false;
 					}
 				}
 
@@ -1106,8 +1106,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 						Net::String value = json.substr(v, i - v + 1);
 						if (!DeserializeAny(lastKey, value, object_chain))
 						{
-							m_parsing_failed = true;
-							break;
+							this->Free();
+							return false;
 						}
 					}
 				}
@@ -1134,8 +1134,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					Net::String value = json.substr(v, i - v);
 					if (!DeserializeAny(lastKey, value, object_chain))
 					{
-						m_parsing_failed = true;
-						break;
+						this->Free();
+						return false;
 					}
 				}
 				// or read till we reach the end
@@ -1146,8 +1146,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					Net::String value = json.substr(v, i - v + 1);
 					if (!DeserializeAny(lastKey, value, object_chain))
 					{
-						m_parsing_failed = true;
-						break;
+						this->Free();
+						return false;
 					}
 				}
 			}
@@ -1162,19 +1162,15 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 
 	if (arr_count > 0)
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another ']' to close the array in '%s'"), json.get().get());
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another '}' to close the object in '%s'"), json.get().get());
-		return false;
-	}
-
-	if (m_parsing_failed)
-	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unable to parse '%s'"), json.get().get());
 		return false;
 	}
 
@@ -1518,12 +1514,14 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 	if (json.get().get()[0] != '[')
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected string to start with '[' in '%s'"), json.get().get());
 		return false;
 	}
 
 	if (json.get().get()[json.length() - 1] != ']')
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected string to start with ']' in '%s'"), json.get().get());
 		return false;
 	}
@@ -1559,6 +1557,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 					Net::Json::Object obj(true);
 					if (!obj.Deserialize(object))
 					{
+						this->Free();
 						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Error on deserializing object in '%s'"), json.get().get());
 						return false;
 					}
@@ -1591,6 +1590,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 					Net::Json::Array arr(true);
 					if (!arr.Deserialize(array))
 					{
+						this->Free();
 						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Error on deserializing array in '%s'"), json.get().get());
 						return false;
 					}
@@ -1657,6 +1657,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 					if (!DeserializeAny(str))
 					{
+						this->Free();
 						return false;
 					}
 				}
@@ -1669,6 +1670,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 					if (!DeserializeAny(str))
 					{
+						this->Free();
 						return false;
 					}
 				}
@@ -1691,6 +1693,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 				if (!DeserializeAny(str))
 				{
+					this->Free();
 					return false;
 				}
 			}
@@ -1699,12 +1702,14 @@ bool Net::Json::Array::Deserialize(Net::String json)
 
 	if (arr_count > 0)
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected another ']' to close the array in '%s'"), json.get().get());
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
+		this->Free();
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected another '}' to close the object in '%s'"), json.get().get());
 		return false;
 	}
