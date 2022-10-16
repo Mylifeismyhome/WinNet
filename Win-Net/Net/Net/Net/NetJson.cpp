@@ -975,6 +975,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 		return false;
 	}
 
+	bool m_parsing_failed = false;
+
 	uint8_t flag = 0;
 	size_t v = 0; // begin for substr
 	size_t arr_count = 0;
@@ -1013,8 +1015,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 
 				if (!kb || !ke)
 				{
-					// @todo: add error message {invalid key}
-					return false;
+					m_parsing_failed = true;
+					break;
 				}
 
 				lastKey = json.substr(kb + 1, ke - kb - 1);
@@ -1029,6 +1031,16 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 		{
 			if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
 			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+				{
+					if (c == '}')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character '}' in '%s'"), json.get().get());
+						m_parsing_failed = true;
+						break;
+					}
+				}
+
 				if (c == '[')
 				{
 					// another array spotted
@@ -1048,13 +1060,24 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 						Net::String value = json.substr(v, i - v + 1);
 						if (!DeserializeAny(lastKey, value, object_chain))
 						{
-							return false;
+							m_parsing_failed = true;
+							break;
 						}
 					}
 				}
 			}
 			else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
 			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
+				{
+					if (c == ']')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character ']' in '%s'"), json.get().get());
+						m_parsing_failed = true;
+						break;
+					}
+				}
+
 				if (c == '{')
 				{
 					// another object spotted
@@ -1074,7 +1097,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 						Net::String value = json.substr(v, i - v + 1);
 						if (!DeserializeAny(lastKey, value, object_chain))
 						{
-							return false;
+							m_parsing_failed = true;
+							break;
 						}
 					}
 				}
@@ -1101,7 +1125,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					Net::String value = json.substr(v, i - v);
 					if (!DeserializeAny(lastKey, value, object_chain))
 					{
-						return false;
+						m_parsing_failed = true;
+						break;
 					}
 				}
 				// or read till we reach the end
@@ -1112,7 +1137,8 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					Net::String value = json.substr(v, i - v + 1);
 					if (!DeserializeAny(lastKey, value, object_chain))
 					{
-						return false;
+						m_parsing_failed = true;
+						break;
 					}
 				}
 			}
@@ -1123,6 +1149,24 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
 			v = i;
 		}
+	}
+
+	if (arr_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another ']' to close the array in '%s'"), json.get().get());
+		return false;
+	}
+
+	if (obj_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Expected another '}' to close the object in '%s'"), json.get().get());
+		return false;
+	}
+
+	if (m_parsing_failed)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unable to parse '%s'"), json.get().get());
+		return false;
 	}
 
 	return true;
@@ -1642,6 +1686,18 @@ bool Net::Json::Array::Deserialize(Net::String json)
 				}
 			}
 		}
+	}
+
+	if (arr_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected another ']' to close the array in '%s'"), json.get().get());
+		return false;
+	}
+
+	if (obj_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Expected another '}' to close the object in '%s'"), json.get().get());
+		return false;
 	}
 
 	return true;
