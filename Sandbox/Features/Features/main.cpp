@@ -295,91 +295,11 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
+	Net::String str("HALLO");
+	std::cout << str[0] << std::endl;
+
 	Net::Json::Object arr;
-	if (!arr.Deserialize(R"({
-"id": "ffd7c833-b6d1-4710-b224-534faef1aeff",
-"amount": "43.83",
-"status": "PENDING",
-"receivingCurrency": "BTC",
-"return_url": "https://vpay.antares2.to/success",
-"internalTransactionId": "8057$sansukar69$45$3040021e0ae823902066e4329906c264302b3f25803dec7ff6f42584fcd2f2acd41c021e1b5498c326ad7c08b43e7b2e988dde72d3df55aee1685a161d282de91220",
-"gateway_departure": "GATE_634D841F728DA",
-"timestamp": 1666024479,
-"payment_methods": [
-{
-"name": "Wyre_Universal",
-"surcharge": "3.07"
-},
-{
-"name": "Cryptocurrency",
-"surcharge": "0.00"
-},
-{
-"name": "Voucher",
-"surcharge": "0.00"
-},
-{
-"name": "Wallet",
-"surcharge": "0.00"
-},
-{
-"name": "paysafecard",
-"surcharge": "5.00"
-}
-],
-"pay_history": [
-{
-"wallet_address": "0x3a8b0a5420178f860f88ae81a029461894597645",
-"amount_in_crypto": 40.73636369,
-"amount_in_fiat": 46.9,
-"payment_method": "wyre_universal",
-"currency": "USDT",
-"isCrypto": true,
-"click_time": "2022-10-17 18:34:40",
-"gateway_arrival": "PAY_634D841FA42A6"
-},
-{
-"wallet_address": "",
-"amount_in_crypto": 0,
-"amount_in_fiat": 50.14,
-"payment_method": "paysafecard",
-"currency": "EUR",
-"isCrypto": false,
-"click_time": "2022-10-17 18:44:59",
-"gateway_arrival": "PAY_634D868B02F65"
-},
-{
-"wallet_address": "",
-"amount_in_crypto": 0,
-"amount_in_fiat": 50.14,
-"payment_method": "paysafecard",
-"currency": "EUR",
-"isCrypto": false,
-"click_time": "2022-10-17 18:45:06",
-"gateway_arrival": "PAY_634D8692B0B15"
-},
-{
-"wallet_address": "",
-"amount_in_crypto": 0,
-"amount_in_fiat": 50.14,
-"payment_method": "paysafecard",
-"currency": "EUR",
-"isCrypto": false,
-"click_time": "2022-10-17 18:45:07",
-"gateway_arrival": "PAY_634D86930C2ED"
-},
-{
-"wallet_address": "",
-"amount_in_crypto": 0,
-"amount_in_fiat": 50.14,
-"payment_method": "paysafecard",
-"currency": "EUR",
-"isCrypto": false,
-"click_time": "2022-10-17 18:45:15",
-"gateway_arrival": "PAY_634D869B948A7"
-}
-]
-})"))
+	if (!arr.Deserialize(R"({"test":"abc","test2":1337,"abc2:"test"})"))
 	{
 		NET_LOG("FUCK");
 	}

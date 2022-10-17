@@ -133,6 +133,11 @@ namespace Net
 			erase(in);
 		}
 
+		char operator[](size_t i)
+		{
+			return this->_string.operator[](i);
+		}
+
 		size_t size() const;
 		size_t length() const;
 		void set(char, ...);

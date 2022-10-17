@@ -63,6 +63,16 @@ namespace Net
 			XOR();
 			XOR(char*);
 
+			/*
+			* Return the character in the buffer located at index i decrypted
+			*/
+			char operator[](size_t i)
+			{
+				auto buffer_ptr = this->_buffer.get();
+				auto key_ptr = this->_Key.get();
+				return static_cast<char>(buffer_ptr[i] ^ key_ptr[i]);
+			}
+
 			void init(char*);
 			void init(const char*);
 			size_t size() const;
