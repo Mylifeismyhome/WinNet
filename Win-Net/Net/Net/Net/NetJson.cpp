@@ -63,62 +63,51 @@ namespace Net
 	}
 }
 
-int Net::Json::Convert::ToInt32(Net::String& str)
+int Net::Json::Convert::ToInt32(char* str)
 {
-	auto ref = str.get();
-	return std::stoi(ref.get());
+	return std::stoi(str);
 }
 
-float Net::Json::Convert::ToFloat(Net::String& str)
+float Net::Json::Convert::ToFloat(char* str)
 {
-	auto ref = str.get();
-	return std::stof(ref.get());
+	return std::stof(str);
 }
 
-double Net::Json::Convert::ToDouble(Net::String& str)
+double Net::Json::Convert::ToDouble(char* str)
 {
-	auto ref = str.get();
-	return std::stod(ref.get());
+	return std::stod(str);
 }
 
-bool Net::Json::Convert::ToBoolean(Net::String& str)
+bool Net::Json::Convert::ToBoolean(char* str)
 {
-	auto ref = str.get();
-
-	if (!strcmp(CSTRING("true"), ref.get()))
+	if (!strcmp(CSTRING("true"), str))
 		return true;
-	else if (!strcmp(CSTRING("false"), ref.get()))
+	else if (!strcmp(CSTRING("false"), str))
 		return false;
 
 	/* todo: throw error */
 	return false;
 }
 
-bool Net::Json::Convert::is_float(Net::String& str)
+bool Net::Json::Convert::is_float(char* str)
 {
-	auto ref = str.get();
-
 	char* end = nullptr;
-	double val = strtof(ref.get(), &end);
-	return end != str.get().get() && *end == '\0' && val != HUGE_VALF;
+	double val = strtof(str, &end);
+	return end != str && *end == '\0' && val != HUGE_VALF;
 }
 
-bool Net::Json::Convert::is_double(Net::String& str)
+bool Net::Json::Convert::is_double(char* str)
 {
-	auto ref = str.get();
-
 	char* end = nullptr;
-	double val = strtod(ref.get(), &end);
-	return end != str.get().get() && *end == '\0' && val != HUGE_VAL;
+	double val = strtod(str, &end);
+	return end != str && *end == '\0' && val != HUGE_VAL;
 }
 
-bool Net::Json::Convert::is_boolean(Net::String& str)
+bool Net::Json::Convert::is_boolean(char* str)
 {
-	auto ref = str.get();
-
-	if (!strcmp(CSTRING("true"), ref.get()))
+	if (!strcmp(CSTRING("true"), str))
 		return true;
-	else if (!strcmp(CSTRING("false"), ref.get()))
+	else if (!strcmp(CSTRING("false"), str))
 		return true;
 
 	return false;
@@ -825,6 +814,12 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
+	auto keyRef = key.get();
+	auto pKey = keyRef.get();
+
+	auto valueRef = value.get();
+	auto pValue = valueRef.get();
+
 	// with object chain
 	Net::Json::BasicValueRead obj(nullptr);
 	if (object_chain.size() > 0)
@@ -849,14 +844,14 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			&& m_type != Net::Json::Type::OBJECT)
 		{
 			// we got an ending curly for an object, but missing the starting curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != '}'
 			&& m_type == Net::Json::Type::OBJECT)
 		{
 			// we got a starting curly for an object, but missing the ending curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::OBJECT)
@@ -864,19 +859,19 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			// object seem to be fine, now call it's deserializer
 
 #ifdef BUILD_LINUX
-			object_chain.push_back(strdup(key.get().get()));
+			object_chain.push_back(strdup(pKey));
 #else
-			object_chain.push_back(_strdup(key.get().get()));
+			object_chain.push_back(_strdup(pKey));
 #endif
 
 			// need this line otherwise empty objects do not work
 			if (object_chain.size() > 0)
 			{
-				obj[key.get().get()] = Net::Json::Object();
+				obj[pKey] = Net::Json::Object();
 			}
 			else
 			{
-				this->operator[](key.get().get()) = Net::Json::Object();
+				this->operator[](pKey) = Net::Json::Object();
 			}
 
 			if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -901,14 +896,14 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			&& m_type != Net::Json::Type::ARRAY)
 		{
 			// we got an ending curly for an array, but missing the starting curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != ']'
 			&& m_type == Net::Json::Type::ARRAY)
 		{
 			// we got a starting curly for an array, but missing the ending curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::ARRAY)
@@ -924,11 +919,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 
 			if (object_chain.size() > 0)
 			{
-				obj[key.get().get()] = arr;
+				obj[pKey] = arr;
 			}
 			else
 			{
-				this->operator[](key.get().get()) = arr;
+				this->operator[](pKey) = arr;
 			}
 
 			return true;
@@ -948,14 +943,14 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			&& m_type != Net::Json::Type::STRING)
 		{
 			// we got an ending double-qoute for a string, but missing the starting
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != '"'
 			&& m_type == Net::Json::Type::STRING)
 		{
 			// we got a starting double-qoute for a string, but missing the ending
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::STRING)
@@ -982,11 +977,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 
 			if (object_chain.size() > 0)
 			{
-				obj[key.get().get()] = str;
+				obj[pKey] = str;
 			}
 			else
 			{
-				this->operator[](key.get().get()) = str;
+				this->operator[](pKey) = str;
 			}
 
 			return true;
@@ -997,17 +992,17 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	* check for boolean
 	*/
 	{
-		if (Convert::is_boolean(value))
+		if (Convert::is_boolean(pValue))
 		{
 			m_type = Net::Json::Type::BOOLEAN;
 
 			if (object_chain.size() > 0)
 			{
-				obj[key.get().get()] = Convert::ToBoolean(value);
+				obj[pKey] = Convert::ToBoolean(pValue);
 				return true;
 			}
 
-			this->operator[](key.get().get()) = Convert::ToBoolean(value);
+			this->operator[](pKey) = Convert::ToBoolean(pValue);
 			return true;
 		}
 	}
@@ -1016,17 +1011,17 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	* check for null value
 	*/
 	{
-		if (!memcmp(value.get().get(), CSTRING("null"), 4))
+		if (!memcmp(pValue, CSTRING("null"), 4))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 
 			if (object_chain.size() > 0)
 			{
-				obj[key.get().get()] = Net::Json::NullValue();
+				obj[pKey] = Net::Json::NullValue();
 				return true;
 			}
 
-			this->operator[](key.get().get()) = Net::Json::NullValue();
+			this->operator[](pKey) = Net::Json::NullValue();
 			return true;
 		}
 	}
@@ -1098,11 +1093,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 				* determinate if it is worth a double or just a float
 				*/
 
-				if (Convert::is_double(value))
+				if (Convert::is_double(pValue))
 				{
 					m_type = Net::Json::Type::DOUBLE;
 				}
-				else if (Convert::is_float(value))
+				else if (Convert::is_float(pValue))
 				{
 					m_type = Net::Json::Type::FLOAT;
 				}
@@ -1113,31 +1108,31 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			case Net::Json::Type::INTEGER:
 				if (object_chain.size() > 0)
 				{
-					obj[key.get().get()] = Convert::ToInt32(value);
+					obj[pKey] = Convert::ToInt32(pValue);
 					break;
 				}
 
-				this->operator[](key.get().get()) = Convert::ToInt32(value);
+				this->operator[](pKey) = Convert::ToInt32(pValue);
 				break;
 
 			case Net::Json::Type::DOUBLE:
 				if (object_chain.size() > 0)
 				{
-					obj[key.get().get()] = Convert::ToDouble(value);
+					obj[pKey] = Convert::ToDouble(pValue);
 					break;
 				}
 
-				this->operator[](key.get().get()) = Convert::ToDouble(value);
+				this->operator[](pKey) = Convert::ToDouble(pValue);
 				break;
 
 			case Net::Json::Type::FLOAT:
 				if (object_chain.size() > 0)
 				{
-					obj[key.get().get()] = Convert::ToFloat(value);
+					obj[pKey] = Convert::ToFloat(pValue);
 					break;
 				}
 
-				this->operator[](key.get().get()) = Convert::ToFloat(value);
+				this->operator[](pKey) = Convert::ToFloat(pValue);
 				break;
 			}
 
@@ -1145,7 +1140,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 		}
 	}
 
-	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), value.get().get());
+	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
 	return false;
 }
 
@@ -1687,6 +1682,9 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
+	auto valueRef = value.get();
+	auto pValue = valueRef.get();
+
 	/*
 	* check for object
 	*/
@@ -1700,14 +1698,14 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 			&& m_type != Net::Json::Type::OBJECT)
 		{
 			// we got an ending curly for an object, but missing the starting curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != '}'
 			&& m_type == Net::Json::Type::OBJECT)
 		{
 			// we got a starting curly for an object, but missing the ending curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::OBJECT)
@@ -1736,14 +1734,14 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 			&& m_type != Net::Json::Type::ARRAY)
 		{
 			// we got an ending curly for an array, but missing the starting curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != ']'
 			&& m_type == Net::Json::Type::ARRAY)
 		{
 			// we got a starting curly for an array, but missing the ending curly
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::ARRAY)
@@ -1772,14 +1770,14 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 			&& m_type != Net::Json::Type::STRING)
 		{
 			// we got an ending double-qoute for a string, but missing the starting
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), pValue);
 			return false;
 		}
 		else if (value[value.length() - 1] != '"'
 			&& m_type == Net::Json::Type::STRING)
 		{
 			// we got a starting double-qoute for a string, but missing the ending
-			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), value.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), pValue);
 			return false;
 		}
 		else if (m_type == Net::Json::Type::STRING)
@@ -1811,10 +1809,10 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 	* check for boolean
 	*/
 	{
-		if (Convert::is_boolean(value))
+		if (Convert::is_boolean(pValue))
 		{
 			m_type = Net::Json::Type::BOOLEAN;
-			return this->push(Convert::ToBoolean(value));
+			return this->push(Convert::ToBoolean(pValue));
 		}
 	}
 
@@ -1822,7 +1820,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 	* check for null value
 	*/
 	{
-		if (!memcmp(value.get().get(), CSTRING("null"), 4))
+		if (!memcmp(pValue, CSTRING("null"), 4))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 			return this->push(Net::Json::NullValue());
@@ -1895,12 +1893,11 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 				/*
 				* determinate if it is worth a double or just a float
 				*/
-
-				if (Convert::is_double(value))
+				if (Convert::is_double(pValue))
 				{
 					m_type = Net::Json::Type::DOUBLE;
 				}
-				else if (Convert::is_float(value))
+				else if (Convert::is_float(pValue))
 				{
 					m_type = Net::Json::Type::FLOAT;
 				}
@@ -1909,13 +1906,13 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 			switch (m_type)
 			{
 			case Net::Json::Type::INTEGER:
-				return this->push(Convert::ToInt32(value));
+				return this->push(Convert::ToInt32(pValue));
 
 			case Net::Json::Type::DOUBLE:
-				return this->push(Convert::ToDouble(value));
+				return this->push(Convert::ToDouble(pValue));
 
 			case Net::Json::Type::FLOAT:
-				return this->push(Convert::ToFloat(value));
+				return this->push(Convert::ToFloat(pValue));
 
 			default:
 				break;
@@ -1923,7 +1920,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		}
 	}
 
-	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), value.get().get());
+	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
 	return false;
 }
 

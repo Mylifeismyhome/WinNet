@@ -173,13 +173,13 @@ namespace Net
 		class Convert
 		{
 		public:
-			static int ToInt32(Net::String& str);
-			static float ToFloat(Net::String& str);
-			static double ToDouble(Net::String& str);
-			static bool ToBoolean(Net::String& str);
-			static bool is_float(Net::String& str);
-			static bool is_double(Net::String& str);
-			static bool is_boolean(Net::String& str);
+			static int ToInt32(char* str);
+			static float ToFloat(char* str);
+			static double ToDouble(char* str);
+			static bool ToBoolean(char* str);
+			static bool is_float(char* str);
+			static bool is_double(char* str);
+			static bool is_boolean(char* str);
 		};
 
 		enum class Type
