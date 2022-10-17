@@ -295,27 +295,61 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	Net::Json::Object obj;
+	Net::Json::Object arr;
+	if (!arr.Deserialize(R"({
+  "glossary": {
+    "GlossDiv": {
+      "GlossList": {
+        "GlossEntry": {
+          "Abbrev": "ISO 8879:1986",
+          "Acronym": "SGML",
+          "GlossDef": {
+            "GlossSeeAlso": [
+              "GML",
+              "XML"
+            ],
+            "para": "A meta-markup language, used to create markup languages such as DocBook."
+          },
+          "GlossSee": "markup",
+          "GlossTerm": "Standard Generalized Markup Language",
+          "ID": "SGML",
+          "SortAs": "SGML"
+        }
+      },
+      "title": "S"
+    },
+    "title": "example glossary"
+  }
+}
 
-	//Net::Json::Array arr;
-
-	//for (int i = 0; i < 2; ++i)
-	//{
-	//	Net::Json::Object obj(true);
-	//	obj["server_name"] = "test";
-	//	obj["server_address"] = i;
-	//	arr.push(obj);
-	//}
-
-	//doc["available_server"] = arr;
-
-	//if (!obj.Deserialize(R"({"test":1337,"aka":{"tt":35,"best":1337},"\"HUN\"\"D":[1,2]})"))
-	if (!obj.Deserialize(R"({"test":"HALLO\"OLLA","abc":0123456789,"test2":123})"))
+)"))
 	{
 		NET_LOG("FUCK");
 	}
 
-	NET_LOG("%s", obj.Stringify().data().data());
+	NET_LOG("%s", arr.Stringify(Net::Json::SerializeType::NONE).data().data());
+
+	//Net::Json::Object obj;
+
+	////Net::Json::Array arr;
+
+	////for (int i = 0; i < 2; ++i)
+	////{
+	////	Net::Json::Object obj(true);
+	////	obj["server_name"] = "test";
+	////	obj["server_address"] = i;
+	////	arr.push(obj);
+	////}
+
+	////doc["available_server"] = arr;
+
+	////if (!obj.Deserialize(R"({"test":1337,"aka":{"tt":35,"best":1337},"\"HUN\"\"D":[1,2]})"))
+	//if (!obj.Deserialize(R"({"test":"HALLO\"OLLA","abc":0123456789,"test2":123})"))
+	//{
+	//	NET_LOG("FUCK");
+	//}
+
+	//NET_LOG("%s", obj.Stringify().data().data());
 
 	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)
 	{

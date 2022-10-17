@@ -318,11 +318,10 @@ namespace Net
 		enum class EDeserializeFlag
 		{
 			FLAG_READING_OBJECT = (1 << 0), // reading an object
-			FLAG_READING_ARRAY = (1 << 1), // reading an array
-			FLAG_READING_STRING = (1 << 2), // reading a string
-			FLAG_READING_ANY = (1 << 3), // read anything and determinate its type
-			FLAG_READING_ELEMENT = (1 << 4), // reading an element inside an object
-			FLAG_READING_ELEMENT_VALUE = (1 << 5) // reading an element's value inside an object
+			FLAG_READING_OBJECT_VALUE = (1 << 1), // reading an element's value inside an object
+			FLAG_READING_ARRAY = (1 << 2), // reading an array
+			FLAG_READING_STRING = (1 << 3), // reading a string
+			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */
@@ -334,7 +333,7 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
-			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain);
+			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_removedWhitespace = false);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -355,13 +354,13 @@ namespace Net
 
 			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
-			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String json, bool m_removedWhitespace = false);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(Net::String& json, Vector<char*>& object_chain);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_removedWhitespace = false);
 		};
 
 		class Array : public BasicArray
@@ -369,7 +368,7 @@ namespace Net
 			template <typename T>
 			bool emplace_back(T value, Type type);
 
-			bool DeserializeAny(Net::String&);
+			bool DeserializeAny(Net::String&, bool m_removedWhitespace = false);
 
 		public:
 			Array(bool bSharedMemory = false);
@@ -391,7 +390,7 @@ namespace Net
 
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
-			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String json, bool m_removedWhitespace = false);
 			bool Parse(Net::String json);
 
 			void Free();
