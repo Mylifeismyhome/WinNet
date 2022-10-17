@@ -2017,7 +2017,14 @@ bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 				}
 
 				--obj_count;
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+
+				if (obj_count == 0)
+				{
+					/*
+					* ok, finished reading the object
+					*/
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+				}
 			}
 
 			/*
@@ -2041,7 +2048,14 @@ bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 				}
 
 				--arr_count;
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+
+				if (arr_count == 0)
+				{
+					/*
+					* ok, finished reading the array
+					*/
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+				}
 			}
 
 			/*
