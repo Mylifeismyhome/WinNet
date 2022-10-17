@@ -354,13 +354,14 @@ namespace Net
 
 			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
-			bool Deserialize(Net::String json, bool m_prepareString = false);
+			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String& json, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString = false);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray
@@ -390,7 +391,8 @@ namespace Net
 
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
-			bool Deserialize(Net::String json, bool m_prepareString = false);
+			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String& json, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();

@@ -787,7 +787,7 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 }
 
 /* wrapper */
-bool Net::Json::Object::Deserialize(Net::String json, bool m_prepareString)
+bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
 	auto ret = this->Deserialize(json, object_chain, m_prepareString);
@@ -800,9 +800,14 @@ bool Net::Json::Object::Deserialize(Net::String json, bool m_prepareString)
 	return ret;
 }
 
+bool Net::Json::Object::Deserialize(Net::String json)
+{
+	return this->Deserialize(json, false);
+}
+
 bool Net::Json::Object::Parse(Net::String json)
 {
-	return this->Deserialize(json);
+	return this->Deserialize(json, false);
 }
 
 /*
@@ -1678,6 +1683,11 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 	return this->Serialize(type, iterations);
 }
 
+bool Net::Json::Array::Deserialize(Net::String json)
+{
+	return this->Deserialize(json, false);
+}
+
 bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
@@ -1932,7 +1942,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 *	- reading anything
 *		- converting anything into int, float, double, boolean and null value
 */
-bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
+bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 {
 	/*
 	* Prepare the json string before parsing
