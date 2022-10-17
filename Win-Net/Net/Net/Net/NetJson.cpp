@@ -1946,7 +1946,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 {
 	/*
-	* remove whitespace and line breaks
+	* Prepare the json string before parsing
 	*/
 	if (!m_prepareString)
 	{
