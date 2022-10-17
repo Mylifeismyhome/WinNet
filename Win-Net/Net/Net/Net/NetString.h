@@ -191,6 +191,7 @@ namespace Net
 		bool eraseAll(char, char);
 		bool eraseAll(const char*);
 		bool eraseAll(const char*, char);
+		bool eraseAll(std::vector<size_t> m_IndexCharacterToSkip);
 		bool replace(char, char, size_t = 0);
 		bool replace(char, const char*, size_t = 0);
 		bool replace(const char*, char, size_t = 0);

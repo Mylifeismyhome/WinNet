@@ -17,9 +17,12 @@ namespace Net
 		static bool PrepareString(Net::String& json)
 		{
 			uint8_t flag = 0;
-			for (size_t i = 0; i < json.size();)
+			auto dec = json.get(); // obtain the json string but decrypted - dec variable is a copy
+
+			std::vector<size_t> m_IndexCharacterToSkip = {};
+			for (size_t i = 0; i < json.size(); ++i)
 			{
-				auto c = json.get().get()[i];
+				auto c = dec.get()[i];
 				if (c == '"')
 				{
 					if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
@@ -38,15 +41,14 @@ namespace Net
 				if (c == ' '
 					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
-					if (!json.erase(i, 1))
-					{
-						return false;
-					}
-
-					continue;
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
 				}
+			}
 
-				++i;
+			if (!json.eraseAll(m_IndexCharacterToSkip))
+			{
+				return false;
 			}
 
 			return json.eraseAll('\n');
@@ -1166,21 +1168,23 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 		m_prepareString = !m_prepareString;
 	}
 
+	auto dec = json.get();
+
 	/*
 	* Since we are passing the json string into an object deserializer
 	* we will check for the syntax that does define an object in the json language at the beginning and end
 	* if not then abort the parsing
 	*/
-	if (json.get().get()[0] != '{')
+	if (dec.get()[0] != '{')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), json.get().get()[0]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), dec.get()[0]);
 		this->Free();
 		return false;
 	}
 
-	if (json.get().get()[json.length() - 1] != '}')
+	if (dec.get()[json.length() - 1] != '}')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), json.get().get()[json.length() - 1]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), dec.get()[json.length() - 1]);
 		this->Free();
 		return false;
 	}
@@ -1189,7 +1193,6 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	size_t v = 0; // begin for substr
 	size_t arr_count = 0;
 	size_t obj_count = 0;
-	auto ref = json.get();
 
 	Net::String key(CSTRING(""));
 
@@ -1206,7 +1209,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	*/
 	for (size_t i = 1; i < json.size() - 2; ++i)
 	{
-		auto c = ref.get()[i];
+		auto c = dec.get()[i];
 
 		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
@@ -1947,26 +1950,32 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 	*/
 	if (!m_prepareString)
 	{
-		json.eraseAll(' ');
-		json.eraseAll('\n');
+		if (!Net::Json::PrepareString(json))
+		{
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
+			return false;
+		}
+
 		m_prepareString = !m_prepareString;
 	}
+
+	auto dec = json.get();
 
 	/*
 	* Since we are passing the json string into an array deserializer
 	* we will check for the syntax that does define an array in the json language at the beginning and end
 	* if not then abort the parsing
 	*/
-	if (json.get().get()[0] != '[')
+	if (dec.get()[0] != '[')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the beginning of the string ... got '%c' ... expected '['"), json.get().get()[0]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the beginning of the string ... got '%c' ... expected '['"), dec.get()[0]);
 		this->Free();
 		return false;
 	}
 
-	if (json.get().get()[json.length() - 1] != ']')
+	if (dec.get()[json.length() - 1] != ']')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the ending of the string ... got '%c' ... expected ']'"), json.get().get()[json.length() - 1]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the ending of the string ... got '%c' ... expected ']'"), dec.get()[json.length() - 1]);
 		this->Free();
 		return false;
 	}
@@ -1984,10 +1993,9 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
 	v = 0;
 
-	auto ref = json.get();
 	for (size_t i = 1; i < json.length() - 1; ++i)
 	{
-		auto c = ref.get()[i];
+		auto c = dec.get()[i];
 
 		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
@@ -2244,13 +2252,15 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	this->Clear();
 	this->Init();
 
-	if (json.get().get()[0] == '{' && json.get().get()[json.length() - 1] == '}')
+	auto dec = json.get();
+
+	if (dec.get()[0] == '{' && dec.get()[json.length() - 1] == '}')
 	{
 		/* is object */
 		this->m_type = Net::Json::Type::OBJECT;
 		return this->root_obj.Deserialize(json);
 	}
-	else if (json.get().get()[0] == '[' && json.get().get()[json.length() - 1] == ']')
+	else if (dec.get()[0] == '[' && dec.get()[json.length() - 1] == ']')
 	{
 		this->m_type = Net::Json::Type::ARRAY;
 		return this->root_array.Deserialize(json);

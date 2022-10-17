@@ -297,7 +297,8 @@ int main()
 
 	Net::Json::Object arr;
 	if (!arr.Deserialize(R"({
-  "glossary": {
+
+"glossary": {
     "GlossDiv": {
       "GlossList": {
         "GlossEntry": {

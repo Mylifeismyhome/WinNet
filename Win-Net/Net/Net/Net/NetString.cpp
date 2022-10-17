@@ -1322,6 +1322,40 @@ namespace Net
 		return true;
 	}
 
+	bool Net::String::eraseAll(std::vector<size_t> m_IndexCharacterToSkip)
+	{
+		if (size() <= 0)
+			return false;
+
+		auto replaceSize = size() - m_IndexCharacterToSkip.size();
+		auto replace = ALLOC<char>(replaceSize + 1);
+		memset(replace, 0, replaceSize);
+		replace[replaceSize] = 0;
+
+		auto dec = get();
+		for (size_t i = 0, j = 0; i < size(); ++i)
+		{
+			bool m_skip = false;
+			for (auto& index : m_IndexCharacterToSkip)
+			{
+				if (i == index)
+				{
+					m_skip = true;
+					break;
+				}
+			}
+			if (m_skip) continue;
+
+			replace[j] = dec.get()[i];
+			++j;
+		}
+
+		_string.free();
+		_string = RUNTIMEXOR(replace);
+		_size = replaceSize;
+		return true;
+	}
+
 	bool String::replace(const char c, const char r, const size_t start)
 	{
 		const auto i = find(start, c);
