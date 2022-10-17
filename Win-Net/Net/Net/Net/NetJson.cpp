@@ -260,7 +260,6 @@ void Net::Json::BasicValue<T>::SetType(Net::Json::Type type)
 	this->m_type = type;
 }
 
-
 template <typename T>
 char* Net::Json::BasicValue<T>::Key()
 {
@@ -1325,21 +1324,22 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				*/
 				key = json.substr(v + 1, i - v - 1);
 				auto refKey = key.get();
+				auto pKey = refKey.get();
 
 				/*
 				* a key in the json language must be a string
 				* and should be unique in each element
 				*/
-				if (refKey.get()[0] != '"')
+				if (pKey[0] != '"')
 				{
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key.get().get()[0]);
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), pKey[0]);
 					this->Free();
 					return false;
 				}
 
-				if (refKey.get()[key.length() - 1] != '"')
+				if (pKey[key.length() - 1] != '"')
 				{
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key.get().get()[key.length() - 1]);
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), pKey[key.length() - 1]);
 					this->Free();
 					return false;
 				}
@@ -1349,11 +1349,11 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				*/
 				for (int j = 1; j < key.length() - 1; ++j)
 				{
-					auto ec = refKey.get()[j];
+					auto ec = pKey[j];
 					if (ec == '"')
 					{
 						if ((j - 1) < 0
-							|| refKey.get()[j - 1] != '\\')
+							|| pKey[j - 1] != '\\')
 						{
 							NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key contains double-qoutes that are not escaped ... double-qoutes inside a key must be escaped with '\\'"));
 							this->Free();
