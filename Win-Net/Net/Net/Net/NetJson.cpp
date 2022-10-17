@@ -1935,7 +1935,6 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 }
 
 /*
-* @Todo: Add better parsing error detection
 * How it is working in its current state
 *	- reading object and parsing it using the object deserializer
 *	- reading array and parsing it using recursive method
