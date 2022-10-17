@@ -1332,7 +1332,8 @@ namespace Net
 		memset(replace, 0, replaceSize);
 		replace[replaceSize] = 0;
 
-		auto dec = get();
+		auto ref = get();
+		auto dec = ref.get();
 		for (size_t i = 0, j = 0; i < size(); ++i)
 		{
 			bool m_skip = false;
@@ -1346,7 +1347,7 @@ namespace Net
 			}
 			if (m_skip) continue;
 
-			replace[j] = dec.get()[i];
+			replace[j] = dec[i];
 			++j;
 		}
 
