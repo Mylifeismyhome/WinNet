@@ -720,14 +720,3 @@ namespace WebServerHandshake
 #ifdef BUILD_LINUX
 #define __int64 long long
 #endif
-
-namespace Net
-{
-	namespace Compiletime
-	{
-		constexpr size_t strlen(const char* s) noexcept
-		{
-			return *s ? 1 + Net::Compiletime::strlen(s + 1) : 0;
-		}
-	}
-}

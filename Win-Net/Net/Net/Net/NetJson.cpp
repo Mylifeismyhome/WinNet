@@ -922,8 +922,8 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	{
 		m_type = Net::Json::Type::INTEGER;
 
-		static const char* m_NumberPattern = CSTRING("0123456789");
-		for (size_t i = 0, j = 0; i < value.size(); ++i)
+		constexpr const char m_NumericPattern[] = "0123456789";
+		for (size_t i = 0, dot = 0; i < value.size(); ++i)
 		{
 			auto c = refValue.get()[i];
 
@@ -932,7 +932,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			*/
 			if (c == '.')
 			{
-				if (j > 0)
+				if (dot > 0)
 				{
 					// number got multiplie decimal splitter
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad number ... number has more than one of the decimal ('.') splitter"));
@@ -942,16 +942,16 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 				/*
 				* decimal number
 				*/
-				++j;
+				++dot;
 
 				m_type = Net::Json::Type::DOUBLE;
 				continue;
 			}
 
 			bool m_isNumber = false;
-			for (size_t z = 0; z < Net::Compiletime::strlen(m_NumberPattern) + 1; ++z)
+			for (size_t z = 0; z < sizeof(m_NumericPattern); ++z)
 			{
-				if (c == static_cast<char>(m_NumberPattern[z]))
+				if (static_cast<int>(c) == static_cast<int>(m_NumericPattern[z]))
 				{
 					m_isNumber = true;
 				}
