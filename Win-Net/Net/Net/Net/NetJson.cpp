@@ -1373,7 +1373,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 			* check for the syntax that seperates elements inside an object
 			* or check if we have reached eof (end of file)
 			*/
-			if (c == ',' || (i == json.length() - 1))
+			if (c == ',' || (i == json.length() - 2))
 			{
 				/*
 				* keep going until we read the entire object or array
@@ -1415,7 +1415,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 					return false;
 				}
 
-				Net::String value = (i == json.length() - 1) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
+				Net::String value = (i == json.length() - 2) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
 
 				/*
 				* pass the value to the DeserializeAny method
@@ -1713,16 +1713,13 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
-
 			Net::Json::Object obj(true);
 			if (!obj.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
 				return false;
 			}
-			this->push(obj);
-
-			return true;
+			return this->push(obj);
 		}
 	}
 
@@ -1752,16 +1749,13 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		else if (m_type == Net::Json::Type::ARRAY)
 		{
 			// array seem to be fine, now call it's deserializer
-
 			Net::Json::Array arr(true);
 			if (!arr.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
 				return false;
 			}
-			this->push(arr);
-
-			return true;
+			return this->push(arr);
 		}
 	}
 
@@ -1809,9 +1803,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 
 			// obtain the string from the json-string without the double-qoutes
 			auto str = value.substr(1, value.length() - 2);
-			this->push(str);
-
-			return true;
+			return this->push(str);
 		}
 	}
 
@@ -1822,8 +1814,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		if (Convert::is_boolean(value))
 		{
 			m_type = Net::Json::Type::BOOLEAN;
-			this->push(Convert::ToBoolean(value));
-			return true;
+			return this->push(Convert::ToBoolean(value));
 		}
 	}
 
@@ -1834,8 +1825,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		if (!memcmp(value.get().get(), CSTRING("null"), 4))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
-			this->push(Net::Json::NullValue());
-			return true;
+			return this->push(Net::Json::NullValue());
 		}
 	}
 
@@ -1919,19 +1909,17 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 			switch (m_type)
 			{
 			case Net::Json::Type::INTEGER:
-				this->push(Convert::ToInt32(value));
-				break;
+				return this->push(Convert::ToInt32(value));
 
 			case Net::Json::Type::DOUBLE:
-				this->push(Convert::ToDouble(value));
-				break;
+				return this->push(Convert::ToDouble(value));
 
 			case Net::Json::Type::FLOAT:
-				this->push(Convert::ToFloat(value));
+				return this->push(Convert::ToFloat(value));
+
+			default:
 				break;
 			}
-
-			return true;
 		}
 	}
 
@@ -2072,7 +2060,7 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 			* or check if we have reached eof (end of file)
 			*	will happen if there is only one element
 			*/
-			if (c == ',' || (i == json.length() - 1))
+			if (c == ',' || (i == json.length() - 2))
 			{
 				/*
 				* keep going until we read the entire object or array
@@ -2086,7 +2074,7 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 					continue;
 				}
 
-				Net::String element = (i == json.length() - 1) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
+				Net::String element = (i == json.length() - 2) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
 
 				/*
 				* pass the value to the DeserializeAny method
