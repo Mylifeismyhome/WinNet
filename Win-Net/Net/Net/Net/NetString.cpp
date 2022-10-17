@@ -316,7 +316,6 @@ namespace Net
 		_size = 0;
 	}
 
-
 	bool String::empty()
 	{
 		if (size() <= 0)
@@ -335,9 +334,7 @@ namespace Net
 		if (i > length())
 			return '\0';
 
-		const auto buffer = revert();
-		const auto ch = buffer.get()[i];
-		return ch;
+		return this->operator[](i);
 	}
 
 	char* String::substr(size_t length)
