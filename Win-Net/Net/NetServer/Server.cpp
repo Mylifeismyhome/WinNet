@@ -982,7 +982,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		{
 			Key.free();
 			IV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES, true);
 			return;
 		}
 
@@ -991,7 +991,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		{
 			Key.free();
 			IV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64);
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptKeyBase64, true);
 			return;
 		}
 
@@ -1000,7 +1000,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		{
 			Key.free();
 			IV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptIVBase64);
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_CryptIVBase64, true);
 			return;
 		}
 

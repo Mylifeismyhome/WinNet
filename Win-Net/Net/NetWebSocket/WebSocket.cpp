@@ -1199,13 +1199,13 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 				}
 
 				sendSize -= res;
-					} while (sendSize > 0);
-				}
+			} while (sendSize > 0);
+		}
 
 		buf.free();
-			}
+	}
 	///////////////////////
-		}
+}
 
 DWORD Net::WebSocket::Server::DoReceive(NET_PEER peer)
 {
@@ -1303,11 +1303,11 @@ DWORD Net::WebSocket::Server::DoReceive(NET_PEER peer)
 		}
 
 		peer->network.reset();
-		}
+	}
 
 	DecodeFrame(peer);
 	return 0;
-	}
+}
 
 void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 {
@@ -1403,7 +1403,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 		peer->network.getData()[PayloadLength] = '\0';
 		peer->network.setDataSize(PayloadLength);
 		Payload.free();
-}
+	}
 	else
 	{
 		ErasePeer(peer);

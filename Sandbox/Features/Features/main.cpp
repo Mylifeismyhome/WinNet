@@ -295,26 +295,44 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	Net::Json::Document doc;
+	Net::String str("HALLO");
+	std::cout << str[0] << std::endl;
 
-	//Net::Json::Array arr;
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	//for (int i = 0; i < 2; ++i)
-	//{
-	//	Net::Json::Object obj(true);
-	//	obj["server_name"] = "test";
-	//	obj["server_address"] = i;
-	//	arr.push(obj);
-	//}
-
-	//doc["available_server"] = arr;
-
-	if (!doc.Deserialize(R"({"available_server":[{"server_name":"mainserver","server_address":"164.68.127.226","server_port":7100},{"server_name":"updateserver","server_address":"164.68.127.226","server_port":7101}]})"))
+	Net::Json::Object arr;
+	if (!arr.Deserialize(R"({"id":"ffd7c833-b6d1-4710-b224-534faef1aeff","amount":"43.83","status":"PENDING","receivingCurrency":"BTC","return_url":"https://vpay.antares2.to/success","internalTransactionId":"8057$sansukar69$45$3040021e0ae823902066e4329906c264302b3f25803dec7ff6f42584fcd2f2acd41c021e1b5498c326ad7c08b43e7b2e988dde72d3df55aee1685a161d282de91220","gateway_departure":"GATE_634D841F728DA","timestamp":1666024479,"payment_methods":[{"name":"Wyre_Universal","surcharge":"3.07"},{"name":"Cryptocurrency","surcharge":"0.00"},{"name":"Voucher","surcharge":"0.00"},{"name":"Wallet","surcharge":"0.00"},{"name":"paysafecard","surcharge":"5.00"}],"pay_history":[{"wallet_address":"0x3a8b0a5420178f860f88ae81a029461894597645","amount_in_crypto":40.73636369,"amount_in_fiat":46.9,"payment_method":"wyre_universal","currency":"USDT","isCrypto":true,"click_time":"2022-10-1718:34:40","gateway_arrival":"PAY_634D841FA42A6"},{"wallet_address":"","amount_in_crypto":0,"amount_in_fiat":50.14,"payment_method":"paysafecard","currency":"EUR","isCrypto":false,"click_time":"2022-10-1718:44:59","gateway_arrival":"PAY_634D868B02F65"},{"wallet_address":"","amount_in_crypto":0,"amount_in_fiat":50.14,"payment_method":"paysafecard","currency":"EUR","isCrypto":false,"click_time":"2022-10-1718:45:06","gateway_arrival":"PAY_634D8692B0B15"},{"wallet_address":"","amount_in_crypto":0,"amount_in_fiat":50.14,"payment_method":"paysafecard","currency":"EUR","isCrypto":false,"click_time":"2022-10-1718:45:07","gateway_arrival":"PAY_634D86930C2ED"},{"wallet_address":"","amount_in_crypto":0,"amount_in_fiat":50.14,"payment_method":"paysafecard","currency":"EUR","isCrypto":false,"click_time":"2022-10-1718:45:15","gateway_arrival":"PAY_634D869B948A7"}]})"))
 	{
 		NET_LOG("FUCK");
 	}
 
-	NET_LOG("%s", doc.Stringify().data().data());
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+
+	NET_LOG("%s", arr.Stringify(Net::Json::SerializeType::NONE).data().data());
+
+	//Net::Json::Object obj;
+
+	////Net::Json::Array arr;
+
+	////for (int i = 0; i < 2; ++i)
+	////{
+	////	Net::Json::Object obj(true);
+	////	obj["server_name"] = "test";
+	////	obj["server_address"] = i;
+	////	arr.push(obj);
+	////}
+
+	////doc["available_server"] = arr;
+
+	////if (!obj.Deserialize(R"({"test":1337,"aka":{"tt":35,"best":1337},"\"HUN\"\"D":[1,2]})"))
+	//if (!obj.Deserialize(R"({"test":"HALLO\"OLLA","abc":0123456789,"test2":123})"))
+	//{
+	//	NET_LOG("FUCK");
+	//}
+
+	//NET_LOG("%s", obj.Stringify().data().data());
 
 	/*for (size_t it = 0; it < doc[CSTRING("available_server")]->as_array()->size(); ++it)
 	{

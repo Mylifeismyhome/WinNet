@@ -5,62 +5,109 @@
 #include <Net/Cryption/XOR.h>
 #include <Net/assets/manager/logmanager.h>
 
-int Net::Json::Convert::ToInt32(Net::String& str)
+namespace Net
 {
-	auto ref = str.get();
-	return std::stoi(ref.get());
+	namespace Json
+	{
+		/*
+		* this method will prepare a json string before parsing
+		* it will remove all the whitespaces outside of string's
+		* it will remove all the line breaks
+		*/
+		static bool PrepareString(Net::String& json)
+		{
+			uint8_t flag = 0;
+
+			std::vector<size_t> m_IndexCharacterToSkip = {};
+			for (size_t i = 0; i < json.length(); ++i)
+			{
+				auto c = json[i];
+				if (c == '"')
+				{
+					if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+					{
+						flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+					else
+					{
+						flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+				}
+
+				/*
+				* remove any white space outside of string's
+				*/
+				if (c == ' '
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove line break
+				*/
+				else if (c == '\n')
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+			}
+
+			if (!json.eraseAll(m_IndexCharacterToSkip))
+			{
+				return false;
+			}
+
+			return true;
+		}
+	}
 }
 
-float Net::Json::Convert::ToFloat(Net::String& str)
+int Net::Json::Convert::ToInt32(char* str)
 {
-	auto ref = str.get();
-	return std::stof(ref.get());
+	return std::stoi(str);
 }
 
-double Net::Json::Convert::ToDouble(Net::String& str)
+float Net::Json::Convert::ToFloat(char* str)
 {
-	auto ref = str.get();
-	return std::stod(ref.get());
+	return std::stof(str);
 }
 
-bool Net::Json::Convert::ToBoolean(Net::String& str)
+double Net::Json::Convert::ToDouble(char* str)
 {
-	auto ref = str.get();
+	return std::stod(str);
+}
 
-	if (!strcmp(CSTRING("true"), ref.get()))
+bool Net::Json::Convert::ToBoolean(char* str)
+{
+	if (!strcmp(CSTRING("true"), str))
 		return true;
-	else if (!strcmp(CSTRING("false"), ref.get()))
+	else if (!strcmp(CSTRING("false"), str))
 		return false;
 
 	/* todo: throw error */
 	return false;
 }
 
-bool Net::Json::Convert::is_float(Net::String& str)
+bool Net::Json::Convert::is_float(char* str)
 {
-	auto ref = str.get();
-
 	char* end = nullptr;
-	double val = strtof(ref.get(), &end);
-	return end != str.get().get() && *end == '\0' && val != HUGE_VALF;
+	double val = strtof(str, &end);
+	return end != str && *end == '\0' && val != HUGE_VALF;
 }
 
-bool Net::Json::Convert::is_double(Net::String& str)
+bool Net::Json::Convert::is_double(char* str)
 {
-	auto ref = str.get();
-
 	char* end = nullptr;
-	double val = strtod(ref.get(), &end);
-	return end != str.get().get() && *end == '\0' && val != HUGE_VAL;
+	double val = strtod(str, &end);
+	return end != str && *end == '\0' && val != HUGE_VAL;
 }
 
-bool Net::Json::Convert::is_boolean(Net::String& str)
+bool Net::Json::Convert::is_boolean(char* str)
 {
-	auto ref = str.get();
-
-	if (!strcmp(CSTRING("true"), ref.get()))
+	if (!strcmp(CSTRING("true"), str))
 		return true;
-	else if (!strcmp(CSTRING("false"), ref.get()))
+	else if (!strcmp(CSTRING("false"), str))
 		return true;
 
 	return false;
@@ -740,10 +787,10 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 }
 
 /* wrapper */
-bool Net::Json::Object::Deserialize(Net::String json)
+bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
-	auto ret = this->Deserialize(json, object_chain);
+	auto ret = this->Deserialize(json, object_chain, m_prepareString);
 	for (size_t i = 0; i < object_chain.size(); ++i)
 	{
 		if (!object_chain[i]) continue;
@@ -753,36 +800,30 @@ bool Net::Json::Object::Deserialize(Net::String json)
 	return ret;
 }
 
-bool Net::Json::Object::Parse(Net::String json)
+bool Net::Json::Object::Deserialize(Net::String json)
 {
-	return this->Deserialize(json);
+	return this->Deserialize(json, false);
 }
 
-/* actual deserialization */
-bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain)
+bool Net::Json::Object::Parse(Net::String json)
 {
-	// remove any whitespaces
-	//value.eraseAll(" ");
+	return this->Deserialize(json, false);
+}
 
-	// object detected
-	if (value.get().get()[0] == '{' && value.get().get()[value.length() - 1] == '}')
-	{
-#ifdef BUILD_LINUX
-		object_chain.push_back(strdup(key.get().get()));
-#else
-		object_chain.push_back(_strdup(key.get().get()));
-#endif
+/*
+* this method will validate the value
+* also, it will push it to the memory
+* it uses recursive calls to deserialize children from object's and array's
+*/
+bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString)
+{
+	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
-		// need this line otherwise empty objects do not work
-		this->operator[](key.get().get()) = Net::Json::Object();
+	auto keyRef = key.get();
+	auto pKey = keyRef.get();
 
-		if (!this->Deserialize(value, object_chain))
-			return false;
-
-		object_chain.erase(object_chain.size() - 1);
-
-		return true;
-	}
+	auto valueRef = value.get();
+	auto pValue = valueRef.get();
 
 	// with object chain
 	Net::Json::BasicValueRead obj(nullptr);
@@ -795,183 +836,361 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 		}
 	}
 
-	// array detected
-	if (value.get().get()[0] == '[' && value.get().get()[value.length() - 1] == ']')
+	/*
+	* check for object
+	*/
 	{
-		Net::Json::Array arr(true);
-		if (!arr.Deserialize(value))
+		if (value[0] == '{')
 		{
-			// @todo: add logging
+			m_type = Net::Json::Type::OBJECT;
+		}
+
+		if (value[value.length() - 1] == '}'
+			&& m_type != Net::Json::Type::OBJECT)
+		{
+			// we got an ending curly for an object, but missing the starting curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
-
-		if (object_chain.size() > 0)
+		else if (value[value.length() - 1] != '}'
+			&& m_type == Net::Json::Type::OBJECT)
 		{
-			obj[key.get().get()] = arr;
+			// we got a starting curly for an object, but missing the ending curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
+			return false;
 		}
-		else
+		else if (m_type == Net::Json::Type::OBJECT)
 		{
-			this->operator[](key.get().get()) = arr;
-		}
+			// object seem to be fine, now call it's deserializer
 
-		return true;
-	}
+#ifdef BUILD_LINUX
+			object_chain.push_back(strdup(pKey));
+#else
+			object_chain.push_back(_strdup(pKey));
+#endif
 
-	// we have to figure out what kind of type the data is from
-	// we start with treating it as an integer
-	Net::Json::Type type = Net::Json::Type::INTEGER;
-
-	if (Convert::is_boolean(value))
-	{
-		type = Net::Json::Type::BOOLEAN;
-	}
-	else if (!memcmp(value.get().get(), CSTRING("null"), 4))
-	{
-		type = Net::Json::Type::NULLVALUE;
-	}
-	else
-	{
-		// find out if there is any string or floating number to read
-
-		uint8_t flag = 0;
-		size_t v = 0; // begin for substr
-		auto ref = value.get();
-		for (size_t i = 0; i < value.size(); ++i)
-		{
-			auto c = ref.get()[i];
-
-			if ((flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+			// need this line otherwise empty objects do not work
+			if (object_chain.size() > 0)
 			{
-				// end of string reading
-				if (c == '"')
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
-					type = Net::Json::Type::STRING;
-
-					auto str = value.substr(v + 1, i - v - 1);
-
-					if (object_chain.size() > 0)
-					{
-						obj[key.get().get()] = str;
-					}
-					else
-					{
-						this->operator[](key.get().get()) = str;
-					}
-
-					return true; // early exit because there won't be anything left to read
-				}
-
-				// keep reading the string
-				continue;
+				obj[pKey] = Net::Json::Object();
 			}
 			else
 			{
-				// check if there is any string to read
-				if (c == '"')
+				this->operator[](pKey) = Net::Json::Object();
+			}
+
+			if (!this->Deserialize(value, object_chain, m_prepareString))
+				return false;
+
+			object_chain.erase(object_chain.size() - 1);
+
+			return true;
+		}
+	}
+
+	/*
+	* check for array
+	*/
+	{
+		if (value[0] == '[')
+		{
+			m_type = Net::Json::Type::ARRAY;
+		}
+
+		if (value[value.length() - 1] == ']'
+			&& m_type != Net::Json::Type::ARRAY)
+		{
+			// we got an ending curly for an array, but missing the starting curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (value[value.length() - 1] != ']'
+			&& m_type == Net::Json::Type::ARRAY)
+		{
+			// we got a starting curly for an array, but missing the ending curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::ARRAY)
+		{
+			// array seem to be fine, now call it's deserializer
+
+			Net::Json::Array arr(true);
+			if (!arr.Deserialize(value, m_prepareString))
+			{
+				// @todo: add logging
+				return false;
+			}
+
+			if (object_chain.size() > 0)
+			{
+				obj[pKey] = arr;
+			}
+			else
+			{
+				this->operator[](pKey) = arr;
+			}
+
+			return true;
+		}
+	}
+
+	/*
+	* check for string
+	*/
+	{
+		if (value[0] == '"')
+		{
+			m_type = Net::Json::Type::STRING;
+		}
+
+		if (value[value.length() - 1] == '"'
+			&& m_type != Net::Json::Type::STRING)
+		{
+			// we got an ending double-qoute for a string, but missing the starting
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), pValue);
+			return false;
+		}
+		else if (value[value.length() - 1] != '"'
+			&& m_type == Net::Json::Type::STRING)
+		{
+			// we got a starting double-qoute for a string, but missing the ending
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::STRING)
+		{
+			/*
+			* walk through the string and make sure there are no non-escaped double-qoutes
+			*/
+			for (int j = 1; j < value.length() - 1; ++j)
+			{
+				auto ec = value[j];
+				if (ec == '"')
 				{
-					flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
-					v = i;
+					if ((j - 1) < 0
+						|| value[j - 1] != '\\')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad string ... string contains double-qoutes that are not escaped ... double-qoutes inside a string must be escaped with '\\'"));
+						return false;
+					}
+				}
+			}
+
+			// obtain the string from the json-string without the double-qoutes
+			auto str = value.substr(1, value.length() - 2);
+
+			if (object_chain.size() > 0)
+			{
+				obj[pKey] = str;
+			}
+			else
+			{
+				this->operator[](pKey) = str;
+			}
+
+			return true;
+		}
+	}
+
+	/*
+	* check for boolean
+	*/
+	{
+		if (Convert::is_boolean(pValue))
+		{
+			m_type = Net::Json::Type::BOOLEAN;
+
+			if (object_chain.size() > 0)
+			{
+				obj[pKey] = Convert::ToBoolean(pValue);
+				return true;
+			}
+
+			this->operator[](pKey) = Convert::ToBoolean(pValue);
+			return true;
+		}
+	}
+
+	/*
+	* check for null value
+	*/
+	{
+		if (!memcmp(pValue, CSTRING("null"), 4))
+		{
+			m_type = Net::Json::Type::NULLVALUE;
+
+			if (object_chain.size() > 0)
+			{
+				obj[pKey] = Net::Json::NullValue();
+				return true;
+			}
+
+			this->operator[](pKey) = Net::Json::NullValue();
+			return true;
+		}
+	}
+
+	/*
+	* check for number
+	*/
+	{
+		m_type = Net::Json::Type::INTEGER;
+
+		constexpr const char m_NumericPattern[] = "0123456789";
+		for (size_t i = 0, dot = 0; i < value.length(); ++i)
+		{
+			auto c = value[i];
+
+			/*
+			* check for decimal number
+			*/
+			if (c == '.')
+			{
+				if (dot > 0)
+				{
+					// number got multiplie decimal splitter
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad number ... number has more than one of the decimal ('.') splitter"));
+					return false;
 				}
 
-				// check if there is a dot that identifies a floating number
-				if (c == '.')
-				{
-					if (Convert::is_double(value))
-					{
-						type = Net::Json::Type::DOUBLE;
-					}
-					else if (Convert::is_float(value))
-					{
-						type = Net::Json::Type::FLOAT;
-					}
+				/*
+				* decimal number
+				*/
+				++dot;
 
+				m_type = Net::Json::Type::DOUBLE;
+				continue;
+			}
+
+			bool m_isNumber = false;
+			for (size_t z = 0; z < sizeof(m_NumericPattern); ++z)
+			{
+				if (static_cast<int>(c) == static_cast<int>(m_NumericPattern[z]))
+				{
+					m_isNumber = true;
 					break;
 				}
 			}
+
+			if (!m_isNumber)
+			{
+				/* not a number */
+
+				/*
+				* null value is handled above, so if the code is reaching the end and the type is still null
+				* then the value is not valid format
+				*/
+				m_type = Net::Json::Type::NULLVALUE;
+				break;
+			}
+		}
+
+		/* value is definitely a number */
+		if (m_type != Net::Json::Type::NULLVALUE)
+		{
+			/*
+			* value is a decimal number
+			*/
+			if (m_type == Net::Json::Type::DOUBLE)
+			{
+				/*
+				* determinate if it is worth a double or just a float
+				*/
+
+				if (Convert::is_double(pValue))
+				{
+					m_type = Net::Json::Type::DOUBLE;
+				}
+				else if (Convert::is_float(pValue))
+				{
+					m_type = Net::Json::Type::FLOAT;
+				}
+			}
+
+			switch (m_type)
+			{
+			case Net::Json::Type::INTEGER:
+				if (object_chain.size() > 0)
+				{
+					obj[pKey] = Convert::ToInt32(pValue);
+					break;
+				}
+
+				this->operator[](pKey) = Convert::ToInt32(pValue);
+				break;
+
+			case Net::Json::Type::DOUBLE:
+				if (object_chain.size() > 0)
+				{
+					obj[pKey] = Convert::ToDouble(pValue);
+					break;
+				}
+
+				this->operator[](pKey) = Convert::ToDouble(pValue);
+				break;
+
+			case Net::Json::Type::FLOAT:
+				if (object_chain.size() > 0)
+				{
+					obj[pKey] = Convert::ToFloat(pValue);
+					break;
+				}
+
+				this->operator[](pKey) = Convert::ToFloat(pValue);
+				break;
+			}
+
+			return true;
 		}
 	}
 
-	switch (type)
-	{
-	case Net::Json::Type::INTEGER:
-		if (object_chain.size() > 0)
-		{
-			obj[key.get().get()] = Convert::ToInt32(value);
-			break;
-		}
-
-		this->operator[](key.get().get()) = Convert::ToInt32(value);
-		break;
-
-	case Net::Json::Type::BOOLEAN:
-		if (object_chain.size() > 0)
-		{
-			obj[key.get().get()] = Convert::ToBoolean(value);
-			break;
-		}
-
-		this->operator[](key.get().get()) = Convert::ToBoolean(value);
-		break;
-
-	case Net::Json::Type::DOUBLE:
-		if (object_chain.size() > 0)
-		{
-			obj[key.get().get()] = Convert::ToDouble(value);
-			break;
-		}
-
-		this->operator[](key.get().get()) = Convert::ToDouble(value);
-		break;
-
-	case Net::Json::Type::FLOAT:
-		if (object_chain.size() > 0)
-		{
-			obj[key.get().get()] = Convert::ToFloat(value);
-			break;
-		}
-
-		this->operator[](key.get().get()) = Convert::ToFloat(value);
-		break;
-
-	case Net::Json::Type::NULLVALUE:
-		if (object_chain.size() > 0)
-		{
-			obj[key.get().get()] = Net::Json::NullValue();
-			break;
-		}
-
-		this->operator[](key.get().get()) = Net::Json::NullValue();
-		break;
-
-	default:
-		NET_LOG_ERROR(CSTRING("INVALID TYPE"));
-		return false;
-	}
-
-	return true;
+	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
+	return false;
 }
 
 /*
-* @Todo: Add better parsing error detection
-* How it is working in its current state
-*	- reading till the common seperator ':' reached
-*		- then extracting the key & value from each other
-*	- processing the value
-*		- using recursive method to parse object chain
-*		- creating an array object on parsing array
+*	This method does do:
+*		- it checks if the json string starts of with '{' and ends with '}'
+*		- it reads the single elements inside of the object and checks for its split that determinate the key and the value
+*		- it reads the entire object or array and stores it as value (use recursive for further analyses)
+*		- it realises if any splitters are missing or if too many have been placed
+*			- it does not do this very accurate but good enough
+*		- it checks if the key is a string
+*		- it checks if the key contains any double-qoutes and if it does then it checks if they are escaped
 */
-bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain)
+bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString)
 {
-	if (json.get().get()[0] != '{')
+	/*
+	* Prepare the json string before parsing
+	*/
+	if (!m_prepareString)
 	{
-		std::cout << "NOT AN OBJECT" << std::endl;
+		if (!Net::Json::PrepareString(json))
+		{
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
+			return false;
+		}
+
+		m_prepareString = !m_prepareString;
+	}
+
+	/*
+	* Since we are passing the json string into an object deserializer
+	* we will check for the syntax that does define an object in the json language at the beginning and end
+	* if not then abort the parsing
+	*/
+	if (json[0] != '{')
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), json[0]);
+		this->Free();
 		return false;
 	}
 
-	if (json.get().get()[json.length() - 1] != '}')
+	if (json[json.length() - 1] != '}')
 	{
-		std::cout << "NOT AN OBJECT2" << std::endl;
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), json[json.length() - 1]);
+		this->Free();
 		return false;
 	}
 
@@ -979,150 +1198,259 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	size_t v = 0; // begin for substr
 	size_t arr_count = 0;
 	size_t obj_count = 0;
-	auto ref = json.get();
 
-	Net::String lastKey;
-	for (size_t i = 1; i < json.size() - 1; ++i)
+	Net::String key(CSTRING(""));
+
+	/*
+	* So an object is seperated in its key and value pair
+	* first scan for the key and detect its syntax that deals as the seperator (':')
+	*/
+	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
+	v = 0;
+
+	/*
+	* Since we did check the start and end to match its syntax that does define an object
+	* so we can skip the first and last character for the further parsing
+	*/
+	for (size_t i = 1; i < json.length() - 1; ++i)
 	{
-		auto c = ref.get()[i];
+		auto c = json[i];
 
-		if ((flag & (int)EDeserializeFlag::FLAG_READING_KEY))
+		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
-			// read till we reach the common splitter for an object
-			if (c == ':')
+			/*
+			* Spotted beginning of an object
+			* now read it fully before further analysing
+			*/
+			if (c == '{')
 			{
-				// read the key
-				size_t kb = 0; // begin
-				size_t ke = 0; // end
-				for (size_t j = v; j < i; ++j)
+				++obj_count;
+				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
+			}
+			else if (c == '}')
+			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT)
+					|| obj_count == 0)
 				{
-					auto d = ref.get()[j];
-					if (d == '"')
-					{
-						if (kb != 0)
-						{
-							ke = j;
-							break;
-						}
-						else
-						{
-							kb = j;
-						}
-					}
-				}
-
-				if (!kb || !ke)
-				{
-					// @todo: add error message {invalid key}
+					// we got an ending curly for an object but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '{' ... got '}'"));
+					this->Free();
 					return false;
 				}
 
-				lastKey = json.substr(kb + 1, ke - kb - 1);
+				--obj_count;
 
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_KEY;
-				flag |= (int)EDeserializeFlag::FLAG_READING_VALUE;
-
-				v = i + 1;
-			}
-		}
-		else if ((flag & (int)EDeserializeFlag::FLAG_READING_VALUE))
-		{
-			if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
-			{
-				if (c == '[')
+				if (obj_count == 0)
 				{
-					// another array spotted
-					++arr_count;
-					continue;
+					/*
+					* ok, finished reading the object
+					*/
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+				}
+			}
+
+			/*
+			* Spotted beginning of an array
+			* now read it fully before further analysing
+			*/
+			if (c == '[')
+			{
+				++arr_count;
+				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+			}
+			else if (c == ']')
+			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY)
+					|| arr_count == 0)
+				{
+					// we got an ending curly for an arry but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '[' ... got ']'"));
+					this->Free();
+					return false;
 				}
 
-				// end of reading arry
-				if (c == ']')
-				{
-					--arr_count;
-					if (arr_count == 0)
-					{
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+				--arr_count;
 
-						Net::String value = json.substr(v, i - v + 1);
-						if (!DeserializeAny(lastKey, value, object_chain))
+				if (arr_count == 0)
+				{
+					/*
+					* ok, finished reading the array
+					*/
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+				}
+			}
+
+			/*
+			* Spotted beginning of a string
+			* now read it fully
+			*/
+			if (c == '"'
+				&& !(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
+					|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
+			{
+				if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+				}
+				else
+				{
+					flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+				}
+			}
+
+			/*
+			* Seperator spotted
+			* now walk back to determinate the key
+			* and walk forward to determinate the value
+			* to determinate the value walk till we reach the syntax that defines the seperation between elements inside an object
+			* or simply till we reach the end, this will be the case if there is only one element
+			*/
+			if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT)
+				&& !(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY)
+				&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+				&& c == ':')
+			{
+				if (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE)
+				{
+					// we got a seperator for key and value pair but were reading the value?
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the value of the element ... got another ':' instead"));
+					this->Free();
+					return false;
+				}
+
+				/*
+				* the last key is obviously the last position at which we set the flag to reading the key
+				* now we have determinated the key, but the value is not determinated yet
+				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
+				*/
+				key = json.substr(v + 1, i - v - 1);
+				auto refKey = key.get();
+
+				/*
+				* a key in the json language must be a string
+				* and should be unique in each element
+				*/
+				if (refKey.get()[0] != '"')
+				{
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key.get().get()[0]);
+					this->Free();
+					return false;
+				}
+
+				if (refKey.get()[key.length() - 1] != '"')
+				{
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key.get().get()[key.length() - 1]);
+					this->Free();
+					return false;
+				}
+
+				/*
+				* walk through the key and make sure there are no non-escaped double-qoutes
+				*/
+				for (int j = 1; j < key.length() - 1; ++j)
+				{
+					auto ec = refKey.get()[j];
+					if (ec == '"')
+					{
+						if ((j - 1) < 0
+							|| refKey.get()[j - 1] != '\\')
 						{
+							NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key contains double-qoutes that are not escaped ... double-qoutes inside a key must be escaped with '\\'"));
+							this->Free();
 							return false;
 						}
 					}
 				}
+
+				// obtain the string from the json-string without the double-qoutes
+				key = key.substr(1, key.length() - 2);
+
+				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE;
+				v = i;
 			}
-			else if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+
+			/*
+			* check for the syntax that seperates elements inside an object
+			* or check if we have reached eof (end of file)
+			*/
+			if (c == ',' || (i == json.length() - 2))
 			{
-				if (c == '{')
+				/*
+				* keep going until we read the entire object or array
+				* only stop if we reached eof
+				*/
+				if (c == ','
+					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
+						|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY
+						|| flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
-					// another object spotted
-					++obj_count;
 					continue;
 				}
 
-				// end of reading object
-				if (c == '}')
+				/*
+				* Spotted seperator for an element
+				* now determinate the value
+				*/
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE))
 				{
-					--obj_count;
-					if (obj_count == 0)
-					{
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
-						flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
+					// we got a seperator for an element but missing the splitter for the key and value pair
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the elements key ... instead got ',' OR 'EOF'"));
+					this->Free();
+					return false;
+				}
 
-						Net::String value = json.substr(v, i - v + 1);
-						if (!DeserializeAny(lastKey, value, object_chain))
-						{
-							return false;
-						}
-					}
-				}
-			}
-			else
-			{
-				// detected an array, read it
-				if (c == '[')
+				if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT) && obj_count > 0)
 				{
-					flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
-					++arr_count;
+					// we got another seperator for an element but missing the end curly for an object
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '}' ... got ',' OR 'EOF'"));
+					this->Free();
+					return false;
 				}
-				// detected an object, read it
-				else if (c == '{')
-				{
-					flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
-					++obj_count;
-				}
-				// read till we reach the next seperator
-				else if (c == ',')
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
 
-					Net::String value = json.substr(v, i - v);
-					if (!DeserializeAny(lastKey, value, object_chain))
-					{
-						return false;
-					}
-				}
-				// or read till we reach the end
-				else if (i == json.length() - 2)
+				if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY) && arr_count > 0)
 				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_VALUE;
-
-					Net::String value = json.substr(v, i - v + 1);
-					if (!DeserializeAny(lastKey, value, object_chain))
-					{
-						return false;
-					}
+					// we got another seperator for an element but missing the end curly for an array
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected ']' ... got ',' OR 'EOF'"));
+					this->Free();
+					return false;
 				}
+
+				Net::String value = (i == json.length() - 2) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
+
+				/*
+				* pass the value to the DeserializeAny method
+				* that method will take any value and further analyse its type
+				* it will use recursive to deserialize further object's or array's
+				*/
+				if (!DeserializeAny(key, value, object_chain, m_prepareString))
+				{
+					// no need to display error message, the method will do it
+					this->Free();
+					return false;
+				}
+
+				/*
+				* value determinated
+				* now remove the flag
+				*/
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE;
+				v = i;
 			}
 		}
-		else
-		{
-			// read key
-			flag |= (int)EDeserializeFlag::FLAG_READING_KEY;
-			v = i;
-		}
+	}
+
+	if (arr_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected an array ending curly ']'"));
+		this->Free();
+		return false;
+	}
+
+	if (obj_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected an object ending curly '}'"));
+		this->Free();
+		return false;
 	}
 
 	return true;
@@ -1249,7 +1577,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			Net::String str(tmp->as_string());
 			str.replaceAll(CSTRING("\n"), CSTRING("\\n"));
 
-			out += str;
+			out += Net::String(CSTRING(R"("%s")"), str.get().get());
 			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
 		}
 		else if (tmp->GetType() == Type::INTEGER)
@@ -1355,102 +1683,258 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 	return this->Serialize(type, iterations);
 }
 
-bool Net::Json::Array::DeserializeAny(Net::String& str)
+bool Net::Json::Array::Deserialize(Net::String json)
 {
-	// object detected
-	auto a = str.get();
-	auto b = a.get();
-	if (str.get().get()[0] == '{' && str.get().get()[str.length() - 1] == '}')
+	return this->Deserialize(json, false);
+}
+
+bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
+{
+	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+
+	auto valueRef = value.get();
+	auto pValue = valueRef.get();
+
+	/*
+	* check for object
+	*/
 	{
-		Net::Json::Object obj(true);
-		if (!obj.Deserialize(str))
+		if (value[0] == '{')
 		{
-			// @todo: add logging
+			m_type = Net::Json::Type::OBJECT;
+		}
+
+		if (value[value.length() - 1] == '}'
+			&& m_type != Net::Json::Type::OBJECT)
+		{
+			// we got an ending curly for an object, but missing the starting curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), pValue);
 			return false;
 		}
-		this->push(obj);
-		return true;
-	}
-
-	// array detected
-	if (str.get().get()[0] == '[' && str.get().get()[str.length() - 1] == ']')
-	{
-		Net::Json::Array arr(true);
-		if (!arr.Deserialize(str))
+		else if (value[value.length() - 1] != '}'
+			&& m_type == Net::Json::Type::OBJECT)
 		{
-			// @todo: add logging
+			// we got a starting curly for an object, but missing the ending curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
 			return false;
 		}
-		this->push(arr);
-		return true;
-	}
-
-	// we have to figure out what kind of type the data is from
-	// we start with treating it as an integer
-	Net::Json::Type type = Net::Json::Type::INTEGER;
-
-	if (Convert::is_boolean(str))
-	{
-		type = Net::Json::Type::BOOLEAN;
-	}
-	else if (!memcmp(str.get().get(), CSTRING("null"), 4))
-	{
-		type = Net::Json::Type::NULLVALUE;
-	}
-	else
-	{
-		// make sure we are having a floating number
-		for (size_t i = 0; i < str.size(); ++i)
+		else if (m_type == Net::Json::Type::OBJECT)
 		{
-			auto c = str.get().get()[i];
+			// object seem to be fine, now call it's deserializer
+			Net::Json::Object obj(true);
+			if (!obj.Deserialize(value, m_prepareString))
+			{
+				// @todo: add logging
+				return false;
+			}
+			return this->push(obj);
+		}
+	}
+
+	/*
+	* check for array
+	*/
+	{
+		if (value[0] == '[')
+		{
+			m_type = Net::Json::Type::ARRAY;
+		}
+
+		if (value[value.length() - 1] == ']'
+			&& m_type != Net::Json::Type::ARRAY)
+		{
+			// we got an ending curly for an array, but missing the starting curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (value[value.length() - 1] != ']'
+			&& m_type == Net::Json::Type::ARRAY)
+		{
+			// we got a starting curly for an array, but missing the ending curly
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::ARRAY)
+		{
+			// array seem to be fine, now call it's deserializer
+			Net::Json::Array arr(true);
+			if (!arr.Deserialize(value, m_prepareString))
+			{
+				// @todo: add logging
+				return false;
+			}
+			return this->push(arr);
+		}
+	}
+
+	/*
+	* check for string
+	*/
+	{
+		if (value[0] == '"')
+		{
+			m_type = Net::Json::Type::STRING;
+		}
+
+		if (value[value.length() - 1] == '"'
+			&& m_type != Net::Json::Type::STRING)
+		{
+			// we got an ending double-qoute for a string, but missing the starting
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), pValue);
+			return false;
+		}
+		else if (value[value.length() - 1] != '"'
+			&& m_type == Net::Json::Type::STRING)
+		{
+			// we got a starting double-qoute for a string, but missing the ending
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::STRING)
+		{
+			/*
+			* walk through the string and make sure there are no non-escaped double-qoutes
+			*/
+			for (int j = 1; j < value.length() - 1; ++j)
+			{
+				auto ec = value[j];
+				if (ec == '"')
+				{
+					if ((j - 1) < 0
+						|| value[j - 1] != '\\')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... string contains double-qoutes that are not escaped ... double-qoutes inside a string must be escaped with '\\'"));
+						return false;
+					}
+				}
+			}
+
+			// obtain the string from the json-string without the double-qoutes
+			auto str = value.substr(1, value.length() - 2);
+			return this->push(str);
+		}
+	}
+
+	/*
+	* check for boolean
+	*/
+	{
+		if (Convert::is_boolean(pValue))
+		{
+			m_type = Net::Json::Type::BOOLEAN;
+			return this->push(Convert::ToBoolean(pValue));
+		}
+	}
+
+	/*
+	* check for null value
+	*/
+	{
+		if (!memcmp(pValue, CSTRING("null"), 4))
+		{
+			m_type = Net::Json::Type::NULLVALUE;
+			return this->push(Net::Json::NullValue());
+		}
+	}
+
+	/*
+	* check for number
+	*/
+	{
+		m_type = Net::Json::Type::INTEGER;
+
+		constexpr const char m_NumericPattern[] = "0123456789";
+		for (size_t i = 0, dot = 0; i < value.length(); ++i)
+		{
+			auto c = value[i];
+
+			/*
+			* check for decimal number
+			*/
 			if (c == '.')
 			{
-				if (Convert::is_double(str))
+				if (dot > 0)
 				{
-					type = Net::Json::Type::DOUBLE;
-				}
-				else if (Convert::is_float(str))
-				{
-					type = Net::Json::Type::FLOAT;
+					// number got multiplie decimal splitter
+					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad number ... number has more than one of the decimal ('.') splitter"));
+					return false;
 				}
 
+				/*
+				* decimal number
+				*/
+				++dot;
+
+				m_type = Net::Json::Type::DOUBLE;
+				continue;
+			}
+
+			bool m_isNumber = false;
+			for (size_t z = 0; z < sizeof(m_NumericPattern); ++z)
+			{
+				if (static_cast<int>(c) == static_cast<int>(m_NumericPattern[z]))
+				{
+					m_isNumber = true;
+					break;
+				}
+			}
+
+			if (!m_isNumber)
+			{
+				/* not a number */
+
+				/*
+				* null value is handled above, so if the code is reaching the end and the type is still null
+				* then the value is not valid format
+				*/
+				m_type = Net::Json::Type::NULLVALUE;
+				break;
+			}
+		}
+
+		/* value is definitely a number */
+		if (m_type != Net::Json::Type::NULLVALUE)
+		{
+			/*
+			* value is a decimal number
+			*/
+			if (m_type == Net::Json::Type::DOUBLE)
+			{
+				/*
+				* determinate if it is worth a double or just a float
+				*/
+				if (Convert::is_double(pValue))
+				{
+					m_type = Net::Json::Type::DOUBLE;
+				}
+				else if (Convert::is_float(pValue))
+				{
+					m_type = Net::Json::Type::FLOAT;
+				}
+			}
+
+			switch (m_type)
+			{
+			case Net::Json::Type::INTEGER:
+				return this->push(Convert::ToInt32(pValue));
+
+			case Net::Json::Type::DOUBLE:
+				return this->push(Convert::ToDouble(pValue));
+
+			case Net::Json::Type::FLOAT:
+				return this->push(Convert::ToFloat(pValue));
+
+			default:
 				break;
 			}
 		}
 	}
 
-	switch (type)
-	{
-	case Net::Json::Type::INTEGER:
-		this->push(Convert::ToInt32(str));
-		break;
-
-	case Net::Json::Type::BOOLEAN:
-		this->push(Convert::ToBoolean(str));
-		break;
-
-	case Net::Json::Type::DOUBLE:
-		this->push(Convert::ToDouble(str));
-		break;
-
-	case Net::Json::Type::FLOAT:
-		this->push(Convert::ToFloat(str));
-		break;
-
-	case Net::Json::Type::NULLVALUE:
-		this->push(Net::Json::NullValue());
-		break;
-
-	default:
-		NET_LOG_ERROR(CSTRING("INVALID TYPE"));
-		return false;
-	}
-
-	return true;
+	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
+	return false;
 }
 
 /*
-* @Todo: Add better parsing error detection
 * How it is working in its current state
 *	- reading object and parsing it using the object deserializer
 *	- reading array and parsing it using recursive method
@@ -1458,186 +1942,176 @@ bool Net::Json::Array::DeserializeAny(Net::String& str)
 *	- reading anything
 *		- converting anything into int, float, double, boolean and null value
 */
-bool Net::Json::Array::Deserialize(Net::String json)
+bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 {
-	// remove any whitespaces
-	//json.eraseAll(" ");
-
-	if (json.get().get()[0] != '[' && json.get().get()[json.length() - 1] != ']')
+	/*
+	* Prepare the json string before parsing
+	*/
+	if (!m_prepareString)
 	{
-		// @todo: add message
+		if (!Net::Json::PrepareString(json))
+		{
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
+			return false;
+		}
+
+		m_prepareString = !m_prepareString;
+	}
+
+	/*
+	* Since we are passing the json string into an array deserializer
+	* we will check for the syntax that does define an array in the json language at the beginning and end
+	* if not then abort the parsing
+	*/
+	if (json[0] != '[')
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the beginning of the string ... got '%c' ... expected '['"), json[0]);
+		this->Free();
 		return false;
 	}
 
+	if (json[json.length() - 1] != ']')
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the ending of the string ... got '%c' ... expected ']'"), json[json.length() - 1]);
+		this->Free();
+		return false;
+	}
+
+	/*
+	* Array's elements in json are split by the syntax (',')
+	* iterate through the json string
+	* read the elements and pass them into DeserializeAny method for further analysis
+	*/
 	uint8_t flag = 0;
 	size_t v = 0; // begin for substr
 	size_t arr_count = 0;
 	size_t obj_count = 0;
-	auto ref = json.get();
+
+	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
+	v = 0;
+
 	for (size_t i = 1; i < json.length() - 1; ++i)
 	{
-		auto c = ref.get()[i];
+		auto c = json[i];
 
-		if ((flag & (int)EDeserializeFlag::FLAG_READING_OBJECT))
+		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
+			/*
+			* Spotted beginning of an object
+			* now read it fully before further analysing
+			*/
 			if (c == '{')
 			{
-				// another object spotted
 				++obj_count;
-				continue;
-			}
-
-			// end of object reading
-			if (c == '}')
-			{
-				--obj_count;
-
-				if (obj_count == 0)
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
-
-					auto object = json.substr(v, i - v + 1);
-					Net::Json::Object obj(true);
-					if (!obj.Deserialize(object))
-					{
-						/* error */
-						std::cout << "UNABEL TO DESERIALIZE OBJECT" << std::endl;
-						return false;
-					}
-					this->push(obj);
-				}
-			}
-
-			// keep reading the object
-			continue;
-		}
-		else if ((flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
-		{
-			if (c == '[')
-			{
-				// another array spotted
-				++arr_count;
-				continue;
-			}
-
-			// end of array reading
-			if (c == ']')
-			{
-				--arr_count;
-
-				if (arr_count == 0)
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
-
-					auto array = json.substr(v, i - v + 1);
-					Net::Json::Array arr(true);
-					if (!arr.Deserialize(array))
-					{
-						/* error */
-						std::cout << "UNABEL TO DESERIALIZE ARRAY" << std::endl;
-						return false;
-					}
-					this->push(arr);
-				}
-			}
-
-			// keep reading the array
-			continue;
-		}
-		else if ((flag & (int)EDeserializeFlag::FLAG_READING_STRING))
-		{
-			// end of string reading
-			if (c == '"')
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
-
-				auto str = json.substr(v + 1, i - v - 1);
-				this->push(str);
-			}
-
-			// keep reading the string
-			continue;
-		}
-		else
-		{
-			// check if there is any object to read
-			if (c == '{')
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
 				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT;
-				v = i;
-				++obj_count;
-				continue;
 			}
-
-			// check if there is any array to read
-			else if (c == '[')
+			else if (c == '}')
 			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
-				v = i;
-				++arr_count;
-				continue;
-			}
-
-			// check if there is any string to read
-			else if (c == '"')
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-				flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
-				v = i;
-				continue;
-			}
-
-			if ((flag & (int)EDeserializeFlag::FLAG_READING_ANY))
-			{
-				// read anything till we reach a seperator
-				if (c == ',')
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT)
+					|| obj_count == 0)
 				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-
-					Net::String str = json.substr(v, i - v);
-
-					if (!DeserializeAny(str))
-					{
-						return false;
-					}
-				}
-				// or read anything till we reach the end
-				else if (i == json.length() - 2)
-				{
-					flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-
-					Net::String str = json.substr(v, i - v + 1);
-
-					if (!DeserializeAny(str))
-					{
-						return false;
-					}
-				}
-
-				// keep reading
-				continue;
-			}
-
-			// we are neither reading an object, array or string
-			// so we do read anything untill we can process it
-			flag |= (int)EDeserializeFlag::FLAG_READING_ANY;
-			v = (c == ',') ? i + 1 : i;
-
-			// check if we reached the end
-			if (i == json.length() - 2)
-			{
-				flag &= ~(int)EDeserializeFlag::FLAG_READING_ANY;
-
-				Net::String str = json.substr(v, i - v + 1);
-
-				if (!DeserializeAny(str))
-				{
+					// we got an ending curly for an object but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected '{' ... got '}'"));
+					this->Free();
 					return false;
 				}
+
+				--obj_count;
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_OBJECT;
+			}
+
+			/*
+			* Spotted beginning of an array
+			* now read it fully before further analysing
+			*/
+			if (c == '[')
+			{
+				++arr_count;
+				flag |= (int)EDeserializeFlag::FLAG_READING_ARRAY;
+			}
+			else if (c == ']')
+			{
+				if (!(flag & (int)EDeserializeFlag::FLAG_READING_ARRAY)
+					|| arr_count == 0)
+				{
+					// we got an ending curly for an arry but missing the start curly
+					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected '[' ... got ']'"));
+					this->Free();
+					return false;
+				}
+
+				--arr_count;
+				flag &= ~(int)EDeserializeFlag::FLAG_READING_ARRAY;
+			}
+
+			/*
+			* Spotted beginning of a string
+			* now read it fully
+			*/
+			if (c == '"'
+				&& !(flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
+					|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY))
+			{
+				if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+				{
+					flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+				}
+				else
+				{
+					flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+				}
+			}
+
+			/*
+			* check for the syntax that splits the elements in an array
+			* or check if we have reached eof (end of file)
+			*	will happen if there is only one element
+			*/
+			if (c == ',' || (i == json.length() - 2))
+			{
+				/*
+				* keep going until we read the entire object or array
+				* only stop if we reached eof
+				*/
+				if (c == ','
+					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
+						|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY
+						|| flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					continue;
+				}
+
+				Net::String element = (i == json.length() - 2) ? json.substr(v + 1, i - v) : json.substr(v + 1, i - v - 1);
+
+				/*
+				* pass the value to the DeserializeAny method
+				* that method will take any value and further analyse its type
+				* it will use recursive to deserialize further object's or array's
+				*/
+				if (!DeserializeAny(element, m_prepareString))
+				{
+					// no need to display error message, the method will do it
+					this->Free();
+					return false;
+				}
+
+				v = i;
 			}
 		}
+	}
+
+	if (arr_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an array ending curly ']'"));
+		this->Free();
+		return false;
+	}
+
+	if (obj_count > 0)
+	{
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an object ending curly '}'"));
+		this->Free();
+		return false;
 	}
 
 	return true;
@@ -1775,13 +2249,13 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	this->Clear();
 	this->Init();
 
-	if (json.get().get()[0] == '{' && json.get().get()[json.length() - 1] == '}')
+	if (json[0] == '{' && json[json.length() - 1] == '}')
 	{
 		/* is object */
 		this->m_type = Net::Json::Type::OBJECT;
 		return this->root_obj.Deserialize(json);
 	}
-	else if (json.get().get()[0] == '[' && json.get().get()[json.length() - 1] == ']')
+	else if (json[0] == '[' && json[json.length() - 1] == ']')
 	{
 		this->m_type = Net::Json::Type::ARRAY;
 		return this->root_array.Deserialize(json);

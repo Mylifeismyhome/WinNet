@@ -50,6 +50,14 @@ namespace Net
 			buffer.free();
 		}
 
+		void XOR_UNIQUEPOINTER::lost_reference()
+		{
+			/*
+			* lost reference means that we know that the pointer is not valid any longer
+			*/
+			this->bFree = false;
+		}
+
 		XOR::XOR()
 		{
 			_length = -1;

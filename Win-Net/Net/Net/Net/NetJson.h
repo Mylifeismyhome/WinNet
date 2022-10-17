@@ -173,13 +173,13 @@ namespace Net
 		class Convert
 		{
 		public:
-			static int ToInt32(Net::String& str);
-			static float ToFloat(Net::String& str);
-			static double ToDouble(Net::String& str);
-			static bool ToBoolean(Net::String& str);
-			static bool is_float(Net::String& str);
-			static bool is_double(Net::String& str);
-			static bool is_boolean(Net::String& str);
+			static int ToInt32(char* str);
+			static float ToFloat(char* str);
+			static double ToDouble(char* str);
+			static bool ToBoolean(char* str);
+			static bool is_float(char* str);
+			static bool is_double(char* str);
+			static bool is_boolean(char* str);
 		};
 
 		enum class Type
@@ -317,12 +317,11 @@ namespace Net
 
 		enum class EDeserializeFlag
 		{
-			FLAG_READING_OBJECT = (1 << 0),
-			FLAG_READING_ARRAY = (1 << 1),
-			FLAG_READING_STRING = (1 << 2),
-			FLAG_READING_ANY = (1 << 3),
-			FLAG_READING_KEY = (1 << 4), // for parsing object only
-			FLAG_READING_VALUE = (1 << 5) // for parsing object only
+			FLAG_READING_OBJECT = (1 << 0), // reading an object
+			FLAG_READING_OBJECT_VALUE = (1 << 1), // reading an element's value inside an object
+			FLAG_READING_ARRAY = (1 << 2), // reading an array
+			FLAG_READING_STRING = (1 << 3), // reading a string
+			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */
@@ -334,7 +333,7 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
-			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain);
+			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -356,12 +355,13 @@ namespace Net
 			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String& json, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(Net::String& json, Vector<char*>& object_chain);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray
@@ -369,7 +369,7 @@ namespace Net
 			template <typename T>
 			bool emplace_back(T value, Type type);
 
-			bool DeserializeAny(Net::String&);
+			bool DeserializeAny(Net::String&, bool m_prepareString = false);
 
 		public:
 			Array(bool bSharedMemory = false);
@@ -392,6 +392,7 @@ namespace Net
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::String& json, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();
