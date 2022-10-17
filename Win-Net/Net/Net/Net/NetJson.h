@@ -333,7 +333,7 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
-			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_removedWhitespace = false);
+			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -354,13 +354,13 @@ namespace Net
 
 			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
-			bool Deserialize(Net::String json, bool m_removedWhitespace = false);
+			bool Deserialize(Net::String json, bool m_prepareString = false);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
-			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_removedWhitespace = false);
+			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString = false);
 		};
 
 		class Array : public BasicArray
@@ -368,7 +368,7 @@ namespace Net
 			template <typename T>
 			bool emplace_back(T value, Type type);
 
-			bool DeserializeAny(Net::String&, bool m_removedWhitespace = false);
+			bool DeserializeAny(Net::String&, bool m_prepareString = false);
 
 		public:
 			Array(bool bSharedMemory = false);
@@ -390,7 +390,7 @@ namespace Net
 
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
-			bool Deserialize(Net::String json, bool m_removedWhitespace = false);
+			bool Deserialize(Net::String json, bool m_prepareString = false);
 			bool Parse(Net::String json);
 
 			void Free();

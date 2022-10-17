@@ -5,6 +5,55 @@
 #include <Net/Cryption/XOR.h>
 #include <Net/assets/manager/logmanager.h>
 
+namespace Net
+{
+	namespace Json
+	{
+		/*
+		* this method will prepare a json string before parsing
+		* it will remove all the whitespaces outside of string's
+		* it will remove all the line breaks
+		*/
+		static bool PrepareString(Net::String& json)
+		{
+			uint8_t flag = 0;
+			for (size_t i = 0; i < json.size();)
+			{
+				auto c = json.get().get()[i];
+				if (c == '"')
+				{
+					if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+					{
+						flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+					else
+					{
+						flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+				}
+
+				/*
+				* remove any white space outside of string's
+				*/
+				if (c == ' '
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					if (!json.erase(i, 1))
+					{
+						return false;
+					}
+
+					continue;
+				}
+
+				++i;
+			}
+
+			return json.eraseAll('\n');
+		}
+	}
+}
+
 int Net::Json::Convert::ToInt32(Net::String& str)
 {
 	auto ref = str.get();
@@ -740,10 +789,10 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 }
 
 /* wrapper */
-bool Net::Json::Object::Deserialize(Net::String json, bool m_removedWhitespace)
+bool Net::Json::Object::Deserialize(Net::String json, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
-	auto ret = this->Deserialize(json, object_chain, m_removedWhitespace);
+	auto ret = this->Deserialize(json, object_chain, m_prepareString);
 	for (size_t i = 0; i < object_chain.size(); ++i)
 	{
 		if (!object_chain[i]) continue;
@@ -763,7 +812,7 @@ bool Net::Json::Object::Parse(Net::String json)
 * also, it will push it to the memory
 * it uses recursive calls to deserialize children from object's and array's
 */
-bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_removedWhitespace)
+bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString)
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 	auto refValue = value.get();
@@ -822,7 +871,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 				this->operator[](key.get().get()) = Net::Json::Object();
 			}
 
-			if (!this->Deserialize(value, object_chain, m_removedWhitespace))
+			if (!this->Deserialize(value, object_chain, m_prepareString))
 				return false;
 
 			object_chain.erase(object_chain.size() - 1);
@@ -859,7 +908,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			// array seem to be fine, now call it's deserializer
 
 			Net::Json::Array arr(true);
-			if (!arr.Deserialize(value, m_removedWhitespace))
+			if (!arr.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
 				return false;
@@ -1092,34 +1141,29 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 }
 
 /*
-* @Todo: Add better parsing error detection
-* How it is working in its current state
-*	- reading till the common seperator ':' reached
-*		- then extracting the key & value from each other
-*	- processing the value
-*		- using recursive method to parse object chain
-*		- creating an array object on parsing array
-*
-*	Rework:
-*		- What does it do so far:
-*			- it checks if the json string starts of with '{' and ends with '}'
-*			- it reads the single elements inside of the object and checks for its split that determinate the key and the value
-*			- it reads the entire object or array and stores it as value (use recursive for further analyses)
-*			- it realises if any splitters are missing or if too many have been placed
-*				- it does not do this very accurate but good enough
-*			- it checks if the key is a string
-*			- it checks if the key contains any double-qoutes and if it does then it checks if they are escaped
+*	This method does do:
+*		- it checks if the json string starts of with '{' and ends with '}'
+*		- it reads the single elements inside of the object and checks for its split that determinate the key and the value
+*		- it reads the entire object or array and stores it as value (use recursive for further analyses)
+*		- it realises if any splitters are missing or if too many have been placed
+*			- it does not do this very accurate but good enough
+*		- it checks if the key is a string
+*		- it checks if the key contains any double-qoutes and if it does then it checks if they are escaped
 */
-bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_removedWhitespace)
+bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString)
 {
 	/*
-	* remove whitespace and line breaks
+	* Prepare the json string before parsing
 	*/
-	if (!m_removedWhitespace)
+	if (!m_prepareString)
 	{
-		json.eraseAll(' ');
-		json.eraseAll('\n');
-		m_removedWhitespace = !m_removedWhitespace;
+		if (!Net::Json::PrepareString(json))
+		{
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
+			return false;
+		}
+
+		m_prepareString = !m_prepareString;
 	}
 
 	/*
@@ -1328,7 +1372,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				* only stop if we reached eof
 				*/
 				if (c == ','
-					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT 
+					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
 						|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY
 						|| flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
@@ -1370,7 +1414,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 				* that method will take any value and further analyse its type
 				* it will use recursive to deserialize further object's or array's
 				*/
-				if (!DeserializeAny(key, value, object_chain, m_removedWhitespace))
+				if (!DeserializeAny(key, value, object_chain, m_prepareString))
 				{
 					// no need to display error message, the method will do it
 					this->Free();
@@ -1631,7 +1675,7 @@ Net::String Net::Json::Array::Stringify(SerializeType type, size_t iterations)
 	return this->Serialize(type, iterations);
 }
 
-bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_removedWhitespace)
+bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 	auto refValue = value.get();
@@ -1664,7 +1708,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_removedWhitespa
 			// object seem to be fine, now call it's deserializer
 
 			Net::Json::Object obj(true);
-			if (!obj.Deserialize(value, m_removedWhitespace))
+			if (!obj.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
 				return false;
@@ -1703,7 +1747,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_removedWhitespa
 			// array seem to be fine, now call it's deserializer
 
 			Net::Json::Array arr(true);
-			if (!arr.Deserialize(value, m_removedWhitespace))
+			if (!arr.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
 				return false;
@@ -1896,16 +1940,16 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_removedWhitespa
 *	- reading anything
 *		- converting anything into int, float, double, boolean and null value
 */
-bool Net::Json::Array::Deserialize(Net::String json, bool m_removedWhitespace)
+bool Net::Json::Array::Deserialize(Net::String json, bool m_prepareString)
 {
 	/*
 	* remove whitespace and line breaks
 	*/
-	if (!m_removedWhitespace)
+	if (!m_prepareString)
 	{
 		json.eraseAll(' ');
 		json.eraseAll('\n');
-		m_removedWhitespace = !m_removedWhitespace;
+		m_prepareString = !m_prepareString;
 	}
 
 	/*
@@ -2025,7 +2069,7 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_removedWhitespace)
 				* only stop if we reached eof
 				*/
 				if (c == ','
-					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT 
+					&& (flag & (int)EDeserializeFlag::FLAG_READING_OBJECT
 						|| flag & (int)EDeserializeFlag::FLAG_READING_ARRAY
 						|| flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
@@ -2039,7 +2083,7 @@ bool Net::Json::Array::Deserialize(Net::String json, bool m_removedWhitespace)
 				* that method will take any value and further analyse its type
 				* it will use recursive to deserialize further object's or array's
 				*/
-				if (!DeserializeAny(element, m_removedWhitespace))
+				if (!DeserializeAny(element, m_prepareString))
 				{
 					// no need to display error message, the method will do it
 					this->Free();

@@ -47,6 +47,7 @@ namespace Net
 			size_t size() const;
 
 			void free();
+			void lost_reference();
 		};
 
 		class XOR
