@@ -6,8 +6,8 @@ namespace Net
 	{
 		AES::AES()
 		{
-			IV = nullptr;
-			Key = nullptr;
+			IV = RUNTIMEXOR();
+			Key = RUNTIMEXOR();
 			KeyLength = NULL;
 		}
 

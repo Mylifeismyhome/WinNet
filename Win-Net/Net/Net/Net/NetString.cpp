@@ -18,13 +18,16 @@ namespace Net
 
 	String::String()
 	{
-		_string = nullptr;
-		_size = 0;
+		_string = RUNTIMEXOR();
 	}
 
 	String::String(const char in)
 	{
-		Construct(in);
+		std::vector<char> str(2);
+		str[0] = in;
+		str[1] = '\0';
+
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 	}
 
 	String::String(const char* in, ...)
@@ -39,7 +42,17 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 
-		Construct(str.data());
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+	}
+
+	String::String(char* str)
+	{
+		/*
+		* instead of allocating new space and copy this string
+		* we just move it's pointer into ours
+		*/
+		_string.free();
+		_string = RUNTIMEXOR(str);
 	}
 
 	String::String(String& in)
@@ -58,8 +71,7 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		_string = RUNTIMEXOR(str.data());
-		_size = 1;
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 	}
 
 	void String::Construct(const char* in, ...)
@@ -74,21 +86,24 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 
-		_string = RUNTIMEXOR(str.data());
-		_size = str.size();
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 	}
 
 	void String::copy(String& in)
 	{
 		_string.free();
-		_string = RUNTIMEXOR(in.data().get());
-		_size = in.size();
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(in.data().get()));
 	}
 
 	void String::move(String&& in)
 	{
-		_string = RUNTIMEXOR(in.data().get());
-		_size = in.size();
+		_string = in._string;
+
+		/*
+		* set _string to nullptr
+		* we moved the pointer to a new object
+		*/
+		in._string = RUNTIMEXOR();
 	}
 
 	String::~String()
@@ -98,12 +113,12 @@ namespace Net
 
 	size_t String::size() const
 	{
-		return _size;
+		return _string.size();
 	}
 
 	size_t String::length() const
 	{
-		return _size - 1;
+		return _string.length();
 	}
 
 	void String::set(const char in, ...)
@@ -113,28 +128,24 @@ namespace Net
 		str[1] = '\0';
 
 		_string.free();
-		_string = RUNTIMEXOR(str.data());
-		_size = 1;
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 	}
 
 	void String::append(const char in)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 		{
 			Construct(in);
 			return;
 		}
 
-		NET_CPOINTER<byte> data(ALLOC<byte>(_size + 1));
-		memcpy(&data.get()[0], _string.revert().get(), _size - 1);
-		memcpy(&data.get()[_size - 1], &in, 1);
-		data.get()[_size] = '\0';
+		NET_CPOINTER<byte> data(ALLOC<byte>(_string.size() + 1));
+		memcpy(&data.get()[0], _string.revert().get(), _string.size());
+		memcpy(&data.get()[_string.size()], &in, 1);
+		data.get()[_string.size()] = '\0';
 
 		_string.free();
 		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
-		_size = _size + 1;
-
-		data.free();
 	}
 
 	void String::set(const char* in, ...)
@@ -159,13 +170,12 @@ namespace Net
 #endif
 
 		_string.free();
-		_string = RUNTIMEXOR(str.data());
-		_size = str.size();
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 	}
 
 	void String::append(const char* in, ...)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 		{
 			Construct(in);
 			return;
@@ -189,90 +199,48 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 #endif
-
-		NET_CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
-		memcpy(&data.get()[0], _string.revert().get(), _size - 1);
-		memcpy(&data.get()[_size - 1], str.data(), str.size());
-		data.get()[_size + str.size()] = '\0';
+		
+		size_t newSize = _string.size() + str.size();
+		NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
+		memcpy(data.get(), _string.revert().get(), _string.size());
+		memcpy(&data.get()[_string.size()], str.data(), str.size());
+		data.get()[newSize] = '\0';
 
 		_string.free();
 		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
-		_size = _size + str.size() - 1;
-
-		data.free();
 	}
 
 	void String::set(String& in, ...)
 	{
-		auto ref = in.get();
+		NET_CPOINTER<byte> buffer(ALLOC<byte>(in.size() + 1));
+		memcpy(buffer.get(), in.get().get(), in.size());
+		buffer.get()[in.size()] = '\0';
 
-		va_list vaArgs;
-
-#ifdef BUILD_LINUX
-		va_start(vaArgs, ref);
-		const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
-		va_end(vaArgs);
-
-		va_start(vaArgs, ref);
-		std::vector<char> str(size + 1);
-		std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
-		va_end(vaArgs);
-#else
-		va_start(vaArgs, ref);
-		const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
-		std::vector<char> str(size + 1);
-		std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
-		va_end(vaArgs);
-#endif
-
-		_string.free();
-		_string = RUNTIMEXOR(str.data());
-		_size = str.size();
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
 	}
 
 	void String::append(String& in, ...)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 		{
 			copy(in);
 			return;
 		}
 
-		auto ref = in.get();
-		va_list vaArgs;
+		size_t newSize = size() + in.size();
+		NET_CPOINTER<byte> buffer(ALLOC<byte>(newSize + 1));
+		memcpy(buffer.get(), this->get().get(), size());
+		memcpy(&buffer.get()[size()], in.get().get(), in.size());
+		buffer.get()[newSize] = '\0';
 
-#ifdef BUILD_LINUX
-		va_start(vaArgs, ref);
-		const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
-		va_end(vaArgs);
-
-		va_start(vaArgs, ref);
-		std::vector<char> str(size + 1);
-		std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
-		va_end(vaArgs);
-#else
-		va_start(vaArgs, ref);
-		const size_t size = std::vsnprintf(nullptr, 0, ref.get(), vaArgs);
-		std::vector<char> str(size + 1);
-		std::vsnprintf(str.data(), str.size(), ref.get(), vaArgs);
-		va_end(vaArgs);
-#endif
-
-		NET_CPOINTER<byte> data(ALLOC<byte>(_size + str.size() + 1));
-		memcpy(&data.get()[0], _string.revert().get(), _size - 1);
-		memcpy(&data.get()[_size - 1], str.data(), str.size());
-		data.get()[_size + str.size()] = '\0';
-
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
-		_size = _size + str.size() - 1;
-
-		data.free();
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
 	}
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::str()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE)
 			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
 		return _string.revert();
@@ -280,7 +248,7 @@ namespace Net
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::cstr()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE)
 			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
 		return _string.revert();
@@ -288,7 +256,7 @@ namespace Net
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::get()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE)
 			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
 		return _string.revert();
@@ -296,7 +264,7 @@ namespace Net
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::revert()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE)
 			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
 		return _string.revert();
@@ -304,7 +272,7 @@ namespace Net
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::data()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE)
 			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
 
 		return _string.revert();
@@ -313,25 +281,24 @@ namespace Net
 	void String::clear()
 	{
 		_string.free();
-		_size = 0;
 	}
 
 	bool String::empty()
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return true;
 
 		const auto buffer = revert();
-		const auto e = !memcmp(buffer.get(), "", size());
+		const auto e = !memcmp(buffer.get(), CSTRING(""), size());
 		return e;
 	}
 
 	char String::at(const size_t i)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return '\0';
 
-		if (i > length())
+		if (i > size())
 			return '\0';
 
 		return this->operator[](i);
@@ -339,7 +306,7 @@ namespace Net
 
 	char* String::substr(size_t length)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return nullptr;
 
 		if (length > size())
@@ -359,7 +326,7 @@ namespace Net
 
 	char* String::substr(const size_t start, size_t length)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return nullptr;
 
 		if (length > size())
@@ -382,7 +349,7 @@ namespace Net
 
 	size_t String::find(char c)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -397,7 +364,7 @@ namespace Net
 
 	size_t String::find(const char c, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -413,7 +380,7 @@ namespace Net
 
 	size_t String::find(const char* pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -438,7 +405,7 @@ namespace Net
 
 	size_t String::find(const char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -476,10 +443,10 @@ namespace Net
 
 	size_t String::find(const size_t start, const char pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = 1;
@@ -504,10 +471,10 @@ namespace Net
 
 	size_t String::find(const size_t start, char pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = 1;
@@ -535,10 +502,10 @@ namespace Net
 
 	size_t String::find(const size_t start, char* pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -563,10 +530,10 @@ namespace Net
 
 	size_t String::find(const size_t start, char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -604,10 +571,10 @@ namespace Net
 
 	size_t String::find(const size_t start, const char* pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -632,10 +599,10 @@ namespace Net
 
 	size_t String::find(const size_t start, const char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
-		if (start > length())
+		if (start > size())
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -675,7 +642,7 @@ namespace Net
 	{
 		std::vector<size_t> tmp;
 
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return tmp;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -692,7 +659,7 @@ namespace Net
 	{
 		std::vector<size_t> tmp;
 
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return tmp;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -709,7 +676,7 @@ namespace Net
 	{
 		std::vector<size_t> tmp;
 
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return tmp;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -726,7 +693,7 @@ namespace Net
 	{
 		std::vector<size_t> tmp;
 
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return tmp;
 
 		for (size_t i = 0; i < size(); ++i)
@@ -741,7 +708,7 @@ namespace Net
 
 	size_t String::findLastOf(char c)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		for (size_t i = size() - 1; i > 0; --i)
@@ -756,7 +723,7 @@ namespace Net
 
 	size_t String::findLastOf(const char c, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		for (size_t i = size() - 1; i > 0; --i)
@@ -772,7 +739,7 @@ namespace Net
 
 	size_t String::findLastOf(const char* pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -800,7 +767,7 @@ namespace Net
 
 	size_t String::findLastOf(const char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		const auto patternLen = strlen(pattern);
@@ -841,7 +808,7 @@ namespace Net
 
 	bool String::compare(const char match)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto buffer = revert();
@@ -851,7 +818,7 @@ namespace Net
 
 	bool String::compare(char match, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto tmp = revert();
@@ -879,7 +846,7 @@ namespace Net
 
 	bool String::compare(const char* match)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto buffer = revert();
@@ -889,7 +856,7 @@ namespace Net
 
 	bool String::compare(const char* match, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto tmp = revert();
@@ -923,7 +890,7 @@ namespace Net
 
 	bool String::compare(char* match)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto buffer = revert();
@@ -933,7 +900,7 @@ namespace Net
 
 	bool String::compare(char* match, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto tmp = revert();
@@ -962,7 +929,7 @@ namespace Net
 
 	bool String::erase(const size_t len)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		if (len > size() - len)
@@ -981,17 +948,16 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = size() - len;
 		return true;
 	}
 
 	bool String::erase(const size_t start, size_t len)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		if (start + len >= length())
-			len = length() - start;
+		if (start + len >= size())
+			len = size() - start;
 
 		const auto replaceSize = size() - len;
 		const auto replace = ALLOC<char>(replaceSize + 1);
@@ -1008,13 +974,12 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
 	bool String::erase(const char c, const size_t start)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, c);
@@ -1026,7 +991,7 @@ namespace Net
 
 	bool String::erase(const char c, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(c, type);
@@ -1038,7 +1003,7 @@ namespace Net
 
 	bool String::erase(const char c, const size_t start, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, c, type);
@@ -1050,7 +1015,7 @@ namespace Net
 
 	bool String::erase(const char* pattern, const size_t start)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, pattern);
@@ -1062,7 +1027,7 @@ namespace Net
 
 	bool String::erase(const char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(pattern, type);
@@ -1074,7 +1039,7 @@ namespace Net
 
 	bool String::erase(const char* pattern, const size_t start, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, pattern, type);
@@ -1087,7 +1052,7 @@ namespace Net
 
 	bool String::erase(String& pattern, const size_t start)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, pattern.get().data());
@@ -1099,7 +1064,7 @@ namespace Net
 
 	bool String::erase(String& pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(pattern.get().data(), type);
@@ -1111,7 +1076,7 @@ namespace Net
 
 	bool String::erase(String& pattern, const size_t start, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		const auto it = find(start, pattern.get().data(), type);
@@ -1123,7 +1088,7 @@ namespace Net
 
 	bool String::eraseAll(const char c)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		std::vector<size_t> tmp;
@@ -1166,13 +1131,12 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
 	bool String::eraseAll(const char c, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		std::vector<size_t> tmp;
@@ -1215,13 +1179,12 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
 	bool String::eraseAll(const char* pattern)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		std::vector<size_t> tmp;
@@ -1265,13 +1228,12 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
 	bool String::eraseAll(const char* pattern, const char type)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		std::vector<size_t> tmp;
@@ -1315,13 +1277,12 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
 	bool Net::String::eraseAll(std::vector<size_t> m_IndexCharacterToSkip)
 	{
-		if (size() <= 0)
+		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
 		auto replaceSize = size() - m_IndexCharacterToSkip.size();
@@ -1350,7 +1311,6 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
@@ -1381,7 +1341,6 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
@@ -1418,7 +1377,6 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 
@@ -1460,7 +1418,6 @@ namespace Net
 
 		_string.free();
 		_string = RUNTIMEXOR(replace);
-		_size = replaceSize;
 		return true;
 	}
 

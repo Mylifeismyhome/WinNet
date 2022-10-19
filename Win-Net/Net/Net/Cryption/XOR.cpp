@@ -8,7 +8,7 @@ namespace Net
 		{
 			// create a copy
 			this->buffer = buffer; // pointer swap
-			this->_length = size;
+			this->_size = size;
 			this->bFree = bFree;
 		}
 
@@ -17,7 +17,7 @@ namespace Net
 			if (this->bFree)
 				this->buffer.free();
 
-			this->_length = NULL;
+			this->_size = NULL;
 		}
 
 		char* XOR_UNIQUEPOINTER::get() const
@@ -37,12 +37,12 @@ namespace Net
 
 		size_t XOR_UNIQUEPOINTER::length() const
 		{
-			return _length;
+			return _size - 1;
 		}
 
 		size_t XOR_UNIQUEPOINTER::size() const
 		{
-			return _length;
+			return _size;
 		}
 
 		void XOR_UNIQUEPOINTER::free()
@@ -60,12 +60,17 @@ namespace Net
 
 		XOR::XOR()
 		{
-			_length = -1;
+			_size = INVALID_SIZE;
 			_buffer = nullptr;
-			_Key = nullptr;
+			_Key = 0;
 		}
 
 		XOR::XOR(char* str)
+		{
+			init(str);
+		}
+
+		XOR::XOR(const char* str)
 		{
 			init(str);
 		}
@@ -74,94 +79,74 @@ namespace Net
 		{
 			if (!str)
 			{
-				_length = -1;
+				_size = INVALID_SIZE;
 				_buffer = nullptr;
-				_Key = nullptr;
+				_Key = 0;
 				return;
 			}
 
-			_length = std::strlen(str);
-			_buffer = ALLOC<char>(length() + 1);
-			memcpy(_buffer.get(), str, length());
-			_buffer.get()[length()] = '\0';
-			_Key = nullptr;
+			_size = std::strlen(str);
+			_buffer = str;
+			_Key = 0;
 
 			encrypt();
 		}
 
 		void XOR::init(const char* str)
 		{
-			_length = std::strlen(str);
-			_buffer = ALLOC<char>(length() + 1);
-			memcpy(_buffer.get(), str, length());
-			_buffer.get()[length()] = '\0';
-			_Key = nullptr;
+			_size = std::strlen(str);
+			_buffer = ALLOC<char>(_size + 1);
+			memcpy(_buffer.get(), str, _size);
+			_buffer.get()[_size] = '\0';
+			_Key = 0;
 
 			encrypt();
 		}
 
 		char* XOR::encrypt()
 		{
-			if (length() == INVALID_SIZE)
-				return (char*)CSTRING("[ERROR] - Invalid length");
+			if (size() == INVALID_SIZE)
+			{
+				return (char*)CSTRING("[ERROR] - Invalid size");
+			}
 
-			_Key.free();
+			// gen new key
+			_Key = rand();
 
-			_Key = ALLOC<size_t>(length());
-			for (size_t i = 0; i < length(); i++)
-				_Key.get()[i] = rand();
-
-			if (!_Key.valid())
-				return (char*)CSTRING("[ERROR] - Invalid Key");
-
-			for (size_t i = 0; i < length(); i++)
-				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ _Key.get()[i]);
-
-			return _buffer.get();
-		}
-
-		char* XOR::decrypt() const
-		{
-			if (length() == INVALID_SIZE)
-				return (char*)CSTRING("[ERROR] - Invalid length");
-
-			if (!_Key.valid())
-				return (char*)CSTRING("[ERROR] - Invalid Key");
-
-			for (size_t i = 0; i < length(); i++)
-				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ _Key.get()[i]);
+			for (size_t i = 0; i < size(); i++)
+			{
+				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ (_Key % (i == 0 ? 1 : i)));
+			}
 
 			return _buffer.get();
 		}
 
 		XOR_UNIQUEPOINTER XOR::revert(const bool free)
 		{
-			const auto pointer = decrypt();
-
-			// create a copy
-			const auto decrypted = ALLOC<char>(length() + 1);
-			memcpy(decrypted, pointer, length());
-			decrypted[length()] = '\0';
-
-			encrypt();
-
-			return XOR_UNIQUEPOINTER(decrypted, length(), free);
+			NET_CPOINTER<byte> buffer(ALLOC<byte>(this->size() + 1));
+			for (size_t i = 0; i < this->size(); ++i)
+			{
+				buffer.get()[i] = this->operator[](i);
+			}
+			buffer.get()[this->size()] = '\0';
+			return XOR_UNIQUEPOINTER(reinterpret_cast<char*>(buffer.get()), size(), free);
 		}
 
 		size_t XOR::size() const
 		{
-			return _length;
+			return _size;
 		}
 
 		size_t XOR::length() const
 		{
-			return _length;
+			return _size - 1;
 		}
 
 		void XOR::free()
 		{
-			_Key.free();
+			_Key = 0;
 			_buffer.free();
+			_size = INVALID_SIZE;
 		}
 	}
 }
