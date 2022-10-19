@@ -815,9 +815,10 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), &match, size());
-		return cmp;
+		if (size() > 1)
+			return false;
+
+		return (this->operator[](0) == match);
 	}
 
 	bool String::compare(char match, const char type)
@@ -825,27 +826,13 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto tmp = revert();
-		size_t len = 1;
+		if (size() > 1)
+			return false;
+
 		if (type & NOT_CASE_SENS)
-		{
-			match = (char)tolower((int)match);
+			return (this->operator[](0) == match);
 
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
-		}
-
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto cmp = !memcmp(tmp.get(), &match, len);
-			return cmp;
-		}
-
-		const auto cmp = !memcmp(tmp.get(), &match, size());
-		return cmp;
+		return ((char)tolower(this->operator[](0)) == (char)tolower(match));
 	}
 
 	bool String::compare(const char* match)
@@ -853,9 +840,18 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), match, size());
-		return cmp;
+		auto len = strlen(match);
+
+		if (this->size() != len)
+			return false;
+
+		for (size_t i = 0; i < len; ++i)
+		{
+			if (this->operator[](i) != match[i])
+				return false;
+		}
+
+		return true;
 	}
 
 	bool String::compare(const char* match, const char type)
@@ -863,33 +859,26 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto tmp = revert();
 		auto len = strlen(match);
-		auto tmpMatch = ALLOC<char>(len + 1);
-		memset(tmpMatch, NULL, len);
-		if (type & NOT_CASE_SENS)
+
+		if (this->size() != len)
+			return false;
+
+		for (size_t i = 0; i < len; ++i)
 		{
-			for (size_t i = 0; i < len; ++i)
-				tmpMatch[i] = (char)tolower((int)match[i]);
-
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
-		}
-		tmpMatch[len] = '\0';
-
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto res = !memcmp(tmp.get(), type & NOT_CASE_SENS ? tmpMatch : match, len);
-			FREE(tmpMatch);
-			return res;
+			if (type & NOT_CASE_SENS)
+			{
+				if ((char)tolower(this->operator[](i)) != (char)tolower(match[i]))
+					return false;
+			}
+			else
+			{
+				if (this->operator[](i) != match[i])
+					return false;
+			}
 		}
 
-		const auto res = !memcmp(tmp.get(), type & NOT_CASE_SENS ? tmpMatch : match, size());
-		FREE(tmpMatch);
-		return res;
+		return true;
 	}
 
 	bool String::compare(char* match)
@@ -897,9 +886,18 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), match, size());
-		return cmp;
+		auto len = strlen(match);
+
+		if (this->size() != len)
+			return false;
+
+		for (size_t i = 0; i < len; ++i)
+		{
+			if (this->operator[](i) != match[i])
+				return false;
+		}
+
+		return true;
 	}
 
 	bool String::compare(char* match, const char type)
@@ -907,28 +905,26 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto tmp = revert();
 		auto len = strlen(match);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < len; ++i)
-				match[i] = (char)tolower((int)match[i]);
 
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
+		if (this->size() != len)
+			return false;
+
+		for (size_t i = 0; i < len; ++i)
+		{
+			if (type & NOT_CASE_SENS)
+			{
+				if ((char)tolower(this->operator[](i)) != (char)tolower(match[i]))
+					return false;
+			}
+			else
+			{
+				if (this->operator[](i) != match[i])
+					return false;
+			}
 		}
 
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto cmp = !memcmp(tmp.get(), match, len);
-			return cmp;
-		}
-
-		const auto cmp = !memcmp(tmp.get(), match, size());
-		return cmp;
+		return true;
 	}
 
 	bool String::erase(const size_t len)
