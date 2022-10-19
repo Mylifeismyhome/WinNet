@@ -175,11 +175,8 @@ namespace Net
 		size_t findLastOf(char, char);
 		size_t findLastOf(const char*);
 		size_t findLastOf(const char*, char);
-		bool compare(char);
-		bool compare(char, char = NONE);
-		bool compare(const char*);
-		bool compare(const char*, char);
-		bool compare(char*);
+		bool compare(const char, const char = NONE);
+		bool compare(const char*, const char = NONE);
 		bool compare(char*, char = NONE);
 		bool erase(size_t);
 		bool erase(size_t, size_t);

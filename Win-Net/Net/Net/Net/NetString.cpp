@@ -292,9 +292,7 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return true;
 
-		const auto buffer = revert();
-		const auto e = !memcmp(buffer.get(), CSTRING(""), size());
-		return e;
+		return (this->compare(CSTRING("")));
 	}
 
 	char String::at(const size_t i)
@@ -810,17 +808,6 @@ namespace Net
 		return NET_STRING_NOT_FOUND;
 	}
 
-	bool String::compare(const char match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		if (size() > 1)
-			return false;
-
-		return (this->operator[](0) == match);
-	}
-
 	bool String::compare(char match, const char type)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
@@ -833,25 +820,6 @@ namespace Net
 			return (this->operator[](0) == match);
 
 		return ((char)tolower(this->operator[](0)) == (char)tolower(match));
-	}
-
-	bool String::compare(const char* match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		auto len = strlen(match);
-
-		if (this->size() != len)
-			return false;
-
-		for (size_t i = 0; i < len; ++i)
-		{
-			if (this->operator[](i) != match[i])
-				return false;
-		}
-
-		return true;
 	}
 
 	bool String::compare(const char* match, const char type)
@@ -876,25 +844,6 @@ namespace Net
 				if (this->operator[](i) != match[i])
 					return false;
 			}
-		}
-
-		return true;
-	}
-
-	bool String::compare(char* match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		auto len = strlen(match);
-
-		if (this->size() != len)
-			return false;
-
-		for (size_t i = 0; i < len; ++i)
-		{
-			if (this->operator[](i) != match[i])
-				return false;
 		}
 
 		return true;
