@@ -953,7 +953,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 	doc[CSTRING("ID")] = id;
 	doc[CSTRING("CONTENT")] = pkg.Data();
 
-	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
+	auto buffer = doc.Serialize(Net::Json::SerializeType::UNFORMATTED);
 
 	auto dataBufferSize = buffer.size();
 	NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));

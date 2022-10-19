@@ -302,16 +302,6 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	{
-		Net::String str2("HALLO");
-		{
-			str2 += gets();
-			std::cout << str2.get().get() << std::endl;
-			str2 += "test";
-		}
-		std::cout << str2.get().get() << std::endl;
-	}
-
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 
 	char* data = nullptr;
@@ -325,7 +315,7 @@ int main()
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
 	Net::Json::Document doc;
-	if (!doc.Deserialize(data))
+	if (!doc.Parse(data))
 	{
 		NET_LOG("Failed json deserialize");
 	}
@@ -338,7 +328,9 @@ int main()
 
 	begin = std::chrono::steady_clock::now();
 
-	std::cout << doc.Stringify(Net::Json::SerializeType::NONE).data().data() << std::endl;
+	auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
+	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE);
+	fb.write(outstr.get().get());
 
 	end = std::chrono::steady_clock::now();
 

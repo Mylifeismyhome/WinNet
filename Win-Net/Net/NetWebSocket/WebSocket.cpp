@@ -1025,7 +1025,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 	doc[CSTRING("CONTENT")] = pkg.Data();
 	doc[CSTRING("RAW")] = false;
 
-	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
+	auto buffer = doc.Serialize(Net::Json::SerializeType::UNFORMATTED);
 
 	auto dataBufferSize = buffer.size();
 	NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));

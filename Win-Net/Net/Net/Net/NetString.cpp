@@ -92,7 +92,10 @@ namespace Net
 	void String::copy(String& in)
 	{
 		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(in.data().get()));
+
+		auto ref = in.get();
+		auto pBuffer = ref.get();
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
 	}
 
 	void String::move(String&& in)
@@ -139,10 +142,11 @@ namespace Net
 			return;
 		}
 
-		NET_CPOINTER<byte> data(ALLOC<byte>(_string.size() + 1));
+		size_t newLen = _string.size() + 1;
+		NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
 		memcpy(&data.get()[0], _string.revert().get(), _string.size());
-		memcpy(&data.get()[_string.size()], &in, 1);
-		data.get()[_string.size()] = '\0';
+		data.get()[_string.size()] = in;
+		data.get()[newLen] = '\0';
 
 		_string.free();
 		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
