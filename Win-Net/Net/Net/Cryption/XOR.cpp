@@ -62,7 +62,7 @@ namespace Net
 		{
 			_size = INVALID_SIZE;
 			_buffer = nullptr;
-			_Key = nullptr;
+			_Key = 0;
 		}
 
 		XOR::XOR(char* str)
@@ -81,13 +81,13 @@ namespace Net
 			{
 				_size = INVALID_SIZE;
 				_buffer = nullptr;
-				_Key = nullptr;
+				_Key = 0;
 				return;
 			}
 
 			_size = std::strlen(str);
 			_buffer = str;
-			_Key = nullptr;
+			_Key = 0;
 
 			encrypt();
 		}
@@ -98,7 +98,7 @@ namespace Net
 			_buffer = ALLOC<char>(_size + 1);
 			memcpy(_buffer.get(), str, _size);
 			_buffer.get()[_size] = '\0';
-			_Key = nullptr;
+			_Key = 0;
 
 			encrypt();
 		}
@@ -110,22 +110,12 @@ namespace Net
 				return (char*)CSTRING("[ERROR] - Invalid size");
 			}
 
-			_Key.free();
-			_Key = ALLOC<size_t>(size() + 1);
-			for (size_t i = 0; i < size(); i++)
-			{
-				_Key.get()[i] = rand();
-			}
-			_Key.get()[size()] = '\0';
-
-			if (!_Key.valid())
-			{
-				return (char*)CSTRING("[ERROR] - Invalid Key");
-			}
+			// gen new key
+			_Key = rand();
 
 			for (size_t i = 0; i < size(); i++)
 			{
-				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ _Key.get()[i]);
+				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ (_Key % (i == 0 ? 1 : i)));
 			}
 
 			return _buffer.get();
@@ -154,7 +144,7 @@ namespace Net
 
 		void XOR::free()
 		{
-			_Key.free();
+			_Key = 0;
 			_buffer.free();
 			_size = INVALID_SIZE;
 		}

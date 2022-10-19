@@ -54,7 +54,7 @@ namespace Net
 		{
 			NET_CPOINTER<char> _buffer;
 			size_t _size;
-			NET_CPOINTER<size_t> _Key;
+			uintptr_t _Key;
 
 			char* encrypt();
 
@@ -74,7 +74,7 @@ namespace Net
 				this->_size = other._size;
 
 				other._buffer = {};
-				other._Key = {};
+				other._Key = 0;
 				other._size = 0;
 
 				return *this;
@@ -86,8 +86,7 @@ namespace Net
 			char operator[](size_t i)
 			{
 				auto buffer_ptr = this->_buffer.get();
-				auto key_ptr = this->_Key.get();
-				return static_cast<char>(buffer_ptr[i] ^ key_ptr[i]);
+				return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
 			}
 
 			void init(char*);

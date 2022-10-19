@@ -336,7 +336,13 @@ int main()
 
 	system("pause");
 
-	NET_LOG("%s", doc.Stringify(Net::Json::SerializeType::NONE).data().data());
+	begin = std::chrono::steady_clock::now();
+
+	std::cout << doc.Stringify(Net::Json::SerializeType::NONE).data().data() << std::endl;
+
+	end = std::chrono::steady_clock::now();
+
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
 	//FREE(data);
 	system("pause");
