@@ -291,9 +291,26 @@ TEST(NTP,
 		NET_LOG(buff);
 );
 
+Net::String gets()
+{
+	Net::String str;
+	str += "test222";
+	return str;
+}
+
 int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
+
+	{
+		Net::String str2("HALLO");
+		{
+			str2 += gets();
+			std::cout << str2.get().get() << std::endl;
+			str2 += "test";
+		}
+		std::cout << str2.get().get() << std::endl;
+	}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 
@@ -317,9 +334,11 @@ int main()
 
 	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
+	system("pause");
+
 	NET_LOG("%s", doc.Stringify(Net::Json::SerializeType::NONE).data().data());
 
-	FREE(data);
+	//FREE(data);
 	system("pause");
 	//RUN(Basic);
 	//RUN(Hex);

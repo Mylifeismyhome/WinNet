@@ -33,7 +33,7 @@ namespace Net
 		class XOR_UNIQUEPOINTER
 		{
 			NET_CPOINTER<char> buffer;
-			size_t _length;
+			size_t _size;
 			bool bFree;
 
 		public:
@@ -53,15 +53,32 @@ namespace Net
 		class XOR
 		{
 			NET_CPOINTER<char> _buffer;
-			size_t _length;
+			size_t _size;
 			NET_CPOINTER<size_t> _Key;
 
 			char* encrypt();
-			char* decrypt() const;
 
 		public:
 			XOR();
 			XOR(char*);
+			XOR(const char*);
+
+			XOR& operator=(XOR& other)
+			{
+				// Guard self assignment
+				if (this == &other)
+					return *this;
+
+				this->_buffer = other._buffer;
+				this->_Key = other._Key;
+				this->_size = other._size;
+
+				other._buffer = {};
+				other._Key = {};
+				other._size = 0;
+
+				return *this;
+			}
 
 			/*
 			* Return the character in the buffer located at index i decrypted

@@ -11,8 +11,8 @@ namespace Net
 			ERR_load_crypto_strings();
 
 			KeyPair = nullptr;
-			_PublicKey = nullptr;
-			_PrivateKey = nullptr;
+			_PublicKey = RUNTIMEXOR();
+			_PrivateKey = RUNTIMEXOR();
 			Set = false;
 		}
 

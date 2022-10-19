@@ -40,7 +40,6 @@ namespace Net
 	class String
 	{
 		RUNTIMEXOR _string;
-		size_t _size;
 		Net::Cryption::XOR_UNIQUEPOINTER revert();
 
 		void Construct(const char);
@@ -50,6 +49,7 @@ namespace Net
 		String();
 		String(char);
 		String(const char*, ...);
+		String(char*);
 		String(String&);
 		String(String&&) NOEXPECT;
 		~String();
@@ -83,7 +83,7 @@ namespace Net
 
 		void operator+=(const char* in)
 		{
-			if (size() > 0)
+			if (size() != INVALID_SIZE && size() != 0)
 				append(in);
 			else
 				set(in);
@@ -91,7 +91,7 @@ namespace Net
 
 		void operator+=(char* in)
 		{
-			if (size() > 0)
+			if (size() != INVALID_SIZE && size() != 0)
 				append(in);
 			else
 				set(in);
@@ -99,7 +99,7 @@ namespace Net
 
 		void operator+=(const char in)
 		{
-			if (size() > 0)
+			if (size() != INVALID_SIZE && size() != 0)
 				append(in);
 			else
 				set(in);
@@ -107,7 +107,7 @@ namespace Net
 
 		void operator+=(String in)
 		{
-			if (size() > 0)
+			if (size() != INVALID_SIZE && size() != 0)
 				append(in);
 			else
 				set(in);
