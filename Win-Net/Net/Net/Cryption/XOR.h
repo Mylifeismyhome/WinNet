@@ -89,6 +89,7 @@ namespace Net
 				return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
 			}
 
+			void set(size_t, char);
 			void init(char*);
 			void init(const char*);
 			size_t size() const;

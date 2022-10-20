@@ -75,6 +75,19 @@ namespace Net
 			init(str);
 		}
 
+		void XOR::set(size_t it, char c)
+		{
+			if (it > size())
+				return;
+
+			this->_buffer.get()[it] = c;
+
+			/*
+			* encrypt it
+			*/
+			this->_buffer.get()[it] ^= (_Key % (it == 0 ? 1 : it));
+		}
+
 		void XOR::init(char* str)
 		{
 			if (!str)
