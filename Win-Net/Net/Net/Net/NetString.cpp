@@ -35,6 +35,8 @@ namespace Net
 	String::String(const char* in, ...)
 	{
 		va_list vaArgs;
+
+#ifdef BUILD_LINUX
 		va_start(vaArgs, in);
 		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
 		va_end(vaArgs);
@@ -43,6 +45,13 @@ namespace Net
 		std::vector<char> str(size + 1);
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
+#else
+		va_start(vaArgs, in);
+		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+		std::vector<char> str(size + 1);
+		std::vsnprintf(str.data(), str.size(), in, vaArgs);
+		va_end(vaArgs);
+#endif
 
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 		_free_size = INVALID_SIZE;
@@ -82,6 +91,8 @@ namespace Net
 	void String::Construct(const char* in, ...)
 	{
 		va_list vaArgs;
+
+#ifdef BUILD_LINUX
 		va_start(vaArgs, in);
 		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
 		va_end(vaArgs);
@@ -90,6 +101,13 @@ namespace Net
 		std::vector<char> str(size + 1);
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
+#else
+		va_start(vaArgs, in);
+		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+		std::vector<char> str(size + 1);
+		std::vsnprintf(str.data(), str.size(), in, vaArgs);
+		va_end(vaArgs);
+#endif
 
 		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 		this->_free_size = INVALID_SIZE;
@@ -192,7 +210,7 @@ namespace Net
 			return;
 		}
 		
-		if (_free_size >= 1)
+		if (_free_size != INVALID_SIZE && _free_size >= 1)
 		{
 			/*
 			* use _free_size to fill up the free space in our current buffer
@@ -225,10 +243,8 @@ namespace Net
 		}
 
 		auto buffer_len = strlen(buffer);
-		if (buffer_len > _free_size)
+		if (_free_size == INVALID_SIZE || buffer_len > _free_size)
 		{
-			_free_size = INVALID_SIZE;
-
 			size_t newSize = _string.size() + buffer_len;
 			NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
 			memcpy(data.get(), _string.revert().get(), _string.size());
@@ -236,7 +252,8 @@ namespace Net
 			data.get()[newSize] = '\0';
 
 			_string.free();
-			_string = RUNTIMEXOR(reinterpret_cast<const char*>(data.get()));
+			_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+			_free_size = INVALID_SIZE;
 
 			return;
 		}
@@ -284,7 +301,7 @@ namespace Net
 		this->append(str.data());
 	}
 
-	void String::append(String& in, ...)
+	void String::append(String& in)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
 		{

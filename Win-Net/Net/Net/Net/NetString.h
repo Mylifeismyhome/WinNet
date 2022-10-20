@@ -147,7 +147,7 @@ namespace Net
 		void set(const char*, ...);
 		void append(const char*, ...);
 		void set(String&, ...);
-		void append(String&, ...);
+		void append(String&);
 		void copy(String&);
 		void move(String&&);
 		Net::Cryption::XOR_UNIQUEPOINTER str();

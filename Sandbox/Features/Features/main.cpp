@@ -309,8 +309,14 @@ int main()
 			std::cout << "FOUND" << std::endl;
 		}
 
+		{
+			Net::String b("test altaaaa123");
+			str += b;
+		}
+
 		str.erase((size_t)6);
 		str.append((char*)"1336");
+		str += "TEST ALTA";
 
 		std::cout << str.get().get() << std::endl;
 	}
