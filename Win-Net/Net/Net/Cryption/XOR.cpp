@@ -4,6 +4,13 @@ namespace Net
 {
 	namespace Cryption
 	{
+		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER()
+		{
+			this->buffer = nullptr;
+			this->_size = INVALID_SIZE;
+			this->bFree = false;
+		}
+
 		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER(char* buffer, const size_t size, const bool bFree)
 		{
 			// create a copy

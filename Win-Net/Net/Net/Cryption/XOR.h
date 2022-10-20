@@ -37,6 +37,7 @@ namespace Net
 			bool bFree;
 
 		public:
+			XOR_UNIQUEPOINTER();
 			XOR_UNIQUEPOINTER(char*, size_t, bool);
 			~XOR_UNIQUEPOINTER();
 

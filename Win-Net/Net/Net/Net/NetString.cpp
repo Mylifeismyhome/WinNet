@@ -222,7 +222,7 @@ namespace Net
 			Construct(in);
 			return;
 		}
-		
+
 		if (_free_size != INVALID_SIZE && _free_size >= 1)
 		{
 			/*
@@ -443,7 +443,7 @@ namespace Net
 		{
 			const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
 			const auto comp = type & NOT_CASE_SENS ? (char)tolower((int)c) : c;
-			if(tmp == comp)
+			if (tmp == comp)
 				return i;
 		}
 
@@ -462,7 +462,7 @@ namespace Net
 		{
 			const auto tmp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)at(i)) : at(i);
 			const auto comp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)pattern[it]) : pattern[it];
-			if(tmp == comp)
+			if (tmp == comp)
 			{
 				it++;
 				if (it == patternLen)
@@ -617,7 +617,7 @@ namespace Net
 		{
 			const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
 			const auto comp = type & NOT_CASE_SENS ? (char)tolower((int)c) : c;
-			if(tmp == comp)
+			if (tmp == comp)
 				return i;
 		}
 
@@ -1116,6 +1116,24 @@ namespace Net
 		}
 
 		return affectedOnce;
+	}
+
+	ViewString Net::String::view_string(size_t m_start, size_t m_size)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return {};
+
+		/*
+		* if m_size is zero
+		* then we return the entire size of the string
+		*/
+		if (m_size == 0)
+			return { this->get(), m_start, size() };
+
+		if ((m_start + m_size) > size())
+			return {};
+
+		return { this->get(), m_start, m_size };
 	}
 }
 NET_POP

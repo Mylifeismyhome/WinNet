@@ -107,6 +107,52 @@ namespace Net
 			buffer.move(out);
 		}
 
+		static Net::String EncodeString(Net::ViewString& vs)
+		{
+			Net::String out;
+
+			for (size_t i = vs.start(); i < vs.size(); ++i)
+			{
+				auto c = vs[i];
+				switch (c)
+				{
+				case '\\':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\\)")));
+					break;
+
+				case '"':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\")")));
+					break;
+
+				case '\b':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\b)")));
+					break;
+
+				case '\t':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\t)")));
+					break;
+
+				case '\n':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\n)")));
+					break;
+
+				case '\f':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\f)")));
+					break;
+
+				case '\r':
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\r)")));
+					break;
+
+				default:
+					out.append(c);
+					break;
+				}
+			}
+
+			return out;
+		}
+
 		static void DecodeString(Net::String& buffer)
 		{
 			if (buffer.size() < 2)
@@ -171,6 +217,70 @@ namespace Net
 			}
 
 			buffer.move(out);
+		}
+
+		static Net::String DecodeString(Net::ViewString& vs)
+		{
+			if (vs.size() < 2)
+				return {};
+
+			Net::String out;
+
+			for (size_t i = vs.start(); i < vs.size(); i++)
+			{
+				if (!memcmp(&vs.get()[i], CSTRING(R"(\")"), 2))
+				{
+					out.append('"');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\/)"), 2))
+				{
+					out.append('\\');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\\)"), 2))
+				{
+					out.append('\\');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\b)"), 2))
+				{
+					out.append('\b');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\t)"), 2))
+				{
+					out.append('\t');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\n)"), 2))
+				{
+					out.append('\n');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\f)"), 2))
+				{
+					out.append('\f');
+					++i;
+					continue;
+				}
+				else if (!memcmp(&vs.get()[i], CSTRING(R"(\r)"), 2))
+				{
+					out.append('\r');
+					++i;
+					continue;
+				}
+
+				out.append(vs[i]);
+			}
+
+			return out;
 		}
 	}
 }
@@ -2039,6 +2149,250 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 	}
 
 	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
+	return false;
+}
+
+bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
+{
+	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+
+	/*
+	* check for object
+	*/
+	{
+		if (vs[vs.start()] == '{')
+		{
+			m_type = Net::Json::Type::OBJECT;
+		}
+
+		if (vs[vs.end()] == '}'
+			&& m_type != Net::Json::Type::OBJECT)
+		{
+			// we got an ending curly for an object, but missing the starting curly
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got an ending curly for an object, but missing the starting curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (vs[vs.end()] != '}'
+			&& m_type == Net::Json::Type::OBJECT)
+		{
+			// we got a starting curly for an object, but missing the ending curly
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::OBJECT)
+		{
+			// object seem to be fine, now call it's deserializer
+			//Net::Json::Object obj(true);
+			//if (!obj.Deserialize(value, m_prepareString))
+			//{
+			//	// @todo: add logging
+			//	return false;
+			//}
+			//return this->push(obj);
+		}
+	}
+
+	/*
+	* check for array
+	*/
+	{
+		if (vs[vs.start()] == '[')
+		{
+			m_type = Net::Json::Type::ARRAY;
+		}
+
+		if (vs[vs.end()] == ']'
+			&& m_type != Net::Json::Type::ARRAY)
+		{
+			// we got an ending curly for an array, but missing the starting curly
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (vs[vs.end()] != ']'
+			&& m_type == Net::Json::Type::ARRAY)
+		{
+			// we got a starting curly for an array, but missing the ending curly
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::ARRAY)
+		{
+			// array seem to be fine, now call it's deserializer
+			//Net::Json::Array arr(true);
+			//if (!arr.Deserialize(value, m_prepareString))
+			//{
+			//	// @todo: add logging
+			//	return false;
+			//}
+			//return this->push(arr);
+		}
+	}
+
+	/*
+	* check for string
+	*/
+	{
+		if (vs[vs.start()] == '"')
+		{
+			m_type = Net::Json::Type::STRING;
+		}
+
+		if (vs[vs.end()] == '"'
+			&& m_type != Net::Json::Type::STRING)
+		{
+			// we got an ending double-qoute for a string, but missing the starting
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got an ending double-qoute for a string, but missing the starting ... '%s'"), pValue);
+			return false;
+		}
+		else if (vs[vs.end()] != '"'
+			&& m_type == Net::Json::Type::STRING)
+		{
+			// we got a starting double-qoute for a string, but missing the ending
+			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... got a starting double-qoute for a string, but missing the ending ... '%s'"), pValue);
+			return false;
+		}
+		else if (m_type == Net::Json::Type::STRING)
+		{
+			/*
+			* walk through the string and make sure there are no non-escaped double-qoutes
+			*/
+			for (int j = vs.start() + 1; j < vs.end() - 1; ++j)
+			{
+				auto ec = vs[j];
+				if (ec == '"')
+				{
+					if ((j - 1) < 0
+						|| vs[j - 1] != '\\')
+					{
+						NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad string ... string contains double-qoutes that are not escaped ... double-qoutes inside a string must be escaped with '\\'"));
+						return false;
+					}
+				}
+			}
+
+			// obtain the string from the json-string without the double-qoutes
+			auto svs = vs.sub_view(1, vs.length() - 1);
+			auto decoded_string = Net::Json::DecodeString(svs);
+			return this->push(decoded_string.get().get());
+		}
+	}
+
+	/*
+	* check for boolean
+	*/
+	{
+		if (Convert::is_boolean(vs.get()))
+		{
+			m_type = Net::Json::Type::BOOLEAN;
+			return this->push(Convert::ToBoolean(&vs.get()[vs.start()]));
+		}
+	}
+
+	/*
+	* check for null value
+	*/
+	{
+		if (!memcmp(vs.get(), CSTRING("null"), 4))
+		{
+			m_type = Net::Json::Type::NULLVALUE;
+			return this->push(Net::Json::NullValue());
+		}
+	}
+
+	/*
+	* check for number
+	*/
+	{
+		m_type = Net::Json::Type::INTEGER;
+
+		constexpr const char m_NumericPattern[] = "0123456789";
+		for (size_t i = vs.start(), dot = 0; i < vs.end(); ++i)
+		{
+			auto c = vs[i];
+
+			/*
+			* check for decimal number
+			*/
+			if (c == '.')
+			{
+				if (dot > 0)
+				{
+					// number got multiplie decimal splitter
+					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad number ... number has more than one of the decimal ('.') splitter"));
+					return false;
+				}
+
+				/*
+				* decimal number
+				*/
+				++dot;
+
+				m_type = Net::Json::Type::DOUBLE;
+				continue;
+			}
+
+			bool m_isNumber = false;
+			for (size_t z = 0; z < sizeof(m_NumericPattern); ++z)
+			{
+				if (static_cast<int>(c) == static_cast<int>(m_NumericPattern[z]))
+				{
+					m_isNumber = true;
+					break;
+				}
+			}
+
+			if (!m_isNumber)
+			{
+				/* not a number */
+
+				/*
+				* null value is handled above, so if the code is reaching the end and the type is still null
+				* then the value is not valid format
+				*/
+				m_type = Net::Json::Type::NULLVALUE;
+				break;
+			}
+		}
+
+		/* value is definitely a number */
+		if (m_type != Net::Json::Type::NULLVALUE)
+		{
+			/*
+			* value is a decimal number
+			*/
+			if (m_type == Net::Json::Type::DOUBLE)
+			{
+				/*
+				* determinate if it is worth a double or just a float
+				*/
+				if (Convert::is_double(vs.get()))
+				{
+					m_type = Net::Json::Type::DOUBLE;
+				}
+				else if (Convert::is_float(vs.get()))
+				{
+					m_type = Net::Json::Type::FLOAT;
+				}
+			}
+
+			switch (m_type)
+			{
+			case Net::Json::Type::INTEGER:
+				return this->push(Convert::ToInt32(vs.get()));
+
+			case Net::Json::Type::DOUBLE:
+				return this->push(Convert::ToDouble(vs.get()));
+
+			case Net::Json::Type::FLOAT:
+				return this->push(Convert::ToFloat(vs.get()));
+
+			default:
+				break;
+			}
+		}
+	}
+
+	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), vs.get());
 	return false;
 }
 

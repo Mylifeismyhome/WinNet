@@ -37,6 +37,117 @@ namespace Net
 		};
 	}
 
+	class ViewString
+	{
+		Net::Cryption::XOR_UNIQUEPOINTER m_ref;
+		size_t m_start;
+		size_t m_size;
+		bool m_valid;
+
+	public:
+		ViewString()
+		{
+			this->m_ref = {};
+			this->m_start = INVALID_SIZE;
+			this->m_size = INVALID_SIZE;
+			this->m_valid = false;
+		}
+
+		ViewString(Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+		{
+			this->m_ref = m_ref;
+			this->m_start = m_start;
+			this->m_size = m_size;
+			this->m_valid = true;
+
+			/*
+			* vs ptr moved
+			*/
+			m_ref.lost_reference();
+		}
+
+		ViewString(ViewString&& vs) NOEXPECT
+		{
+			this->m_ref = vs.m_ref;
+			this->m_start = vs.m_start;
+			this->m_size = vs.m_size;
+			this->m_valid = true;
+
+			/*
+			* vs ptr moved
+			*/
+			vs.m_ref.lost_reference();
+		}
+
+		char operator[](size_t i)
+		{
+			if (!valid()) return '\0';
+			return this->m_ref.get()[i];
+		}
+
+		size_t start() const
+		{
+			if (!valid()) return INVALID_SIZE;
+			return m_start;
+		}
+
+		size_t end() const
+		{
+			if (!valid()) return INVALID_SIZE;
+			return start() + length();
+		}
+
+		size_t size() const
+		{
+			if (!valid()) return INVALID_SIZE;
+			return m_size;
+		}
+
+		size_t length() const
+		{
+			if (!valid()) return INVALID_SIZE;
+			return m_size - 1;
+		}
+
+		char* get() const
+		{
+			if (!valid()) return nullptr;
+			return &m_ref.get()[start()];
+		}
+
+		bool valid() const
+		{
+			return m_valid;
+		}
+
+		ViewString sub_view(size_t m_start, size_t m_size = 0)
+		{
+			if (!valid())
+				return {};
+
+			if (size() == INVALID_SIZE || size() == 0)
+				return {};
+
+			/*
+			* adjust the starting index
+			* on a sub view we add our current starting index on top of the new one
+			*/
+			m_start += this->start();
+
+			/*
+			* if m_size is zero
+			* then we return the entire size of the string
+			*/
+			if (m_size == 0)
+				return { this->m_ref, m_start, size() };
+
+			if ((m_start + m_size) > size())
+				return {};
+
+			return { this->m_ref, m_start, m_size };
+		}
+	};
+
 	class String
 	{
 		RUNTIMEXOR _string;
@@ -194,6 +305,7 @@ namespace Net
 		bool replaceAll(char, const char*);
 		bool replaceAll(const char*, char);
 		bool replaceAll(const char*, const char*);
+		ViewString view_string(size_t, size_t = 0);
 	};
 }
 NET_DSA_END

@@ -370,6 +370,7 @@ namespace Net
 			bool emplace_back(T value, Type type);
 
 			bool DeserializeAny(Net::String&, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString&, bool m_prepareString = false);
 
 		public:
 			Array(bool bSharedMemory = false);

@@ -304,21 +304,9 @@ int main()
 
 	{
 		Net::String str("123456789");
-		if (str.find("halLo", Net::String::type::NOT_CASE_SENS) != NET_STRING_NOT_FOUND)
-		{
-			std::cout << "FOUND" << std::endl;
-		}
+		auto vs = str.view_string(5);
 
-		{
-			Net::String b("test altaaaa123");
-			str += b;
-		}
-
-		str.erase((size_t)6);
-		str.append((char*)"1336");
-		str += "TEST ALTA";
-
-		std::cout << str.get().get() << std::endl;
+		std::cout << vs.get() << std::endl;
 	}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
