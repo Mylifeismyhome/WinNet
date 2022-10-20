@@ -640,6 +640,7 @@ namespace Net
 			}
 		}
 		_string.set(size() - len, '\0');
+		_string.set_size(size() - len);
 
 		return true;
 	}
@@ -671,6 +672,7 @@ namespace Net
 			}
 		}
 		_string.set(size() - len, '\0');
+		_string.set_size(size() - len);
 
 		return true;
 	}

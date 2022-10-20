@@ -88,6 +88,11 @@ namespace Net
 			this->_buffer.get()[it] ^= (_Key % (it == 0 ? 1 : it));
 		}
 
+		void XOR::set_size(size_t new_size)
+		{
+			this->_size = new_size;
+		}
+
 		void XOR::init(char* str)
 		{
 			if (!str)

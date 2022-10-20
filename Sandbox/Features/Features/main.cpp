@@ -314,39 +314,39 @@ int main()
 		std::cout << str.get().get() << std::endl;
 	}
 
-	//NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
+	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 
-	//char* data = nullptr;
-	//if (!f.read(data))
-	//{
-	//	NET_LOG("failed reading file");
-	//	system("pause");
-	//	return 0;
-	//}
+	char* data = nullptr;
+	if (!f.read(data))
+	{
+		NET_LOG("failed reading file");
+		system("pause");
+		return 0;
+	}
 
-	//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	//Net::Json::Document doc;
-	//if (!doc.Parse(data))
-	//{
-	//	NET_LOG("Failed json deserialize");
-	//}
+	Net::Json::Document doc;
+	if (!doc.Parse(data))
+	{
+		NET_LOG("Failed json deserialize");
+	}
 
-	//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-	//std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
-	//system("pause");
+	system("pause");
 
-	//begin = std::chrono::steady_clock::now();
+	begin = std::chrono::steady_clock::now();
 
-	//auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
-	//NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE);
-	//fb.write(outstr.get().get());
+	auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
+	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE);
+	fb.write(outstr.get().get());
 
-	//end = std::chrono::steady_clock::now();
+	end = std::chrono::steady_clock::now();
 
-	//std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
 	//FREE(data);
 	system("pause");

@@ -90,6 +90,7 @@ namespace Net
 			}
 
 			void set(size_t, char);
+			void set_size(size_t);
 			void init(char*);
 			void init(const char*);
 			size_t size() const;
