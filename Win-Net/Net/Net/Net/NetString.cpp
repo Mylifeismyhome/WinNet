@@ -136,6 +136,19 @@ namespace Net
 		in._free_size = INVALID_SIZE;
 	}
 
+	void String::move(String& in)
+	{
+		_string = in._string;
+		_free_size = in._free_size;
+
+		/*
+		* set _string to nullptr
+		* we moved the pointer to a new object
+		*/
+		in._string = RUNTIMEXOR();
+		in._free_size = INVALID_SIZE;
+	}
+
 	String::~String()
 	{
 		_string.free();

@@ -63,7 +63,8 @@ namespace Net
 
 		static void EncodeString(Net::String& buffer)
 		{
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
+
 			for (size_t i = 0; i < buffer.size(); ++i)
 			{
 				auto c = buffer[i];
@@ -103,7 +104,7 @@ namespace Net
 				}
 			}
 
-			buffer = out;
+			buffer.move(out);
 		}
 
 		static void DecodeString(Net::String& buffer)
@@ -111,7 +112,7 @@ namespace Net
 			if (buffer.size() < 2)
 				return;
 
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
 
 			auto ref = buffer.get();
 			auto pBuffer = ref.get();
@@ -169,7 +170,7 @@ namespace Net
 				out.append(pBuffer[i]);
 			}
 
-			buffer = out;
+			buffer.move(out);
 		}
 	}
 }

@@ -150,6 +150,7 @@ namespace Net
 		void append(String&);
 		void copy(String&);
 		void move(String&&);
+		void move(String&);
 		Net::Cryption::XOR_UNIQUEPOINTER str();
 		Net::Cryption::XOR_UNIQUEPOINTER cstr();
 		Net::Cryption::XOR_UNIQUEPOINTER get();
