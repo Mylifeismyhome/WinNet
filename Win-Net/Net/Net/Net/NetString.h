@@ -56,9 +56,8 @@ namespace Net
 
 		enum type
 		{
-			NONE = 0x0,
-			NOT_CASE_SENS,
-			IN_LEN
+			NONE = 0,
+			NOT_CASE_SENS
 		};
 
 		void operator=(const char* in)

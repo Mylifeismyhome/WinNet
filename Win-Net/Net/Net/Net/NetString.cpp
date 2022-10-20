@@ -626,7 +626,7 @@ namespace Net
 
 		/*
 		* instead of allocating a new buffer
-		* we use the method to move the characters up/down
+		* we use the method to move the characters up
 		* and repos the null-terminator
 		*/
 		char prevChar = at(size() - 1);
@@ -658,7 +658,7 @@ namespace Net
 
 		/*
 		* instead of allocating a new buffer
-		* we use the method to move the characters up/down
+		* we use the method to move the characters up
 		* and repos the null-terminator
 		*/
 		char prevChar = at(size() - 1);

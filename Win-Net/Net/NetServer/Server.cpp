@@ -210,7 +210,7 @@ NET_TIMER(NTPReSyncClock)
 Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
-	const auto peer = new NET_IPEER();
+	const auto peer = ALLOC<NET_IPEER>();
 	peer->UniqueID = socket;
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
@@ -230,7 +230,7 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
 	{
-		const auto _CalcLatency = new CalcLatency_t();
+		const auto _CalcLatency = ALLOC<CalcLatency_t>();
 		_CalcLatency->server = this;
 		_CalcLatency->peer = peer;
 		//peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
@@ -1263,7 +1263,7 @@ NET_THREAD(PeerStartRoutine)
 		const auto PublicKey = peer->cryption.RSA.publicKey();
 
 		size_t b64len = PublicKey.size();
-		BYTE* b64 = new BYTE[b64len + 1];
+		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
 		memcpy(b64, PublicKey.data(), b64len);
 		b64[b64len] = 0;
 
@@ -1331,7 +1331,7 @@ void Net::Server::Server::Acceptor()
 		}
 	} while (accept_socket == INVALID_SOCKET);
 
-	const auto pdata = new Receive_t();
+	const auto pdata = ALLOC<Receive_t>();
 	pdata->server = this;
 	pdata->peer = CreatePeer(client_addr, accept_socket);
 	if (pdata->peer) Net::Thread::Create(PeerStartRoutine, pdata);
@@ -2110,7 +2110,7 @@ if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // e
 // from now we use the Cryption, synced with Server
 {
 	size_t b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
-	BYTE* b64 = new BYTE[b64len + 1];
+	BYTE* b64 = ALLOC<BYTE>(b64len + 1);
 	memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
 	b64[b64len] = 0;
 

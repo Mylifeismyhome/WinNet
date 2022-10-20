@@ -99,7 +99,7 @@ NET_THREAD(NetTimerThread)
 
 NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double timer, void* param, const bool bdelete)
 {
-	const auto timer_t = new Timer_t();
+	const auto timer_t = ALLOC<Timer_t>();
 	timer_t->param = param;
 	timer_t->func = func;
 	timer_t->timer = timer;

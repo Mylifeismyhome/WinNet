@@ -29,7 +29,7 @@ namespace Net
 			Profile_t(void* peer)
 			{
 				this->peer = peer;
-				data = new NET_PACKET();
+				data = ALLOC<NET_PACKET>();
 				ext = nullptr;
 			}
 
@@ -82,7 +82,7 @@ namespace Net
 			void Init(size_t max_entries)
 			{
 				this->max_entries = max_entries;
-				data = new NET_PROFILE_DATA[this->max_entries];
+				data = ALLOC<NET_PROFILE_DATA>(this->max_entries);
 				memset(data, 0, this->max_entries);
 			}
 

@@ -352,7 +352,7 @@ template <typename T>
 void Net::Json::BasicValue<T>::SetKey(const char* key)
 {
 	auto len = strlen(key);
-	this->key = new char[len + 1];
+	this->key = ALLOC<char>(len + 1);
 	if (!this->key) return;
 	memcpy(this->key, key, len);
 	this->key[len] = 0;
@@ -594,7 +594,7 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 	if (!this->ptr) return;
 
 	size_t len = strlen(value);
-	char* ptr = new char[len + 1];
+	char* ptr = ALLOC<char>(len + 1);
 	memcpy(ptr, value, len);
 	ptr[len] = 0;
 
@@ -662,7 +662,7 @@ void Net::Json::Object::Free()
 template<typename T>
 bool Net::Json::Object::__append(const char* key, T value, Type type)
 {
-	BasicValue<T>* heap = new BasicValue<T>();
+	BasicValue<T>* heap = ALLOC<BasicValue<T>>();
 	if (!heap) return false;
 	heap->SetKey(key);
 	heap->SetValue(value, type);
@@ -693,7 +693,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 	auto ptr = this->__get<Object>(key);
 	if (!ptr)
 	{
-		BasicValue<Object>* heap = new BasicValue<Object>();
+		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
 		if (!heap) return { nullptr };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
@@ -734,7 +734,7 @@ bool Net::Json::Object::Append(const char* key, bool value)
 bool Net::Json::Object::Append(const char* key, const char* value)
 {
 	size_t len = strlen(value);
-	char* ptr = new char[len + 1];
+	char* ptr = ALLOC<char>(len + 1);
 	memcpy(ptr, value, len);
 	ptr[len] = 0;
 	if (!__append(key, ptr, Type::STRING))
@@ -1583,7 +1583,7 @@ void Net::Json::Array::Free()
 template <typename T>
 bool Net::Json::Array::emplace_back(T value, Type type)
 {
-	BasicValue<T>* heap = new BasicValue<T>();
+	BasicValue<T>* heap = ALLOC<BasicValue<T>>();
 	if (!heap) return false;
 	heap->SetValue(value, type);
 	this->__push(heap);
@@ -1624,7 +1624,7 @@ bool Net::Json::Array::push(bool value)
 bool Net::Json::Array::push(const char* value)
 {
 	size_t len = strlen(value);
-	char* ptr = new char[len + 1];
+	char* ptr = ALLOC<char>(len + 1);
 	memcpy(ptr, value, len);
 	ptr[len] = 0;
 

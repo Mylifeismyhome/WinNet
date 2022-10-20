@@ -159,7 +159,7 @@ namespace Net
 		{
 			// create a new buffer
 			size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
-			byte* data32 = new byte[encodeLength + 1];
+			byte* data32 = ALLOC<byte>(encodeLength + 1);
 			data32[encodeLength] = '\0';
 			if (Encode32(buffer, static_cast<int>(len), data32))
 			{
@@ -181,7 +181,7 @@ namespace Net
 		{
 			// create a new buffer
 			size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
-			byte* data32 = new byte[encodeLength + 1];
+			byte* data32 = ALLOC<byte>(encodeLength + 1);
 			data32[encodeLength] = '\0';
 			if (Encode32(buffer, static_cast<int>(len), data32))
 			{
@@ -203,7 +203,7 @@ namespace Net
 		{
 			// create a new buffer
 			size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
-			byte* data256 = new byte[decodedLength + 1];
+			byte* data256 = ALLOC<byte>(decodedLength + 1);
 			data256[decodedLength] = '\0';
 			if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
 			{
@@ -225,7 +225,7 @@ namespace Net
 		{
 			// create a new buffer
 			size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
-			byte* data256 = new byte[decodedLength + 1];
+			byte* data256 = ALLOC<byte>(decodedLength + 1);
 			data256[decodedLength] = '\0';
 			if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
 			{
