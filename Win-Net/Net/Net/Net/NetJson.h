@@ -394,6 +394,7 @@ namespace Net
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();

@@ -303,10 +303,13 @@ int main()
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
 	{
-		Net::String str("123456789");
-		auto vs = str.view_string(5);
+		Net::String str(R"(["test","hacker","aka"])");
+		auto vs = str.view_string(0);
+		
+		Net::Json::Array arr;
+		arr.Deserialize(vs, false);
 
-		std::cout << vs.get() << std::endl;
+		std::cout << arr.Stringify(Net::Json::SerializeType::UNFORMATTED).get().get() << std::endl;
 	}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);

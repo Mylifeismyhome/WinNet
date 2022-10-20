@@ -94,7 +94,7 @@ namespace Net
 		size_t end() const
 		{
 			if (!valid()) return INVALID_SIZE;
-			return start() + length();
+			return start() + size();
 		}
 
 		size_t size() const
@@ -128,23 +128,33 @@ namespace Net
 			if (size() == INVALID_SIZE || size() == 0)
 				return {};
 
+			ViewString vs;
+			vs.m_ref = this->m_ref;
+
 			/*
-			* adjust the starting index
-			* on a sub view we add our current starting index on top of the new one
+			* ok, so on a sub_view we gotta make sure that it will not free on death
 			*/
-			m_start += this->start();
+			vs.m_ref.lost_reference();
+
+			vs.m_start = m_start;
 
 			/*
 			* if m_size is zero
 			* then we return the entire size of the string
 			*/
 			if (m_size == 0)
-				return { this->m_ref, m_start, size() };
+			{
+				vs.m_size = size();
+			}
+			else
+			{
+				if ((m_start + m_size) > size())
+					return {};
 
-			if ((m_start + m_size) > size())
-				return {};
+				vs.m_size = m_start;
+			}
 
-			return { this->m_ref, m_start, m_size };
+			return vs;
 		}
 	};
 
