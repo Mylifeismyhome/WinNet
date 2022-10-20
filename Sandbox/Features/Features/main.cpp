@@ -309,7 +309,8 @@ int main()
 			std::cout << "FOUND" << std::endl;
 		}
 
-		str.erase((size_t)1, (size_t)3);
+		str.erase((size_t)6);
+		str.append((char*)"1336");
 
 		std::cout << str.get().get() << std::endl;
 	}

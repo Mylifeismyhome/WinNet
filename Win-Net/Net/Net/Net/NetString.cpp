@@ -19,6 +19,7 @@ namespace Net
 	String::String()
 	{
 		_string = RUNTIMEXOR();
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(const char in)
@@ -28,6 +29,7 @@ namespace Net
 		str[1] = '\0';
 
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(const char* in, ...)
@@ -43,6 +45,7 @@ namespace Net
 		va_end(vaArgs);
 
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(char* str)
@@ -53,6 +56,7 @@ namespace Net
 		*/
 		_string.free();
 		_string = RUNTIMEXOR(str);
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(String& in)
@@ -71,7 +75,8 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::Construct(const char* in, ...)
@@ -86,27 +91,31 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::copy(String& in)
 	{
-		_string.free();
+		this->_string.free();
 
 		auto ref = in.get();
 		auto pBuffer = ref.get();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::move(String&& in)
 	{
 		_string = in._string;
+		_free_size = in._free_size;
 
 		/*
 		* set _string to nullptr
 		* we moved the pointer to a new object
 		*/
 		in._string = RUNTIMEXOR();
+		in._free_size = INVALID_SIZE;
 	}
 
 	String::~String()
@@ -130,26 +139,9 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
-	}
-
-	void String::append(const char in)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-		{
-			Construct(in);
-			return;
-		}
-
-		size_t newLen = _string.size() + 1;
-		NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
-		memcpy(&data.get()[0], _string.revert().get(), _string.size());
-		data.get()[_string.size()] = in;
-		data.get()[newLen] = '\0';
-
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::set(const char* in, ...)
@@ -173,8 +165,93 @@ namespace Net
 		va_end(vaArgs);
 #endif
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
+	}
+
+	void String::set(String& in, ...)
+	{
+		auto ref = in.get();
+		auto ptr = ref.get();
+
+		/*
+		* cast it to const char*
+		* so we will perform a copy
+		*/
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(ptr));
+		this->_free_size = INVALID_SIZE;
+	}
+
+	void String::append(const char in)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+		{
+			Construct(in);
+			return;
+		}
+		
+		if (_free_size >= 1)
+		{
+			/*
+			* use _free_size to fill up the free space in our current buffer
+			*/
+			auto prevLen = size();
+			_string.set_size(size() + 1);
+			_string.set(prevLen, in);
+			_string.set(size(), '\0');
+			_free_size -= 1;
+		}
+		else
+		{
+			size_t newLen = _string.size() + 1;
+			NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
+			memcpy(&data.get()[0], _string.revert().get(), _string.size());
+			data.get()[_string.size()] = in;
+			data.get()[newLen] = '\0';
+
+			_string.free();
+			_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+		}
+	}
+
+	void Net::String::append(char* buffer)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+		{
+			Construct(buffer);
+			return;
+		}
+
+		auto buffer_len = strlen(buffer);
+		if (buffer_len > _free_size)
+		{
+			_free_size = INVALID_SIZE;
+
+			size_t newSize = _string.size() + buffer_len;
+			NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
+			memcpy(data.get(), _string.revert().get(), _string.size());
+			memcpy(&data.get()[_string.size()], buffer, buffer_len);
+			data.get()[newSize] = '\0';
+
+			_string.free();
+			_string = RUNTIMEXOR(reinterpret_cast<const char*>(data.get()));
+
+			return;
+		}
+
+		/*
+		* use _free_size to fill up the free space in our current buffer
+		*/
+		auto prevLen = size();
+		_string.set_size(size() + buffer_len);
+		for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+		{
+			_string.set(i + j, buffer[j]);
+		}
+		_string.set(size(), '\0');
+		_free_size -= buffer_len;
 	}
 
 	void String::append(const char* in, ...)
@@ -203,25 +280,8 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 #endif
-		
-		size_t newSize = _string.size() + str.size();
-		NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
-		memcpy(data.get(), _string.revert().get(), _string.size());
-		memcpy(&data.get()[_string.size()], str.data(), str.size());
-		data.get()[newSize] = '\0';
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
-	}
-
-	void String::set(String& in, ...)
-	{
-		NET_CPOINTER<byte> buffer(ALLOC<byte>(in.size() + 1));
-		memcpy(buffer.get(), in.get().get(), in.size());
-		buffer.get()[in.size()] = '\0';
-
-		this->_string.free();
-		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
+		this->append(str.data());
 	}
 
 	void String::append(String& in, ...)
@@ -232,14 +292,9 @@ namespace Net
 			return;
 		}
 
-		size_t newSize = size() + in.size();
-		NET_CPOINTER<byte> buffer(ALLOC<byte>(newSize + 1));
-		memcpy(buffer.get(), this->get().get(), size());
-		memcpy(&buffer.get()[size()], in.get().get(), in.size());
-		buffer.get()[newSize] = '\0';
-
-		this->_string.free();
-		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
+		auto ref = in.get();
+		auto ptr = ref.get();
+		this->append(ptr);
 	}
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::str()
@@ -642,6 +697,19 @@ namespace Net
 		_string.set(size() - len, '\0');
 		_string.set_size(size() - len);
 
+		/*
+		* ok if we removed then we add the amount to _free_size
+		* later we will use it for the append function
+		*/
+		if (_free_size == INVALID_FILE_SIZE)
+		{
+			_free_size = len;
+		}
+		else
+		{
+			_free_size += len;
+		}
+
 		return true;
 	}
 
@@ -673,6 +741,19 @@ namespace Net
 		}
 		_string.set(size() - len, '\0');
 		_string.set_size(size() - len);
+
+		/*
+		* ok if we removed then we add the amount to _free_size
+		* later we will use it for the append function
+		*/
+		if (_free_size == INVALID_FILE_SIZE)
+		{
+			_free_size = len;
+		}
+		else
+		{
+			_free_size += len;
+		}
 
 		return true;
 	}

@@ -40,6 +40,8 @@ namespace Net
 	class String
 	{
 		RUNTIMEXOR _string;
+		size_t _free_size;
+
 		Net::Cryption::XOR_UNIQUEPOINTER revert();
 
 		void Construct(const char);
@@ -141,6 +143,7 @@ namespace Net
 		size_t length() const;
 		void set(char, ...);
 		void append(char);
+		void append(char*);
 		void set(const char*, ...);
 		void append(const char*, ...);
 		void set(String&, ...);
