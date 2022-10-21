@@ -68,6 +68,7 @@ namespace Net
 		XOR::XOR()
 		{
 			_size = INVALID_SIZE;
+			_actual_size = INVALID_SIZE;
 			_buffer = nullptr;
 			_Key = 0;
 		}
@@ -82,9 +83,61 @@ namespace Net
 			init(str);
 		}
 
+		void XOR::reserve(size_t m_size)
+		{
+			if (_buffer.get())
+			{
+				if (m_size >= size())
+				{
+					auto tmp = ALLOC<char>(m_size + 1);
+					for (size_t i = 0; i < size(); ++i)
+					{
+						tmp[i] = this->operator[](i);
+					}
+					tmp[size()] = 0;
+
+					_buffer.free();
+					_buffer = tmp;
+					_actual_size = m_size;
+					return;
+				}
+
+				_buffer.free();
+			}
+
+			auto tmp = ALLOC<char>(m_size + 1);
+			_buffer = tmp;
+			_size = 0;
+			_actual_size = m_size;
+		}
+
+		void XOR::finalize()
+		{
+			if (!_buffer.get())
+			{
+				return;
+			}
+
+			if (actual_size() == size())
+			{
+				return;
+			}
+
+			auto tmp = ALLOC<char>(size() + 1);
+			for (size_t i = 0; i < size(); ++i)
+			{
+				tmp[i] = this->operator[](i);
+			}
+			tmp[size()] = 0;
+
+			_buffer.free();
+			_buffer = tmp;
+			_actual_size = size();
+		}
+
 		void XOR::set(size_t it, char c)
 		{
-			if (it > size())
+			if (it > actual_size() || actual_size() == INVALID_SIZE)
 				return;
 
 			this->_buffer.get()[it] = c;
@@ -120,6 +173,7 @@ namespace Net
 		void XOR::init(const char* str)
 		{
 			_size = std::strlen(str);
+			_actual_size = _size;
 			_buffer = ALLOC<char>(_size + 1);
 			memcpy(_buffer.get(), str, _size);
 			_buffer.get()[_size] = '\0';
@@ -162,6 +216,11 @@ namespace Net
 			return _size;
 		}
 
+		size_t XOR::actual_size() const
+		{
+			return _actual_size;
+		}
+
 		size_t XOR::length() const
 		{
 			return _size - 1;
@@ -172,6 +231,7 @@ namespace Net
 			_Key = 0;
 			_buffer.free();
 			_size = INVALID_SIZE;
+			_actual_size = INVALID_SIZE;
 		}
 	}
 }

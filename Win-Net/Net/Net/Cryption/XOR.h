@@ -55,6 +55,7 @@ namespace Net
 		{
 			NET_CPOINTER<char> _buffer;
 			size_t _size;
+			size_t _actual_size;
 			uintptr_t _Key;
 
 			char* encrypt();
@@ -63,6 +64,9 @@ namespace Net
 			XOR();
 			XOR(char*);
 			XOR(const char*);
+
+			void reserve(size_t size);
+			void finalize();
 
 			XOR& operator=(XOR& other)
 			{
@@ -95,6 +99,7 @@ namespace Net
 			void init(char*);
 			void init(const char*);
 			size_t size() const;
+			size_t actual_size() const;
 			size_t length() const;
 			XOR_UNIQUEPOINTER revert(bool = true);
 			void free();

@@ -275,9 +275,30 @@ namespace Net
 		_string.free();
 	}
 
+	/*
+	* this function will pre-allocate space
+	* with finalize it will shrunk it by performing one another re-allocation
+	* this function should be used anytime append will be called
+	* just reserve enough space and finalize it
+	*/
+	void Net::String::reserve(size_t m_size)
+	{
+		return _string.reserve(m_size);
+	}
+
+	void Net::String::finalize()
+	{
+		return _string.finalize();
+	}
+
 	size_t String::size() const
 	{
 		return _string.size();
+	}
+
+	size_t String::actual_size() const
+	{
+		return _string.actual_size();
 	}
 
 	size_t String::length() const
@@ -338,76 +359,100 @@ namespace Net
 
 	void String::append(const char in)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			Construct(in);
 			return;
 		}
 
-		if (_free_size != INVALID_SIZE && _free_size >= 1)
+		if (actual_size() > size())
 		{
-			/*
-			* use _free_size to fill up the free space in our current buffer
-			*/
 			auto prevLen = size();
 			_string.set_size(size() + 1);
 			_string.set(prevLen, in);
 			_string.set(size(), '\0');
-			_free_size -= 1;
 		}
 		else
 		{
-			size_t newLen = _string.size() + 1;
-			NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
-			memcpy(&data.get()[0], _string.revert().get(), _string.size());
-			data.get()[_string.size()] = in;
-			data.get()[newLen] = '\0';
+			if (_free_size != INVALID_SIZE && _free_size >= 1)
+			{
+				/*
+				* use _free_size to fill up the free space in our current buffer
+				*/
+				auto prevLen = size();
+				_string.set_size(size() + 1);
+				_string.set(prevLen, in);
+				_string.set(size(), '\0');
+				_free_size -= 1;
+			}
+			else
+			{
+				size_t newLen = _string.size() + 1;
+				NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
+				memcpy(&data.get()[0], _string.revert().get(), _string.size());
+				data.get()[_string.size()] = in;
+				data.get()[newLen] = '\0';
 
-			_string.free();
-			_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+				_string.free();
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+			}
 		}
 	}
 
 	void Net::String::append(char* buffer)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			Construct(buffer);
 			return;
 		}
 
 		auto buffer_len = strlen(buffer);
-		if (_free_size == INVALID_SIZE || buffer_len > _free_size)
+
+		if (actual_size() > size())
 		{
-			size_t newSize = _string.size() + buffer_len;
-			NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
-			memcpy(data.get(), _string.revert().get(), _string.size());
-			memcpy(&data.get()[_string.size()], buffer, buffer_len);
-			data.get()[newSize] = '\0';
-
-			_string.free();
-			_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
-			_free_size = INVALID_SIZE;
-
-			return;
+			auto prevLen = size();
+			_string.set_size(size() + buffer_len);
+			for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+			{
+				_string.set(i + j, buffer[j]);
+			}
+			_string.set(size(), '\0');
 		}
-
-		/*
-		* use _free_size to fill up the free space in our current buffer
-		*/
-		auto prevLen = size();
-		_string.set_size(size() + buffer_len);
-		for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+		else
 		{
-			_string.set(i + j, buffer[j]);
+			if (_free_size == INVALID_SIZE || buffer_len > _free_size)
+			{
+				size_t newSize = _string.size() + buffer_len;
+				NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
+				memcpy(data.get(), _string.revert().get(), _string.size());
+				memcpy(&data.get()[_string.size()], buffer, buffer_len);
+				data.get()[newSize] = '\0';
+
+				_string.free();
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+				_free_size = INVALID_SIZE;
+
+				return;
+			}
+
+			/*
+			* use _free_size to fill up the free space in our current buffer
+			*/
+			auto prevLen = size();
+			_string.set_size(size() + buffer_len);
+			for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+			{
+				_string.set(i + j, buffer[j]);
+			}
+			_string.set(size(), '\0');
+			_free_size -= buffer_len;
 		}
-		_string.set(size(), '\0');
-		_free_size -= buffer_len;
 	}
 
 	void String::append(const char* in, ...)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			Construct(in);
 			return;
@@ -437,7 +482,7 @@ namespace Net
 
 	void String::append(String& in)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			copy(in);
 			return;

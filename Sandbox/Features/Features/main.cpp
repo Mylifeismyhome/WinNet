@@ -302,15 +302,14 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	/*{
-		Net::String str(R"({"test":"alta","test2":1336})");
-		auto vs = str.view_string(0);
-		
-		Net::Json::Object arr;
-		arr.Deserialize(vs, false);
+	//{
+	//	Net::String str;
+	//	str.reserve(100);
 
-		std::cout << arr.Stringify(Net::Json::SerializeType::UNFORMATTED).get().get() << std::endl;
-	}*/
+	//	str += "test";
+
+	//	std::cout << str.get().get() << std::endl;
+	//}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 

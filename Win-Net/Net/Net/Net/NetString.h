@@ -88,6 +88,9 @@ namespace Net
 		String(String&&) NOEXPECT;
 		~String();
 
+		void reserve(size_t m_size);
+		void finalize();
+
 		enum type
 		{
 			NONE = 0,
@@ -116,7 +119,7 @@ namespace Net
 
 		void operator+=(const char* in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -124,7 +127,7 @@ namespace Net
 
 		void operator+=(char* in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -132,7 +135,7 @@ namespace Net
 
 		void operator+=(const char in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -140,7 +143,7 @@ namespace Net
 
 		void operator+=(String in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -172,6 +175,7 @@ namespace Net
 		}
 
 		size_t size() const;
+		size_t actual_size() const;
 		size_t length() const;
 		void set(char, ...);
 		void append(char);

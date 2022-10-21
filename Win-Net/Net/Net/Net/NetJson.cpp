@@ -178,7 +178,8 @@ namespace Net
 
 		static void EncodeString(Net::String& buffer)
 		{
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
+			out.reserve(buffer.size());
 
 			for (size_t i = 0; i < buffer.size(); ++i)
 			{
@@ -219,12 +220,14 @@ namespace Net
 				}
 			}
 
+			out.finalize();
 			buffer.move(out);
 		}
 
 		static Net::String EncodeString(Net::ViewString& vs)
 		{
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
+			out.reserve(vs.size());
 
 			for (size_t i = vs.start(); i < vs.end(); ++i)
 			{
@@ -265,6 +268,7 @@ namespace Net
 				}
 			}
 
+			out.finalize();
 			return out;
 		}
 
@@ -273,7 +277,8 @@ namespace Net
 			if (buffer.size() < 2)
 				return;
 
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
+			out.reserve(buffer.size());
 
 			auto ref = buffer.get();
 			auto pBuffer = ref.get();
@@ -331,12 +336,14 @@ namespace Net
 				out.append(pBuffer[i]);
 			}
 
+			out.finalize();
 			buffer.move(out);
 		}
 
 		static Net::String DecodeString(Net::ViewString& vs)
 		{
-			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+			Net::String out;
+			out.reserve(vs.size());
 
 			if (vs.size() < 2)
 				return out;
@@ -395,6 +402,7 @@ namespace Net
 				out.append(vs[i]);
 			}
 
+			out.finalize();
 			return out;
 		}
 	}
