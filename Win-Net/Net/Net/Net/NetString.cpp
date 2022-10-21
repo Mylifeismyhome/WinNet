@@ -16,9 +16,131 @@ namespace Net
 		}
 	}
 
+	ViewString::ViewString()
+	{
+		this->m_ptr_original = nullptr;
+		this->m_ref = {};
+		this->m_start = INVALID_SIZE;
+		this->m_size = INVALID_SIZE;
+		this->m_valid = false;
+	}
+
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+	{
+		this->m_ptr_original = m_ptr_original;
+		this->m_ref = m_ref;
+		this->m_start = m_start;
+		this->m_size = m_size;
+		this->m_valid = true;
+
+		/*
+		* vs ptr moved
+		*/
+		m_ref.lost_reference();
+	}
+
+	ViewString::ViewString(ViewString& vs) NOEXPECT
+	{
+		this->m_ptr_original = vs.m_ptr_original;
+		this->m_ref = vs.m_ref;
+		this->m_start = vs.m_start;
+		this->m_size = vs.m_size;
+		this->m_valid = vs.m_valid;
+
+		/*
+		* vs ptr moved
+		*/
+		vs.m_ref.lost_reference();
+	}
+
+	size_t ViewString::start() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_start;
+	}
+
+	size_t ViewString::end() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return start() + size();
+	}
+
+	size_t ViewString::size() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_size;
+	}
+
+	size_t ViewString::length() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_size - 1;
+	}
+
+	char* ViewString::get() const
+	{
+		if (!valid()) return nullptr;
+		return m_ref.get();
+	}
+
+	bool ViewString::valid() const
+	{
+		return m_valid;
+	}
+
+	void* ViewString::original()
+	{
+		return m_ptr_original;
+	}
+
+	bool ViewString::refresh()
+	{
+		if (!valid()) return false;
+		if (!original()) return false;
+		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
+		return true;
+	}
+
+	ViewString ViewString::sub_view(size_t m_start, size_t m_size)
+	{
+		if (!valid())
+			return {};
+
+		if (size() == INVALID_SIZE || size() == 0)
+			return {};
+
+		ViewString vs;
+		vs.m_ptr_original = this->m_ptr_original;
+		vs.m_ref = this->m_ref;
+
+		/*
+		* ok, so on a sub_view we gotta make sure that it will not free on death
+		*/
+		vs.m_ref.lost_reference();
+
+		vs.m_start = m_start;
+
+		/*
+		* if m_size is zero
+		* then we return the entire size of the string
+		*/
+		if (m_size == 0)
+		{
+			vs.m_size = size();
+		}
+		else
+		{
+			vs.m_size = m_size;
+		}
+
+		vs.m_valid = true;
+		return vs;
+	}
+
 	String::String()
 	{
 		_string = RUNTIMEXOR();
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(const char in)
@@ -28,11 +150,14 @@ namespace Net
 		str[1] = '\0';
 
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(const char* in, ...)
 	{
 		va_list vaArgs;
+
+#ifdef BUILD_LINUX
 		va_start(vaArgs, in);
 		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
 		va_end(vaArgs);
@@ -41,8 +166,16 @@ namespace Net
 		std::vector<char> str(size + 1);
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
+#else
+		va_start(vaArgs, in);
+		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+		std::vector<char> str(size + 1);
+		std::vsnprintf(str.data(), str.size(), in, vaArgs);
+		va_end(vaArgs);
+#endif
 
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(char* str)
@@ -53,6 +186,7 @@ namespace Net
 		*/
 		_string.free();
 		_string = RUNTIMEXOR(str);
+		_free_size = INVALID_SIZE;
 	}
 
 	String::String(String& in)
@@ -71,12 +205,15 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::Construct(const char* in, ...)
 	{
 		va_list vaArgs;
+
+#ifdef BUILD_LINUX
 		va_start(vaArgs, in);
 		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
 		va_end(vaArgs);
@@ -85,25 +222,52 @@ namespace Net
 		std::vector<char> str(size + 1);
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
+#else
+		va_start(vaArgs, in);
+		const size_t size = std::vsnprintf(nullptr, 0, in, vaArgs);
+		std::vector<char> str(size + 1);
+		std::vsnprintf(str.data(), str.size(), in, vaArgs);
+		va_end(vaArgs);
+#endif
 
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::copy(String& in)
 	{
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(in.data().get()));
+		this->_string.free();
+
+		auto ref = in.get();
+		auto pBuffer = ref.get();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::move(String&& in)
 	{
 		_string = in._string;
+		_free_size = in._free_size;
 
 		/*
 		* set _string to nullptr
 		* we moved the pointer to a new object
 		*/
 		in._string = RUNTIMEXOR();
+		in._free_size = INVALID_SIZE;
+	}
+
+	void String::move(String& in)
+	{
+		_string = in._string;
+		_free_size = in._free_size;
+
+		/*
+		* set _string to nullptr
+		* we moved the pointer to a new object
+		*/
+		in._string = RUNTIMEXOR();
+		in._free_size = INVALID_SIZE;
 	}
 
 	String::~String()
@@ -111,9 +275,30 @@ namespace Net
 		_string.free();
 	}
 
+	/*
+	* this function will pre-allocate space
+	* with finalize it will shrunk it by performing one another re-allocation
+	* this function should be used anytime append will be called
+	* just reserve enough space and finalize it
+	*/
+	void Net::String::reserve(size_t m_size)
+	{
+		return _string.reserve(m_size);
+	}
+
+	void Net::String::finalize()
+	{
+		return _string.finalize();
+	}
+
 	size_t String::size() const
 	{
 		return _string.size();
+	}
+
+	size_t String::actual_size() const
+	{
+		return _string.actual_size();
 	}
 
 	size_t String::length() const
@@ -127,25 +312,9 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
-	}
-
-	void String::append(const char in)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-		{
-			Construct(in);
-			return;
-		}
-
-		NET_CPOINTER<byte> data(ALLOC<byte>(_string.size() + 1));
-		memcpy(&data.get()[0], _string.revert().get(), _string.size());
-		memcpy(&data.get()[_string.size()], &in, 1);
-		data.get()[_string.size()] = '\0';
-
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
 	}
 
 	void String::set(const char* in, ...)
@@ -169,13 +338,121 @@ namespace Net
 		va_end(vaArgs);
 #endif
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		this->_free_size = INVALID_SIZE;
+	}
+
+	void String::set(String& in, ...)
+	{
+		auto ref = in.get();
+		auto ptr = ref.get();
+
+		/*
+		* cast it to const char*
+		* so we will perform a copy
+		*/
+		this->_string.free();
+		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(ptr));
+		this->_free_size = INVALID_SIZE;
+	}
+
+	void String::append(const char in)
+	{
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
+		{
+			Construct(in);
+			return;
+		}
+
+		if (actual_size() > size())
+		{
+			auto prevLen = size();
+			_string.set_size(size() + 1);
+			_string.set(prevLen, in);
+			_string.set(size(), '\0');
+		}
+		else
+		{
+			if (_free_size != INVALID_SIZE && _free_size >= 1)
+			{
+				/*
+				* use _free_size to fill up the free space in our current buffer
+				*/
+				auto prevLen = size();
+				_string.set_size(size() + 1);
+				_string.set(prevLen, in);
+				_string.set(size(), '\0');
+				_free_size -= 1;
+			}
+			else
+			{
+				size_t newLen = _string.size() + 1;
+				NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
+				memcpy(&data.get()[0], _string.revert().get(), _string.size());
+				data.get()[_string.size()] = in;
+				data.get()[newLen] = '\0';
+
+				_string.free();
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+			}
+		}
+	}
+
+	void Net::String::append(char* buffer)
+	{
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
+		{
+			Construct(buffer);
+			return;
+		}
+
+		auto buffer_len = strlen(buffer);
+
+		if (actual_size() > size())
+		{
+			auto prevLen = size();
+			_string.set_size(size() + buffer_len);
+			for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+			{
+				_string.set(i + j, buffer[j]);
+			}
+			_string.set(size(), '\0');
+		}
+		else
+		{
+			if (_free_size == INVALID_SIZE || buffer_len > _free_size)
+			{
+				size_t newSize = _string.size() + buffer_len;
+				NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
+				memcpy(data.get(), _string.revert().get(), _string.size());
+				memcpy(&data.get()[_string.size()], buffer, buffer_len);
+				data.get()[newSize] = '\0';
+
+				_string.free();
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+				_free_size = INVALID_SIZE;
+
+				return;
+			}
+
+			/*
+			* use _free_size to fill up the free space in our current buffer
+			*/
+			auto prevLen = size();
+			_string.set_size(size() + buffer_len);
+			for (size_t i = prevLen, j = 0; j < buffer_len; ++j)
+			{
+				_string.set(i + j, buffer[j]);
+			}
+			_string.set(size(), '\0');
+			_free_size -= buffer_len;
+		}
 	}
 
 	void String::append(const char* in, ...)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			Construct(in);
 			return;
@@ -199,43 +476,21 @@ namespace Net
 		std::vsnprintf(str.data(), str.size(), in, vaArgs);
 		va_end(vaArgs);
 #endif
-		
-		size_t newSize = _string.size() + str.size();
-		NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
-		memcpy(data.get(), _string.revert().get(), _string.size());
-		memcpy(&data.get()[_string.size()], str.data(), str.size());
-		data.get()[newSize] = '\0';
 
-		_string.free();
-		_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+		this->append(str.data());
 	}
 
-	void String::set(String& in, ...)
+	void String::append(String& in)
 	{
-		NET_CPOINTER<byte> buffer(ALLOC<byte>(in.size() + 1));
-		memcpy(buffer.get(), in.get().get(), in.size());
-		buffer.get()[in.size()] = '\0';
-
-		this->_string.free();
-		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
-	}
-
-	void String::append(String& in, ...)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
 			copy(in);
 			return;
 		}
 
-		size_t newSize = size() + in.size();
-		NET_CPOINTER<byte> buffer(ALLOC<byte>(newSize + 1));
-		memcpy(buffer.get(), this->get().get(), size());
-		memcpy(&buffer.get()[size()], in.get().get(), in.size());
-		buffer.get()[newSize] = '\0';
-
-		this->_string.free();
-		this->_string = RUNTIMEXOR(reinterpret_cast<char*>(buffer.get()));
+		auto ref = in.get();
+		auto ptr = ref.get();
+		this->append(ptr);
 	}
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::str()
@@ -288,9 +543,7 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return true;
 
-		const auto buffer = revert();
-		const auto e = !memcmp(buffer.get(), CSTRING(""), size());
-		return e;
+		return (this->compare(CSTRING("")));
 	}
 
 	char String::at(const size_t i)
@@ -347,21 +600,6 @@ namespace Net
 		return sub;
 	}
 
-	size_t String::find(char c)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		for (size_t i = 0; i < size(); ++i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &c, 1))
-				return i;
-		}
-
-		return NET_STRING_NOT_FOUND;
-	}
-
 	size_t String::find(const char c, const char type)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
@@ -371,33 +609,8 @@ namespace Net
 		{
 			const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
 			const auto comp = type & NOT_CASE_SENS ? (char)tolower((int)c) : c;
-			if (!memcmp(&tmp, &comp, 1))
+			if (tmp == comp)
 				return i;
-		}
-
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::find(const char* pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = strlen(pattern);
-
-		size_t it = 0;
-		for (size_t i = 0; i < size(); ++i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &pattern[it], 1))
-			{
-				it++;
-
-				if (it == patternLen)
-					return i - it + 1;
-			}
-			else
-				it = 0;
 		}
 
 		return NET_STRING_NOT_FOUND;
@@ -410,188 +623,46 @@ namespace Net
 
 		const auto patternLen = strlen(pattern);
 
-		auto tmpMatch = ALLOC<char>(patternLen + 1);
-		memset(tmpMatch, NULL, patternLen);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < patternLen; ++i)
-				tmpMatch[i] = (char)tolower((int)pattern[i]);
-		}
-		tmpMatch[patternLen] = '\0';
-
 		size_t it = 0;
 		for (size_t i = 0; i < size(); ++i)
 		{
-			const auto tmp = (char)tolower((int)at(i));
-			if (!memcmp(&tmp, type & NOT_CASE_SENS ? &tmpMatch[it] : &pattern[it], 1))
+			const auto tmp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)at(i)) : at(i);
+			const auto comp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)pattern[it]) : pattern[it];
+			if (tmp == comp)
 			{
 				it++;
-
 				if (it == patternLen)
 				{
-					FREE(tmpMatch);
 					return i - it + 1;
 				}
 			}
 			else
-				it = 0;
-		}
-
-		FREE(tmpMatch);
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::find(const size_t start, const char pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		if (start > size())
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = 1;
-
-		size_t it = 0;
-		for (auto i = start; i < size(); ++i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &pattern, 1))
 			{
-				it++;
-
-				if (it == patternLen)
-					return i - it + 1;
-			}
-			else
 				it = 0;
+			}
 		}
 
 		return NET_STRING_NOT_FOUND;
 	}
 
-	size_t String::find(const size_t start, char pattern, const char type)
+	size_t String::find(const size_t start, char character, const char type)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
 			return NET_STRING_NOT_FOUND;
 
 		if (start > size())
 			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = 1;
 
 		if (type & NOT_CASE_SENS)
-			pattern = (char)tolower((int)pattern);
+		{
+			character = (char)tolower((int)character);
+		}
 
-		size_t it = 0;
 		for (auto i = start; i < size(); ++i)
 		{
 			const auto tmp = (char)tolower((int)at(i));
-			if (!memcmp(&tmp, &pattern, 1))
-			{
-				it++;
-
-				if (it == patternLen)
-					return i - it + 1;
-			}
-			else
-				it = 0;
-		}
-
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::find(const size_t start, char* pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		if (start > size())
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = strlen(pattern);
-
-		size_t it = 0;
-		for (auto i = start; i < size(); ++i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &pattern[it], 1))
-			{
-				it++;
-
-				if (it == patternLen)
-					return i - it + 1;
-			}
-			else
-				it = 0;
-		}
-
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::find(const size_t start, char* pattern, const char type)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		if (start > size())
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = strlen(pattern);
-
-		auto tmpMatch = ALLOC<char>(patternLen + 1);
-		memset(tmpMatch, NULL, patternLen);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < patternLen; ++i)
-				tmpMatch[i] = (char)tolower((int)pattern[i]);
-		}
-		tmpMatch[patternLen] = '\0';
-
-		size_t it = 0;
-		for (auto i = start; i < size(); ++i)
-		{
-			const auto tmp = (char)tolower((int)at(i));
-			if (!memcmp(&tmp, type & NOT_CASE_SENS ? &tmpMatch[it] : &pattern[it], 1))
-			{
-				it++;
-
-				if (it == patternLen)
-				{
-					FREE(tmpMatch);
-					return i - it + 1;
-				}
-			}
-			else
-				it = 0;
-		}
-
-		FREE(tmpMatch);
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::find(const size_t start, const char* pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		if (start > size())
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = strlen(pattern);
-
-		size_t it = 0;
-		for (auto i = start; i < size(); ++i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &pattern[it], 1))
-			{
-				it++;
-
-				if (it == patternLen)
-					return i - it + 1;
-			}
-			else
-				it = 0;
+			if (tmp == character)
+				return i;
 		}
 
 		return NET_STRING_NOT_FOUND;
@@ -607,52 +678,26 @@ namespace Net
 
 		const auto patternLen = strlen(pattern);
 
-		auto tmpMatch = ALLOC<char>(patternLen + 1);
-		memset(tmpMatch, NULL, patternLen);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < patternLen; ++i)
-				tmpMatch[i] = (char)tolower((int)pattern[i]);
-		}
-		tmpMatch[patternLen] = '\0';
-
 		size_t it = 0;
 		for (auto i = start; i < size(); ++i)
 		{
-			const auto tmp = (char)tolower((int)at(i));
-			if (!memcmp(&tmp, type & NOT_CASE_SENS ? &tmpMatch[it] : &pattern[it], 1))
+			const auto tmp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)at(i)) : at(i);
+			const auto comp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)pattern[it]) : pattern[it];
+			if (tmp == comp)
 			{
 				it++;
-
 				if (it == patternLen)
 				{
-					FREE(tmpMatch);
 					return i - it + 1;
 				}
 			}
 			else
+			{
 				it = 0;
+			}
 		}
 
-		FREE(tmpMatch);
 		return NET_STRING_NOT_FOUND;
-	}
-
-	std::vector<size_t> String::findAll(const char c)
-	{
-		std::vector<size_t> tmp;
-
-		if (size() == INVALID_SIZE || size() == 0)
-			return tmp;
-
-		for (size_t i = 0; i < size(); ++i)
-		{
-			const auto res = find(i, c);
-			if (res != NET_STRING_NOT_FOUND)
-				tmp.emplace_back(res);
-		}
-
-		return tmp;
 	}
 
 	std::vector<size_t> String::findAll(const char c, const char type)
@@ -666,24 +711,10 @@ namespace Net
 		{
 			const auto res = find(i, c, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
-		}
-
-		return tmp;
-	}
-
-	std::vector<size_t> String::findAll(const char* pattern)
-	{
-		std::vector<size_t> tmp;
-
-		if (size() == INVALID_SIZE || size() == 0)
-			return tmp;
-
-		for (size_t i = 0; i < size(); ++i)
-		{
-			const auto res = find(i, pattern);
-			if (res != NET_STRING_NOT_FOUND)
-				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
@@ -700,25 +731,59 @@ namespace Net
 		{
 			const auto res = find(i, pattern, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
 	}
 
-	size_t String::findLastOf(char c)
+	std::vector<size_t> String::findAll(size_t start, const char c, const char type)
 	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
+		std::vector<size_t> tmp;
 
-		for (size_t i = size() - 1; i > 0; --i)
+		if (size() == INVALID_SIZE || size() == 0)
+			return tmp;
+
+		if (start > size())
+			return tmp;
+
+		for (size_t i = start; i < size(); ++i)
 		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &c, 1))
-				return i;
+			const auto res = find(i, c, type);
+			if (res != NET_STRING_NOT_FOUND)
+			{
+				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
-		return NET_STRING_NOT_FOUND;
+		return tmp;
+	}
+
+	std::vector<size_t> String::findAll(size_t start, const char* pattern, const char type)
+	{
+		std::vector<size_t> tmp;
+
+		if (size() == INVALID_SIZE || size() == 0)
+			return tmp;
+
+		if (start > size())
+			return tmp;
+
+		for (size_t i = start; i < size(); ++i)
+		{
+			const auto res = find(i, pattern, type);
+			if (res != NET_STRING_NOT_FOUND)
+			{
+				tmp.emplace_back(res);
+				i = res;
+			}
+		}
+
+		return tmp;
 	}
 
 	size_t String::findLastOf(const char c, const char type)
@@ -730,36 +795,8 @@ namespace Net
 		{
 			const auto tmp = type & NOT_CASE_SENS ? (char)tolower((int)at(i)) : at(i);
 			const auto comp = type & NOT_CASE_SENS ? (char)tolower((int)c) : c;
-			if (!memcmp(&tmp, &comp, 1))
+			if (tmp == comp)
 				return i;
-		}
-
-		return NET_STRING_NOT_FOUND;
-	}
-
-	size_t String::findLastOf(const char* pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return NET_STRING_NOT_FOUND;
-
-		const auto patternLen = strlen(pattern);
-
-		size_t it = patternLen - 1;
-		for (size_t i = size() - 1; i > 0; --i)
-		{
-			const auto tmp = at(i);
-			if (!memcmp(&tmp, &pattern[it], 1))
-			{
-				if (it == 0)
-					it = INVALID_SIZE;
-				else
-					it--;
-
-				if (it == INVALID_SIZE)
-					return i;
-			}
-			else
-				it = patternLen - 1;
 		}
 
 		return NET_STRING_NOT_FOUND;
@@ -772,20 +809,12 @@ namespace Net
 
 		const auto patternLen = strlen(pattern);
 
-		auto tmpMatch = ALLOC<char>(patternLen + 1);
-		memset(tmpMatch, NULL, patternLen);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < patternLen; ++i)
-				tmpMatch[i] = (char)tolower((int)pattern[i]);
-		}
-		tmpMatch[patternLen] = '\0';
-
 		size_t it = patternLen - 1;
 		for (size_t i = size() - 1; i > 0; --i)
 		{
-			const auto tmp = (char)tolower((int)at(i));
-			if (!memcmp(&tmp, type & NOT_CASE_SENS ? &tmpMatch[it] : &pattern[it], 1))
+			const auto tmp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)at(i)) : at(i);
+			const auto comp = (type & Net::String::type::NOT_CASE_SENS) ? (char)tolower((int)pattern[it]) : pattern[it];
+			if (tmp == comp)
 			{
 				if (it == 0)
 					it = INVALID_SIZE;
@@ -794,26 +823,16 @@ namespace Net
 
 				if (it == INVALID_SIZE)
 				{
-					FREE(tmpMatch);
 					return i;
 				}
 			}
 			else
+			{
 				it = patternLen - 1;
+			}
 		}
 
-		FREE(tmpMatch);
 		return NET_STRING_NOT_FOUND;
-	}
-
-	bool String::compare(const char match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), &match, size());
-		return cmp;
 	}
 
 	bool String::compare(char match, const char type)
@@ -821,37 +840,13 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto tmp = revert();
-		size_t len = 1;
-		if (type & NOT_CASE_SENS)
-		{
-			match = (char)tolower((int)match);
-
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
-		}
-
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto cmp = !memcmp(tmp.get(), &match, len);
-			return cmp;
-		}
-
-		const auto cmp = !memcmp(tmp.get(), &match, size());
-		return cmp;
-	}
-
-	bool String::compare(const char* match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (size() > 1)
 			return false;
 
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), match, size());
-		return cmp;
+		if (type & NOT_CASE_SENS)
+			return (this->operator[](0) == match);
+
+		return ((char)tolower(this->operator[](0)) == (char)tolower(match));
 	}
 
 	bool String::compare(const char* match, const char type)
@@ -859,72 +854,26 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		const auto tmp = revert();
 		auto len = strlen(match);
-		auto tmpMatch = ALLOC<char>(len + 1);
-		memset(tmpMatch, NULL, len);
-		if (type & NOT_CASE_SENS)
-		{
-			for (size_t i = 0; i < len; ++i)
-				tmpMatch[i] = (char)tolower((int)match[i]);
 
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
-		}
-		tmpMatch[len] = '\0';
-
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto res = !memcmp(tmp.get(), type & NOT_CASE_SENS ? tmpMatch : match, len);
-			FREE(tmpMatch);
-			return res;
-		}
-
-		const auto res = !memcmp(tmp.get(), type & NOT_CASE_SENS ? tmpMatch : match, size());
-		FREE(tmpMatch);
-		return res;
-	}
-
-	bool String::compare(char* match)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
+		if (this->size() != len)
 			return false;
 
-		const auto buffer = revert();
-		const auto cmp = !memcmp(buffer.get(), match, size());
-		return cmp;
-	}
-
-	bool String::compare(char* match, const char type)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		const auto tmp = revert();
-		auto len = strlen(match);
-		if (type & NOT_CASE_SENS)
+		for (size_t i = 0; i < len; ++i)
 		{
-			for (size_t i = 0; i < len; ++i)
-				match[i] = (char)tolower((int)match[i]);
-
-			for (size_t i = 0; i < size(); ++i)
-				tmp.get()[i] = (char)tolower((int)tmp.get()[i]);
+			if (type & NOT_CASE_SENS)
+			{
+				if ((char)tolower(this->operator[](i)) != (char)tolower(match[i]))
+					return false;
+			}
+			else
+			{
+				if (this->operator[](i) != match[i])
+					return false;
+			}
 		}
 
-		if (type & IN_LEN)
-		{
-			if (len > size())
-				len = size();
-
-			const auto cmp = !memcmp(tmp.get(), match, len);
-			return cmp;
-		}
-
-		const auto cmp = !memcmp(tmp.get(), match, size());
-		return cmp;
+		return true;
 	}
 
 	bool String::erase(const size_t len)
@@ -932,22 +881,43 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		if (len > size() - len)
+		if (len > size())
 		{
 			clear();
 			return true;
 		}
 
-		const auto replace = ALLOC<char>(len + 1);
-		for (size_t i = len, it = 0; i < size(); ++i, ++it)
+		/*
+		* instead of allocating a new buffer
+		* we use the method to move the characters up
+		* and repos the null-terminator
+		*/
+		char prevChar = at(size() - 1);
+		for (size_t i = 0; i < len; ++i)
 		{
-			const auto tmp = at(i);
-			memcpy(&replace[it], &tmp, 1);
+			for (size_t j = size() - 1; j > 0; --j)
+			{
+				char rem = at(j - 1);
+				_string.set(j - 1, prevChar);
+				prevChar = rem;
+			}
 		}
-		replace[size() - len] = '\0';
+		_string.set(size() - len, '\0');
+		_string.set_size(size() - len);
 
-		_string.free();
-		_string = RUNTIMEXOR(replace);
+		/*
+		* ok if we removed then we add the amount to _free_size
+		* later we will use it for the append function
+		*/
+		if (_free_size == INVALID_FILE_SIZE)
+		{
+			_free_size = len;
+		}
+		else
+		{
+			_free_size += len;
+		}
+
 		return true;
 	}
 
@@ -956,24 +926,43 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		if (start + len >= size())
-			len = size() - start;
-
-		const auto replaceSize = size() - len;
-		const auto replace = ALLOC<char>(replaceSize + 1);
-		for (size_t i = 0, j = 0; i < size(); ++i)
+		if (start + len > size())
 		{
-			if (i >= start && i <= start + len - 1)
-				continue;
-
-			const auto tmp = at(i);
-			memcpy(&replace[j], &tmp, 1);
-			++j;
+			clear();
+			return true;
 		}
-		replace[replaceSize] = '\0';
 
-		_string.free();
-		_string = RUNTIMEXOR(replace);
+		/*
+		* instead of allocating a new buffer
+		* we use the method to move the characters up
+		* and repos the null-terminator
+		*/
+		char prevChar = at(size() - 1);
+		for (size_t i = 0; i < len; ++i)
+		{
+			for (size_t j = size() - 1; j > start; --j)
+			{
+				char rem = at(j - 1);
+				_string.set(j - 1, prevChar);
+				prevChar = rem;
+			}
+		}
+		_string.set(size() - len, '\0');
+		_string.set_size(size() - len);
+
+		/*
+		* ok if we removed then we add the amount to _free_size
+		* later we will use it for the append function
+		*/
+		if (_free_size == INVALID_FILE_SIZE)
+		{
+			_free_size = len;
+		}
+		else
+		{
+			_free_size += len;
+		}
+
 		return true;
 	}
 
@@ -1086,149 +1075,13 @@ namespace Net
 		return erase(it, pattern.length());
 	}
 
-	bool String::eraseAll(const char c)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		std::vector<size_t> tmp;
-		size_t it = 0;
-		auto res = NET_STRING_NOT_FOUND;
-		do
-		{
-			res = find(it, c);
-			if (res != NET_STRING_NOT_FOUND)
-			{
-				tmp.emplace_back(res);
-				it = res + 1;
-			}
-		} while (res != NET_STRING_NOT_FOUND);
-
-		if (tmp.empty())
-			return false;
-
-		const auto replaceSize = size() - tmp.size();
-		const auto replace = ALLOC<char>(replaceSize + 1);
-
-		for (size_t i = 0, j = 0; i < size(); ++i)
-		{
-			auto skip = false;
-			for (auto& value : tmp)
-			{
-				if (value == i)
-				{
-					skip = true;
-					break;
-				}
-			}
-			if (skip)
-				continue;
-
-			const auto ch = at(i);
-			memcpy(&replace[j], &ch, 1);
-			++j;
-		}
-
-		_string.free();
-		_string = RUNTIMEXOR(replace);
-		return true;
-	}
-
 	bool String::eraseAll(const char c, const char type)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		std::vector<size_t> tmp;
-		size_t it = 0;
-		auto res = NET_STRING_NOT_FOUND;
-		do
-		{
-			res = find(it, c, type);
-			if (res != NET_STRING_NOT_FOUND)
-			{
-				tmp.emplace_back(res);
-				it = res + 1;
-			}
-		} while (res != NET_STRING_NOT_FOUND);
-
-		if (tmp.empty())
-			return false;
-
-		const auto replaceSize = size() - tmp.size();
-		const auto replace = ALLOC<char>(replaceSize + 1);
-
-		for (size_t i = 0, j = 0; i < size(); ++i)
-		{
-			auto skip = false;
-			for (auto& value : tmp)
-			{
-				if (value == i)
-				{
-					skip = true;
-					break;
-				}
-			}
-			if (skip)
-				continue;
-
-			const auto ch = at(i);
-			memcpy(&replace[j], &ch, 1);
-			++j;
-		}
-
-		_string.free();
-		_string = RUNTIMEXOR(replace);
-		return true;
-	}
-
-	bool String::eraseAll(const char* pattern)
-	{
-		if (size() == INVALID_SIZE || size() == 0)
-			return false;
-
-		std::vector<size_t> tmp;
-		size_t it = 0;
-		auto res = NET_STRING_NOT_FOUND;
-		do
-		{
-			res = find(it, pattern);
-			if (res != NET_STRING_NOT_FOUND)
-			{
-				tmp.emplace_back(res);
-				it = res + 1;
-			}
-		} while (res != NET_STRING_NOT_FOUND);
-
-		if (tmp.empty())
-			return false;
-
-		const auto replaceSize = size() - tmp.size();
-		const	 auto replace = ALLOC<char>(replaceSize + 1);
-		const auto plen = strlen(pattern);
-
-		for (size_t i = 0, j = 0; i < size(); ++i)
-		{
-			auto skip = false;
-			for (auto& value : tmp)
-			{
-				if (i >= value && i < value + plen)
-				{
-					skip = true;
-					break;
-				}
-			}
-			if (skip)
-				continue;
-
-			const auto ch = at(i);
-			memcpy(&replace[j], &ch, 1);
-			++j;
-		}
-
-		_string.free();
-		_string = RUNTIMEXOR(replace);
-		return true;
+		auto match = findAll(c, type);
+		return eraseAll(match);
 	}
 
 	bool String::eraseAll(const char* pattern, const char type)
@@ -1236,48 +1089,8 @@ namespace Net
 		if (size() == INVALID_SIZE || size() == 0)
 			return false;
 
-		std::vector<size_t> tmp;
-		size_t it = 0;
-		auto res = NET_STRING_NOT_FOUND;
-		do
-		{
-			res = find(it, pattern, type);
-			if (res != NET_STRING_NOT_FOUND)
-			{
-				tmp.emplace_back(res);
-				it = res + 1;
-			}
-		} while (res != NET_STRING_NOT_FOUND);
-
-		if (tmp.empty())
-			return false;
-
-		const auto replaceSize = size() - tmp.size();
-		const auto replace = ALLOC<char>(replaceSize + 1);
-		const auto plen = strlen(pattern);
-
-		for (size_t i = 0, j = 0; i < size(); ++i)
-		{
-			auto skip = false;
-			for (auto& value : tmp)
-			{
-				if (i >= value && i < value + plen)
-				{
-					skip = true;
-					break;
-				}
-			}
-			if (skip)
-				continue;
-
-			const auto ch = at(i);
-			memcpy(&replace[j], &ch, 1);
-			++j;
-		}
-
-		_string.free();
-		_string = RUNTIMEXOR(replace);
-		return true;
+		auto match = findAll(pattern, type);
+		return eraseAll(match);
 	}
 
 	bool Net::String::eraseAll(std::vector<size_t> m_IndexCharacterToSkip)
@@ -1320,8 +1133,7 @@ namespace Net
 		if (i == NET_STRING_NOT_FOUND)
 			return false;
 
-		const auto str = revert();
-		str.get()[i] = r;
+		_string.set(i, r);
 		return true;
 	}
 
@@ -1427,9 +1239,8 @@ namespace Net
 		if (found.empty())
 			return false;
 
-		const auto str = revert();
-		for (auto& val : found)
-			str.get()[val] = r;
+		for (auto& index : found)
+			_string.set(index, r);
 
 		return true;
 	}
@@ -1483,6 +1294,21 @@ namespace Net
 		}
 
 		return affectedOnce;
+	}
+
+	ViewString Net::String::view_string(size_t m_start, size_t m_size)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return {};
+
+		/*
+		* if m_size is zero
+		* then we return the entire size of the string
+		*/
+		if (m_size == 0)
+			return { this, this->get(), m_start, size() };
+
+		return { this, this->get(), m_start, m_size };
 	}
 }
 NET_POP

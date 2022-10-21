@@ -37,6 +37,7 @@ namespace Net
 			bool bFree;
 
 		public:
+			XOR_UNIQUEPOINTER();
 			XOR_UNIQUEPOINTER(char*, size_t, bool);
 			~XOR_UNIQUEPOINTER();
 
@@ -54,6 +55,7 @@ namespace Net
 		{
 			NET_CPOINTER<char> _buffer;
 			size_t _size;
+			size_t _actual_size;
 			uintptr_t _Key;
 
 			char* encrypt();
@@ -62,6 +64,9 @@ namespace Net
 			XOR();
 			XOR(char*);
 			XOR(const char*);
+
+			void reserve(size_t size);
+			void finalize();
 
 			XOR& operator=(XOR& other)
 			{
@@ -89,9 +94,12 @@ namespace Net
 				return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
 			}
 
+			void set(size_t, char);
+			void set_size(size_t);
 			void init(char*);
 			void init(const char*);
 			size_t size() const;
+			size_t actual_size() const;
 			size_t length() const;
 			XOR_UNIQUEPOINTER revert(bool = true);
 			void free();

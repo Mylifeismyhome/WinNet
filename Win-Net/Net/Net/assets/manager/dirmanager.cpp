@@ -5,7 +5,7 @@ NET_IGNORE_CONVERSION_NULL
 NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
 {
 	const size_t cSize = strlen(data->d_name) + 1;
-	wchar_t* w_d_name = new wchar_t[cSize];
+	wchar_t* w_d_name = ALLOC<wchar_t>(cSize);
 	mbstowcs(w_d_name, data->d_name, cSize);
 
 	wcscpy(this->name, w_d_name);
@@ -654,7 +654,7 @@ namespace Net
 					nextDir += CWSTRING("/");
 
 					const size_t cSize = strlen(entry->d_name) + 1;
-					wchar_t* w_d_name = new wchar_t[cSize];
+					wchar_t* w_d_name = ALLOC<wchar_t>(cSize);
 					mbstowcs(w_d_name, entry->d_name, cSize);
 
 					nextDir += w_d_name;

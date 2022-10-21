@@ -47,7 +47,7 @@ namespace Net
 					else
 						capacity = capacity * 2;
 
-					T* new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+					T* new_container = ALLOC<T>(capacity);
 					if (!new_container) return;
 					memset((void*)new_container, 0, sizeof(T) * capacity);
 
@@ -84,7 +84,7 @@ namespace Net
 
 					if (current_size < (capacity / 2))
 					{
-						auto new_container = static_cast<T*>(malloc(sizeof(T) * (capacity / 2)));
+						auto new_container = ALLOC<T>(capacity / 2);
 						memset(new_container, 0, sizeof(T) * (capacity / 2));
 
 						if (current_size >= 1)
@@ -115,7 +115,7 @@ namespace Net
 						else
 							capacity *= 2;
 
-						auto new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+						auto new_container = ALLOC<T>(capacity);
 						memset(new_container, 0, sizeof(T) * capacity);
 
 						if (current_size >= 1)
@@ -174,12 +174,19 @@ namespace Net
 		{
 		public:
 			static int ToInt32(char* str);
+			static int ToInt32(Net::ViewString& vs);
 			static float ToFloat(char* str);
+			static float ToFloat(Net::ViewString& vs);
 			static double ToDouble(char* str);
+			static double ToDouble(Net::ViewString& vs);
 			static bool ToBoolean(char* str);
+			static bool ToBoolean(Net::ViewString& vs);
 			static bool is_float(char* str);
+			static bool is_float(Net::ViewString& vs);
 			static bool is_double(char* str);
+			static bool is_double(Net::ViewString& vs);
 			static bool is_boolean(char* str);
+			static bool is_boolean(Net::ViewString& vs);
 		};
 
 		enum class Type
@@ -196,7 +203,7 @@ namespace Net
 
 		enum class SerializeType
 		{
-			NONE = 0,
+			UNFORMATTED = 0,
 			FORMATTED
 		};
 
@@ -257,6 +264,7 @@ namespace Net
 			void operator=(const BasicObject& value);
 
 			void SetKey(const char* key);
+			void SetKey(Net::ViewString& key);
 			void SetValue(T value, Type type);
 			void SetType(Type type);
 
@@ -299,6 +307,7 @@ namespace Net
 			BasicValue<Object>* operator->() const;
 
 			BasicValueRead operator[](const char* key);
+			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
 			BasicValueRead operator[](int idx);
 
@@ -333,14 +342,20 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
+			template <typename T>
+			BasicValue<T>* __get(Net::ViewString& key);
+
 			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<char*>& object_chain, bool m_prepareString = false);
 
 		public:
 			Object(bool bSharedMemory = false);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
+			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead At(const char* key);
+			BasicValueRead At(Net::ViewString& key);
 
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
@@ -352,16 +367,20 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
-			Net::String Serialize(SerializeType type = SerializeType::NONE, size_t iterations = 0);
-			Net::String Stringify(SerializeType type = SerializeType::NONE, size_t iterations = 0);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, bool m_prepareString);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 
-			void Free();
+			void Destroy();
 
 		private:
 			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, Vector<char*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray
@@ -370,6 +389,7 @@ namespace Net
 			bool emplace_back(T value, Type type);
 
 			bool DeserializeAny(Net::String&, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString&, bool m_prepareString = false);
 
 		public:
 			Array(bool bSharedMemory = false);
@@ -392,10 +412,13 @@ namespace Net
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
+			bool Deserialize(Net::ViewString& json, bool m_prepareString);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 
-			void Free();
+			void Destroy();
 		};
 
 		class Document
@@ -431,10 +454,12 @@ namespace Net
 			void Set(Array arr);
 			void Set(Array* arr);
 
-			Net::String Serialize(SerializeType type = SerializeType::NONE);
-			Net::String Stringify(SerializeType type = SerializeType::NONE);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 		};
 	}
 }

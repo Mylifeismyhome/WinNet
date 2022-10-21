@@ -148,7 +148,7 @@ bool Net::Packet::Deserialize(const char* data)
 
 void Net::Packet::SetJson(Net::Json::Document& doc)
 {
-	this->json.Deserialize(doc.Serialize(Net::Json::SerializeType::NONE));
+	this->json.Deserialize(doc.Serialize(Net::Json::SerializeType::UNFORMATTED));
 }
 
 void Net::Packet::SetRaw(const std::vector<Net::RawData_t>& raw)
@@ -190,5 +190,5 @@ size_t Net::Packet::Packet::GetRawDataFullSize() const
 
 Net::String Net::Packet::Stringify()
 {
-	return this->json.Serialize(Net::Json::SerializeType::NONE);
+	return this->json.Serialize(Net::Json::SerializeType::UNFORMATTED);
 }

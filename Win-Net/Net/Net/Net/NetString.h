@@ -37,9 +37,43 @@ namespace Net
 		};
 	}
 
+	class ViewString
+	{
+		void* m_ptr_original;
+		Net::Cryption::XOR_UNIQUEPOINTER m_ref;
+		size_t m_start;
+		size_t m_size;
+		bool m_valid;
+
+	public:
+		ViewString();
+		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size);
+		ViewString(ViewString& vs) NOEXPECT;
+
+		char operator[](size_t i)
+		{
+			if (!valid()) return '\0';
+			return this->m_ref.get()[i];
+		}
+
+		size_t start() const;
+		size_t end() const;
+		size_t size() const;
+		size_t length() const;
+
+		char* get() const;
+		bool valid() const;
+
+		void* original();
+		bool refresh();
+		ViewString sub_view(size_t m_start, size_t m_size = 0);
+	};
+
 	class String
 	{
 		RUNTIMEXOR _string;
+		size_t _free_size;
+
 		Net::Cryption::XOR_UNIQUEPOINTER revert();
 
 		void Construct(const char);
@@ -54,11 +88,13 @@ namespace Net
 		String(String&&) NOEXPECT;
 		~String();
 
+		void reserve(size_t m_size);
+		void finalize();
+
 		enum type
 		{
-			NONE = 0x0,
-			NOT_CASE_SENS,
-			IN_LEN
+			NONE = 0,
+			NOT_CASE_SENS
 		};
 
 		void operator=(const char* in)
@@ -83,7 +119,7 @@ namespace Net
 
 		void operator+=(const char* in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -91,7 +127,7 @@ namespace Net
 
 		void operator+=(char* in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -99,7 +135,7 @@ namespace Net
 
 		void operator+=(const char in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -107,7 +143,7 @@ namespace Net
 
 		void operator+=(String in)
 		{
-			if (size() != INVALID_SIZE && size() != 0)
+			if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
 			else
 				set(in);
@@ -139,15 +175,18 @@ namespace Net
 		}
 
 		size_t size() const;
+		size_t actual_size() const;
 		size_t length() const;
 		void set(char, ...);
 		void append(char);
+		void append(char*);
 		void set(const char*, ...);
 		void append(const char*, ...);
 		void set(String&, ...);
-		void append(String&, ...);
+		void append(String&);
 		void copy(String&);
 		void move(String&&);
+		void move(String&);
 		Net::Cryption::XOR_UNIQUEPOINTER str();
 		Net::Cryption::XOR_UNIQUEPOINTER cstr();
 		Net::Cryption::XOR_UNIQUEPOINTER get();
@@ -157,30 +196,18 @@ namespace Net
 		char at(size_t);
 		char* substr(size_t);
 		char* substr(size_t, size_t);
-		size_t find(char);
-		size_t find(char, char);
-		size_t find(const char*);
-		size_t find(const char*, char);
-		size_t find(size_t, char);
-		size_t find(size_t, char, char);
-		size_t find(size_t, char*);
-		size_t find(size_t, char*, char);
-		size_t find(size_t, const char*);
-		size_t find(size_t, const char*, char);
-		std::vector<size_t> findAll(char);
-		std::vector<size_t> findAll(char, char);
-		std::vector<size_t> findAll(const char*);
-		std::vector<size_t> findAll(const char*, char);
-		size_t findLastOf(char);
-		size_t findLastOf(char, char);
-		size_t findLastOf(const char*);
-		size_t findLastOf(const char*, char);
-		bool compare(char);
-		bool compare(char, char = NONE);
-		bool compare(const char*);
-		bool compare(const char*, char);
-		bool compare(char*);
-		bool compare(char*, char = NONE);
+		size_t find(const char, const char = NONE);
+		size_t find(const char*, const char = NONE);
+		size_t find(size_t, char, const char = NONE);
+		size_t find(size_t, const char*, const char = NONE);
+		std::vector<size_t> findAll(char, const char = NONE);
+		std::vector<size_t> findAll(const char*, const char = NONE);
+		std::vector<size_t> findAll(size_t, char, const char = NONE);
+		std::vector<size_t> findAll(size_t, const char*, const char = NONE);
+		size_t findLastOf(char, const char = NONE);
+		size_t findLastOf(const char*, const char = NONE);
+		bool compare(const char, const char = NONE);
+		bool compare(const char*, const char = NONE);
 		bool erase(size_t);
 		bool erase(size_t, size_t);
 		bool erase(char, size_t = 0);
@@ -192,11 +219,9 @@ namespace Net
 		bool erase(String&, size_t = 0);
 		bool erase(String&, char);
 		bool erase(String&, size_t, char);
-		bool eraseAll(char);
-		bool eraseAll(char, char);
-		bool eraseAll(const char*);
-		bool eraseAll(const char*, char);
-		bool eraseAll(std::vector<size_t> m_IndexCharacterToSkip);
+		bool eraseAll(char, const char = NONE);
+		bool eraseAll(const char*, const char = NONE);
+		bool eraseAll(std::vector<size_t>);
 		bool replace(char, char, size_t = 0);
 		bool replace(char, const char*, size_t = 0);
 		bool replace(const char*, char, size_t = 0);
@@ -205,6 +230,7 @@ namespace Net
 		bool replaceAll(char, const char*);
 		bool replaceAll(const char*, char);
 		bool replaceAll(const char*, const char*);
+		ViewString view_string(size_t = 0, size_t = 0);
 	};
 }
 NET_DSA_END

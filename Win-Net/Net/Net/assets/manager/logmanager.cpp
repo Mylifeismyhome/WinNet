@@ -355,7 +355,7 @@ namespace Net
 				return;
 
 			const size_t lenfunc = strlen(funcA) + 1;
-			wchar_t* func = new wchar_t[lenfunc];
+			wchar_t* func = ALLOC<wchar_t>(lenfunc);
 			mbstowcs(func, funcA, lenfunc);
 
 			va_list vaArgs;
@@ -517,7 +517,7 @@ namespace Net
 					return;
 
 				const size_t lenfunc = strlen(funcA) + 1;
-				wchar_t* func = new wchar_t[lenfunc];
+				wchar_t* func = ALLOC<wchar_t>(lenfunc);
 				mbstowcs(func, funcA, lenfunc);
 
 				va_list vaArgs;

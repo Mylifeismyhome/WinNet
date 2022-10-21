@@ -22,7 +22,7 @@ char* SQLString(const char* string, ...)
 	va_end(vaArgs);
 #endif
 
-	auto* res = new char[str.size() + 1];
+	auto* res = ALLOC<char>(str.size() + 1);
 	memcpy(res, str.data(), str.size());
 	res[str.size()] = '\0';
 	return res;

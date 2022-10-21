@@ -159,13 +159,13 @@ namespace Net
 		{
 			// create a new buffer
 			size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
-			byte* data32 = new byte[encodeLength + 1];
+			byte* data32 = ALLOC<byte>(encodeLength + 1);
 			data32[encodeLength] = '\0';
 			if (Encode32(buffer, static_cast<int>(len), data32))
 			{
 				if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
 				{
-					delete[] buffer;
+					FREE(buffer);
 					buffer = data32;
 					len = encodeLength;
 
@@ -173,7 +173,7 @@ namespace Net
 				}
 			}
 
-			delete[] data32;
+			FREE(data32);
 			return false;
 		}
 
@@ -181,13 +181,13 @@ namespace Net
 		{
 			// create a new buffer
 			size_t encodeLength = (size_t)GetEncode32Length(static_cast<int>(len));
-			byte* data32 = new byte[encodeLength + 1];
+			byte* data32 = ALLOC<byte>(encodeLength + 1);
 			data32[encodeLength] = '\0';
 			if (Encode32(buffer, static_cast<int>(len), data32))
 			{
 				if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
 				{
-					if (out) delete[] out;
+					FREE(out);
 					out = data32;
 					len = encodeLength;
 
@@ -195,7 +195,7 @@ namespace Net
 				}
 			}
 
-			delete[] data32;
+			FREE(data32);
 			return false;
 		}
 
@@ -203,13 +203,13 @@ namespace Net
 		{
 			// create a new buffer
 			size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
-			byte* data256 = new byte[decodedLength + 1];
+			byte* data256 = ALLOC<byte>(decodedLength + 1);
 			data256[decodedLength] = '\0';
 			if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
 			{
 				if (Decode32(buffer, static_cast<int>(len), data256))
 				{
-					delete[] buffer;
+					FREE(buffer);
 					buffer = data256;
 					len = decodedLength;
 
@@ -217,7 +217,7 @@ namespace Net
 				}
 			}
 
-			delete[] data256;
+			FREE(data256);
 			return false;
 		}
 
@@ -225,13 +225,13 @@ namespace Net
 		{
 			// create a new buffer
 			size_t decodedLength = (size_t)GetDecode32Length(static_cast<int>(len));
-			byte* data256 = new byte[decodedLength + 1];
+			byte* data256 = ALLOC<byte>(decodedLength + 1);
 			data256[decodedLength] = '\0';
 			if (Unmap32(buffer, static_cast<int>(len), NET_BASE32_PATTERN))
 			{
 				if (Decode32(buffer, static_cast<int>(len), data256))
 				{
-					if (out) delete[] out;
+					FREE(out);
 					out = data256;
 					len = decodedLength;
 
@@ -239,7 +239,7 @@ namespace Net
 				}
 			}
 
-			delete[] data256;
+			FREE(data256);
 			return false;
 		}
 	}

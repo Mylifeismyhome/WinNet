@@ -199,7 +199,7 @@ NET_TIMER(DoCalcLatency)
 NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
-	const auto peer = new Net::WebSocket::Server::peerInfo();
+	const auto peer = ALLOC<Net::WebSocket::Server::peerInfo>();
 	peer->UniqueID = socket;
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
@@ -244,7 +244,7 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
 	{
-		const auto _DoCalcLatency = new DoCalcLatency_t();
+		const auto _DoCalcLatency = ALLOC<DoCalcLatency_t>();
 		_DoCalcLatency->server = this;
 		_DoCalcLatency->peer = peer;
 		//peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
@@ -999,7 +999,7 @@ void Net::WebSocket::Server::Acceptor()
 
 	if (GetAcceptSocket() != INVALID_SOCKET)
 	{
-		const auto param = new Receive_t();
+		const auto param = ALLOC<Receive_t>();
 		param->server = this;
 		param->peer = CreatePeer(client_addr, GetAcceptSocket());
 		if (!param->peer) return;
@@ -1025,7 +1025,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 	doc[CSTRING("CONTENT")] = pkg.Data();
 	doc[CSTRING("RAW")] = false;
 
-	auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
+	auto buffer = doc.Serialize(Net::Json::SerializeType::UNFORMATTED);
 
 	auto dataBufferSize = buffer.size();
 	NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));

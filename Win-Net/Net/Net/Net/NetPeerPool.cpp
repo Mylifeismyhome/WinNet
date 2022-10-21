@@ -72,8 +72,8 @@ void* Net::PeerPool::peerInfo_t::GetCallbackOnDelete()
 
 Net::PeerPool::PeerPool_t::PeerPool_t()
 {
-	peer_mutex = new std::mutex();
-	peer_threadpool_mutex = new std::mutex();
+	peer_mutex = ALLOC<std::mutex>();
+	peer_threadpool_mutex = ALLOC <std::mutex>();
 
 	fncSleep = nullptr;
 	ms_sleep_time = 100;
@@ -278,10 +278,10 @@ NET_THREAD(threadpool_manager)
 
 void Net::PeerPool::PeerPool_t::threadpool_add()
 {
-	peer_threadpool_t* pool = new peer_threadpool_t();
+	peer_threadpool_t* pool = ALLOC<peer_threadpool_t>();
 	if (!pool) return;
 
-	pool->vPeers = new Net::PeerPool::peerInfo_t*[get_max_peers()];
+	pool->vPeers = ALLOC<Net::PeerPool::peerInfo_t*>(get_max_peers());
 	if (!pool->vPeers)
 	{
 		delete pool;
@@ -292,7 +292,7 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 		pool->vPeers[i] = nullptr;
 
 	// dispatch the thread
-	auto data = new threadpool_manager_data_t();
+	auto data = ALLOC<threadpool_manager_data_t>();
 	data->pClass = this;
 	data->pool = pool;
 	Net::Thread::Create(threadpool_manager, (LPVOID)data);

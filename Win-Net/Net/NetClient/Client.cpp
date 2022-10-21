@@ -1010,7 +1010,7 @@ namespace Net
 			doc[CSTRING("ID")] = id;
 			doc[CSTRING("CONTENT")] = pkg.Data();
 
-			auto buffer = doc.Serialize(Net::Json::SerializeType::NONE);
+			auto buffer = doc.Serialize(Net::Json::SerializeType::UNFORMATTED);
 
 			auto dataBufferSize = buffer.size();
 			NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
@@ -2086,7 +2086,7 @@ namespace Net
 		auto MyPublicKey = network.RSA.publicKey();
 
 		size_t b64len = MyPublicKey.size();
-		BYTE* b64 = new BYTE[b64len + 1];
+		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
 		memcpy(b64, MyPublicKey.data(), b64len);
 		b64[b64len] = 0;
 
@@ -2100,7 +2100,7 @@ namespace Net
 		// from now we use the Cryption, synced with Server
 		{
 			b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
-			b64 = new BYTE[b64len + 1];
+			b64 = ALLOC<BYTE>(b64len + 1);
 			memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
 			b64[b64len] = 0;
 
