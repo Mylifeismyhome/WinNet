@@ -5,6 +5,9 @@
 #include <Net/Cryption/XOR.h>
 #include <Net/assets/manager/logmanager.h>
 
+constexpr auto Net_Json_Boolean_True = "true";
+constexpr auto Net_Json_Boolean_False = "false";
+
 namespace Net
 {
 	namespace Json
@@ -221,10 +224,10 @@ namespace Net
 
 		static Net::String DecodeString(Net::ViewString& vs)
 		{
-			if (vs.size() < 2)
-				return {};
-
 			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
+
+			if (vs.size() < 2)
+				return out;
 
 			for (size_t i = vs.start(); i < vs.end(); i++)
 			{
@@ -293,7 +296,7 @@ int Net::Json::Convert::ToInt32(char* str)
 int Net::Json::Convert::ToInt32(Net::ViewString& vs)
 {
 	auto end = &vs.get()[vs.end()];
-	return static_cast<int>(strtol(vs.get(), &end, 10));
+	return static_cast<int>(strtol(&vs.get()[vs.start()], &end, 10));
 }
 
 float Net::Json::Convert::ToFloat(char* str)
@@ -304,7 +307,7 @@ float Net::Json::Convert::ToFloat(char* str)
 float Net::Json::Convert::ToFloat(Net::ViewString& vs)
 {
 	auto end = &vs.get()[vs.end()];
-	return strtof(vs.get(), &end);
+	return strtof(&vs.get()[vs.start()], &end);
 }
 
 double Net::Json::Convert::ToDouble(char* str)
@@ -315,14 +318,14 @@ double Net::Json::Convert::ToDouble(char* str)
 double Net::Json::Convert::ToDouble(Net::ViewString& vs)
 {
 	auto end = &vs.get()[vs.end()];
-	return strtod(vs.get(), &end);
+	return strtod(&vs.get()[vs.start()], &end);
 }
 
 bool Net::Json::Convert::ToBoolean(char* str)
 {
-	if (!strcmp(CSTRING("true"), str))
+	if (!strcmp(Net_Json_Boolean_True, str))
 		return true;
-	else if (!strcmp(CSTRING("false"), str))
+	else if (!strcmp(Net_Json_Boolean_False, str))
 		return false;
 
 	/* todo: throw error */
@@ -331,9 +334,9 @@ bool Net::Json::Convert::ToBoolean(char* str)
 
 bool Net::Json::Convert::ToBoolean(Net::ViewString& vs)
 {
-	if (!memcmp(vs.get(), CSTRING("true"), vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.length()))
 		return true;
-	if (!memcmp(vs.get(), CSTRING("false"), vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.length()))
 		return false;
 
 	/* todo: throw error */
@@ -350,8 +353,8 @@ bool Net::Json::Convert::is_float(char* str)
 bool Net::Json::Convert::is_float(Net::ViewString& vs)
 {
 	auto end = &vs.get()[vs.end()];
-	double val = strtof(vs.get(), &end);
-	return end != vs.get() && val != HUGE_VALF;
+	double val = strtof(&vs.get()[vs.start()], &end);
+	return end != &vs.get()[vs.start()] && val != HUGE_VALF;
 }
 
 bool Net::Json::Convert::is_double(char* str)
@@ -364,15 +367,15 @@ bool Net::Json::Convert::is_double(char* str)
 bool Net::Json::Convert::is_double(Net::ViewString& vs)
 {
 	auto end = &vs.get()[vs.end()];
-	double val = strtod(vs.get(), &end);
-	return end != vs.get() && val != HUGE_VALF;
+	double val = strtod(&vs.get()[vs.start()], &end);
+	return end != &vs.get()[vs.start()] && val != HUGE_VALF;
 }
 
 bool Net::Json::Convert::is_boolean(char* str)
 {
-	if (!strcmp(CSTRING("true"), str))
+	if (!strcmp(Net_Json_Boolean_True, str))
 		return true;
-	else if (!strcmp(CSTRING("false"), str))
+	else if (!strcmp(Net_Json_Boolean_False, str))
 		return true;
 
 	return false;
@@ -380,9 +383,9 @@ bool Net::Json::Convert::is_boolean(char* str)
 
 bool Net::Json::Convert::is_boolean(Net::ViewString& vs)
 {
-	if (!memcmp(vs.get(), CSTRING("true"), vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.length()))
 		return true;
-	if (!memcmp(vs.get(), CSTRING("false"), vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.length()))
 		return true;
 
 	return false;
@@ -527,7 +530,7 @@ void Net::Json::BasicValue<T>::SetKey(Net::ViewString& key)
 {
 	this->key = ALLOC<char>(key.size() + 1);
 	if (!this->key) return;
-	memcpy(this->key, key.get(), key.size());
+	memcpy(this->key, &key.get()[key.start()], key.size());
 	this->key[key.size()] = 0;
 }
 
@@ -878,7 +881,7 @@ Net::Json::BasicValue<T>* Net::Json::Object::__get(Net::ViewString& key)
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		BasicValue<T>* tmp = (BasicValue<T>*)value[i];
-		if (memcmp(tmp->Key(), key.get(), key.size()) != 0) continue;
+		if (memcmp(tmp->Key(), &key.get()[key.start()], key.size()) != 0) continue;
 		return (BasicValue<T>*)value[i];
 	}
 
@@ -1495,6 +1498,16 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 
 bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<char*>& object_chain, bool m_prepareString)
 {
+	if (!key.valid() || !value.valid())
+	{
+		/*
+		* some internal error
+		*/
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
+		this->Free();
+		return false;
+	}
+
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
 	// with object chain
@@ -1504,7 +1517,8 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		obj = { this->operator[](object_chain[0]) };
 		for (size_t i = 1; i < object_chain.size(); ++i)
 		{
-			obj = obj[object_chain[i]];
+			auto vs = (Net::ViewString*)object_chain[i];
+			obj = obj[*vs];
 		}
 	}
 
@@ -1534,25 +1548,21 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
-			// create a copy of the string
-			auto pCopyKey = ALLOC<char>(key.size() + 1);
-			memcpy(pCopyKey, key.get(), key.length());
-			pCopyKey[key.size()] = '\0';
 
 #ifdef BUILD_LINUX
-			object_chain.push_back(pCopyKey);
+			object_chain.push_back((char*)&key);
 #else
-			object_chain.push_back(pCopyKey);
+			object_chain.push_back((char*)&key);
 #endif
 
 			// need this line otherwise empty objects do not work
 			if (object_chain.size() > 0)
 			{
-				obj[pCopyKey] = Net::Json::Object();
+				obj[key] = Net::Json::Object();
 			}
 			else
 			{
-				this->operator[](pCopyKey) = Net::Json::Object();
+				this->operator[](key) = Net::Json::Object();
 			}
 
 			if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -1694,7 +1704,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 	* check for null value
 	*/
 	{
-		if (!memcmp(value.get(), CSTRING("null"), value.length()))
+		if (!memcmp(&value.get()[value.start()], CSTRING("null"), value.length()))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 
@@ -1823,7 +1833,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		}
 	}
 
-	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), value.get());
+	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), &value.get()[value.start()]);
 	return false;
 }
 
@@ -2300,6 +2310,15 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
 				key = vs.sub_view(v + 1, i - v - 1);
+				if (!key.valid())
+				{
+					/*
+					* some internal error
+					*/
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
+					this->Free();
+					return false;
+				}
 
 				/*
 				* a key in the json language must be a string
@@ -2339,6 +2358,15 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 
 				// obtain the string from the json-string without the double-qoutes
 				key = key.sub_view(key.start() + 1, key.length() - 1);
+				if (!key.valid())
+				{
+					/*
+					* some internal error
+					*/
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
+					this->Free();
+					return false;
+				}
 
 				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE;
 				v = i;
@@ -2391,11 +2419,15 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 				}
 
 				Net::ViewString value = (i == vs.end() - 2) ? vs.sub_view(v + 1, i - v) : vs.sub_view(v + 1, i - v - 1);
-
-				for (size_t i = value.start(); i < value.end(); ++i)
-					std::cout << value[i];
-
-				std::cout << std::endl;
+				if (!value.valid())
+				{
+					/*
+					* some internal error
+					*/
+					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
+					this->Free();
+					return false;
+				}
 
 				/*
 				* pass the value to the DeserializeAny method
@@ -2914,6 +2946,16 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 
 bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 {
+	if (!vs.valid())
+	{
+		/*
+		* some internal error
+		*/
+		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
+		this->Free();
+		return false;
+	}
+
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
 	/*
@@ -3053,7 +3095,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 	* check for null value
 	*/
 	{
-		if (!memcmp(vs.get(), CSTRING("null"), vs.length()))
+		if (!memcmp(&vs.get()[vs.start()], CSTRING("null"), vs.length()))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 			return this->push(Net::Json::NullValue());
@@ -3153,7 +3195,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		}
 	}
 
-	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), vs.get());
+	NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad value ... value is from unknown type ... got '%s'"), &vs.get()[vs.start()]);
 	return false;
 }
 
@@ -3508,6 +3550,15 @@ bool Net::Json::Array::Deserialize(Net::ViewString& vs, bool m_prepareString)
 				}
 
 				Net::ViewString element = (i == vs.end() - 2) ? vs.sub_view(v + 1, i - v) : vs.sub_view(v + 1, i - v - 1);
+				if (!element.valid())
+				{
+					/*
+					* some internal error
+					*/
+					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
+					this->Free();
+					return false;
+				}
 
 				/*
 				* pass the value to the DeserializeAny method

@@ -112,7 +112,7 @@ namespace Net
 		char* get() const
 		{
 			if (!valid()) return nullptr;
-			return &m_ref.get()[start()];
+			return m_ref.get();
 		}
 
 		bool valid() const
