@@ -36,11 +36,10 @@ namespace Net
 						flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
 					}
 				}
-
 				/*
 				* remove any white space outside of string's
 				*/
-				if (c == ' '
+				else if (c == ' '
 					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
 					// push back the index of the character we will skip
@@ -49,7 +48,38 @@ namespace Net
 				/*
 				* remove line break
 				*/
-				else if (c == '\n')
+				else if (c == '\n'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove set position to start of line
+				*/
+				else if (c == '\r'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove tabulator
+				*/
+				else if (c == '\t'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				else if (c == '\b'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				else if (c == '\f'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
 					// push back the index of the character we will skip
 					m_IndexCharacterToSkip.push_back(i);
@@ -74,7 +104,7 @@ namespace Net
 			uint8_t flag = 0;
 
 			std::vector<size_t> m_IndexCharacterToSkip = {};
-			for (size_t i = 0; i < json.size(); ++i)
+			for (size_t i = json.start(); i < json.end(); ++i)
 			{
 				auto c = json[i];
 				if (c == '"')
@@ -88,11 +118,10 @@ namespace Net
 						flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
 					}
 				}
-
 				/*
 				* remove any white space outside of string's
 				*/
-				if (c == ' '
+				else if (c == ' '
 					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
 					// push back the index of the character we will skip
@@ -101,7 +130,38 @@ namespace Net
 				/*
 				* remove line break
 				*/
-				else if (c == '\n')
+				else if (c == '\n'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove set position to start of line
+				*/
+				else if (c == '\r'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove tabulator
+				*/
+				else if (c == '\t'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				else if (c == '\b'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				else if (c == '\f'
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
 				{
 					// push back the index of the character we will skip
 					m_IndexCharacterToSkip.push_back(i);

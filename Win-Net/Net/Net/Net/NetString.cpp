@@ -665,7 +665,10 @@ namespace Net
 		{
 			const auto res = find(i, c, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
@@ -682,7 +685,10 @@ namespace Net
 		{
 			const auto res = find(i, pattern, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
@@ -702,7 +708,10 @@ namespace Net
 		{
 			const auto res = find(i, c, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
@@ -722,7 +731,10 @@ namespace Net
 		{
 			const auto res = find(i, pattern, type);
 			if (res != NET_STRING_NOT_FOUND)
+			{
 				tmp.emplace_back(res);
+				i = res;
+			}
 		}
 
 		return tmp;
