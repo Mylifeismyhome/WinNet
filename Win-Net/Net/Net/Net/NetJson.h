@@ -370,9 +370,11 @@ namespace Net
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
 			bool Deserialize(Net::ViewString& vs, bool m_prepareString);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 
 			void Free();
 
@@ -410,9 +412,11 @@ namespace Net
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
-			bool Deserialize(Net::ViewString& vs, bool m_prepareString);
+			bool Deserialize(Net::ViewString& json, bool m_prepareString);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 
 			void Free();
 		};
@@ -453,7 +457,9 @@ namespace Net
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
+			bool Deserialize(Net::ViewString& json);
 			bool Parse(Net::String json);
+			bool Parse(Net::ViewString& json);
 		};
 	}
 }
