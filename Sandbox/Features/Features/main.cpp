@@ -323,12 +323,11 @@ int main()
 	}
 
 	Net::String str(data);
-	auto vs = str.view_string();
 
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
 	Net::Json::Object doc;
-	if (!doc.Deserialize(vs, false))
+	if (!doc.Deserialize(str))
 	{
 		NET_LOG("Failed json deserialize");
 	}

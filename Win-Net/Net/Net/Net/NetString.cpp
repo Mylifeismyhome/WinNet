@@ -16,6 +16,126 @@ namespace Net
 		}
 	}
 
+	ViewString::ViewString()
+	{
+		this->m_ptr_original = nullptr;
+		this->m_ref = {};
+		this->m_start = INVALID_SIZE;
+		this->m_size = INVALID_SIZE;
+		this->m_valid = false;
+	}
+
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+	{
+		this->m_ptr_original = m_ptr_original;
+		this->m_ref = m_ref;
+		this->m_start = m_start;
+		this->m_size = m_size;
+		this->m_valid = true;
+
+		/*
+		* vs ptr moved
+		*/
+		m_ref.lost_reference();
+	}
+
+	ViewString::ViewString(ViewString& vs) NOEXPECT
+	{
+		this->m_ptr_original = vs.m_ptr_original;
+		this->m_ref = vs.m_ref;
+		this->m_start = vs.m_start;
+		this->m_size = vs.m_size;
+		this->m_valid = vs.m_valid;
+
+		/*
+		* vs ptr moved
+		*/
+		vs.m_ref.lost_reference();
+	}
+
+	size_t ViewString::start() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_start;
+	}
+
+	size_t ViewString::end() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return start() + size();
+	}
+
+	size_t ViewString::size() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_size;
+	}
+
+	size_t ViewString::length() const
+	{
+		if (!valid()) return INVALID_SIZE;
+		return m_size - 1;
+	}
+
+	char* ViewString::get() const
+	{
+		if (!valid()) return nullptr;
+		return m_ref.get();
+	}
+
+	bool ViewString::valid() const
+	{
+		return m_valid;
+	}
+
+	void* ViewString::original()
+	{
+		return m_ptr_original;
+	}
+
+	bool ViewString::refresh()
+	{
+		if (!valid()) return false;
+		if (!original()) return false;
+		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
+	}
+
+	ViewString ViewString::sub_view(size_t m_start, size_t m_size)
+	{
+		if (!valid())
+			return {};
+
+		if (size() == INVALID_SIZE || size() == 0)
+			return {};
+
+		ViewString vs;
+		vs.m_ptr_original = this->m_ptr_original;
+		vs.m_ref = this->m_ref;
+
+		/*
+		* ok, so on a sub_view we gotta make sure that it will not free on death
+		*/
+		vs.m_ref.lost_reference();
+
+		vs.m_start = m_start;
+
+		/*
+		* if m_size is zero
+		* then we return the entire size of the string
+		*/
+		if (m_size == 0)
+		{
+			vs.m_size = size();
+		}
+		else
+		{
+			vs.m_size = m_size;
+		}
+
+		vs.m_valid = true;
+		return vs;
+	}
+
 	String::String()
 	{
 		_string = RUNTIMEXOR();
@@ -1128,9 +1248,9 @@ namespace Net
 		* then we return the entire size of the string
 		*/
 		if (m_size == 0)
-			return { this->get(), m_start, size() };
+			return { this, this->get(), m_start, size() };
 
-		return { this->get(), m_start, m_size };
+		return { this, this->get(), m_start, m_size };
 	}
 }
 NET_POP

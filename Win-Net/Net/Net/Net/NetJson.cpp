@@ -64,6 +64,58 @@ namespace Net
 			return true;
 		}
 
+		static bool PrepareString(Net::ViewString& json)
+		{
+			if(!json.original())
+			{
+				return false;
+			}
+
+			uint8_t flag = 0;
+
+			std::vector<size_t> m_IndexCharacterToSkip = {};
+			for (size_t i = 0; i < json.size(); ++i)
+			{
+				auto c = json[i];
+				if (c == '"')
+				{
+					if (flag & (int)EDeserializeFlag::FLAG_READING_STRING)
+					{
+						flag &= ~(int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+					else
+					{
+						flag |= (int)EDeserializeFlag::FLAG_READING_STRING;
+					}
+				}
+
+				/*
+				* remove any white space outside of string's
+				*/
+				if (c == ' '
+					&& !(flag & (int)EDeserializeFlag::FLAG_READING_STRING))
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+				/*
+				* remove line break
+				*/
+				else if (c == '\n')
+				{
+					// push back the index of the character we will skip
+					m_IndexCharacterToSkip.push_back(i);
+				}
+			}
+
+			if (!reinterpret_cast<Net::String*>(json.original())->eraseAll(m_IndexCharacterToSkip))
+			{
+				return false;
+			}
+
+			return json.refresh();
+		}
+
 		static void EncodeString(Net::String& buffer)
 		{
 			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
@@ -1881,37 +1933,37 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	return this->Deserialize(vs, m_prepareString);
 }
 
-bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object_chain, bool m_prepareString)
 {
 	/*
 	* Prepare the json string before parsing
 	*/
-	/*if (!m_prepareString)
+	if (!m_prepareString)
 	{
 		if (!Net::Json::PrepareString(json))
 		{
-			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get());
 			return false;
 		}
 
 		m_prepareString = !m_prepareString;
-	}*/
+	}
 
 	/*
 	* Since we are passing the json string into an object deserializer
 	* we will check for the syntax that does define an object in the json language at the beginning and end
 	* if not then abort the parsing
 	*/
-	if (vs[vs.start()] != '{')
+	if (json[json.start()] != '{')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), vs[vs.start()]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), json[json.start()]);
 		this->Free();
 		return false;
 	}
 
-	if (vs[vs.end() - 1] != '}')
+	if (json[json.end() - 1] != '}')
 	{
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), vs[vs.end() - 1]);
+		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), json[json.end() - 1]);
 		this->Free();
 		return false;
 	}
@@ -1928,15 +1980,15 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 	* first scan for the key and detect its syntax that deals as the seperator (':')
 	*/
 	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
-	v = vs.start();
+	v = json.start();
 
 	/*
 	* Since we did check the start and end to match its syntax that does define an object
 	* so we can skip the first and last character for the further parsing
 	*/
-	for (size_t i = vs.start() + 1; i < vs.end() - 1; ++i)
+	for (size_t i = json.start() + 1; i < json.end() - 1; ++i)
 	{
-		auto c = vs[i];
+		auto c = json[i];
 
 		if (flag & (int)EDeserializeFlag::FLAG_READING_ELEMENT)
 		{
@@ -2045,7 +2097,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 				* now we have determinated the key, but the value is not determinated yet
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
-				key = vs.sub_view(v + 1, i - v - 1);
+				key = json.sub_view(v + 1, i - v - 1);
 				if (!key.valid())
 				{
 					/*
@@ -2112,7 +2164,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 			* check for the syntax that seperates elements inside an object
 			* or check if we have reached eof (end of file)
 			*/
-			if (c == ',' || (i == vs.end() - 2))
+			if (c == ',' || (i == json.end() - 2))
 			{
 				/*
 				* keep going until we read the entire object or array
@@ -2154,7 +2206,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, Vector<char*>& object_c
 					return false;
 				}
 
-				Net::ViewString value = (i == vs.end() - 2) ? vs.sub_view(v + 1, i - v) : vs.sub_view(v + 1, i - v - 1);
+				Net::ViewString value = (i == json.end() - 2) ? json.sub_view(v + 1, i - v) : json.sub_view(v + 1, i - v - 1);
 				if (!value.valid())
 				{
 					/*
@@ -2979,19 +3031,19 @@ bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 
 bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 {
-	///*
-	//* Prepare the json string before parsing
-	//*/
-	//if (!m_prepareString)
-	//{
-	//	if (!Net::Json::PrepareString(json))
-	//	{
-	//		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get().get());
-	//		return false;
-	//	}
+	/*
+	* Prepare the json string before parsing
+	*/
+	if (!m_prepareString)
+	{
+		if (!Net::Json::PrepareString(json))
+		{
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected error ... failed to prepare json string ... got '%s'"), json.get());
+			return false;
+		}
 
-	//	m_prepareString = !m_prepareString;
-	//}
+		m_prepareString = !m_prepareString;
+	}
 
 	/*
 	* Since we are passing the json string into an array deserializer
