@@ -63,7 +63,7 @@ namespace Net
 
 		static void EncodeString(Net::String& buffer)
 		{
-			Net::String out(CSTRING(""));
+			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
 
 			for (size_t i = 0; i < buffer.size(); ++i)
 			{
@@ -109,7 +109,7 @@ namespace Net
 
 		static Net::String EncodeString(Net::ViewString& vs)
 		{
-			Net::String out(CSTRING(""));
+			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
 
 			for (size_t i = vs.start(); i < vs.end(); ++i)
 			{
@@ -158,7 +158,7 @@ namespace Net
 			if (buffer.size() < 2)
 				return;
 
-			Net::String out(CSTRING(""));
+			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
 
 			auto ref = buffer.get();
 			auto pBuffer = ref.get();
@@ -224,7 +224,7 @@ namespace Net
 			if (vs.size() < 2)
 				return {};
 
-			Net::String out(CSTRING(""));
+			Net::String out(reinterpret_cast<const char*>(CSTRING("")));
 
 			for (size_t i = vs.start(); i < vs.end(); i++)
 			{
@@ -290,14 +290,32 @@ int Net::Json::Convert::ToInt32(char* str)
 	return std::stoi(str);
 }
 
+int Net::Json::Convert::ToInt32(Net::ViewString& vs)
+{
+	auto end = &vs.get()[vs.end()];
+	return static_cast<int>(strtol(vs.get(), &end, 10));
+}
+
 float Net::Json::Convert::ToFloat(char* str)
 {
 	return std::stof(str);
 }
 
+float Net::Json::Convert::ToFloat(Net::ViewString& vs)
+{
+	auto end = &vs.get()[vs.end()];
+	return strtof(vs.get(), &end);
+}
+
 double Net::Json::Convert::ToDouble(char* str)
 {
 	return std::stod(str);
+}
+
+double Net::Json::Convert::ToDouble(Net::ViewString& vs)
+{
+	auto end = &vs.get()[vs.end()];
+	return strtod(vs.get(), &end);
 }
 
 bool Net::Json::Convert::ToBoolean(char* str)
@@ -311,11 +329,29 @@ bool Net::Json::Convert::ToBoolean(char* str)
 	return false;
 }
 
+bool Net::Json::Convert::ToBoolean(Net::ViewString& vs)
+{
+	if (!memcmp(vs.get(), CSTRING("true"), vs.length()))
+		return true;
+	if (!memcmp(vs.get(), CSTRING("false"), vs.length()))
+		return false;
+
+	/* todo: throw error */
+	return false;
+}
+
 bool Net::Json::Convert::is_float(char* str)
 {
 	char* end = nullptr;
 	double val = strtof(str, &end);
 	return end != str && *end == '\0' && val != HUGE_VALF;
+}
+
+bool Net::Json::Convert::is_float(Net::ViewString& vs)
+{
+	auto end = &vs.get()[vs.end()];
+	double val = strtof(vs.get(), &end);
+	return end != vs.get() && val != HUGE_VALF;
 }
 
 bool Net::Json::Convert::is_double(char* str)
@@ -325,11 +361,28 @@ bool Net::Json::Convert::is_double(char* str)
 	return end != str && *end == '\0' && val != HUGE_VAL;
 }
 
+bool Net::Json::Convert::is_double(Net::ViewString& vs)
+{
+	auto end = &vs.get()[vs.end()];
+	double val = strtod(vs.get(), &end);
+	return end != vs.get() && val != HUGE_VALF;
+}
+
 bool Net::Json::Convert::is_boolean(char* str)
 {
 	if (!strcmp(CSTRING("true"), str))
 		return true;
 	else if (!strcmp(CSTRING("false"), str))
+		return true;
+
+	return false;
+}
+
+bool Net::Json::Convert::is_boolean(Net::ViewString& vs)
+{
+	if (!memcmp(vs.get(), CSTRING("true"), vs.length()))
+		return true;
+	if (!memcmp(vs.get(), CSTRING("false"), vs.length()))
 		return true;
 
 	return false;
@@ -2205,26 +2258,26 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 			&& m_type != Net::Json::Type::ARRAY)
 		{
 			// we got an ending curly for an array, but missing the starting curly
-			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), pValue);
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got an ending curly for an array, but missing the starting curly ... '%s'"), vs.get());
 			return false;
 		}
 		else if (vs[vs.end() - 1] != ']'
 			&& m_type == Net::Json::Type::ARRAY)
 		{
 			// we got a starting curly for an array, but missing the ending curly
-			//NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), pValue);
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad array ... got a starting curly for an array, but missing the ending curly ... '%s'"), vs.get());
 			return false;
 		}
 		else if (m_type == Net::Json::Type::ARRAY)
 		{
 			// array seem to be fine, now call it's deserializer
-			//Net::Json::Array arr(true);
-			//if (!arr.Deserialize(value, m_prepareString))
-			//{
-			//	// @todo: add logging
-			//	return false;
-			//}
-			//return this->push(arr);
+			Net::Json::Array arr(true);
+			if (!arr.Deserialize(vs, m_prepareString))
+			{
+				// @todo: add logging
+				return false;
+			}
+			return this->push(arr);
 		}
 	}
 
@@ -2282,10 +2335,10 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 	* check for boolean
 	*/
 	{
-		if (Convert::is_boolean(vs.get()))
+		if (Convert::is_boolean(vs))
 		{
 			m_type = Net::Json::Type::BOOLEAN;
-			return this->push(Convert::ToBoolean(&vs.get()[vs.start()]));
+			return this->push(Convert::ToBoolean(vs));
 		}
 	}
 
@@ -2293,7 +2346,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 	* check for null value
 	*/
 	{
-		if (!memcmp(vs.get(), CSTRING("null"), 4))
+		if (!memcmp(vs.get(), CSTRING("null"), vs.length()))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 			return this->push(Net::Json::NullValue());
@@ -2366,11 +2419,11 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 				/*
 				* determinate if it is worth a double or just a float
 				*/
-				if (Convert::is_double(vs.get()))
+				if (Convert::is_double(vs))
 				{
 					m_type = Net::Json::Type::DOUBLE;
 				}
-				else if (Convert::is_float(vs.get()))
+				else if (Convert::is_float(vs))
 				{
 					m_type = Net::Json::Type::FLOAT;
 				}
@@ -2379,13 +2432,13 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 			switch (m_type)
 			{
 			case Net::Json::Type::INTEGER:
-				return this->push(Convert::ToInt32(vs.get()));
+				return this->push(Convert::ToInt32(vs));
 
 			case Net::Json::Type::DOUBLE:
-				return this->push(Convert::ToDouble(vs.get()));
+				return this->push(Convert::ToDouble(vs));
 
 			case Net::Json::Type::FLOAT:
-				return this->push(Convert::ToFloat(vs.get()));
+				return this->push(Convert::ToFloat(vs));
 
 			default:
 				break;
@@ -2640,7 +2693,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& vs, bool m_prepareString)
 	size_t obj_count = 0;
 
 	flag |= (int)EDeserializeFlag::FLAG_READING_ELEMENT;
-	v = 0;
+	v = vs.start();
 
 	for (size_t i = vs.start() + 1; i < vs.end() - 1; ++i)
 	{
@@ -2748,7 +2801,11 @@ bool Net::Json::Array::Deserialize(Net::ViewString& vs, bool m_prepareString)
 				}
 
 				Net::ViewString element = (i == vs.end() - 2) ? vs.sub_view(v + 1, i - v) : vs.sub_view(v + 1, i - v - 1);
-				std::cout << element.get() << std::endl;
+				for (size_t i = element.start(); i < element.end(); ++i)
+					std::cout << element[i];
+
+				std::cout << std::endl;
+
 				/*
 				* pass the value to the DeserializeAny method
 				* that method will take any value and further analyse its type

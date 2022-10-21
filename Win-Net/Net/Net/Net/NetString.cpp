@@ -1130,9 +1130,6 @@ namespace Net
 		if (m_size == 0)
 			return { this->get(), m_start, size() };
 
-		if ((m_start + m_size) > size())
-			return {};
-
 		return { this->get(), m_start, m_size };
 	}
 }

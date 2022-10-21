@@ -303,7 +303,7 @@ int main()
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
 	{
-		Net::String str(R"(["test","hacker","aka"])");
+		Net::String str(R"(["test","hacker",["aka46","test nigger"],"aka",true,null,1337,1.235])");
 		auto vs = str.view_string(0);
 		
 		Net::Json::Array arr;

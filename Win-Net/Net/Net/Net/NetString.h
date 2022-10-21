@@ -71,7 +71,7 @@ namespace Net
 			this->m_ref = vs.m_ref;
 			this->m_start = vs.m_start;
 			this->m_size = vs.m_size;
-			this->m_valid = true;
+			this->m_valid = vs.m_valid;
 
 			/*
 			* vs ptr moved
@@ -148,12 +148,10 @@ namespace Net
 			}
 			else
 			{
-				if ((m_start + m_size) > size())
-					return {};
-
-				vs.m_size = m_start;
+				vs.m_size = m_size;
 			}
 
+			vs.m_valid = true;
 			return vs;
 		}
 	};
@@ -315,7 +313,7 @@ namespace Net
 		bool replaceAll(char, const char*);
 		bool replaceAll(const char*, char);
 		bool replaceAll(const char*, const char*);
-		ViewString view_string(size_t, size_t = 0);
+		ViewString view_string(size_t = 0, size_t = 0);
 	};
 }
 NET_DSA_END

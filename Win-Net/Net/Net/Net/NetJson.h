@@ -174,12 +174,19 @@ namespace Net
 		{
 		public:
 			static int ToInt32(char* str);
+			static int ToInt32(Net::ViewString& vs);
 			static float ToFloat(char* str);
+			static float ToFloat(Net::ViewString& vs);
 			static double ToDouble(char* str);
+			static double ToDouble(Net::ViewString& vs);
 			static bool ToBoolean(char* str);
+			static bool ToBoolean(Net::ViewString& vs);
 			static bool is_float(char* str);
+			static bool is_float(Net::ViewString& vs);
 			static bool is_double(char* str);
+			static bool is_double(Net::ViewString& vs);
 			static bool is_boolean(char* str);
+			static bool is_boolean(Net::ViewString& vs);
 		};
 
 		enum class Type
