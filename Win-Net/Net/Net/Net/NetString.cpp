@@ -98,6 +98,7 @@ namespace Net
 		if (!valid()) return false;
 		if (!original()) return false;
 		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
+		return true;
 	}
 
 	ViewString ViewString::sub_view(size_t m_start, size_t m_size)

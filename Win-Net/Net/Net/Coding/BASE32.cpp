@@ -165,7 +165,7 @@ namespace Net
 			{
 				if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
 				{
-					delete[] buffer;
+					FREE(buffer);
 					buffer = data32;
 					len = encodeLength;
 
@@ -173,7 +173,7 @@ namespace Net
 				}
 			}
 
-			delete[] data32;
+			FREE(data32);
 			return false;
 		}
 
@@ -187,7 +187,7 @@ namespace Net
 			{
 				if (Map32(data32, static_cast<int>(encodeLength), NET_BASE32_PATTERN))
 				{
-					if (out) delete[] out;
+					FREE(out);
 					out = data32;
 					len = encodeLength;
 
@@ -195,7 +195,7 @@ namespace Net
 				}
 			}
 
-			delete[] data32;
+			FREE(data32);
 			return false;
 		}
 
@@ -209,7 +209,7 @@ namespace Net
 			{
 				if (Decode32(buffer, static_cast<int>(len), data256))
 				{
-					delete[] buffer;
+					FREE(buffer);
 					buffer = data256;
 					len = decodedLength;
 
@@ -217,7 +217,7 @@ namespace Net
 				}
 			}
 
-			delete[] data256;
+			FREE(data256);
 			return false;
 		}
 
@@ -231,7 +231,7 @@ namespace Net
 			{
 				if (Decode32(buffer, static_cast<int>(len), data256))
 				{
-					if (out) delete[] out;
+					FREE(out);
 					out = data256;
 					len = decodedLength;
 
@@ -239,7 +239,7 @@ namespace Net
 				}
 			}
 
-			delete[] data256;
+			FREE(data256);
 			return false;
 		}
 	}

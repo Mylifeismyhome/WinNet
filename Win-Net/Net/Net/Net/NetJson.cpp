@@ -587,19 +587,12 @@ Net::Json::BasicValue<T>::~BasicValue()
 			&& cast->GetType() == Type::STRING
 			&& cast->Value())
 		{
-			delete[] cast->Value();
-			cast->Value() = nullptr;
+			FREE(cast->Value());
 		}
 	}
 
 	this->value = {};
-
-	if (this->key)
-	{
-		delete[] this->key;
-		this->key = nullptr;
-	}
-
+	FREE(this->key);
 	this->m_type = Type::NULLVALUE;
 }
 
@@ -906,8 +899,7 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 	if (cast->GetType() == Type::STRING
 		&& cast->Value())
 	{
-		delete[] cast->Value();
-		cast->Value() = nullptr;
+		FREE(cast->Value());
 	}
 	cast->SetValue(ptr, Type::STRING);
 }
@@ -955,10 +947,10 @@ Net::Json::Object::Object(bool bSharedMemory)
 
 Net::Json::Object::~Object()
 {
-	if (!bSharedMemory) this->Free();
+	if (!bSharedMemory) this->Destroy();
 }
 
-void Net::Json::Object::Free()
+void Net::Json::Object::Destroy()
 {
 	this->value.clear();
 }
@@ -1077,8 +1069,7 @@ bool Net::Json::Object::Append(const char* key, const char* value)
 	ptr[len] = 0;
 	if (!__append(key, ptr, Type::STRING))
 	{
-		delete[] ptr;
-		ptr = nullptr;
+		FREE(ptr);
 		return false;
 	}
 
@@ -1239,8 +1230,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 	for (size_t i = 0; i < object_chain.size(); ++i)
 	{
 		if (!object_chain[i]) continue;
-		delete[] object_chain[i];
-		object_chain[i] = nullptr;
+		FREE(object_chain[i]);
 	}
 	return ret;
 }
@@ -1252,8 +1242,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& vs, bool m_prepareString)
 	for (size_t i = 0; i < object_chain.size(); ++i)
 	{
 		if (!object_chain[i]) continue;
-		delete[] object_chain[i];
-		object_chain[i] = nullptr;
+		FREE(object_chain[i]);
 	}
 	return ret;
 }
@@ -1626,7 +1615,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		* some internal error
 		*/
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -2017,14 +2006,14 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 	if (json[json.start()] != '{')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the beginning of the string ... got '%c' ... expected '{'"), json[json.start()]);
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
 	if (json[json.end() - 1] != '}')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Unexpected character in the ending of the string ... got '%c' ... expected '}'"), json[json.end() - 1]);
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -2068,7 +2057,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got an ending curly for an object but missing the start curly
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '{' ... got '}'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2099,7 +2088,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got an ending curly for an arry but missing the start curly
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '[' ... got ']'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2148,7 +2137,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got a seperator for key and value pair but were reading the value?
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the value of the element ... got another ':' instead"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2164,7 +2153,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 					* some internal error
 					*/
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2175,14 +2164,14 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				if (key[key.start()] != '"')
 				{
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must start with double quotes ... instead got '%c'"), key[key.start()]);
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
 				if (key[key.end() - 1] != '"')
 				{
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key is not a string ... it must end with double quotes ... instead got '%c'"), key[key.end() - 1]);
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2198,7 +2187,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 							|| key[j - 1] != '\\')
 						{
 							NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad key ... key contains double-qoutes that are not escaped ... double-qoutes inside a key must be escaped with '\\'"));
-							this->Free();
+							this->Destroy();
 							return false;
 						}
 					}
@@ -2212,7 +2201,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 					* some internal error
 					*/
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2246,7 +2235,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got a seperator for an element but missing the splitter for the key and value pair
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected to read the elements key ... instead got ',' OR 'EOF'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2254,7 +2243,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got another seperator for an element but missing the end curly for an object
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected '}' ... got ',' OR 'EOF'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2262,7 +2251,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				{
 					// we got another seperator for an element but missing the end curly for an array
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected ']' ... got ',' OR 'EOF'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2273,7 +2262,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 					* some internal error
 					*/
 					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2285,7 +2274,7 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 				if (!DeserializeAny(key, value, object_chain, m_prepareString))
 				{
 					// no need to display error message, the method will do it
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -2302,14 +2291,14 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object
 	if (arr_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected an array ending curly ']'"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad syntax ... expected an object ending curly '}'"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -2323,10 +2312,10 @@ Net::Json::Array::Array(bool bSharedMemory)
 
 Net::Json::Array::~Array()
 {
-	if (!bSharedMemory) this->Free();
+	if (!bSharedMemory) this->Destroy();
 }
 
-void Net::Json::Array::Free()
+void Net::Json::Array::Destroy()
 {
 	this->value.clear();
 }
@@ -2810,7 +2799,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		* some internal error
 		*/
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -3113,14 +3102,14 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 	if (json[json.start()] != '[')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the beginning of the string ... got '%c' ... expected '['"), json[json.start()]);
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
 	if (json[json.end() - 1] != ']')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the ending of the string ... got '%c' ... expected ']'"), json[json.end() - 1]);
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -3159,7 +3148,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 				{
 					// we got an ending curly for an object but missing the start curly
 					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected '{' ... got '}'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -3190,7 +3179,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 				{
 					// we got an ending curly for an arry but missing the start curly
 					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected '[' ... got ']'"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -3249,7 +3238,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 					* some internal error
 					*/
 					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -3261,7 +3250,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 				if (!DeserializeAny(element, m_prepareString))
 				{
 					// no need to display error message, the method will do it
-					this->Free();
+					this->Destroy();
 					return false;
 				}
 
@@ -3273,14 +3262,14 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 	if (arr_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an array ending curly ']'"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an object ending curly '}'"));
-		this->Free();
+		this->Destroy();
 		return false;
 	}
 
@@ -3344,8 +3333,8 @@ void Net::Json::Document::Init()
 
 void Net::Json::Document::Clear()
 {
-	if (this->m_free_root_obj) this->root_obj.Free();
-	if (this->m_free_root_array) this->root_array.Free();
+	if (this->m_free_root_obj) this->root_obj.Destroy();
+	if (this->m_free_root_array) this->root_array.Destroy();
 }
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](const char* key)

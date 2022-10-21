@@ -47,7 +47,7 @@ namespace Net
 					else
 						capacity = capacity * 2;
 
-					T* new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+					T* new_container = ALLOC<T>(capacity);
 					if (!new_container) return;
 					memset((void*)new_container, 0, sizeof(T) * capacity);
 
@@ -84,7 +84,7 @@ namespace Net
 
 					if (current_size < (capacity / 2))
 					{
-						auto new_container = static_cast<T*>(malloc(sizeof(T) * (capacity / 2)));
+						auto new_container = ALLOC<T>(capacity / 2);
 						memset(new_container, 0, sizeof(T) * (capacity / 2));
 
 						if (current_size >= 1)
@@ -115,7 +115,7 @@ namespace Net
 						else
 							capacity *= 2;
 
-						auto new_container = static_cast<T*>(malloc(sizeof(T) * capacity));
+						auto new_container = ALLOC<T>(capacity);
 						memset(new_container, 0, sizeof(T) * capacity);
 
 						if (current_size >= 1)
@@ -376,7 +376,7 @@ namespace Net
 			bool Parse(Net::String json);
 			bool Parse(Net::ViewString& json);
 
-			void Free();
+			void Destroy();
 
 		private:
 			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
@@ -418,7 +418,7 @@ namespace Net
 			bool Parse(Net::String json);
 			bool Parse(Net::ViewString& json);
 
-			void Free();
+			void Destroy();
 		};
 
 		class Document
