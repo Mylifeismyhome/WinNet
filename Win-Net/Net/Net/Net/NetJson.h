@@ -264,6 +264,7 @@ namespace Net
 			void operator=(const BasicObject& value);
 
 			void SetKey(const char* key);
+			void SetKey(Net::ViewString& key);
 			void SetValue(T value, Type type);
 			void SetType(Type type);
 
@@ -306,6 +307,7 @@ namespace Net
 			BasicValue<Object>* operator->() const;
 
 			BasicValueRead operator[](const char* key);
+			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
 			BasicValueRead operator[](int idx);
 
@@ -340,14 +342,20 @@ namespace Net
 			template <typename T>
 			BasicValue<T>* __get(const char* key);
 
+			template <typename T>
+			BasicValue<T>* __get(Net::ViewString& key);
+
 			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<char*>& object_chain, bool m_prepareString = false);
 
 		public:
 			Object(bool bSharedMemory = false);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
+			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead At(const char* key);
+			BasicValueRead At(Net::ViewString& key);
 
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
@@ -363,12 +371,14 @@ namespace Net
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, bool m_prepareString);
 			bool Parse(Net::String json);
 
 			void Free();
 
 		private:
 			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, Vector<char*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray

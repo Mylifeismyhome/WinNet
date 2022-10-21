@@ -66,7 +66,7 @@ namespace Net
 			m_ref.lost_reference();
 		}
 
-		ViewString(ViewString&& vs) NOEXPECT
+		ViewString(ViewString& vs) NOEXPECT
 		{
 			this->m_ref = vs.m_ref;
 			this->m_start = vs.m_start;

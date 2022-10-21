@@ -302,15 +302,15 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	{
-		Net::String str(R"(["test","hacker",["aka46","test nigger"],"aka",true,null,1337,1.235])");
+	/*{
+		Net::String str(R"({"test":"alta","test2":1336})");
 		auto vs = str.view_string(0);
 		
-		Net::Json::Array arr;
+		Net::Json::Object arr;
 		arr.Deserialize(vs, false);
 
 		std::cout << arr.Stringify(Net::Json::SerializeType::UNFORMATTED).get().get() << std::endl;
-	}
+	}*/
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 
@@ -322,10 +322,13 @@ int main()
 		return 0;
 	}
 
+	Net::String str(data);
+
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	Net::Json::Document doc;
-	if (!doc.Parse(data))
+	Net::Json::Object doc;
+	auto vs = str.view_string();
+	if (!doc.Deserialize(vs, false))
 	{
 		NET_LOG("Failed json deserialize");
 	}
