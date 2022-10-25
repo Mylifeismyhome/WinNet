@@ -311,7 +311,7 @@ int main()
         //str += (const char*)CSTRING("KAK");
         str += (const char*)"KAK";
 
-		printf("TEST STR: %s\n", str.get().get());
+		std::cout << "TEST STR: %s | " << str << std::endl;
 	}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);

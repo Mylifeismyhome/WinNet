@@ -25,7 +25,7 @@ namespace Net
 		this->m_valid = false;
 	}
 
-	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER m_ref, size_t m_start, size_t m_size)
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
 	{
 		this->m_ptr_original = m_ptr_original;
 		this->m_ref = m_ref;
@@ -37,6 +37,56 @@ namespace Net
 		* vs ptr moved
 		*/
 		m_ref.lost_reference();
+	}
+
+	ViewString& ViewString::operator=(const ViewString& vs)
+	{
+		// Guard self assignment
+		if (this == &vs)
+			return *this;
+
+		this->m_ptr_original = vs.m_ptr_original;
+		this->m_ref = vs.m_ref;
+		this->m_start = vs.m_start;
+		this->m_size = vs.m_size;
+		this->m_valid = vs.m_valid;
+
+		vs.m_ref.lost_reference();
+		return *this;
+	}
+
+	char ViewString::operator[](size_t i)
+	{
+		if (!valid()) return '\0';
+		return this->m_ref.get()[i];
+	}
+
+	ViewString::ViewString(ViewString& vs)
+	{
+		this->m_ptr_original = vs.m_ptr_original;
+		this->m_ref = vs.m_ref;
+		this->m_start = vs.m_start;
+		this->m_size = vs.m_size;
+		this->m_valid = vs.m_valid;
+
+		/*
+		* vs ptr moved
+		*/
+		vs.m_ref.lost_reference();
+	}
+
+	ViewString::ViewString(ViewString&& vs)
+	{
+		this->m_ptr_original = vs.m_ptr_original;
+		this->m_ref = vs.m_ref;
+		this->m_start = vs.m_start;
+		this->m_size = vs.m_size;
+		this->m_valid = vs.m_valid;
+
+		/*
+		* vs ptr moved
+		*/
+		vs.m_ref.lost_reference();
 	}
 
 	size_t ViewString::start() const
@@ -180,7 +230,7 @@ namespace Net
 		copy(in);
 	}
 
-	String::String(String&& in) NOEXPECT
+	String::String(String&& in)
 	{
 		move((String&&)in);
 	}
@@ -275,6 +325,83 @@ namespace Net
 	void Net::String::finalize()
 	{
 		return _string.finalize();
+	}
+
+	void Net::String::operator=(const char* in)
+	{
+		set(in);
+	}
+
+	void Net::String::operator=(char* in)
+	{
+		set(in);
+	}
+
+	void Net::String::operator=(const char in)
+	{
+		set(in);
+	}
+
+	void Net::String::operator=(String in)
+	{
+		copy(in);
+	}
+
+	void Net::String::operator+=(const char* in)
+	{
+		if (actual_size() != INVALID_SIZE && actual_size() != 0)
+			append(in);
+		else
+			set(in);
+	}
+
+	void Net::String::operator+=(char* in)
+	{
+		if (actual_size() != INVALID_SIZE && actual_size() != 0)
+			append(in);
+		else
+			set(in);
+	}
+
+	void Net::String::operator+=(const char in)
+	{
+		if (actual_size() != INVALID_SIZE && actual_size() != 0)
+			append(in);
+		else
+			set(in);
+	}
+
+	void Net::String::operator+=(String in)
+	{
+		if (actual_size() != INVALID_SIZE && actual_size() != 0)
+			append(in);
+		else
+			set(in);
+	}
+
+	void Net::String::operator-=(const char* in)
+	{
+		erase(in);
+	}
+
+	void Net::String::operator-=(char* in)
+	{
+		erase(in);
+	}
+
+	void Net::String::operator-=(const char in)
+	{
+		erase(in);
+	}
+
+	void Net::String::operator-=(String& in)
+	{
+		erase(in);
+	}
+
+	char Net::String::operator[](size_t i)
+	{
+		return this->_string.operator[](i);
 	}
 
 	size_t String::size() const
@@ -1296,6 +1423,34 @@ namespace Net
 			return { this, this->get(), m_start, size() };
 
 		return { this, this->get(), m_start, m_size };
+	}
+
+	std::ostream& operator<<(std::ostream& os, Net::String& ns)
+	{
+		/*
+		* better iterate through it and append each character
+		* rather than heap allocating another space for the decrypted text
+		*/
+		for (size_t i = 0; i < ns.size(); ++i)
+		{
+			os << ns[i];
+		}
+
+		return os;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const Net::String& ns)
+	{
+		/*
+		* better iterate through it and append each character
+		* rather than heap allocating another space for the decrypted text
+		*/
+		for (size_t i = 0; i < ns.size(); ++i)
+		{
+			os << const_cast<Net::String*>(&ns)[i];
+		}
+
+		return os;
 	}
 }
 NET_POP

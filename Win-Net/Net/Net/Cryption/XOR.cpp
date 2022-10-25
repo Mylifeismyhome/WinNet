@@ -57,12 +57,12 @@ namespace Net
 			buffer.free();
 		}
 
-		void XOR_UNIQUEPOINTER::lost_reference()
+		void XOR_UNIQUEPOINTER::lost_reference() const
 		{
 			/*
 			* lost reference means that we know that the pointer is not valid any longer
 			*/
-			this->bFree = false;
+			const_cast<XOR_UNIQUEPOINTER*>(this)->bFree = false;
 		}
 
 		XOR::XOR()
@@ -135,6 +135,26 @@ namespace Net
 			_actual_size = size();
 		}
 
+		XOR& XOR::operator=(const XOR& other)
+		{
+			// Guard self assignment
+			if (this == &other)
+				return *this;
+
+			this->_buffer = other._buffer;
+			this->_Key = other._Key;
+			this->_size = other._size;
+			this->_actual_size = other._actual_size;
+
+			return *this;
+		}
+
+		char XOR::operator[](size_t i)
+		{
+			auto buffer_ptr = this->_buffer.get();
+			return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
+		}
+
 		void XOR::set(size_t it, char c)
 		{
 			if (it > actual_size() || actual_size() == INVALID_SIZE)
@@ -189,7 +209,7 @@ namespace Net
 		{
 			if (size() == INVALID_SIZE)
 			{
-				return (char*)CSTRING("[ERROR] - Invalid size");
+				return nullptr;
 			}
 
 			// gen new key
