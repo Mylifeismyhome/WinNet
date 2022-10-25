@@ -25,10 +25,10 @@ namespace Net
 		this->m_valid = false;
 	}
 
-	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER* m_ref, size_t m_start, size_t m_size)
 	{
 		this->m_ptr_original = m_ptr_original;
-		this->m_ref = m_ref;
+		this->m_ref = *m_ref;
 		this->m_start = m_start;
 		this->m_size = m_size;
 		this->m_valid = true;
@@ -36,7 +36,7 @@ namespace Net
 		/*
 		* vs ptr moved
 		*/
-		m_ref.lost_reference();
+		m_ref->lost_reference();
 	}
 
 	ViewString& ViewString::operator=(const ViewString& vs)
@@ -1419,10 +1419,12 @@ namespace Net
 		* if m_size is zero
 		* then we return the entire size of the string
 		*/
-		if (m_size == 0)
-			return { this, this->get(), m_start, size() };
+        auto m_ref = this->get();
 
-		return { this, this->get(), m_start, m_size };
+		if (m_size == 0)
+			return { this, &m_ref, m_start, size() };
+
+		return { this, &m_ref, m_start, m_size };
 	}
 
 	std::ostream& operator<<(std::ostream& os, Net::String& ns)
