@@ -25,7 +25,7 @@ namespace Net
 		this->m_valid = false;
 	}
 
-	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER m_ref, size_t m_start, size_t m_size)
 	{
 		this->m_ptr_original = m_ptr_original;
 		this->m_ref = m_ref;
@@ -37,20 +37,6 @@ namespace Net
 		* vs ptr moved
 		*/
 		m_ref.lost_reference();
-	}
-
-	ViewString::ViewString(ViewString& vs) NOEXPECT
-	{
-		this->m_ptr_original = vs.m_ptr_original;
-		this->m_ref = vs.m_ref;
-		this->m_start = vs.m_start;
-		this->m_size = vs.m_size;
-		this->m_valid = vs.m_valid;
-
-		/*
-		* vs ptr moved
-		*/
-		vs.m_ref.lost_reference();
 	}
 
 	size_t ViewString::start() const
@@ -454,6 +440,7 @@ namespace Net
 	{
 		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
+            printf("CONSTRUCT LOL\n");
 			Construct(in);
 			return;
 		}
@@ -909,7 +896,7 @@ namespace Net
 		* ok if we removed then we add the amount to _free_size
 		* later we will use it for the append function
 		*/
-		if (_free_size == INVALID_FILE_SIZE)
+		if (_free_size == INVALID_SIZE)
 		{
 			_free_size = len;
 		}
@@ -954,7 +941,7 @@ namespace Net
 		* ok if we removed then we add the amount to _free_size
 		* later we will use it for the append function
 		*/
-		if (_free_size == INVALID_FILE_SIZE)
+		if (_free_size == INVALID_SIZE)
 		{
 			_free_size = len;
 		}

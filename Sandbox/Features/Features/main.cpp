@@ -302,14 +302,17 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	//{
-	//	Net::String str;
-	//	str.reserve(100);
+	{
+	    Net::String str;
+		//str.reserve(100);
 
-	//	str += "test";
+		str += (const char*)"test";
+        printf("NO CC\n");
+        //str += (const char*)CSTRING("KAK");
+        str += (const char*)"KAK";
 
-	//	std::cout << str.get().get() << std::endl;
-	//}
+		printf("TEST STR: %s\n", str.get().get());
+	}
 
 	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
 
@@ -340,6 +343,9 @@ int main()
 	begin = std::chrono::steady_clock::now();
 
 	auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
+
+    printf("OUT: %s\n", outstr.get().get());
+
 	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE);
 	fb.write(outstr.get().get());
 

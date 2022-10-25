@@ -1337,11 +1337,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			// need this line otherwise empty objects do not work
 			if (object_chain.size() > 0)
 			{
-				obj[pKey] = Net::Json::Object();
+				obj[pKey] = ALLOC<Net::Json::Object>();
 			}
 			else
 			{
-				this->operator[](pKey) = Net::Json::Object();
+				this->operator[](pKey) = ALLOC<Net::Json::Object>();
 			}
 
 			if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -1677,11 +1677,11 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 			// need this line otherwise empty objects do not work
 			if (object_chain.size() > 0)
 			{
-				obj[key] = Net::Json::Object();
+				obj[key] = ALLOC<Net::Json::Object>();
 			}
 			else
 			{
-				this->operator[](key) = Net::Json::Object();
+				this->operator[](key) = ALLOC<Net::Json::Object>();
 			}
 
 			if (!this->Deserialize(value, object_chain, m_prepareString))

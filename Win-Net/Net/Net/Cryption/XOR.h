@@ -68,7 +68,7 @@ namespace Net
 			void reserve(size_t size);
 			void finalize();
 
-			XOR& operator=(XOR& other)
+			XOR& operator=(const XOR& other)
 			{
 				// Guard self assignment
 				if (this == &other)
@@ -77,10 +77,7 @@ namespace Net
 				this->_buffer = other._buffer;
 				this->_Key = other._Key;
 				this->_size = other._size;
-
-				other._buffer = {};
-				other._Key = 0;
-				other._size = 0;
+                this->_actual_size = other._actual_size;
 
 				return *this;
 			}

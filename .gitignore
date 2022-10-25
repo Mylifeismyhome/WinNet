@@ -392,3 +392,6 @@ TestLinux/include
 *.tar.gz
 
 extern/MYSQL/tmp/
+
+# CLion
+.idea/
