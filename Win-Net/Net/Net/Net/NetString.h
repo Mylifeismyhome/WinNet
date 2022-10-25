@@ -47,8 +47,7 @@ namespace Net
 
 	public:
 		ViewString();
-		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size);
-		ViewString(ViewString& vs) NOEXPECT;
+		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER m_ref, size_t m_start, size_t m_size);
 
 		char operator[](size_t i)
 		{
@@ -119,10 +118,10 @@ namespace Net
 
 		void operator+=(const char* in)
 		{
-			if (actual_size() != INVALID_SIZE && actual_size() != 0)
+			//if (actual_size() != INVALID_SIZE && actual_size() != 0)
 				append(in);
-			else
-				set(in);
+			//else
+			//	set(in);
 		}
 
 		void operator+=(char* in)

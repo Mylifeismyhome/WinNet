@@ -151,6 +151,7 @@ namespace Net
 		void XOR::set_size(size_t new_size)
 		{
 			this->_size = new_size;
+            this->_actual_size = new_size;
 		}
 
 		void XOR::init(char* str)
@@ -158,12 +159,14 @@ namespace Net
 			if (!str)
 			{
 				_size = INVALID_SIZE;
+                _actual_size = size();
 				_buffer = nullptr;
 				_Key = 0;
 				return;
 			}
 
-			_size = std::strlen(str);
+			_size = strlen(str);
+            _actual_size = size();
 			_buffer = str;
 			_Key = 0;
 
@@ -172,7 +175,7 @@ namespace Net
 
 		void XOR::init(const char* str)
 		{
-			_size = std::strlen(str);
+			_size = strlen(str);
 			_actual_size = _size;
 			_buffer = ALLOC<char>(_size + 1);
 			memcpy(_buffer.get(), str, _size);
