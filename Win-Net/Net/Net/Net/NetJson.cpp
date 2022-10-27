@@ -1193,10 +1193,32 @@ size_t Net::Json::Object::CalcLengthForSerialize()
 Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 {
 	Net::String out;
-	out.reserve(CalcLengthForSerialize());
-	out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"))));
+	//	out.reserve(CalcLengthForSerialize());
 
+	out += "{";
 	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		if (tmp->GetType() == Type::INTEGER)
+		{
+			out += reinterpret_cast<const char*>(tmp->Key());
+			out += ":";
+			out += tmp->as_int();
+			out += ",";
+		}
+		else if (tmp->GetType() == Type::OBJECT)
+		{
+			out += reinterpret_cast<const char*>(tmp->Key());
+			out += ":";
+			out += tmp->as_object()->Serialize(type, iterations);
+			out += ",";
+		}
+	}
+	out += "}";
+
+	//out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"))));
+
+	/*for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
 		if (tmp->GetType() == Type::NULLVALUE)
@@ -1325,9 +1347,9 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 		}
 	}
 
-	out += reinterpret_cast<const char*>(CSTRING("}"));
+	out += reinterpret_cast<const char*>(CSTRING("}"));*/
 
-	out.finalize();
+	//out.finalize();
 	return out;
 }
 
@@ -1340,13 +1362,23 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
-	return this->Deserialize(json, object_chain, m_prepareString);
+	auto ret = this->Deserialize(json, object_chain, m_prepareString);
+	for (size_t i = 0; i < object_chain.size(); ++i)
+	{
+		FREE(object_chain[i]);
+	}
+	return ret;
 }
 
 bool Net::Json::Object::Deserialize(Net::ViewString& vs, bool m_prepareString)
 {
-	Vector<char*> object_chain = {};
-	return this->Deserialize(vs, object_chain, m_prepareString);
+	Vector<Net::ViewString*> object_chain = {};
+	auto ret = this->Deserialize(vs, object_chain, m_prepareString);
+	for (size_t i = 0; i < object_chain.size(); ++i)
+	{
+		FREE(object_chain[i]);
+	}
+	return ret;
 }
 
 bool Net::Json::Object::Deserialize(Net::String json)
@@ -1417,15 +1449,15 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			// we got a starting curly for an object, but missing the ending curly
 			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), pValue);
 			return false;
-		}
+	}
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
 
 #ifdef BUILD_LINUX
-			object_chain.push_back(pKey);
+			object_chain.push_back(_strdup(pKey));
 #else
-			object_chain.push_back(pKey);
+			object_chain.push_back(strdup(pKey));
 #endif
 
 			// need this line otherwise empty objects do not work
@@ -1445,7 +1477,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 
 			return true;
 		}
-	}
+}
 
 	/*
 	* check for array
@@ -1707,9 +1739,9 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 
 	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), pValue);
 	return false;
-}
+	}
 
-bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<char*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<Net::ViewString*>& object_chain, bool m_prepareString)
 {
 	if (!key.valid() || !value.valid())
 	{
@@ -1727,11 +1759,11 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 	Net::Json::BasicValueRead obj(nullptr);
 	if (object_chain.size() > 0)
 	{
-		obj = { this->operator[](object_chain[0]) };
+		obj = { this->operator[](*object_chain[0]) };
 		for (size_t i = 1; i < object_chain.size(); ++i)
 		{
-			auto vs = (Net::ViewString*)object_chain[i];
-			obj = obj[*vs];
+			auto vs = *object_chain[i];
+			obj = obj[vs];
 		}
 	}
 
@@ -1757,15 +1789,17 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 			// we got a starting curly for an object, but missing the ending curly
 			NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad object ... got a starting curly for an object, but missing the ending curly ... '%s'"), value.get());
 			return false;
-		}
+	}
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
+			auto heapCopy = ALLOC<Net::ViewString>();
+			memcpy(heapCopy, &key, sizeof(Net::ViewString));
 
 #ifdef BUILD_LINUX
-			object_chain.push_back((char*)&key);
+			object_chain.push_back(heapCopy);
 #else
-			object_chain.push_back((char*)&key);
+			object_chain.push_back(heapCopy);
 #endif
 
 			// need this line otherwise empty objects do not work
@@ -1785,7 +1819,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 			return true;
 		}
-	}
+}
 
 	/*
 	* check for array
@@ -2048,7 +2082,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 	NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Bad value ... value is from unknown type ... got '%s'"), &value.get()[value.start()]);
 	return false;
-}
+	}
 
 /*
 *	This method does do:
@@ -2084,7 +2118,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	return this->Deserialize(vs, m_prepareString);
 }
 
-bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<char*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<Net::ViewString*>& object_chain, bool m_prepareString)
 {
 	/*
 	* Prepare the json string before parsing
@@ -2597,138 +2631,149 @@ size_t Net::Json::Array::CalcLengthForSerialize()
 Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 {
 	Net::String out;
-	out.reserve(CalcLengthForSerialize());
-	out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["))));
+	//out.reserve(CalcLengthForSerialize());
 
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
-		if (tmp->GetType() == Type::NULLVALUE)
+		if (tmp->GetType() == Type::OBJECT)
 		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			out += Net::String(CSTRING(R"(%s)"), CSTRING("null"));
-			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
-		}
-		else if (tmp->GetType() == Type::STRING)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			Net::String str(tmp->as_string());
-			Net::Json::EncodeString(str);
-
-			out += Net::String(CSTRING(R"("%s")"), str.get().get());
-			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
-		}
-		else if (tmp->GetType() == Type::INTEGER)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			out += Net::String(CSTRING(R"(%i)"), tmp->as_int());
-			out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
-		}
-		else if (tmp->GetType() == Type::FLOAT)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			out += Net::String(CSTRING(R"(%F)"), tmp->as_float());
-			out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
-		}
-		else if (tmp->GetType() == Type::DOUBLE)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			out += Net::String(CSTRING(R"(%F)"), tmp->as_double());
-			out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
-		}
-		else if (tmp->GetType() == Type::BOOLEAN)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
-			out += Net::String(CSTRING(R"(%s)"), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
-			out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
-		}
-		else if (tmp->GetType() == Type::OBJECT)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += reinterpret_cast<const char*>(CSTRING("\t"));
-				}
-			}
-
 			out += tmp->as_object()->Serialize(type, (iterations + 1));
-			out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
-		}
-		else if (tmp->GetType() == Type::ARRAY)
-		{
-			if (type == SerializeType::FORMATTED)
-			{
-				for (size_t it = 0; it < iterations + 1; ++it)
-				{
-					out += CSTRING("\t");
-				}
-			}
-
-			out += tmp->as_array()->Serialize(type, (iterations + 1));
-			out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+			out += ",";
 		}
 	}
 
-	size_t it = 0;
-	if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
-		out.erase(it, 1);
+	//out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["))));
 
-	if (type == SerializeType::FORMATTED) out += CSTRING("\n");
+	//for (size_t i = 0; i < value.size(); ++i)
+	//{
+	//	auto tmp = (BasicValue<void*>*)value[i];
+	//	if (tmp->GetType() == Type::NULLVALUE)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
 
-	if (type == SerializeType::FORMATTED)
-	{
-		for (size_t it = 0; it < iterations; ++it)
-		{
-			out += reinterpret_cast<const char*>(CSTRING("\t"));
-		}
-	}
+	//		out += Net::String(CSTRING(R"(%s)"), CSTRING("null"));
+	//		out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
+	//	}
+	//	else if (tmp->GetType() == Type::STRING)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
 
-	out += reinterpret_cast<const char*>(CSTRING("]"));
+	//		Net::String str(tmp->as_string());
+	//		Net::Json::EncodeString(str);
 
-	out.finalize();
+	//		out += Net::String(CSTRING(R"("%s")"), str.get().get());
+	//		out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
+	//	}
+	//	else if (tmp->GetType() == Type::INTEGER)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
+
+	//		out += Net::String(CSTRING(R"(%i)"), tmp->as_int());
+	//		out += (type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(",");
+	//	}
+	//	else if (tmp->GetType() == Type::FLOAT)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
+
+	//		out += Net::String(CSTRING(R"(%F)"), tmp->as_float());
+	//		out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+	//	}
+	//	else if (tmp->GetType() == Type::DOUBLE)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
+
+	//		out += Net::String(CSTRING(R"(%F)"), tmp->as_double());
+	//		out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+	//	}
+	//	else if (tmp->GetType() == Type::BOOLEAN)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
+
+	//		out += Net::String(CSTRING(R"(%s)"), tmp->as_boolean() ? CSTRING("true") : CSTRING("false"));
+	//		out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+	//	}
+	//	else if (tmp->GetType() == Type::OBJECT)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//			}
+	//		}
+
+	//		out += tmp->as_object()->Serialize(type, (iterations + 1));
+	//		out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+	//	}
+	//	else if (tmp->GetType() == Type::ARRAY)
+	//	{
+	//		if (type == SerializeType::FORMATTED)
+	//		{
+	//			for (size_t it = 0; it < iterations + 1; ++it)
+	//			{
+	//				out += CSTRING("\t");
+	//			}
+	//		}
+
+	//		out += tmp->as_array()->Serialize(type, (iterations + 1));
+	//		out += reinterpret_cast<const char*>((type == SerializeType::FORMATTED) ? CSTRING(",\n") : CSTRING(","));
+	//	}
+	//}
+
+	//size_t it = 0;
+	//if ((it = out.findLastOf(CSTRING(","))) != NET_STRING_NOT_FOUND)
+	//	out.erase(it, 1);
+
+	//if (type == SerializeType::FORMATTED) out += CSTRING("\n");
+
+	//if (type == SerializeType::FORMATTED)
+	//{
+	//	for (size_t it = 0; it < iterations; ++it)
+	//	{
+	//		out += reinterpret_cast<const char*>(CSTRING("\t"));
+	//	}
+	//}
+
+	//out += reinterpret_cast<const char*>(CSTRING("]"));
+
+	//out.finalize();
 	return out;
 }
 
