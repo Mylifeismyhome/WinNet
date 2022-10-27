@@ -2,6 +2,7 @@
 	Author: Tobias Staack
 */
 #pragma once
+#define NET_JSON_ARR_LEN(x) sizeof(x)[0] / sizeof(x)
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
@@ -367,6 +368,7 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
+			size_t CalcLengthForSerialize();
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
 			bool Deserialize(Net::String json);
@@ -409,6 +411,7 @@ namespace Net
 
 			size_t size() const;
 
+			size_t CalcLengthForSerialize();
 			Net::String Serialize(SerializeType type, size_t iterations = 0);
 			Net::String Stringify(SerializeType type, size_t iterations = 0);
 			bool Deserialize(Net::String json);

@@ -65,6 +65,9 @@ namespace Net
 		void* original();
 		bool refresh();
 		ViewString sub_view(size_t m_start, size_t m_size = 0);
+
+		friend std::ostream& operator<<(std::ostream& os, Net::ViewString& vs);
+		friend std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs);
 	};
 
 	class String

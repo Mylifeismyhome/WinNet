@@ -1427,6 +1427,34 @@ namespace Net
 		return { this, &m_ref, m_start, m_size };
 	}
 
+	std::ostream& operator<<(std::ostream& os, Net::ViewString& vs)
+	{
+		/*
+		* better iterate through it and append each character
+		* rather than heap allocating another space for the decrypted text
+		*/
+		for (size_t i = vs.start(); i < vs.end(); ++i)
+		{
+			os << vs[i];
+		}
+
+		return os;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs)
+	{
+		/*
+		* better iterate through it and append each character
+		* rather than heap allocating another space for the decrypted text
+		*/
+		for (size_t i = vs.start(); i < vs.end(); ++i)
+		{
+			os << const_cast<Net::ViewString*>(&vs)[i];
+		}
+
+		return os;
+	}
+
 	std::ostream& operator<<(std::ostream& os, Net::String& ns)
 	{
 		/*

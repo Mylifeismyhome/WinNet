@@ -96,7 +96,7 @@ namespace Net
 
 		static bool PrepareString(Net::ViewString& json)
 		{
-			if(!json.original())
+			if (!json.original())
 			{
 				return false;
 			}
@@ -454,9 +454,9 @@ bool Net::Json::Convert::ToBoolean(char* str)
 
 bool Net::Json::Convert::ToBoolean(Net::ViewString& vs)
 {
-	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.size()))
 		return true;
-	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.size()))
 		return false;
 
 	/* todo: throw error */
@@ -503,9 +503,9 @@ bool Net::Json::Convert::is_boolean(char* str)
 
 bool Net::Json::Convert::is_boolean(Net::ViewString& vs)
 {
-	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_True, vs.size()))
 		return true;
-	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.length()))
+	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.size()))
 		return true;
 
 	return false;
@@ -1089,9 +1089,113 @@ bool Net::Json::Object::Append(const char* key, Object value)
 	return __append(key, value, Type::OBJECT);
 }
 
+size_t Net::Json::Object::CalcLengthForSerialize()
+{
+	size_t m_size = 0;
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		if (tmp->GetType() == Type::NULLVALUE)
+		{
+			m_size += NET_JSON_ARR_LEN("null");
+		}
+		else if (tmp->GetType() == Type::STRING)
+		{
+			auto len = strlen(tmp->as_string());
+			m_size += len;
+		}
+		else if (tmp->GetType() == Type::INTEGER)
+		{
+			if (tmp->as_int() == 0) m_size += 1;
+			else m_size += floor(log10(abs(tmp->as_int()))) + 1;
+		}
+		else if (tmp->GetType() == Type::FLOAT)
+		{
+			int digits = 0;
+			long cnum = tmp->as_float();
+			while (cnum > 0) //count no of digits before floating point
+			{
+				digits++;
+				cnum = cnum / 10;
+			}
+			if (tmp->as_float() == 0)
+				digits = 1;
+
+			double no_float;
+			no_float = tmp->as_float() * (pow(10, (8 - digits)));
+			long long int total = (long long int)no_float;
+			int no_of_digits, extrazeroes = 0;
+			for (int i = 0; i < 8; i++)
+			{
+				int dig;
+				dig = total % 10;
+				total = total / 10;
+				if (dig != 0)
+					break;
+				else
+					extrazeroes++;
+			}
+			no_of_digits = 8 - extrazeroes;
+			m_size += no_of_digits;
+		}
+		else if (tmp->GetType() == Type::DOUBLE)
+		{
+			int digits = 0;
+			long cnum = tmp->as_double();
+			while (cnum > 0) //count no of digits before floating point
+			{
+				digits++;
+				cnum = cnum / 10;
+			}
+			if (tmp->as_double() == 0)
+				digits = 1;
+
+			double no_float;
+			no_float = tmp->as_double() * (pow(10, (16 - digits)));
+			long long int total = (long long int)no_float;
+			int no_of_digits, extrazeroes = 0;
+			for (int i = 0; i < 16; i++)
+			{
+				int dig;
+				dig = total % 10;
+				total = total / 10;
+				if (dig != 0)
+					break;
+				else
+					extrazeroes++;
+			}
+			no_of_digits = 16 - extrazeroes;
+			m_size += no_of_digits;
+		}
+		else if (tmp->GetType() == Type::BOOLEAN)
+		{
+			if (tmp->as_boolean())
+			{
+				m_size += NET_JSON_ARR_LEN("true");
+			}
+			else
+			{
+				m_size += NET_JSON_ARR_LEN("false");
+			}
+		}
+		else if (tmp->GetType() == Type::OBJECT)
+		{
+			m_size += tmp->as_object()->CalcLengthForSerialize();
+		}
+		else if (tmp->GetType() == Type::ARRAY)
+		{
+			m_size += tmp->as_array()->CalcLengthForSerialize();
+		}
+	}
+	return m_size;
+}
+
 Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 {
-	Net::String out(reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"))));
+	Net::String out;
+	out.reserve(CalcLengthForSerialize());
+	out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("{\n") : CSTRING("{"))));
+
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
@@ -1222,6 +1326,8 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 	}
 
 	out += reinterpret_cast<const char*>(CSTRING("}"));
+
+	out.finalize();
 	return out;
 }
 
@@ -1234,25 +1340,13 @@ Net::String Net::Json::Object::Stringify(SerializeType type, size_t iterations)
 bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
-	auto ret = this->Deserialize(json, object_chain, m_prepareString);
-	for (size_t i = 0; i < object_chain.size(); ++i)
-	{
-		if (!object_chain[i]) continue;
-		FREE(object_chain[i]);
-	}
-	return ret;
+	return this->Deserialize(json, object_chain, m_prepareString);
 }
 
 bool Net::Json::Object::Deserialize(Net::ViewString& vs, bool m_prepareString)
 {
 	Vector<char*> object_chain = {};
-	auto ret = this->Deserialize(vs, object_chain, m_prepareString);
-	for (size_t i = 0; i < object_chain.size(); ++i)
-	{
-		if (!object_chain[i]) continue;
-		FREE(object_chain[i]);
-	}
-	return ret;
+	return this->Deserialize(vs, object_chain, m_prepareString);
 }
 
 bool Net::Json::Object::Deserialize(Net::String json)
@@ -1329,9 +1423,9 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 			// object seem to be fine, now call it's deserializer
 
 #ifdef BUILD_LINUX
-			object_chain.push_back(strdup(pKey));
+			object_chain.push_back(pKey);
 #else
-			object_chain.push_back(_strdup(pKey));
+			object_chain.push_back(pKey);
 #endif
 
 			// need this line otherwise empty objects do not work
@@ -1482,7 +1576,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	* check for null value
 	*/
 	{
-		if (!memcmp(pValue, CSTRING("null"), 4))
+		if (!memcmp(pValue, CSTRING("null"), strlen(pValue)))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 
@@ -1823,7 +1917,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 	* check for null value
 	*/
 	{
-		if (!memcmp(&value.get()[value.start()], CSTRING("null"), value.length()))
+		if (!memcmp(&value.get()[value.start()], CSTRING("null"), value.size()))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 
@@ -2399,9 +2493,113 @@ size_t Net::Json::Array::size() const
 	return this->value.size();
 }
 
+size_t Net::Json::Array::CalcLengthForSerialize()
+{
+	size_t m_size = 0;
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		if (tmp->GetType() == Type::NULLVALUE)
+		{
+			m_size += NET_JSON_ARR_LEN("null");
+		}
+		else if (tmp->GetType() == Type::STRING)
+		{
+			auto len = strlen(tmp->as_string());
+			m_size += len;
+		}
+		else if (tmp->GetType() == Type::INTEGER)
+		{
+			if (tmp->as_int() == 0) m_size += 1;
+			else m_size += floor(log10(abs(tmp->as_int()))) + 1;
+		}
+		else if (tmp->GetType() == Type::FLOAT)
+		{
+			int digits = 0;
+			long cnum = tmp->as_float();
+			while (cnum > 0) //count no of digits before floating point
+			{
+				digits++;
+				cnum = cnum / 10;
+			}
+			if (tmp->as_float() == 0)
+				digits = 1;
+
+			double no_float;
+			no_float = tmp->as_float() * (pow(10, (8 - digits)));
+			long long int total = (long long int)no_float;
+			int no_of_digits, extrazeroes = 0;
+			for (int i = 0; i < 8; i++)
+			{
+				int dig;
+				dig = total % 10;
+				total = total / 10;
+				if (dig != 0)
+					break;
+				else
+					extrazeroes++;
+			}
+			no_of_digits = 8 - extrazeroes;
+			m_size += no_of_digits;
+		}
+		else if (tmp->GetType() == Type::DOUBLE)
+		{
+			int digits = 0;
+			long cnum = tmp->as_double();
+			while (cnum > 0) //count no of digits before floating point
+			{
+				digits++;
+				cnum = cnum / 10;
+			}
+			if (tmp->as_double() == 0)
+				digits = 1;
+
+			double no_float;
+			no_float = tmp->as_double() * (pow(10, (16 - digits)));
+			long long int total = (long long int)no_float;
+			int no_of_digits, extrazeroes = 0;
+			for (int i = 0; i < 16; i++)
+			{
+				int dig;
+				dig = total % 10;
+				total = total / 10;
+				if (dig != 0)
+					break;
+				else
+					extrazeroes++;
+			}
+			no_of_digits = 16 - extrazeroes;
+			m_size += no_of_digits;
+		}
+		else if (tmp->GetType() == Type::BOOLEAN)
+		{
+			if (tmp->as_boolean())
+			{
+				m_size += NET_JSON_ARR_LEN("true");
+			}
+			else
+			{
+				m_size += NET_JSON_ARR_LEN("false");
+			}
+		}
+		else if (tmp->GetType() == Type::OBJECT)
+		{
+			m_size += tmp->as_object()->CalcLengthForSerialize();
+		}
+		else if (tmp->GetType() == Type::ARRAY)
+		{
+			m_size += tmp->as_array()->CalcLengthForSerialize();
+		}
+	}
+	return m_size;
+}
+
 Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 {
-	Net::String out(reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["))));
+	Net::String out;
+	out.reserve(CalcLengthForSerialize());
+	out += (reinterpret_cast<const char*>((type == SerializeType::FORMATTED ? CSTRING("[\n") : CSTRING("["))));
+
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
@@ -2529,6 +2727,8 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 	}
 
 	out += reinterpret_cast<const char*>(CSTRING("]"));
+
+	out.finalize();
 	return out;
 }
 
@@ -2950,7 +3150,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 	* check for null value
 	*/
 	{
-		if (!memcmp(&vs.get()[vs.start()], CSTRING("null"), vs.length()))
+		if (!memcmp(&vs.get()[vs.start()], CSTRING("null"), vs.size()))
 		{
 			m_type = Net::Json::Type::NULLVALUE;
 			return this->push(Net::Json::NullValue());
