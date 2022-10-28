@@ -165,14 +165,6 @@ typedef DWORD typeLatency;
 ////////////////////////////////////////////////////
 #ifdef NET_TEST_MEMORY_LEAKS
 static std::vector<void*> NET_TEST_MEMORY_LEAKS_POINTER_LIST;
-
-__forceinline void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
-{
-	printf(CSTRING("----- POINTER INSTANCE(s) -----\n"));
-	for (const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
-		printf(CSTRING("Allocated Instance: %p\n"), entry);
-	printf(CSTRING("----------------------------------------\n"));
-}
 #endif
 
 template <typename T>
@@ -184,7 +176,7 @@ T* NET_ALLOC_MEM(const size_t n)
 		if (pointer)
 		{
 #ifdef NET_TEST_MEMORY_LEAKS
-			printf(CSTRING("Allocated: %llu Byte(s) ; %p\n"), n, pointer);
+			//printf("Allocated: %llu Byte(s) ; %p\n", n, pointer);
 			NET_TEST_MEMORY_LEAKS_POINTER_LIST.emplace_back(pointer);
 #endif
 
@@ -206,7 +198,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 		return;
 
 #ifdef NET_TEST_MEMORY_LEAKS
-	printf(CSTRING("Deallocated: %p\n"), pointer);
+	//printf("Deallocated: %p\n", pointer);
 	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
 	{
 		if (*it == pointer)

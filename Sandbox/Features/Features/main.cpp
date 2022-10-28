@@ -295,46 +295,54 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
-
-	char* data = nullptr;
-	if (!f.read(data))
 	{
-		NET_LOG("failed reading file");
-		system("pause");
-		return 0;
+		NET_FILEMANAGER f(Net::String("%s/test.json", Net::Manager::Directory::homeDirA().data()).get().get(), NET_FILE_READ);
+
+		char* data = nullptr;
+		if (!f.read(data))
+		{
+			NET_LOG("failed reading file");
+			system("pause");
+			return 0;
+		}
+
+		Net::String str(data);
+
+		Net::Json::Object doc;
+		if (!doc.Deserialize(str))
+		{
+			NET_LOG("Failed json deserialize");
+		}
 	}
 
-	Net::String str(data);
+	//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+	//Net::Json::Object doc;
+	//if (!doc.Deserialize(str))
+	//{
+	//	NET_LOG("Failed json deserialize");
+	//}
 
-	Net::Json::Object doc;
-	if (!doc.Deserialize(str))
-	{
-		NET_LOG("Failed json deserialize");
-	}
+	//std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	//std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+	////printf("OK TOBI: %s\n", doc["voting"]->as_object()->Stringify(Net::Json::SerializeType::UNFORMATTED).get().get());
 
-	//printf("OK TOBI: %s\n", doc["voting"]->as_object()->Stringify(Net::Json::SerializeType::UNFORMATTED).get().get());
+	//system("pause");
 
-	system("pause");
+	//begin = std::chrono::steady_clock::now();
 
-	begin = std::chrono::steady_clock::now();
+	//auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
 
-	auto outstr = doc.Stringify(Net::Json::SerializeType::UNFORMATTED);
+ //   printf("OUT: %s\n", outstr.get().get());
 
-    printf("OUT: %s\n", outstr.get().get());
+	//NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD);
+	//fb.write(outstr.get().get());
 
-	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD);
-	fb.write(outstr.get().get());
+	//end = std::chrono::steady_clock::now();
 
-	end = std::chrono::steady_clock::now();
-
-	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
+	//std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
 	//FREE(data);
 	system("pause");

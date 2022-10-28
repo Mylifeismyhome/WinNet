@@ -7,6 +7,16 @@
 extern void __Net_Enable_Logging();
 extern void __Net_Shutdown_Logging();
 
+#ifdef NET_TEST_MEMORY_LEAKS
+static void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
+{
+	printf("----- POINTER INSTANCE(s) -----\n");
+	for (const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
+		printf("Allocated Instance: %p\n", entry);
+	printf("----------------------------------------\n");
+}
+#endif
+
 NET_EXPORT_FUNCTION void Net::load(int flag)
 {
 #ifndef NET_DISABLE_IMPORT_KERNEL32
@@ -49,6 +59,10 @@ NET_EXPORT_FUNCTION void Net::unload()
 
 #ifndef NET_DISABLE_IMPORT_KERNEL32
 	Import::Resolver::Unload(CSTRING("Kernel32"));
+#endif
+
+#ifdef NET_TEST_MEMORY_LEAKS
+	NET_TEST_MEMORY_SHOW_DIAGNOSTIC();
 #endif
 }
 
