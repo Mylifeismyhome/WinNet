@@ -334,6 +334,12 @@ namespace Net
 			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
 		};
 
+		struct SerializeT
+		{
+			Net::String m_buffer;
+			bool m_valid;
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -369,8 +375,9 @@ namespace Net
 			bool Append(const char* key, Object value);
 
 			size_t CalcLengthForSerialize();
-			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
-			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
+			SerializeT TrySerialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
@@ -412,8 +419,9 @@ namespace Net
 			size_t size() const;
 
 			size_t CalcLengthForSerialize();
-			Net::String Serialize(SerializeType type, size_t iterations = 0);
-			Net::String Stringify(SerializeType type, size_t iterations = 0);
+			SerializeT TrySerialize(SerializeType type);
+			Net::String Serialize(SerializeType type);
+			Net::String Stringify(SerializeType type);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
