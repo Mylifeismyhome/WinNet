@@ -319,7 +319,7 @@ int main()
 
 	std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << "[ms]" << std::endl;
 
-	printf("OK TOBI: %s\n", doc["map_ban"]->as_array()->at(0)->as_object()->operator[]("team_ID")->as_string());
+	//printf("OK TOBI: %s\n", doc["voting"]->as_object()->Stringify(Net::Json::SerializeType::UNFORMATTED).get().get());
 
 	system("pause");
 
@@ -329,7 +329,7 @@ int main()
 
     printf("OUT: %s\n", outstr.get().get());
 
-	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE);
+	NET_FILEMANAGER fb("test.out", NET_FILE_READ | NET_FILE_WRITE | NET_FILE_DISCARD);
 	fb.write(outstr.get().get());
 
 	end = std::chrono::steady_clock::now();
