@@ -1035,7 +1035,7 @@ namespace Net
 				Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 				IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-				if (!aes.init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
+				if (!aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())))
 				{
 					Key.free();
 					IV.free();
@@ -1621,7 +1621,7 @@ namespace Net
 				}
 
 				NET_AES aes;
-				if (!aes.init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
+				if (!aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())))
 				{
 					AESKey.free();
 					AESIV.free();
@@ -1909,7 +1909,6 @@ namespace Net
 
 			if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 			{
-				data.free();
 				Disconnect();
 				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 				return;
@@ -1918,7 +1917,6 @@ namespace Net
 			const auto id = PKG[CSTRING("ID")]->as_int();
 			if (id < 0)
 			{
-				data.free();
 				Disconnect();
 				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
 				return;
@@ -1927,7 +1925,6 @@ namespace Net
 			if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
 				&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
 			{
-				data.free();
 				Disconnect();
 				NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
 				return;
@@ -1948,8 +1945,6 @@ namespace Net
 					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 				}
-
-			data.free();
 		}
 
 		void Client::CompressData(BYTE*& data, size_t& size)
@@ -2108,8 +2103,6 @@ namespace Net
 
 			network.RSA.setPublicKey(reinterpret_cast<char*>(b64));
 			network.RSAHandshake = true;
-
-			FREE(b64);
 		}
 		NET_END_PACKET;
 

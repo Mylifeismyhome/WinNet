@@ -17,10 +17,18 @@ short Net::Version::Revision()
 
 Net::String Net::Version::Key()
 {
-	return Net::String(NetKey);
+	/*
+	* must be const char* 
+	* otherwise it moves the pointer and tries to free it on destruction
+	*/
+	return Net::String(reinterpret_cast<const char*>(NetKey));
 }
 
 Net::String Net::Version::Version()
 {
-	return Net::String(CSTRING("%i.%i.%i-%s"), Major(), Minor(), Revision(), Key().data().data());
+	/*
+	* must be const char*
+	* otherwise it moves the pointer and tries to free it on destruction
+	*/
+	return Net::String(reinterpret_cast<const char*>(CSTRING("%i.%i.%i-%s")), Major(), Minor(), Revision(), Key().data().data());
 }

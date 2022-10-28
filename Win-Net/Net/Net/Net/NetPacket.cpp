@@ -141,6 +141,11 @@ void Net::Packet::AddRaw(Net::RawData_t& raw)
 	this->raw.emplace_back(raw);
 }
 
+bool Net::Packet::Deserialize(char* data)
+{
+	return this->json.Deserialize(data);
+}
+
 bool Net::Packet::Deserialize(const char* data)
 {
 	return this->json.Deserialize(data);

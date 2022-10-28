@@ -51,7 +51,6 @@ namespace Net
 				key.get()[len] = '\0';
 
 				_PublicKey.init(key.get());
-				key.free();
 
 				BIO_free(bio);
 			}
@@ -74,7 +73,6 @@ namespace Net
 				key.get()[len] = '\0';
 
 				_PrivateKey.init(key.get());
-				key.free();
 
 				BIO_free(bio);
 			}

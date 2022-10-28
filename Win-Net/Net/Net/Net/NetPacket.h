@@ -73,6 +73,7 @@ namespace Net
 		void AddRaw(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true);
 		void AddRaw(Net::RawData_t& raw);
 
+		bool Deserialize(char* data);
 		bool Deserialize(const char* data);
 
 		void SetJson(Net::Json::Document& doc);

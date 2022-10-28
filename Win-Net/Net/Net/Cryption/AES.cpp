@@ -22,8 +22,8 @@ namespace Net
 			if (!in_Key || !in_IV)
 				return false;
 
-			Key = RUNTIMEXOR((char*)in_Key);
-			IV = RUNTIMEXOR((char*)in_IV);
+			Key = RUNTIMEXOR(in_Key);
+			IV = RUNTIMEXOR(in_IV);
 			KeyLength = in_KeyLength;
 			return true;
 		}
