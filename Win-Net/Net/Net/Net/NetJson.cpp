@@ -477,7 +477,7 @@ bool Net::Json::Convert::ToBoolean(char* str)
 	else if (!strcmp(Net_Json_Boolean_False, str))
 		return false;
 
-	/* todo: throw error */
+	NET_LOG_ERROR(CSTRING("[Net::Json::Convert] - failed to convert to boolean"));
 	return false;
 }
 
@@ -488,7 +488,7 @@ bool Net::Json::Convert::ToBoolean(Net::ViewString& vs)
 	if (!memcmp(&vs.get()[vs.start()], Net_Json_Boolean_False, vs.size()))
 		return false;
 
-	/* todo: throw error */
+	NET_LOG_ERROR(CSTRING("[Net::Json::Convert] - failed to convert to boolean"));
 	return false;
 }
 
@@ -1311,7 +1311,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 			break;
 
 		default:
-			// todo add error
+			NET_LOG_ERROR(CSTRING("[Net::Json::Object] - Unable to serialize object => invalid type"));
 			return {};
 		}
 
@@ -2627,7 +2627,7 @@ Net::String Net::Json::Array::Serialize(SerializeType type, size_t iterations)
 			break;
 
 		default:
-			// todo add error
+			NET_LOG_ERROR(CSTRING("[Net::Json::Array] - Unable to serialize array => invalid type"));
 			return {};
 		}
 
@@ -3549,8 +3549,7 @@ bool Net::Json::Document::Deserialize(Net::ViewString& json)
 		return this->root_array.Deserialize(json);
 	}
 
-	/* error */
-	// @todo: add error message
+	NET_LOG_ERROR(CSTRING("[Net::Json::Document] - Unable to deserialize document => neither object nor array"));
 	return false;
 }
 
