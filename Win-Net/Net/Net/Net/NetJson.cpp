@@ -345,9 +345,6 @@ namespace Net
 			Net::String out;
 			out.reserve(vs.size());
 
-			if (vs.size() < 2)
-				return out;
-
 			for (size_t i = vs.start(); i < vs.end(); i++)
 			{
 				if (!memcmp(&vs.get()[i], CSTRING(R"(\")"), 2))
@@ -1193,25 +1190,54 @@ size_t Net::Json::Object::CalcLengthForSerialize()
 Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 {
 	Net::String out;
-	//	out.reserve(CalcLengthForSerialize());
+	out.reserve(CalcLengthForSerialize());
 
 	out += "{";
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
-		if (tmp->GetType() == Type::INTEGER)
+		switch (tmp->GetType())
 		{
-			out += reinterpret_cast<const char*>(tmp->Key());
-			out += ":";
-			out += tmp->as_int();
-			out += ",";
-		}
-		else if (tmp->GetType() == Type::OBJECT)
-		{
-			out += reinterpret_cast<const char*>(tmp->Key());
-			out += ":";
+		case Type::OBJECT:
+			out.append("%s:", tmp->Key());
 			out += tmp->as_object()->Serialize(type, iterations);
-			out += ",";
+			out += ',';
+			break;
+
+		case Type::NULLVALUE:
+			out.append("%s:null,", tmp->Key());
+			break;
+
+		case Type::STRING:
+		{
+			Net::String enc(tmp->as_string());
+			Net::Json::EncodeString(enc);
+			out.append("%s:", tmp->Key());
+			out += '"';
+			out += enc;
+			out += '"';
+			out += ',';
+			break;
+		}
+
+		case Type::INTEGER:
+			out.append("%s:%i,", tmp->Key(), tmp->as_int());
+			break;
+
+		case Type::BOOLEAN:
+			out.append("%s:%s,", tmp->Key(), tmp->as_boolean() ? "true" : "false");
+			break;
+
+		case Type::FLOAT:
+			out.append("%s:%f,", tmp->Key(), tmp->as_float());
+			break;
+
+		case Type::DOUBLE:
+			out.append("%s:%lf,", tmp->Key(), tmp->as_double());
+			break;
+
+		default:
+			break;
 		}
 	}
 	out += "}";
@@ -1349,7 +1375,7 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 
 	out += reinterpret_cast<const char*>(CSTRING("}"));*/
 
-	//out.finalize();
+	out.finalize();
 	return out;
 }
 
