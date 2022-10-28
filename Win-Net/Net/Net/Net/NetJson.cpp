@@ -1253,7 +1253,14 @@ size_t Net::Json::Object::CalcLengthForSerialize()
 
 Net::String Net::Json::Object::Serialize(SerializeType type)
 {
-	return this->TrySerialize(type).m_buffer;
+	Net::Json::SerializeT st;
+	st.m_reserved = false;
+	if (!this->TrySerialize(type, st))
+	{
+		return {};
+	}
+	st.m_buffer.finalize();
+	return st.m_buffer;
 }
 
 Net::String Net::Json::Object::Stringify(SerializeType type)
@@ -1971,12 +1978,31 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 * This function will try to serialize it
 * on any error it will recursivly return and m_valid will be set to false to handle the closing
 */
-Net::Json::SerializeT Net::Json::Object::TrySerialize(SerializeType type)
+bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 {
-	SerializeT out;
-	out.m_buffer.reserve(CalcLengthForSerialize());
+	if (!st.m_reserved)
+	{
+		size_t m_size = CalcLengthForSerialize();
+		for (size_t i = 0; i < value.size(); ++i)
+		{
+			auto tmp = (BasicValue<void*>*)value[i];
+			switch (tmp->GetType())
+			{
+			case Type::OBJECT:
+				m_size += tmp->as_object()->CalcLengthForSerialize();
+				break;
 
-	out.m_buffer += "{";
+			case Type::ARRAY:
+				m_size += tmp->as_array()->CalcLengthForSerialize();
+				break;
+			}
+		}
+
+		st.m_buffer.reserve(m_size * 2);
+		st.m_reserved = !st.m_reserved;
+	}
+
+	st.m_buffer += "{";
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
@@ -1984,86 +2010,79 @@ Net::Json::SerializeT Net::Json::Object::TrySerialize(SerializeType type)
 		Net::Json::EncodeString(encodedKey);
 
 		// append key
-		out.m_buffer += '"';
-		out.m_buffer += encodedKey;
-		out.m_buffer += '"';
-		out.m_buffer += ":";
+		st.m_buffer += '"';
+		st.m_buffer += encodedKey;
+		st.m_buffer += '"';
+		st.m_buffer += ":";
 
 		switch (tmp->GetType())
 		{
 		case Type::OBJECT:
 		{
-			auto ret = tmp->as_object()->TrySerialize(type);
-			if (!ret.m_valid)
+			if (!tmp->as_object()->TrySerialize(type, st))
 			{
-				out.m_buffer = Net::String();
-				out.m_valid = false;
-				return out;
+				st.m_buffer = Net::String();
+				st.m_valid = false;
+				return false;
 			}
-
-			out.m_buffer += ret.m_buffer;
 			break;
 		}
 
 		case Type::ARRAY:
 		{
-			auto ret = tmp->as_array()->TrySerialize(type);
-			if (!ret.m_valid)
+			if (!tmp->as_array()->TrySerialize(type, st))
 			{
-				out.m_buffer = Net::String();
-				out.m_valid = false;
-				return out;
+				st.m_buffer = Net::String();
+				st.m_valid = false;
+				return false;
 			}
-
-			out.m_buffer += ret.m_buffer;
 			break;
 		}
 
 		case Type::NULLVALUE:
-			out.m_buffer += "null";
+			st.m_buffer += "null";
 			break;
 
 		case Type::STRING:
 		{
 			Net::String enc((const char*)tmp->as_string());
 			Net::Json::EncodeString(enc);
-			out.m_buffer += '"';
-			out.m_buffer += enc;
-			out.m_buffer += '"';
+			st.m_buffer += '"';
+			st.m_buffer += enc;
+			st.m_buffer += '"';
 			break;
 		}
 
 		case Type::INTEGER:
-			out.m_buffer.append("%i", tmp->as_int());
+			st.m_buffer.append("%i", tmp->as_int());
 			break;
 
 		case Type::BOOLEAN:
-			out.m_buffer.append("%s", tmp->as_boolean() ? "true" : "false");
+			st.m_buffer.append("%s", tmp->as_boolean() ? "true" : "false");
 			break;
 
 		case Type::FLOAT:
-			out.m_buffer.append("%f", tmp->as_float());
+			st.m_buffer.append("%f", tmp->as_float());
 			break;
 
 		case Type::DOUBLE:
-			out.m_buffer.append("%lf", tmp->as_double());
+			st.m_buffer.append("%lf", tmp->as_double());
 			break;
 
 		default:
 			NET_LOG_ERROR(CSTRING("[Net::Json::Object] - Unable to serialize object => invalid type"));
 
-			out.m_buffer = Net::String();
-			out.m_valid = false;
-			return out;
+			st.m_buffer = Net::String();
+			st.m_valid = false;
+			return false;
 		}
 
-		if (i != value.size() - 1) 	out.m_buffer += ',';
+		if (i != value.size() - 1) 	st.m_buffer += ',';
 	}
-	out.m_buffer += "}";
-	out.m_buffer.finalize();
+	st.m_buffer += "}";
 
-	out.m_valid = true;
-	return out;
+	st.m_valid = true;
+	return true;
 }
 
 /*
@@ -2612,7 +2631,14 @@ size_t Net::Json::Array::CalcLengthForSerialize()
 
 Net::String Net::Json::Array::Serialize(SerializeType type)
 {
-	return this->TrySerialize(type).m_buffer;
+	Net::Json::SerializeT st;
+	st.m_reserved = false;
+	if (!this->TrySerialize(type, st))
+	{
+		return {};
+	}
+	st.m_buffer.finalize();
+	return st.m_buffer;
 }
 
 Net::String Net::Json::Array::Stringify(SerializeType type)
@@ -3141,12 +3167,31 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 * This function will try to serialize it
 * on any error it will recursivly return and m_valid will be set to false to handle the closing
 */
-Net::Json::SerializeT Net::Json::Array::TrySerialize(SerializeType type)
+bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 {
-	SerializeT out;
-	out.m_buffer.reserve(CalcLengthForSerialize());
+	if (!st.m_reserved)
+	{
+		size_t m_size = CalcLengthForSerialize();
+		for (size_t i = 0; i < value.size(); ++i)
+		{
+			auto tmp = (BasicValue<void*>*)value[i];
+			switch (tmp->GetType())
+			{
+			case Type::OBJECT:
+				m_size += tmp->as_object()->CalcLengthForSerialize();
+				break;
 
-	out.m_buffer += '[';
+			case Type::ARRAY:
+				m_size += tmp->as_array()->CalcLengthForSerialize();
+				break;
+			}
+		}
+
+		st.m_buffer.reserve(m_size * 2);
+		st.m_reserved = !st.m_reserved;
+	}
+
+	st.m_buffer += '[';
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
@@ -3154,77 +3199,70 @@ Net::Json::SerializeT Net::Json::Array::TrySerialize(SerializeType type)
 		{
 		case Type::OBJECT:
 		{
-			auto ret = tmp->as_object()->TrySerialize(type);
-			if (!ret.m_valid)
+			if (!tmp->as_object()->TrySerialize(type, st))
 			{
-				out.m_buffer = Net::String();
-				out.m_valid = false;
-				return out;
+				st.m_buffer = Net::String();
+				st.m_valid = false;
+				return false;
 			}
-
-			out.m_buffer += ret.m_buffer;
 			break;
 		}
 
 		case Type::ARRAY:
 		{
-			auto ret = tmp->as_array()->TrySerialize(type);
-			if (!ret.m_valid)
+			if (!tmp->as_array()->TrySerialize(type, st))
 			{
-				out.m_buffer = Net::String();
-				out.m_valid = false;
-				return out;
+				st.m_buffer = Net::String();
+				st.m_valid = false;
+				return false;
 			}
-
-			out.m_buffer += ret.m_buffer;
 			break;
 		}
 
 		case Type::NULLVALUE:
-			out.m_buffer += "null";
+			st.m_buffer += "null";
 			break;
 
 		case Type::STRING:
 		{
 			Net::String enc((const char*)tmp->as_string());
 			Net::Json::EncodeString(enc);
-			out.m_buffer += '"';
-			out.m_buffer += enc;
-			out.m_buffer += '"';
+			st.m_buffer += '"';
+			st.m_buffer += enc;
+			st.m_buffer += '"';
 			break;
 		}
 
 		case Type::INTEGER:
-			out.m_buffer.append("%i", tmp->as_int());
+			st.m_buffer.append("%i", tmp->as_int());
 			break;
 
 		case Type::BOOLEAN:
-			out.m_buffer.append("%s", tmp->as_boolean() ? "true" : "false");
+			st.m_buffer.append("%s", tmp->as_boolean() ? "true" : "false");
 			break;
 
 		case Type::FLOAT:
-			out.m_buffer.append("%f", tmp->as_float());
+			st.m_buffer.append("%f", tmp->as_float());
 			break;
 
 		case Type::DOUBLE:
-			out.m_buffer.append("%lf", tmp->as_double());
+			st.m_buffer.append("%lf", tmp->as_double());
 			break;
 
 		default:
 			NET_LOG_ERROR(CSTRING("[Net::Json::Array] - Unable to serialize array => invalid type"));
 
-			out.m_buffer = Net::String();
-			out.m_valid = false;
-			return out;
+			st.m_buffer = Net::String();
+			st.m_valid = false;
+			return false;
 		}
 
-		if (i != value.size() - 1) 	out.m_buffer += ',';
+		if (i != value.size() - 1) 	st.m_buffer += ',';
 	}
-	out.m_buffer += ']';
-	out.m_buffer.finalize();
+	st.m_buffer += ']';
 
-	out.m_valid = true;
-	return out;
+	st.m_valid = true;
+	return true;
 }
 
 /*

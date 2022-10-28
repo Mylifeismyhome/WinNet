@@ -337,6 +337,7 @@ namespace Net
 		struct SerializeT
 		{
 			Net::String m_buffer;
+			bool m_reserved;
 			bool m_valid;
 		};
 
@@ -375,7 +376,7 @@ namespace Net
 			bool Append(const char* key, Object value);
 
 			size_t CalcLengthForSerialize();
-			SerializeT TrySerialize(SerializeType type = SerializeType::UNFORMATTED);
+			bool TrySerialize(SerializeType type, SerializeT& st);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -419,9 +420,9 @@ namespace Net
 			size_t size() const;
 
 			size_t CalcLengthForSerialize();
-			SerializeT TrySerialize(SerializeType type);
-			Net::String Serialize(SerializeType type);
-			Net::String Stringify(SerializeType type);
+			bool TrySerialize(SerializeType type, SerializeT& st);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
