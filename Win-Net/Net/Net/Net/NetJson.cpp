@@ -178,6 +178,8 @@ namespace Net
 
 		static void EncodeString(Net::String& buffer)
 		{
+			if (buffer.empty()) return;
+
 			Net::String out;
 			out.reserve(buffer.size());
 
@@ -344,6 +346,20 @@ namespace Net
 		{
 			Net::String out;
 			out.reserve(vs.size());
+
+			/*
+			* early exit for size less than 2
+			* or invalid
+			*/
+			if (vs.size() < 2 || vs.size() == INVALID_SIZE)
+			{
+				for (size_t i = vs.start(); i < vs.end(); i++)
+				{
+					out.append(vs[i]);
+				}
+				out.finalize();
+				return out;
+			}
 
 			for (size_t i = vs.start(); i < vs.end(); i++)
 			{
@@ -1229,7 +1245,6 @@ Net::String Net::Json::Object::Serialize(SerializeType type, size_t iterations)
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		auto tmp = (BasicValue<void*>*)value[i];
-
 		Net::String encodedKey((const char*)tmp->Key());
 		Net::Json::EncodeString(encodedKey);
 

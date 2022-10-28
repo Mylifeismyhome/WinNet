@@ -106,6 +106,7 @@ namespace Net
 			}
 
 			auto tmp = ALLOC<char>(m_size + 1);
+			memset(tmp, 0, m_size);
 			_buffer = tmp;
 			_size = 0;
 			_actual_size = m_size;

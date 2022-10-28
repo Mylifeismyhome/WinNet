@@ -155,19 +155,7 @@ namespace Net
 		vs.m_ref.lost_reference();
 
 		vs.m_start = m_start;
-
-		/*
-		* if m_size is zero
-		* then we return the entire size of the string
-		*/
-		if (m_size == 0)
-		{
-			vs.m_size = size();
-		}
-		else
-		{
-			vs.m_size = m_size;
-		}
+		vs.m_size = m_size;
 
 		vs.m_valid = true;
 		return vs;
