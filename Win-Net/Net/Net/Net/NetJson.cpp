@@ -2022,7 +2022,6 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 			if (!tmp->as_object()->TrySerialize(type, st))
 			{
 				st.m_buffer = Net::String();
-				st.m_valid = false;
 				return false;
 			}
 			break;
@@ -2033,7 +2032,6 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 			if (!tmp->as_array()->TrySerialize(type, st))
 			{
 				st.m_buffer = Net::String();
-				st.m_valid = false;
 				return false;
 			}
 			break;
@@ -2073,15 +2071,12 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 			NET_LOG_ERROR(CSTRING("[Net::Json::Object] - Unable to serialize object => invalid type"));
 
 			st.m_buffer = Net::String();
-			st.m_valid = false;
 			return false;
 		}
 
 		if (i != value.size() - 1) 	st.m_buffer += ',';
 	}
 	st.m_buffer += "}";
-
-	st.m_valid = true;
 	return true;
 }
 
@@ -3202,7 +3197,6 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 			if (!tmp->as_object()->TrySerialize(type, st))
 			{
 				st.m_buffer = Net::String();
-				st.m_valid = false;
 				return false;
 			}
 			break;
@@ -3213,7 +3207,6 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 			if (!tmp->as_array()->TrySerialize(type, st))
 			{
 				st.m_buffer = Net::String();
-				st.m_valid = false;
 				return false;
 			}
 			break;
@@ -3253,15 +3246,12 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 			NET_LOG_ERROR(CSTRING("[Net::Json::Array] - Unable to serialize array => invalid type"));
 
 			st.m_buffer = Net::String();
-			st.m_valid = false;
 			return false;
 		}
 
 		if (i != value.size() - 1) 	st.m_buffer += ',';
 	}
 	st.m_buffer += ']';
-
-	st.m_valid = true;
 	return true;
 }
 

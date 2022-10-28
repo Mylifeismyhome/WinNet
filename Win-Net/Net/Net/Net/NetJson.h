@@ -338,7 +338,6 @@ namespace Net
 		{
 			Net::String m_buffer;
 			bool m_reserved;
-			bool m_valid;
 		};
 
 		/* an object has no fixed data type since it stores anything json can supports */
