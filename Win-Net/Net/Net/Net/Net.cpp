@@ -165,7 +165,11 @@ std::string Net::sock_err::getString(const int err, const bool is_ssl)
 #endif
 	}
 
-	return std::string(Net::String(CSTRING("unknown error {code: %i, ssl_error: %s}"), err, is_ssl ? CSTRING("true") : CSTRING("false")).data().data());
+	/*
+	* must be const char*
+	* otherwise it moves the pointer and tries to free it on destruction
+	*/
+	return std::string(Net::String(reinterpret_cast<const char*>(CSTRING("unknown error {code: %i, ssl_error: %s}")), err, is_ssl ? CSTRING("true") : CSTRING("false")).data().data());
 }
 
 std::string Net::ssl::GET_SSL_METHOD_NAME(const int method)
