@@ -205,9 +205,12 @@ namespace Net
 		NET_EXPORT_FUNCTION tm TM_GetTime();
 #ifndef NET_DISABLE_LOGMANAGER
 		NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates);
-		void Log(LogStates, const char*, const char*, ...);
-		void Log(LogStates, const char*, const wchar_t*, ...);
-		NET_EXPORT_FUNCTION void ChangeStdOutputColor(int);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, const char*, ...);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, const wchar_t*, ...);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, Net::String);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, Net::String&);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, Net::ViewString);
+		NET_EXPORT_FUNCTION void Log(LogStates, const char*, Net::ViewString&);
 
 		NET_EXPORT_FUNCTION void SetPrintF(bool);
 		NET_EXPORT_FUNCTION bool GetPrintFState();
@@ -226,7 +229,11 @@ namespace Net
 			NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
 			NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
 			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const char*, ...);
-			void Log(Console::LogStates, const char*, const wchar_t*, ...);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const wchar_t*, ...);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::String);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::String&);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::ViewString);
+			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::ViewString&);
 #endif
 		}
 	}

@@ -366,7 +366,7 @@ namespace Net
 			}
 		}
 
-		void Log(const LogStates state, const char* func, const char* msg, ...)
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, const char* msg, ...)
 		{
 			if (!__net_logging_enabled)
 				return;
@@ -401,7 +401,7 @@ namespace Net
 			}
 		}
 
-		void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
 		{
 			if (!__net_logging_enabled)
 				return;
@@ -440,6 +440,92 @@ namespace Net
 			}
 
 			FREE(func);
+		}
+
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, Net::String msg)
+		{
+			if (!__net_logging_enabled)
+				return;
+
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+				auto ref = msg.get();
+
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = std::string(ref.get());
+				data.save = true;
+				__net__logmanager_holder_a.emplace_back(data);
+			}
+		}
+
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, Net::String& msg)
+		{
+			if (!__net_logging_enabled)
+				return;
+
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+				auto ref = msg.get();
+
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = std::string(ref.get());
+				data.save = true;
+				__net__logmanager_holder_a.emplace_back(data);
+			}
+		}
+
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, Net::ViewString msg)
+		{
+			if (!__net_logging_enabled)
+				return;
+
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+				std::string tmp;
+				tmp.reserve(msg.size());
+				for (size_t i = msg.start(); i < msg.end(); ++i)
+				{
+					tmp += msg[i];
+				}
+
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = tmp;
+				data.save = true;
+				__net__logmanager_holder_a.emplace_back(data);
+			}
+		}
+
+		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, Net::ViewString& msg)
+		{
+			if (!__net_logging_enabled)
+				return;
+
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+				std::string tmp;
+				tmp.reserve(msg.size());
+				for (size_t i = msg.start(); i < msg.end(); ++i)
+				{
+					tmp += msg[i];
+				}
+
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = tmp;
+				data.save = true;
+				__net__logmanager_holder_a.emplace_back(data);
+			}
 		}
 
 		NET_EXPORT_FUNCTION void SetPrintF(const bool state)
@@ -598,7 +684,7 @@ namespace Net
 				}
 			}
 
-			void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
 			{
 				if (!__net_logging_enabled)
 					return;
@@ -637,6 +723,92 @@ namespace Net
 				}
 
 				FREE(func);
+			}
+
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, Net::String msg)
+			{
+				if (!__net_logging_enabled)
+					return;
+
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+					auto ref = msg.get();
+
+					__net_logmanager_array_entry_A_t data;
+					data.state = state;
+					data.func = std::string(func);
+					data.msg = std::string(ref.get());
+					data.save = true;
+					__net__logmanager_holder_a.emplace_back(data);
+				}
+			}
+
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, Net::String& msg)
+			{
+				if (!__net_logging_enabled)
+					return;
+
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+					auto ref = msg.get();
+
+					__net_logmanager_array_entry_A_t data;
+					data.state = state;
+					data.func = std::string(func);
+					data.msg = std::string(ref.get());
+					data.save = true;
+					__net__logmanager_holder_a.emplace_back(data);
+				}
+			}
+
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, Net::ViewString msg)
+			{
+				if (!__net_logging_enabled)
+					return;
+
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+					std::string tmp;
+					tmp.reserve(msg.size());
+					for (size_t i = msg.start(); i < msg.end(); ++i)
+					{
+						tmp += msg[i];
+					}
+
+					__net_logmanager_array_entry_A_t data;
+					data.state = state;
+					data.func = std::string(func);
+					data.msg = tmp;
+					data.save = true;
+					__net__logmanager_holder_a.emplace_back(data);
+				}
+			}
+
+			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, Net::ViewString& msg)
+			{
+				if (!__net_logging_enabled)
+					return;
+
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+					std::string tmp;
+					tmp.reserve(msg.size());
+					for (size_t i = msg.start(); i < msg.end(); ++i)
+					{
+						tmp += msg[i];
+					}
+
+					__net_logmanager_array_entry_A_t data;
+					data.state = state;
+					data.func = std::string(func);
+					data.msg = tmp;
+					data.save = true;
+					__net__logmanager_holder_a.emplace_back(data);
+				}
 			}
 		}
 	}
