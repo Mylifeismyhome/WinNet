@@ -308,7 +308,7 @@ int main()
 
 		Net::String str(data);
 
-		Net::Json::Object doc;
+		Net::Json::Document doc;
 		if (!doc.Deserialize(str))
 		{
 			NET_LOG("Failed json deserialize");

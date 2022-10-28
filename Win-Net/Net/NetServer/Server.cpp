@@ -978,7 +978,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 		IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-		if (!aes.init(reinterpret_cast<char*>(Key.get()), reinterpret_cast<char*>(IV.get())))
+		if (!aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())))
 		{
 			Key.free();
 			IV.free();
@@ -1223,9 +1223,6 @@ void OnPeerDelete(void* pdata)
 
 	// erase him
 	server->ErasePeer(peer, true);
-
-	delete peer;
-	peer = nullptr;
 }
 
 NET_TIMER(TimerPeerCheckAwaitNetProtocol)
@@ -1710,7 +1707,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		}
 
 		NET_AES aes;
-		if (!aes.init(reinterpret_cast<char*>(AESKey.get()), reinterpret_cast<char*>(AESIV.get())))
+		if (!aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())))
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1994,7 +1991,6 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 	{
-		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
 		return;
 	}
@@ -2002,7 +1998,6 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	const auto id = PKG[CSTRING("ID")]->as_int();
 	if (id < 0)
 	{
-		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
 		return;
 	}
@@ -2010,7 +2005,6 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
 		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
 	{
-		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
 		return;
 	}
@@ -2027,8 +2021,6 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	if (!CheckDataN(peer, id, Content))
 		if (!CheckData(peer, id, Content))
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-
-	data.free();
 }
 
 void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
@@ -2118,8 +2110,6 @@ if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // e
 
 	peer->cryption.RSA.setPublicKey(reinterpret_cast<char*>(b64));
 	peer->cryption.setHandshakeStatus(true);
-
-	FREE(b64);
 }
 
 // RSA Handshake has been finished, keep going with normal process

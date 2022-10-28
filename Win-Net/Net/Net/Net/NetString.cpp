@@ -75,7 +75,7 @@ namespace Net
 		vs.m_ref.lost_reference();
 	}
 
-	ViewString::ViewString(ViewString&& vs)
+	ViewString::ViewString(ViewString&& vs) NOEXPECT
 	{
 		this->m_ptr_original = vs.m_ptr_original;
 		this->m_ref = vs.m_ref;
@@ -133,7 +133,12 @@ namespace Net
 	{
 		if (!valid()) return false;
 		if (!original()) return false;
-		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
+
+		this->m_ref.lost_reference();
+		auto tmp = reinterpret_cast<Net::String*>(original())->get();
+		this->m_ref = tmp;
+		tmp.lost_reference();
+
 		return true;
 	}
 
