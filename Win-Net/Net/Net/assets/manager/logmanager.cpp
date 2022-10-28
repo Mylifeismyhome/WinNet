@@ -3,6 +3,7 @@
 
 #include <Net/assets/assets.h>
 #include <Net/assets/manager/filemanager.h>
+#include <Net/Import/Kernel32.hpp>
 
 #ifndef NET_DISABLE_LOGMANAGER
 // Color codes
@@ -28,6 +29,13 @@ static bool __net_logging_enabled = false;
 void __Net_Enable_Logging()
 {
 	__net_logging_enabled = true;
+	Net::Manager::Log::start();
+}
+
+void __Net_Shutdown_Logging()
+{
+	if (!__net_logging_enabled) return;
+	Net::Manager::Log::shutdown();
 }
 
 // global override able callback
@@ -50,6 +58,8 @@ struct [[nodiscard]] __net_logmanager_array_entry_A_t
 	bool save;
 };
 
+static std::vector< __net_logmanager_array_entry_A_t> __net__logmanager_holder_a;
+
 struct [[nodiscard]] __net_logmanager_array_entry_W_t
 {
 	Net::Console::LogStates state;
@@ -58,12 +68,12 @@ struct [[nodiscard]] __net_logmanager_array_entry_W_t
 	bool save;
 };
 
+static std::vector< __net_logmanager_array_entry_W_t> __net__logmanager_holder_w;
+
 /* lock the call - just output one message each lock */
 static std::mutex __net_logmanager_critical;
 static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry)
 {
-	std::lock_guard<std::mutex> guard(__net_logmanager_critical);
-
 	if (entry.msg.empty())
 		return;
 
@@ -164,8 +174,6 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 
 static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry)
 {
-	std::lock_guard<std::mutex> guard(__net_logmanager_critical);
-
 	if (entry.msg.empty())
 		return;
 
@@ -264,6 +272,47 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 	}
 }
 
+static short __net_m_shutdownThread = 0;
+
+static void __net_logmanager_thread()
+{
+	while (__net_m_shutdownThread != 2)
+	{
+		/*
+		* this scopes will manage the mutex
+		*/
+		{
+			std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+
+			/*
+			* print chars
+			*/
+			while (__net__logmanager_holder_a.size() > 0)
+			{
+				__net_logmanager_output_log_a(*__net__logmanager_holder_a.begin());
+				__net__logmanager_holder_a.erase(__net__logmanager_holder_a.begin());
+			}
+
+			/*
+			* print wide chars
+			*/
+			while (__net__logmanager_holder_w.size() > 0)
+			{
+				__net_logmanager_output_log_w(*__net__logmanager_holder_w.begin());
+				__net__logmanager_holder_w.erase(__net__logmanager_holder_w.begin());
+			}
+		}
+
+#ifdef BUILD_LINUX
+		usleep(1 * 1000);
+#else
+		Kernel32::Sleep(1);
+#endif
+	}
+
+	__net_m_shutdownThread = 0;
+}
+
 #endif
 namespace Net
 {
@@ -341,12 +390,15 @@ namespace Net
 			va_end(vaArgs);
 #endif
 
-			__net_logmanager_array_entry_A_t data;
-			data.state = state;
-			data.func = std::string(func);
-			data.msg = std::string(str.data());
-			data.save = false;
-			std::thread(__net_logmanager_output_log_a, data).detach();
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+				__net_logmanager_array_entry_A_t data;
+				data.state = state;
+				data.func = std::string(func);
+				data.msg = std::string(str.data());
+				data.save = false;
+				__net__logmanager_holder_a.emplace_back(data);
+			}
 		}
 
 		void Log(const LogStates state, const char* funcA, const wchar_t* msg, ...)
@@ -377,12 +429,15 @@ namespace Net
 			va_end(vaArgs);
 #endif
 
-			__net_logmanager_array_entry_W_t data;
-			data.state = state;
-			data.func = std::wstring(func);
-			data.msg = std::wstring(str.data());
-			data.save = false;
-			std::thread(__net_logmanager_output_log_w, data).detach();
+			{
+				std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+				__net_logmanager_array_entry_W_t data;
+				data.state = state;
+				data.func = std::wstring(func);
+				data.msg = std::wstring(str.data());
+				data.save = false;
+				__net__logmanager_holder_w.emplace_back(data);
+			}
 
 			FREE(func);
 		}
@@ -431,6 +486,35 @@ namespace Net
 	{
 		namespace Log
 		{
+			void start()
+			{
+				if (__net_m_shutdownThread == 1)
+					return;
+
+				std::thread(__net_logmanager_thread).detach();
+				__net_m_shutdownThread = 1;
+			}
+
+			void shutdown()
+			{
+				if (__net_m_shutdownThread != 1)
+					return;
+
+				__net_m_shutdownThread = 2;
+
+				/*
+				* wait for thread to shutdown
+				*/
+				while (__net_m_shutdownThread != 0)
+				{
+#ifdef BUILD_LINUX
+					usleep(1 * 1000);
+#else
+					Kernel32::Sleep(1);
+#endif
+				}
+			}
+
 			NET_EXPORT_FUNCTION void SetOutputName(const char* name)
 			{
 				if (!__net_logging_enabled)
@@ -503,12 +587,15 @@ namespace Net
 				va_end(vaArgs);
 #endif
 
-				__net_logmanager_array_entry_A_t data;
-				data.state = state;
-				data.func = std::string(func);
-				data.msg = std::string(str.data());
-				data.save = true;
-				std::thread(__net_logmanager_output_log_a, data).detach();
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+					__net_logmanager_array_entry_A_t data;
+					data.state = state;
+					data.func = std::string(func);
+					data.msg = std::string(str.data());
+					data.save = true;
+					__net__logmanager_holder_a.emplace_back(data);
+				}
 			}
 
 			void Log(const Console::LogStates state, const char* funcA, const wchar_t* msg, ...)
@@ -539,12 +626,15 @@ namespace Net
 				va_end(vaArgs);
 #endif
 
-				__net_logmanager_array_entry_W_t data;
-				data.state = state;
-				data.func = std::wstring(func);
-				data.msg = std::wstring(str.data());
-				data.save = true;
-				std::thread(__net_logmanager_output_log_w, data).detach();
+				{
+					std::lock_guard<std::mutex> guard(__net_logmanager_critical);
+					__net_logmanager_array_entry_W_t data;
+					data.state = state;
+					data.func = std::wstring(func);
+					data.msg = std::wstring(str.data());
+					data.save = true;
+					__net__logmanager_holder_w.emplace_back(data);
+				}
 
 				FREE(func);
 			}

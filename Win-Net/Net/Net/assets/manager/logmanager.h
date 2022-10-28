@@ -220,6 +220,8 @@ namespace Net
 		namespace Log
 		{
 #ifndef NET_DISABLE_LOGMANAGER
+			void start();
+			void shutdown();
 			NET_EXPORT_FUNCTION void SetOutputName(const char*);
 			NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
 			NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
