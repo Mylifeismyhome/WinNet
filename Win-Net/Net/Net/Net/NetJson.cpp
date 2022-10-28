@@ -189,7 +189,15 @@ namespace Net
 				switch (c)
 				{
 				case '\\':
-					out.append(reinterpret_cast<const char*>(CSTRING(R"(\/)")));
+					if ((i + 1) < buffer.size() &&
+						buffer[i + 1] == '\\')
+					{
+						out.append(reinterpret_cast<const char*>(CSTRING(R"(\\)")));
+						++i;
+						continue;
+					}
+
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\\)")));
 					break;
 
 				case '"':
@@ -237,7 +245,15 @@ namespace Net
 				switch (c)
 				{
 				case '\\':
-					out.append(reinterpret_cast<const char*>(CSTRING(R"(\/)")));
+					if ((i + 1) < vs.end() &&
+						vs[i + 1] == '\\')
+					{
+						out.append(reinterpret_cast<const char*>(CSTRING(R"(\\)")));
+						++i;
+						continue;
+					}
+
+					out.append(reinterpret_cast<const char*>(CSTRING(R"(\\)")));
 					break;
 
 				case '"':
