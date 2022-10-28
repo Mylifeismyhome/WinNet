@@ -5,16 +5,20 @@
 #include <Net/Import/Ws2_32.hpp>
 
 extern void __Net_Enable_Logging();
+extern void __Net_Shutdown_Logging();
+
+#ifdef NET_TEST_MEMORY_LEAKS
+static void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
+{
+	printf("----- POINTER INSTANCE(s) -----\n");
+	for (const auto entry : NET_TEST_MEMORY_LEAKS_POINTER_LIST)
+		printf("Allocated Instance: %p\n", entry);
+	printf("----------------------------------------\n");
+}
+#endif
 
 NET_EXPORT_FUNCTION void Net::load(int flag)
 {
-#ifndef NET_DISABLE_LOGMANAGER
-	if (flag & NetOptions::ENABLE_LOGGING)
-	{
-		__Net_Enable_Logging();
-	}
-#endif
-
 #ifndef NET_DISABLE_IMPORT_KERNEL32
 	Import::Resolver::Load(CSTRING("Kernel32"), CSTRING(WINDOWS_MODULE_PATH"\\kernel32.dll"), Import::Resolver::type_t::RESOLVE_MEMORY);
 #endif
@@ -27,11 +31,24 @@ NET_EXPORT_FUNCTION void Net::load(int flag)
 	Import::Resolver::Load(CSTRING("Ws2_32"), CSTRING(WINDOWS_MODULE_PATH"\\Ws2_32.dll"));
 #endif
 
+#ifndef NET_DISABLE_LOGMANAGER
+	if (flag & NetOptions::ENABLE_LOGGING)
+	{
+		__Net_Enable_Logging();
+	}
+#endif
+
 	Net::Codes::NetLoadErrorCodes();
 }
 
 NET_EXPORT_FUNCTION void Net::unload()
 {
+#ifndef NET_DISABLE_LOGMANAGER
+	__Net_Shutdown_Logging();
+#endif
+
+	Net::Codes::NetUnloadErrorCodes();
+
 #ifndef NET_DISABLE_IMPORT_WS2_32
 	Import::Resolver::Unload(CSTRING("Ws2_32"));
 #endif
@@ -44,7 +61,9 @@ NET_EXPORT_FUNCTION void Net::unload()
 	Import::Resolver::Unload(CSTRING("Kernel32"));
 #endif
 
-	Net::Codes::NetUnloadErrorCodes();
+#ifdef NET_TEST_MEMORY_LEAKS
+	NET_TEST_MEMORY_SHOW_DIAGNOSTIC();
+#endif
 }
 
 int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOCKET_OPT_LEN optlen)

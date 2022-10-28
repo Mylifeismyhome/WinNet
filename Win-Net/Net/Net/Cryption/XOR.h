@@ -48,7 +48,7 @@ namespace Net
 			size_t size() const;
 
 			void free();
-			void lost_reference();
+			void lost_reference() const;
 		};
 
 		class XOR
@@ -68,28 +68,12 @@ namespace Net
 			void reserve(size_t size);
 			void finalize();
 
-			XOR& operator=(const XOR& other)
-			{
-				// Guard self assignment
-				if (this == &other)
-					return *this;
-
-				this->_buffer = other._buffer;
-				this->_Key = other._Key;
-				this->_size = other._size;
-                this->_actual_size = other._actual_size;
-
-				return *this;
-			}
+			XOR& operator=(const XOR& other);
 
 			/*
 			* Return the character in the buffer located at index i decrypted
 			*/
-			char operator[](size_t i)
-			{
-				auto buffer_ptr = this->_buffer.get();
-				return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
-			}
+			char operator[](size_t i);
 
 			void set(size_t, char);
 			void set_size(size_t);

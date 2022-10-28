@@ -47,13 +47,12 @@ namespace Net
 
 	public:
 		ViewString();
-		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER m_ref, size_t m_start, size_t m_size);
+		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER* m_ref, size_t m_start, size_t m_size);
+		ViewString(ViewString& vs);
+		ViewString(ViewString&& vs);
 
-		char operator[](size_t i)
-		{
-			if (!valid()) return '\0';
-			return this->m_ref.get()[i];
-		}
+		ViewString& operator=(const ViewString& vs);
+		char operator[](size_t i);
 
 		size_t start() const;
 		size_t end() const;
@@ -66,6 +65,9 @@ namespace Net
 		void* original();
 		bool refresh();
 		ViewString sub_view(size_t m_start, size_t m_size = 0);
+
+		friend std::ostream& operator<<(std::ostream& os, Net::ViewString& vs);
+		friend std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs);
 	};
 
 	class String
@@ -84,7 +86,7 @@ namespace Net
 		String(const char*, ...);
 		String(char*);
 		String(String&);
-		String(String&&) NOEXPECT;
+		String(String&&);
 		~String();
 
 		void reserve(size_t m_size);
@@ -96,82 +98,19 @@ namespace Net
 			NOT_CASE_SENS
 		};
 
-		void operator=(const char* in)
-		{
-			set(in);
-		}
-
-		void operator=(char* in)
-		{
-			set(in);
-		}
-
-		void operator=(const char in)
-		{
-			set(in);
-		}
-
-		void operator=(String in)
-		{
-			copy(in);
-		}
-
-		void operator+=(const char* in)
-		{
-			//if (actual_size() != INVALID_SIZE && actual_size() != 0)
-				append(in);
-			//else
-			//	set(in);
-		}
-
-		void operator+=(char* in)
-		{
-			if (actual_size() != INVALID_SIZE && actual_size() != 0)
-				append(in);
-			else
-				set(in);
-		}
-
-		void operator+=(const char in)
-		{
-			if (actual_size() != INVALID_SIZE && actual_size() != 0)
-				append(in);
-			else
-				set(in);
-		}
-
-		void operator+=(String in)
-		{
-			if (actual_size() != INVALID_SIZE && actual_size() != 0)
-				append(in);
-			else
-				set(in);
-		}
-
-		void operator-=(const char* in)
-		{
-			erase(in);
-		}
-
-		void operator-=(char* in)
-		{
-			erase(in);
-		}
-
-		void operator-=(const char in)
-		{
-			erase(in);
-		}
-
-		void operator-=(String& in)
-		{
-			erase(in);
-		}
-
-		char operator[](size_t i)
-		{
-			return this->_string.operator[](i);
-		}
+		void operator=(const char* in);
+		void operator=(char* in);
+		void operator=(const char in);
+		void operator=(String in);
+		void operator+=(const char* in);
+		void operator+=(char* in);
+		void operator+=(const char in);
+		void operator+=(String in);
+		void operator-=(const char* in);
+		void operator-=(char* in);
+		void operator-=(const char in);
+		void operator-=(String& in);
+		char operator[](size_t i);
 
 		size_t size() const;
 		size_t actual_size() const;
@@ -230,6 +169,9 @@ namespace Net
 		bool replaceAll(const char*, char);
 		bool replaceAll(const char*, const char*);
 		ViewString view_string(size_t = 0, size_t = 0);
+
+		friend std::ostream& operator<<(std::ostream& os, Net::String& ns);
+		friend std::ostream& operator<<(std::ostream& os, const Net::String& ns);
 	};
 }
 NET_DSA_END

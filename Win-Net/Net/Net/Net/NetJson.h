@@ -2,6 +2,7 @@
 	Author: Tobias Staack
 */
 #pragma once
+#define NET_JSON_ARR_LEN(x) sizeof(x)[0] / sizeof(x)
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetString.h>
@@ -333,6 +334,12 @@ namespace Net
 			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
 		};
 
+		struct SerializeT
+		{
+			Net::String m_buffer;
+			bool m_reserved;
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -346,7 +353,7 @@ namespace Net
 			BasicValue<T>* __get(Net::ViewString& key);
 
 			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
-			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<char*>& object_chain, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
 
 		public:
 			Object(bool bSharedMemory = false);
@@ -367,8 +374,10 @@ namespace Net
 			bool Append(const char* key, const char* value);
 			bool Append(const char* key, Object value);
 
-			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
-			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED, size_t iterations = 0);
+			size_t CalcLengthForSerialize();
+			bool TrySerialize(SerializeType type, SerializeT& st);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
@@ -380,7 +389,7 @@ namespace Net
 
 		private:
 			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
-			bool Deserialize(Net::ViewString& vs, Vector<char*>& object_chain, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, Vector<Net::ViewString*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray
@@ -409,8 +418,10 @@ namespace Net
 
 			size_t size() const;
 
-			Net::String Serialize(SerializeType type, size_t iterations = 0);
-			Net::String Stringify(SerializeType type, size_t iterations = 0);
+			size_t CalcLengthForSerialize();
+			bool TrySerialize(SerializeType type, SerializeT& st);
+			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
+			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
 			bool Deserialize(Net::ViewString& json);
 			bool Deserialize(Net::String& json, bool m_prepareString);
