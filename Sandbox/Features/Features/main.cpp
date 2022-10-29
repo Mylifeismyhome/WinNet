@@ -313,6 +313,8 @@ int main()
 		{
 			NET_LOG("Failed json deserialize");
 		}
+
+		std::cout << doc.Stringify(Net::Json::SerializeType::FORMATTED) << std::endl;
 	}
 
 	//std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

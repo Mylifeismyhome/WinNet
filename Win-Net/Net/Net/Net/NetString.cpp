@@ -218,14 +218,10 @@ namespace Net
 		_free_size = INVALID_SIZE;
 	}
 
-	String::String(String& in)
+	String::String(const String& in)
 	{
-		copy(in);
-	}
-
-	String::String(String&& in)
-	{
-		move((String&&)in);
+		auto cast = const_cast<String*>(&in);
+		copy(*cast);
 	}
 
 	void String::Construct(const char in)
@@ -263,40 +259,32 @@ namespace Net
 		this->_free_size = INVALID_SIZE;
 	}
 
-	void String::copy(String& in)
+	void String::copy(const String& in)
 	{
-		this->_string.free();
+		auto cast = const_cast<String*>(&in);
 
-		auto ref = in.get();
+		auto ref = cast->get();
 		auto pBuffer = ref.get();
+
+		this->_string.free();
 		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
 		this->_free_size = INVALID_SIZE;
 	}
 
-	void String::move(String&& in)
+	void String::move(const String& in)
 	{
-		_string = in._string;
-		_free_size = in._free_size;
+		auto cast = const_cast<String*>(&in);
+
+		_string = cast->_string;
+		_free_size = cast->_free_size;
 
 		/*
 		* set _string to nullptr
 		* we moved the pointer to a new object
 		*/
-		in._string = RUNTIMEXOR();
-		in._free_size = INVALID_SIZE;
-	}
-
-	void String::move(String& in)
-	{
-		_string = in._string;
-		_free_size = in._free_size;
-
-		/*
-		* set _string to nullptr
-		* we moved the pointer to a new object
-		*/
-		in._string = RUNTIMEXOR();
-		in._free_size = INVALID_SIZE;
+		cast->_string.lost_reference();
+		cast->_string = RUNTIMEXOR();
+		cast->_free_size = INVALID_SIZE;
 	}
 
 	String::~String()
@@ -335,7 +323,7 @@ namespace Net
 		set(in);
 	}
 
-	void Net::String::operator=(String in)
+	void Net::String::operator=(const String& in)
 	{
 		copy(in);
 	}
@@ -364,12 +352,14 @@ namespace Net
 			set(in);
 	}
 
-	void Net::String::operator+=(String in)
+	void Net::String::operator+=(const String& in)
 	{
+		auto cast = const_cast<String*>(&in);
+
 		if (actual_size() != INVALID_SIZE && actual_size() != 0)
-			append(in);
+			append(*cast);
 		else
-			set(in);
+			set(*cast);
 	}
 
 	void Net::String::operator-=(const char* in)
@@ -387,9 +377,34 @@ namespace Net
 		erase(in);
 	}
 
-	void Net::String::operator-=(String& in)
+	void Net::String::operator-=(const String& in)
 	{
-		erase(in);
+		auto cast = const_cast<String*>(&in);
+		erase(*cast);
+	}
+
+	bool Net::String::operator==(const char in)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return false;
+
+		return this->compare(in);
+	}
+
+	bool Net::String::operator==(const char* in)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return false;
+
+		return this->compare(in);
+	}
+
+	bool Net::String::operator==(const String& in)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return false;
+
+		return this->compare(in);
 	}
 
 	char Net::String::operator[](size_t i)
@@ -449,9 +464,11 @@ namespace Net
 		this->_free_size = INVALID_SIZE;
 	}
 
-	void String::set(String& in, ...)
+	void String::set(const String& in, ...)
 	{
-		auto ref = in.get();
+		auto cast = const_cast<String*>(&in);
+
+		auto ref = cast->get();
 		auto ptr = ref.get();
 
 		/*
@@ -495,12 +512,15 @@ namespace Net
 			{
 				size_t newLen = _string.size() + 1;
 				NET_CPOINTER<byte> data(ALLOC<byte>(newLen + 1));
-				memcpy(&data.get()[0], _string.revert().get(), _string.size());
+				for (size_t i = 0; i < _string.size(); ++i)
+				{
+					data.get()[i] = _string.operator[](i);
+				}
 				data.get()[_string.size()] = in;
 				data.get()[newLen] = '\0';
 
 				_string.free();
-				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
 			}
 		}
 	}
@@ -531,12 +551,15 @@ namespace Net
 			{
 				size_t newSize = _string.size() + buffer_len;
 				NET_CPOINTER<byte> data(ALLOC<byte>(newSize + 1));
-				memcpy(data.get(), _string.revert().get(), _string.size());
+				for (size_t i = 0; i < _string.size(); ++i)
+				{
+					data.get()[i] = _string.operator[](i);
+				}
 				memcpy(&data.get()[_string.size()], buffer, buffer_len);
 				data.get()[newSize] = '\0';
 
 				_string.free();
-				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
 				_free_size = INVALID_SIZE;
 
 				return;
@@ -560,7 +583,6 @@ namespace Net
 	{
 		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
-            printf("CONSTRUCT LOL\n");
 			Construct(in);
 			return;
 		}
@@ -587,7 +609,7 @@ namespace Net
 		this->append(str.data());
 	}
 
-	void String::append(String& in)
+	void String::append(const String& in)
 	{
 		if (actual_size() == INVALID_SIZE || actual_size() == 0)
 		{
@@ -595,9 +617,12 @@ namespace Net
 			return;
 		}
 
-		auto ref = in.get();
+		auto cast = const_cast<String*>(&in);
+
+		auto ref = cast->get();
 		auto ptr = ref.get();
-		this->append(ptr);
+
+		this->append(reinterpret_cast<char*>(ptr));
 	}
 
 	Net::Cryption::XOR_UNIQUEPOINTER String::str()
@@ -983,6 +1008,35 @@ namespace Net
 		return true;
 	}
 
+	bool Net::String::compare(const String& in, const char type)
+	{
+		if (size() == INVALID_SIZE || size() == 0)
+			return false;
+
+		auto cast = const_cast<String*>(&in);
+
+		auto len = cast->size();
+
+		if (this->size() != len)
+			return false;
+
+		for (size_t i = 0; i < len; ++i)
+		{
+			if (type & NOT_CASE_SENS)
+			{
+				if ((char)tolower(this->operator[](i)) != (char)tolower(cast->operator[](i)))
+					return false;
+			}
+			else
+			{
+				if (this->operator[](i) != cast->operator[](i))
+					return false;
+			}
+		}
+
+		return true;
+	}
+
 	bool String::erase(const size_t len)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
@@ -1230,7 +1284,7 @@ namespace Net
 		}
 
 		_string.free();
-		_string = RUNTIMEXOR(replace);
+		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
 
@@ -1259,7 +1313,7 @@ namespace Net
 		memcpy(&replace[i + rSize], &str.get()[i + 1], size() - i - 1);
 
 		_string.free();
-		_string = RUNTIMEXOR(replace);
+		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
 
@@ -1295,7 +1349,7 @@ namespace Net
 		replace[replaceSize] = '\0';
 
 		_string.free();
-		_string = RUNTIMEXOR(replace);
+		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
 
@@ -1336,7 +1390,7 @@ namespace Net
 		replace[replaceSize] = '\0';
 
 		_string.free();
-		_string = RUNTIMEXOR(replace);
+		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
 
@@ -1420,20 +1474,6 @@ namespace Net
 		return { this, &m_ref, m_start, m_size };
 	}
 
-	std::ostream& operator<<(std::ostream& os, Net::ViewString& vs)
-	{
-		/*
-		* better iterate through it and append each character
-		* rather than heap allocating another space for the decrypted text
-		*/
-		for (size_t i = vs.start(); i < vs.end(); ++i)
-		{
-			os << vs[i];
-		}
-
-		return os;
-	}
-
 	std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs)
 	{
 		/*
@@ -1442,21 +1482,7 @@ namespace Net
 		*/
 		for (size_t i = vs.start(); i < vs.end(); ++i)
 		{
-			os << const_cast<Net::ViewString*>(&vs)[i];
-		}
-
-		return os;
-	}
-
-	std::ostream& operator<<(std::ostream& os, Net::String& ns)
-	{
-		/*
-		* better iterate through it and append each character
-		* rather than heap allocating another space for the decrypted text
-		*/
-		for (size_t i = 0; i < ns.size(); ++i)
-		{
-			os << ns[i];
+			os << const_cast<Net::ViewString*>(&vs)->operator[](i);
 		}
 
 		return os;
@@ -1470,7 +1496,7 @@ namespace Net
 		*/
 		for (size_t i = 0; i < ns.size(); ++i)
 		{
-			os << const_cast<Net::String*>(&ns)[i];
+			os << const_cast<Net::String*>(&ns)->operator[](i);
 		}
 
 		return os;

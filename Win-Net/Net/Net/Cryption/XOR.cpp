@@ -154,6 +154,7 @@ namespace Net
 		char XOR::operator[](size_t i)
 		{
 			auto buffer_ptr = this->_buffer.get();
+			if (!buffer_ptr) return 0;
 			return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
 		}
 
@@ -167,11 +168,20 @@ namespace Net
 			/*
 			* encrypt it
 			*/
-			this->_buffer.get()[it] ^= (_Key % (it == 0 ? 1 : it));
+			this->_buffer.get()[it] ^= (this->_Key % (it == 0 ? 1 : it));
 		}
 
 		void XOR::set_size(size_t new_size)
 		{
+			if (this->_actual_size < new_size)
+			{
+				/*
+				* reached limit
+				* require realloc
+				*/
+				this->reserve(new_size);
+			}
+
 			this->_size = new_size;
 		}
 
@@ -286,6 +296,11 @@ namespace Net
 
 			_size = INVALID_SIZE;
 			_actual_size = INVALID_SIZE;
+		}
+
+		void XOR::lost_reference()
+		{
+			this->_bfree = false;
 		}
 	}
 }

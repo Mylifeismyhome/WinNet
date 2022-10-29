@@ -86,6 +86,7 @@ namespace Net
 			size_t length() const;
 			XOR_UNIQUEPOINTER revert(bool = true);
 			void free();
+			void lost_reference();
 		};
 	}
 }

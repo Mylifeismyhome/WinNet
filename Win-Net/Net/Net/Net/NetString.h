@@ -66,7 +66,6 @@ namespace Net
 		bool refresh();
 		ViewString sub_view(size_t m_start, size_t m_size = 0);
 
-		friend std::ostream& operator<<(std::ostream& os, Net::ViewString& vs);
 		friend std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs);
 	};
 
@@ -85,8 +84,7 @@ namespace Net
 		String(char);
 		String(const char*, ...);
 		String(char*);
-		String(String&);
-		String(String&&);
+		String(const String&);
 		~String();
 
 		void reserve(size_t m_size);
@@ -101,15 +99,18 @@ namespace Net
 		void operator=(const char* in);
 		void operator=(char* in);
 		void operator=(const char in);
-		void operator=(String in);
+		void operator=(const String& in);
 		void operator+=(const char* in);
 		void operator+=(char* in);
 		void operator+=(const char in);
-		void operator+=(String in);
+		void operator+=(const String& in);
 		void operator-=(const char* in);
 		void operator-=(char* in);
 		void operator-=(const char in);
-		void operator-=(String& in);
+		void operator-=(const String& in);
+		bool operator==(const char);
+		bool operator==(const char*);
+		bool operator==(const String& in);
 		char operator[](size_t i);
 
 		size_t size() const;
@@ -120,11 +121,10 @@ namespace Net
 		void append(char*);
 		void set(const char*, ...);
 		void append(const char*, ...);
-		void set(String&, ...);
-		void append(String&);
-		void copy(String&);
-		void move(String&&);
-		void move(String&);
+		void set(const String&, ...);
+		void append(const String&);
+		void copy(const String&);
+		void move(const String&);
 		Net::Cryption::XOR_UNIQUEPOINTER str();
 		Net::Cryption::XOR_UNIQUEPOINTER cstr();
 		Net::Cryption::XOR_UNIQUEPOINTER get();
@@ -146,6 +146,7 @@ namespace Net
 		size_t findLastOf(const char*, const char = NONE);
 		bool compare(const char, const char = NONE);
 		bool compare(const char*, const char = NONE);
+		bool compare(const String&, const char = NONE);
 		bool erase(size_t);
 		bool erase(size_t, size_t);
 		bool erase(char, size_t = 0);
@@ -170,7 +171,6 @@ namespace Net
 		bool replaceAll(const char*, const char*);
 		ViewString view_string(size_t = 0, size_t = 0);
 
-		friend std::ostream& operator<<(std::ostream& os, Net::String& ns);
 		friend std::ostream& operator<<(std::ostream& os, const Net::String& ns);
 	};
 }

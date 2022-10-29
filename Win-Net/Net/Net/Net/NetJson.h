@@ -375,7 +375,7 @@ namespace Net
 			bool Append(const char* key, Object value);
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st);
+			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -419,7 +419,7 @@ namespace Net
 			size_t size() const;
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st);
+			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
