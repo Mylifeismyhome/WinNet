@@ -2004,7 +2004,7 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 
 	st.m_buffer += "{";
 
-	if (type == SerializeType::FORMATTED)
+	if (value.size() != 0 && type == SerializeType::FORMATTED)
 		st.m_buffer += '\n';
 
 	for (size_t i = 0; i < value.size(); ++i)
@@ -2096,7 +2096,7 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 		}
 	}
 
-	if (type == SerializeType::FORMATTED)
+	if (value.size() != 0 && type == SerializeType::FORMATTED)
 	{
 		st.m_buffer += '\n';
 
