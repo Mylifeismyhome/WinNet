@@ -27,6 +27,19 @@ namespace Net
 			this->_size = NULL;
 		}
 
+		XOR_UNIQUEPOINTER& XOR_UNIQUEPOINTER::operator=(const XOR_UNIQUEPOINTER& other)
+		{
+			// Guard self assignment
+			if (this == &other)
+				return *this;
+
+			this->buffer = other.buffer;
+			this->_size = other._size;
+			this->bFree = other.bFree;
+
+			return *this;
+		}
+
 		char* XOR_UNIQUEPOINTER::get() const
 		{
 			return buffer.get();
@@ -71,11 +84,12 @@ namespace Net
 			_actual_size = INVALID_SIZE;
 			_buffer = nullptr;
 			_Key = 0;
+			_bfree = false;
 		}
 
-		XOR::XOR(char* str)
+		XOR::XOR(char* str, bool m_free)
 		{
-			init(str);
+			init(str, m_free);
 		}
 
 		XOR::XOR(const char* str)
@@ -153,6 +167,7 @@ namespace Net
 		char XOR::operator[](size_t i)
 		{
 			auto buffer_ptr = this->_buffer.get();
+			if (!buffer_ptr) return 0;
 			return static_cast<char>(buffer_ptr[i] ^ (this->_Key % (i == 0 ? 1 : i)));
 		}
 
@@ -166,15 +181,24 @@ namespace Net
 			/*
 			* encrypt it
 			*/
-			this->_buffer.get()[it] ^= (_Key % (it == 0 ? 1 : it));
+			this->_buffer.get()[it] ^= (this->_Key % (it == 0 ? 1 : it));
 		}
 
 		void XOR::set_size(size_t new_size)
 		{
+			if (this->_actual_size < new_size)
+			{
+				/*
+				* reached limit
+				* require realloc
+				*/
+				this->reserve(new_size);
+			}
+
 			this->_size = new_size;
 		}
 
-		void XOR::init(char* str)
+		void XOR::init(char* str, bool m_free)
 		{
 			if (!str)
 			{
@@ -189,6 +213,7 @@ namespace Net
             _actual_size = size();
 			_buffer = str;
 			_Key = 0;
+			_bfree = false;
 
 			encrypt();
 		}
@@ -201,6 +226,7 @@ namespace Net
 			memcpy(_buffer.get(), str, _size);
 			_buffer.get()[_size] = '\0';
 			_Key = 0;
+			_bfree = true;
 
 			encrypt();
 		}
@@ -214,6 +240,21 @@ namespace Net
 
 			// gen new key
 			_Key = rand();
+
+			for (size_t i = 0; i < size(); i++)
+			{
+				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ (_Key % (i == 0 ? 1 : i)));
+			}
+
+			return _buffer.get();
+		}
+
+		char* XOR::decrypt()
+		{
+			if (size() == INVALID_SIZE)
+			{
+				return nullptr;
+			}
 
 			for (size_t i = 0; i < size(); i++)
 			{
@@ -252,9 +293,27 @@ namespace Net
 		void XOR::free()
 		{
 			_Key = 0;
-			_buffer.free();
+
+			/*
+			* if we do not free the buffer
+			* then we decrypt it
+			*/
+			if (_bfree)
+			{
+				_buffer.free();
+			}
+			else
+			{
+				this->decrypt();
+			}
+
 			_size = INVALID_SIZE;
 			_actual_size = INVALID_SIZE;
+		}
+
+		void XOR::lost_reference()
+		{
+			this->_bfree = false;
 		}
 	}
 }

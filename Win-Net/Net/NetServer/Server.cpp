@@ -1989,6 +1989,8 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
+	data.free();
+
 	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);

@@ -19,7 +19,7 @@ Net::String Net::Version::Key()
 {
 	/*
 	* must be const char* 
-	* otherwise it moves the pointer and tries to free it on destruction
+	* need to create a copy of it
 	*/
 	return Net::String(reinterpret_cast<const char*>(NetKey));
 }
@@ -28,7 +28,7 @@ Net::String Net::Version::Version()
 {
 	/*
 	* must be const char*
-	* otherwise it moves the pointer and tries to free it on destruction
+	* need to create a copy of it
 	*/
 	return Net::String(reinterpret_cast<const char*>(CSTRING("%i.%i.%i-%s")), Major(), Minor(), Revision(), Key().data().data());
 }

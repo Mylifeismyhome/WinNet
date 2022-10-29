@@ -28,13 +28,13 @@ namespace Net
 			return true;
 		}
 
-		bool AES::init(char* in_Key, char* in_IV, const size_t in_KeyLength)
+		bool AES::init(char* in_Key, bool m_key_free, char* in_IV, bool m_iv_free, const size_t in_KeyLength)
 		{
 			if (!in_Key || !in_IV)
 				return false;
 
-			Key = RUNTIMEXOR(in_Key);
-			IV = RUNTIMEXOR(in_IV);
+			Key = RUNTIMEXOR(in_Key, m_key_free);
+			IV = RUNTIMEXOR(in_IV, m_iv_free);
 			KeyLength = in_KeyLength;
 			return true;
 		}

@@ -1907,6 +1907,8 @@ namespace Net
 				return;
 			}
 
+			data.free();
+
 			if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
 			{
 				Disconnect();

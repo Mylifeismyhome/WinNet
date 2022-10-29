@@ -181,7 +181,7 @@ namespace Net
 			if (buffer.empty()) return;
 
 			Net::String out;
-			out.reserve(buffer.size());
+			out.reserve(buffer.size() * 2);
 
 			for (size_t i = 0; i < buffer.size(); ++i)
 			{
@@ -237,7 +237,7 @@ namespace Net
 		static Net::String EncodeString(Net::ViewString& vs)
 		{
 			Net::String out;
-			out.reserve(vs.size());
+			out.reserve(vs.size() * 2);
 
 			for (size_t i = vs.start(); i < vs.end(); ++i)
 			{
@@ -1978,7 +1978,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 * This function will try to serialize it
 * on any error it will recursivly return and m_valid will be set to false to handle the closing
 */
-bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
+bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t iterations)
 {
 	if (!st.m_reserved)
 	{
@@ -2003,23 +2003,36 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 	}
 
 	st.m_buffer += "{";
+
+	if (value.size() != 0 && type == SerializeType::FORMATTED)
+		st.m_buffer += '\n';
+
 	for (size_t i = 0; i < value.size(); ++i)
 	{
-		auto tmp = (BasicValue<void*>*)value[i];
-		Net::String encodedKey((const char*)tmp->Key());
-		Net::Json::EncodeString(encodedKey);
+		if (type == SerializeType::FORMATTED)
+		{
+			for (size_t i = 0; i < iterations; ++i)
+				st.m_buffer += '\t';
+		}
 
+		auto tmp = (BasicValue<void*>*)value[i];
+		Net::String encodedKey(reinterpret_cast<const char*>(tmp->Key()));
+		Net::Json::EncodeString(encodedKey);
+		
 		// append key
 		st.m_buffer += '"';
 		st.m_buffer += encodedKey;
 		st.m_buffer += '"';
-		st.m_buffer += ":";
+		if (type == SerializeType::FORMATTED)
+			st.m_buffer += " : ";
+		else
+			st.m_buffer += ":";
 
 		switch (tmp->GetType())
 		{
 		case Type::OBJECT:
 		{
-			if (!tmp->as_object()->TrySerialize(type, st))
+			if (!tmp->as_object()->TrySerialize(type, st, iterations + 1))
 			{
 				st.m_buffer = Net::String();
 				return false;
@@ -2029,7 +2042,7 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 
 		case Type::ARRAY:
 		{
-			if (!tmp->as_array()->TrySerialize(type, st))
+			if (!tmp->as_array()->TrySerialize(type, st, iterations + 1))
 			{
 				st.m_buffer = Net::String();
 				return false;
@@ -2043,7 +2056,7 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 
 		case Type::STRING:
 		{
-			Net::String enc((const char*)tmp->as_string());
+			Net::String enc(reinterpret_cast<const char*>(tmp->as_string()));
 			Net::Json::EncodeString(enc);
 			st.m_buffer += '"';
 			st.m_buffer += enc;
@@ -2074,8 +2087,23 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st)
 			return false;
 		}
 
-		if (i != value.size() - 1) 	st.m_buffer += ',';
+		if (i != value.size() - 1)
+		{
+			st.m_buffer += ',';
+
+			if (type == SerializeType::FORMATTED)
+				st.m_buffer += '\n';
+		}
 	}
+
+	if (value.size() != 0 && type == SerializeType::FORMATTED)
+	{
+		st.m_buffer += '\n';
+
+		for (size_t i = 0; i < iterations - 1; ++i)
+			st.m_buffer += '\t';
+	}
+
 	st.m_buffer += "}";
 	return true;
 }
@@ -3162,7 +3190,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 * This function will try to serialize it
 * on any error it will recursivly return and m_valid will be set to false to handle the closing
 */
-bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
+bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st, size_t iterations)
 {
 	if (!st.m_reserved)
 	{
@@ -3194,7 +3222,7 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 		{
 		case Type::OBJECT:
 		{
-			if (!tmp->as_object()->TrySerialize(type, st))
+			if (!tmp->as_object()->TrySerialize(type, st, iterations + 1))
 			{
 				st.m_buffer = Net::String();
 				return false;
@@ -3204,7 +3232,7 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st)
 
 		case Type::ARRAY:
 		{
-			if (!tmp->as_array()->TrySerialize(type, st))
+			if (!tmp->as_array()->TrySerialize(type, st, iterations + 1))
 			{
 				st.m_buffer = Net::String();
 				return false;

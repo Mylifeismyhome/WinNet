@@ -41,6 +41,8 @@ namespace Net
 			XOR_UNIQUEPOINTER(char*, size_t, bool);
 			~XOR_UNIQUEPOINTER();
 
+			XOR_UNIQUEPOINTER& operator=(const XOR_UNIQUEPOINTER& other);
+
 			char* get() const;
 			char* data()  const;
 			char* str() const;
@@ -57,12 +59,14 @@ namespace Net
 			size_t _size;
 			size_t _actual_size;
 			uintptr_t _Key;
+			bool _bfree;
 
 			char* encrypt();
+			char* decrypt();
 
 		public:
 			XOR();
-			XOR(char*);
+			XOR(char*, bool m_free = false);
 			XOR(const char*);
 
 			void reserve(size_t size);
@@ -77,13 +81,14 @@ namespace Net
 
 			void set(size_t, char);
 			void set_size(size_t);
-			void init(char*);
+			void init(char*, bool m_free = false);
 			void init(const char*);
 			size_t size() const;
 			size_t actual_size() const;
 			size_t length() const;
 			XOR_UNIQUEPOINTER revert(bool = true);
 			void free();
+			void lost_reference();
 		};
 	}
 }
