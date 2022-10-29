@@ -50,7 +50,7 @@ namespace Net
 				BIO_read(bio, key.get(), len);
 				key.get()[len] = '\0';
 
-				_PublicKey.init(key.get());
+				_PublicKey.init(key.get(), true);
 
 				BIO_free(bio);
 			}
@@ -72,7 +72,7 @@ namespace Net
 				BIO_read(bio, key.get(), len);
 				key.get()[len] = '\0';
 
-				_PrivateKey.init(key.get());
+				_PrivateKey.init(key.get(), true);
 
 				BIO_free(bio);
 			}
@@ -90,10 +90,10 @@ namespace Net
 			return _PrivateKey.revert();
 		}
 
-		void NETRSA::setPublicKey(char* key)
+		void NETRSA::setPublicKey(char* key, bool m_free)
 		{
 			_PublicKey.free();
-			_PublicKey.init(key);
+			_PublicKey.init(key, m_free);
 		}
 
 		void NETRSA::setPublicKey(const char* key)
@@ -102,10 +102,10 @@ namespace Net
 			_PublicKey.init(key);
 		}
 
-		void NETRSA::setPrivateKey(char* key)
+		void NETRSA::setPrivateKey(char* key, bool m_free)
 		{
 			_PrivateKey.free();
-			_PrivateKey.init(key);
+			_PrivateKey.init(key, m_free);
 		}
 
 		void NETRSA::setPrivateKey(const char* key)
@@ -138,14 +138,14 @@ namespace Net
 			return true;
 		}
 
-		bool NETRSA::init(char* in_PublicKey, char* in_PrivateKey)
+		bool NETRSA::init(char* in_PublicKey, bool m_pukfree, char* in_PrivateKey, bool m_pikfree)
 		{
 			if (!in_PublicKey
 				|| !in_PrivateKey)
 				return false;
 
-			_PublicKey.init(in_PublicKey);
-			_PrivateKey.init(in_PrivateKey);
+			_PublicKey.init(in_PublicKey, m_pukfree);
+			_PrivateKey.init(in_PrivateKey, m_pikfree);
 			Set = true;
 			return true;
 		}

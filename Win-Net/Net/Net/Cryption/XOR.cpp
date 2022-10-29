@@ -71,11 +71,12 @@ namespace Net
 			_actual_size = INVALID_SIZE;
 			_buffer = nullptr;
 			_Key = 0;
+			_bfree = false;
 		}
 
-		XOR::XOR(char* str)
+		XOR::XOR(char* str, bool m_free)
 		{
-			init(str);
+			init(str, m_free);
 		}
 
 		XOR::XOR(const char* str)
@@ -174,7 +175,7 @@ namespace Net
 			this->_size = new_size;
 		}
 
-		void XOR::init(char* str)
+		void XOR::init(char* str, bool m_free)
 		{
 			if (!str)
 			{
@@ -189,6 +190,7 @@ namespace Net
             _actual_size = size();
 			_buffer = str;
 			_Key = 0;
+			_bfree = false;
 
 			encrypt();
 		}
@@ -201,6 +203,7 @@ namespace Net
 			memcpy(_buffer.get(), str, _size);
 			_buffer.get()[_size] = '\0';
 			_Key = 0;
+			_bfree = true;
 
 			encrypt();
 		}
@@ -214,6 +217,21 @@ namespace Net
 
 			// gen new key
 			_Key = rand();
+
+			for (size_t i = 0; i < size(); i++)
+			{
+				_buffer.get()[i] = static_cast<char>(_buffer.get()[i] ^ (_Key % (i == 0 ? 1 : i)));
+			}
+
+			return _buffer.get();
+		}
+
+		char* XOR::decrypt()
+		{
+			if (size() == INVALID_SIZE)
+			{
+				return nullptr;
+			}
 
 			for (size_t i = 0; i < size(); i++)
 			{
@@ -252,7 +270,20 @@ namespace Net
 		void XOR::free()
 		{
 			_Key = 0;
-			_buffer.free();
+
+			/*
+			* if we do not free the buffer
+			* then we decrypt it
+			*/
+			if (_bfree)
+			{
+				_buffer.free();
+			}
+			else
+			{
+				this->decrypt();
+			}
+
 			_size = INVALID_SIZE;
 			_actual_size = INVALID_SIZE;
 		}
