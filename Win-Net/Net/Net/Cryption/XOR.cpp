@@ -27,6 +27,19 @@ namespace Net
 			this->_size = NULL;
 		}
 
+		XOR_UNIQUEPOINTER& XOR_UNIQUEPOINTER::operator=(const XOR_UNIQUEPOINTER& other)
+		{
+			// Guard self assignment
+			if (this == &other)
+				return *this;
+
+			this->buffer = other.buffer;
+			this->_size = other._size;
+			this->bFree = other.bFree;
+
+			return *this;
+		}
+
 		char* XOR_UNIQUEPOINTER::get() const
 		{
 			return buffer.get();

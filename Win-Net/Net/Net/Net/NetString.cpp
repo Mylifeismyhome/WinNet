@@ -134,10 +134,19 @@ namespace Net
 		if (!valid()) return false;
 		if (!original()) return false;
 
-		this->m_ref.lost_reference();
 		auto tmp = reinterpret_cast<Net::String*>(original())->get();
 		this->m_ref = tmp;
 		tmp.lost_reference();
+
+		if (this->m_start != 0)
+		{
+			if (this->m_start - (this->m_size - tmp.size()) == INVALID_SIZE)
+				this->m_start = 0;
+			else
+				this->m_start -= this->m_size - tmp.size();
+		}
+
+		this->m_size = tmp.size();
 
 		return true;
 	}
@@ -1266,7 +1275,9 @@ namespace Net
 
 		auto ref = get();
 		auto dec = ref.get();
-		for (size_t i = 0, j = 0; i < size(); ++i)
+
+		size_t j = 0;
+		for (size_t i = 0; i < size(); ++i)
 		{
 			bool m_skip = false;
 			for (auto& index : m_IndexCharacterToSkip)

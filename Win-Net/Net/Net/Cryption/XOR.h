@@ -41,6 +41,8 @@ namespace Net
 			XOR_UNIQUEPOINTER(char*, size_t, bool);
 			~XOR_UNIQUEPOINTER();
 
+			XOR_UNIQUEPOINTER& operator=(const XOR_UNIQUEPOINTER& other);
+
 			char* get() const;
 			char* data()  const;
 			char* str() const;
