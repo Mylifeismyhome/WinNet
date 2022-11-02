@@ -446,6 +446,7 @@ namespace Net
 
 		public:
 			Document();
+			Document(Document&& m_doc) NOEXPECT;
 			~Document();
 
 			Type GetType();

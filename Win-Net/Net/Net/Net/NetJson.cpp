@@ -3528,6 +3528,26 @@ Net::Json::Document::Document()
 	this->Init();
 }
 
+Net::Json::Document::Document(Net::Json::Document&& m_doc) NOEXPECT
+{
+	/*
+	* move the document into new instance
+	*/
+	this->m_type = m_doc.m_type;
+	this->root_obj = m_doc.root_obj;
+	this->root_array = m_doc.root_array;
+	this->m_free_root_obj = m_doc.m_free_root_obj;
+	this->m_free_root_array = m_doc.m_free_root_array;
+
+	/*
+	* m_doc lost it's reference
+	* do not free objects on heap
+	* they are still in use
+	*/
+	m_doc.m_free_root_obj = false;
+	m_doc.m_free_root_array = false;
+}
+
 Net::Json::Document::~Document()
 {
 	this->Clear();
