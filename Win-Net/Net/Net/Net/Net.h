@@ -172,7 +172,7 @@ T* NET_ALLOC_MEM(const size_t n)
 {
 	try
 	{
-		T* pointer = new T[n];
+		T* pointer = (T*)malloc(n * sizeof(T));
 		if (pointer)
 		{
 #ifdef NET_TEST_MEMORY_LEAKS

@@ -30,6 +30,8 @@
 // Protocol
 #include <Net/Protocol/NTP.h>
 
+#include <Net/Net/NetPacket.h>
+
 #ifndef BUILD_LINUX
 #pragma comment(lib, "NetCore_static.lib")
 #pragma comment(lib, "NetClient_static.lib")
