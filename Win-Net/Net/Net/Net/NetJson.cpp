@@ -3528,8 +3528,17 @@ Net::Json::Document::Document()
 	this->Init();
 }
 
-Net::Json::Document::Document(Net::Json::Document&& m_doc) NOEXPECT
+Net::Json::Document::~Document()
 {
+	this->Clear();
+}
+
+Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXCEPT
+{
+	// Guard self assignment
+	if (this == &m_doc)
+		return *this;
+
 	/*
 	* move the document into new instance
 	*/
@@ -3544,13 +3553,10 @@ Net::Json::Document::Document(Net::Json::Document&& m_doc) NOEXPECT
 	* do not free objects on heap
 	* they are still in use
 	*/
-	m_doc.m_free_root_obj = false;
-	m_doc.m_free_root_array = false;
-}
+	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_obj = false;
+	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_array = false;
 
-Net::Json::Document::~Document()
-{
-	this->Clear();
+	return *this;
 }
 
 Net::Json::Type Net::Json::Document::GetType()

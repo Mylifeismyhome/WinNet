@@ -454,8 +454,9 @@ namespace Net
 
 		public:
 			Document();
-			Document(Document&& m_doc) NOEXPECT;
 			~Document();
+
+			Document& operator=(const Document& m_doc) NOEXCEPT;
 
 			Type GetType();
 			Object GetRootObject();

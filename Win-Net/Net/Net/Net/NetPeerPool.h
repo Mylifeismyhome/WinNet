@@ -45,10 +45,10 @@ namespace Net
 		class PeerPool_t
 		{
 			std::vector<Net::PeerPool::peerInfo_t*> peer_queue;
-			std::mutex* peer_mutex;
+			std::recursive_mutex peer_mutex;
 
 			std::vector<peer_threadpool_t*> peer_threadpool;
-			std::mutex* peer_threadpool_mutex;
+			std::recursive_mutex peer_threadpool_mutex;
 
 			bool check_more_threads_needed();
 			void threapool_push(peer_threadpool_t* pool);
@@ -66,7 +66,7 @@ namespace Net
 			peerInfo_t* queue_pop();
 
 			std::vector<peer_threadpool_t*>& get_peer_threadpool();
-			std::mutex* get_peer_threadpool_mutex();
+			std::recursive_mutex* get_peer_threadpool_mutex();
 
 			peer_threadpool_t* threadpool_get_free_slot_in_target_pool(peer_threadpool_t* from_pool);
 

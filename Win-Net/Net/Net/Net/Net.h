@@ -704,7 +704,7 @@ namespace WebServerHandshake
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
 #define NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME 60000
 
-#define NOEXPECT noexcept
+#define NOEXCEPT noexcept
 #define CONSTEXPR const
 
 #define FUNCNAME CSTRING("")

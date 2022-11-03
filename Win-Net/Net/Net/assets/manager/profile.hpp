@@ -74,6 +74,7 @@ namespace Net
 			{
 				data = nullptr;
 				max_entries = 0;
+				c_entries = 0;
 			}
 
 			void Init(size_t max_entries)
@@ -85,8 +86,7 @@ namespace Net
 
 			~Profile()
 			{
-				delete data;
-				data = nullptr;
+				FREE(data);
 				max_entries = 0;
 			}
 
