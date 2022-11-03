@@ -31,12 +31,12 @@ Net::Server::Server::Server()
 Net::Server::Server::~Server()
 {
 	for (auto& entry : socketoption)
-		delete entry;
+		FREE(entry);
 
 	socketoption.clear();
 
 	for (auto& entry : option)
-		delete entry;
+		FREE(entry);
 
 	option.clear();
 }
@@ -943,7 +943,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 	if (peer->bErase)
 		return;
 
-	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	uint32_t sendToken = INVALID_UINT_SIZE;
 	if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)

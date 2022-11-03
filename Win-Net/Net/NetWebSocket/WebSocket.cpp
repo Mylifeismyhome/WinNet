@@ -29,12 +29,12 @@ Net::WebSocket::Server::Server()
 Net::WebSocket::Server::~Server()
 {
 	for (auto& entry : socketoption)
-		delete entry;
+		FREE(entry);
 
 	socketoption.clear();
 
 	for (auto& entry : option)
-		delete entry;
+		FREE(entry);
 
 	option.clear();
 }
@@ -916,8 +916,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				delete peer;
-				peer = nullptr;
+				FREE(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::would_block)
@@ -936,8 +935,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				delete peer;
-				peer = nullptr;
+				FREE(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::error)
@@ -947,8 +945,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				delete peer;
-				peer = nullptr;
+				FREE(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::success)
@@ -983,8 +980,7 @@ NET_THREAD(Receive)
 	// erase him
 	server->ErasePeer(peer, true);
 
-	delete peer;
-	peer = nullptr;
+	FREE(peer);
 	return 0;
 }
 
@@ -1018,7 +1014,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	Net::Json::Document doc;
 	doc[CSTRING("ID")] = static_cast<int>(id);
@@ -1049,7 +1045,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::recursive_mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	// write package id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);

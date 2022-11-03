@@ -75,7 +75,7 @@ namespace Net
 		vs.m_ref.lost_reference();
 	}
 
-	ViewString::ViewString(ViewString&& vs) NOEXPECT
+	ViewString::ViewString(ViewString&& vs) NOEXCEPT
 	{
 		this->m_ptr_original = vs.m_ptr_original;
 		this->m_ref = vs.m_ref;

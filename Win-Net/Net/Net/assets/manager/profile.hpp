@@ -3,7 +3,7 @@
 #define NET_PROFILE_DATA Net::Manager::Profile_t
 
 #include <Net/Net/Net.h>
-#include <Net/Net/NetPacket.h>
+#include <Net/Net/NetJson.h>
 #include <mutex>
 
 NET_DSA_BEGIN
@@ -16,20 +16,18 @@ namespace Net
 			void* peer;
 
 		public:
-			NET_PACKET* data;
+			Net::Json::Document data;
 			void* ext;
 
 			Profile_t()
 			{
 				peer = nullptr;
-				data = nullptr;
 				ext = nullptr;
 			}
 
 			Profile_t(void* peer)
 			{
 				this->peer = peer;
-				data = ALLOC<NET_PACKET>();
 				ext = nullptr;
 			}
 
@@ -41,7 +39,6 @@ namespace Net
 			void clear()
 			{
 				peer = nullptr;
-				FREE(data);
 				FREE(ext);
 			}
 
@@ -77,6 +74,7 @@ namespace Net
 			{
 				data = nullptr;
 				max_entries = 0;
+				c_entries = 0;
 			}
 
 			void Init(size_t max_entries)
@@ -88,12 +86,11 @@ namespace Net
 
 			~Profile()
 			{
-				delete data;
-				data = nullptr;
+				FREE(data);
 				max_entries = 0;
 			}
 
-			NET_PACKET* Add(void* peer)
+			Net::Json::Document* Add(void* peer)
 			{
 				if (!data) return nullptr;
 
@@ -146,14 +143,14 @@ namespace Net
 				}
 			}
 
-			NET_PACKET* peer(void* peer)
+			Net::Json::Document* peer(void* peer)
 			{
 				if (!data) return nullptr;
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
 					if (data[i].Peer<void*>() == peer)
-						return data[i].data;
+						return &data[i].data;
 				}
 
 				return nullptr;

@@ -21,9 +21,17 @@ namespace Net
 			{
 			}
 
-			Vector(const Vector<T>& copy) : current_size(0), capacity(0), container(nullptr)
+			Vector(const Vector<T>& m_vector) : current_size(0), capacity(0), container(nullptr)
 			{
-				*this = copy;
+				this->current_size = m_vector.current_size;
+				this->capacity = m_vector.capacity;
+		
+				T* copy_container = ALLOC<T>(this->capacity);
+				if (!copy_container) return;
+				memcpy((void*)copy_container, m_vector.container, sizeof(T) * this->capacity);
+				this->container = copy_container;
+
+				this->stack = m_vector.stack;
 			}
 
 			T* get()
@@ -447,6 +455,8 @@ namespace Net
 		public:
 			Document();
 			~Document();
+
+			Document& operator=(const Document& m_doc) NOEXCEPT;
 
 			Type GetType();
 			Object GetRootObject();

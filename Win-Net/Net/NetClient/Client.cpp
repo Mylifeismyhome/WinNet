@@ -98,12 +98,12 @@ namespace Net
 			Clear();
 
 			for (auto& entry : socketoption)
-				delete entry;
+				FREE(entry);
 
 			socketoption.clear();
 
 			for (auto& entry : option)
-				delete entry;
+				FREE(entry);
 
 			option.clear();
 		}
@@ -1000,7 +1000,7 @@ namespace Net
 			if (!IsConnected())
 				return;
 
-			std::lock_guard<std::recursive_mutex> guard(network._mutex_send);
+			std::lock_guard<std::mutex> guard(network._mutex_send);
 
 			uint32_t sendToken = INVALID_UINT_SIZE;
 			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
