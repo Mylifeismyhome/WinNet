@@ -106,7 +106,7 @@ namespace Net
 				size_t _data_size;
 				size_t _data_full_size;
 				size_t _data_offset;
-				std::recursive_mutex _mutex_send;
+				std::mutex _mutex_send;
 
 				network_t()
 				{
@@ -276,7 +276,7 @@ namespace Net
 				}
 
 				// save the option value
-				option.emplace_back(new Option_t<T>(o));
+				option.emplace_back(ALLOC<Option_t<T>, Option_t<T>>(1, o));
 
 				// set the bit flag
 				optionBitFlag |= o.opt;
@@ -315,7 +315,7 @@ namespace Net
 				}
 
 				// save the option value
-				socketoption.emplace_back(new SocketOption_t<T>(opt));
+				socketoption.emplace_back(ALLOC<SocketOption_t<T>, SocketOption_t<T>>(1, opt));
 
 				// set the bit flag
 				socketOptionBitFlag |= opt.opt;

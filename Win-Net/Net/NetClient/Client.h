@@ -107,7 +107,7 @@ namespace Net
 				NET_HANDLE_TIMER hSyncClockNTP;
 				NET_HANDLE_TIMER hReSyncClockNTP;
 
-				std::recursive_mutex _mutex_send;
+				std::mutex _mutex_send;
 
 				Network()
 				{
@@ -168,7 +168,7 @@ namespace Net
 				}
 
 				// save the option value
-				option.emplace_back(new Option_t<T>(o));
+				option.emplace_back(ALLOC<Option_t<T>, Option_t<T>>(1, o));
 
 				// set the bit flag
 				optionBitFlag |= o.opt;
@@ -207,7 +207,7 @@ namespace Net
 				}
 
 				// save the option value
-				socketoption.emplace_back(new SocketOption_t<T>(opt));
+				socketoption.emplace_back(ALLOC<SocketOption_t<T>, SocketOption_t<T>>(1, opt));
 
 				// set the bit flag
 				socketOptionBitFlag |= opt.opt;

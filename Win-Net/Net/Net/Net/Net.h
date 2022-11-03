@@ -146,8 +146,8 @@ virtual type name(__VA_ARGS__)
 #define NET_DSA_END _Pragma("pack(pop)")
 #endif
 
-#define ALLOC Alloc
-#define FREE(data) Free(data)
+#define ALLOC NET_ALLOC_MEM
+#define FREE NET_FREE_MEM
 
 ////////////////////////////////////////////////
 //    SECTION - TYPE DEFENITIONS     //
@@ -167,18 +167,23 @@ typedef DWORD typeLatency;
 static std::vector<void*> NET_TEST_MEMORY_LEAKS_POINTER_LIST;
 #endif
 
-template <typename T>
-T* NET_ALLOC_MEM(const size_t n)
+template <typename T, typename... Args>
+T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 {
 	try
 	{
-		T* pointer = (T*)malloc(n * sizeof(T));
+		T* pointer = (T*)calloc(n, sizeof(T));
 		if (pointer)
 		{
 #ifdef NET_TEST_MEMORY_LEAKS
 			//printf("Allocated: %llu Byte(s) ; %p\n", n, pointer);
 			NET_TEST_MEMORY_LEAKS_POINTER_LIST.emplace_back(pointer);
 #endif
+
+			/*
+			* call the constructor explicity
+			*/
+			new (pointer) T(args...);
 
 			return pointer;
 		}
@@ -213,18 +218,31 @@ __forceinline void NET_FREE_MEM(void* pointer)
 	pointer = nullptr;
 }
 
-template<class T>
-T* Alloc(const size_t size = 1)
-{
-	T* object = NET_ALLOC_MEM<T>(size);
-	return object;
-}
-
 template <typename T>
-static void Free(T*& data)
+__forceinline void NET_FREE_MEM(void* pointer)
 {
-	NET_FREE_MEM(data);
-	data = nullptr;
+	if (!pointer)
+		return;
+
+#ifdef NET_TEST_MEMORY_LEAKS
+	//printf("Deallocated: %p\n", pointer);
+	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
+	{
+		if (*it == pointer)
+		{
+			NET_TEST_MEMORY_LEAKS_POINTER_LIST.erase(it);
+			break;
+		}
+	}
+#endif
+
+	/*
+	* call destructor
+	*/
+	pointer->~T();
+
+	free(pointer);
+	pointer = nullptr;
 }
 
 ////////////////////////////////////////////////////

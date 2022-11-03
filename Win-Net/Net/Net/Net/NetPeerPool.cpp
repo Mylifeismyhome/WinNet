@@ -77,10 +77,6 @@ Net::PeerPool::PeerPool_t::PeerPool_t()
 	max_peers = DEFAULT_MAX_PEER_COUNT;
 }
 
-Net::PeerPool::PeerPool_t::~PeerPool_t()
-{
-}
-
 void Net::PeerPool::PeerPool_t::set_sleep_time(DWORD ms_sleep_time)
 {
 	this->ms_sleep_time = ms_sleep_time;
@@ -179,7 +175,6 @@ NET_THREAD(threadpool_manager)
 					(*fncCallbackOnDelete)(peer->GetPeer());
 				}
 
-				delete peer;
 				peer = nullptr;
 				break;
 			}
@@ -234,11 +229,8 @@ NET_THREAD(threadpool_manager)
 				}
 			}
 
-			delete pool->vPeers;
-			pool->vPeers = nullptr;
-
-			delete data;
-			data = nullptr;
+			FREE(pool->vPeers);
+			FREE(data);
 			return NULL;
 		}
 
@@ -257,8 +249,7 @@ NET_THREAD(threadpool_manager)
 		}
 	}
 
-	delete data;
-	data = nullptr;
+	FREE(data);
 	return NULL;
 }
 
@@ -270,7 +261,7 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 	pool->vPeers = ALLOC<Net::PeerPool::peerInfo_t*>(get_max_peers());
 	if (!pool->vPeers)
 	{
-		delete pool;
+		FREE(pool);
 		return;
 	}
 

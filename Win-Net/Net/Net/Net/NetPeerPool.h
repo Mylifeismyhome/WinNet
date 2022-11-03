@@ -61,7 +61,6 @@ namespace Net
 
 		public:
 			PeerPool_t();
-			~PeerPool_t();
 
 			peerInfo_t* queue_pop();
 
