@@ -181,7 +181,7 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 #endif
 
 			/*
-			* call the constructor explicity
+			* call constructor using placement new
 			*/
 			new (pointer) T(args...);
 

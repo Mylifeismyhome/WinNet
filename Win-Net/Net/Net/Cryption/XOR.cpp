@@ -213,7 +213,7 @@ namespace Net
             _actual_size = size();
 			_buffer = str;
 			_Key = 0;
-			_bfree = false;
+			_bfree = m_free;
 
 			encrypt();
 		}

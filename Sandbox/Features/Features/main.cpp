@@ -309,22 +309,34 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	RUN(Basic);
-	RUN(Hex);
-	RUN(Base32);
-	RUN(Base64);
-	RUN(MD5);
-	RUN(SHA1);
-	RUN(TOTP);
-	RUN(AES);
-	RUN(rsa);
-	RUN(Directory);
-	RUN(HTTP);
-	RUN(HTTPS);
-	RUN(TIMER);
-	//RUN(DATABASE);
-	RUN(JSON);
-	RUN(NTP);
+	std::cout << "start" << std::endl;
+	{
+		Net::Json::Document m_doc;
+		m_doc["ABC"] = "test";
+		m_doc["test"] = 1335;
+		m_doc["test3"] = true;
+		m_doc["test4"] = 1.25f;
+		m_doc["test5"] = 1.252323232324245242342;
+		m_doc["test6"] = Net::Json::NullValue();
+	}
+	std::cout << "end" << std::endl;
+
+	//RUN(Basic);
+	//RUN(Hex);
+	//RUN(Base32);
+	//RUN(Base64);
+	//RUN(MD5);
+	//RUN(SHA1);
+	//RUN(TOTP);
+	//RUN(AES);
+	//RUN(rsa);
+	//RUN(Directory);
+	//RUN(HTTP);
+	//RUN(HTTPS);
+	//RUN(TIMER);
+	////RUN(DATABASE);
+	//RUN(JSON);
+	//RUN(NTP);
 
 	NET_UNLOAD;
 

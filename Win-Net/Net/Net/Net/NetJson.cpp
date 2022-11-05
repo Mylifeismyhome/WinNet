@@ -616,16 +616,14 @@ Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type t
 template <typename T>
 Net::Json::BasicValue<T>::~BasicValue()
 {
-	/* free string from heap */
-	if (this->m_type == Type::STRING)
+	/*
+	* string's are allocated into its own mem space before storing
+	* free it aswell
+	*/
+	if(this->m_type ==  Type::STRING)
 	{
-		auto cast = (BasicValue<char*>*)this;
-		if (cast
-			&& cast->GetType() == Type::STRING
-			&& cast->Value())
-		{
-			FREE<Net::Json::BasicObject>(cast->Value());
-		}
+		auto m_pCast = (BasicValue<char*>*)this;
+		FREE<char>(m_pCast->Value());
 	}
 
 	this->value = {};
@@ -933,10 +931,9 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 	ptr[len] = 0;
 
 	auto cast = ((BasicValue<char*>*)this->ptr);
-	if (cast->GetType() == Type::STRING
-		&& cast->Value())
+	if (cast->GetType() == Type::STRING)
 	{
-		FREE<Net::Json::BasicObject>(cast->Value());
+		FREE<char>(cast->Value());
 	}
 	cast->SetValue(ptr, Type::STRING);
 }
@@ -988,6 +985,52 @@ Net::Json::Object::~Object()
 
 void Net::Json::Object::Destroy()
 {
+	/*
+	* iterate through the values
+	* then manually free it to call its destructor
+	*/
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		switch (tmp->GetType())
+		{
+		case Type::NULLVALUE:
+			FREE<Net::Json::NullValue>(tmp);
+			break;
+
+		case Type::OBJECT:
+			FREE<Net::Json::Object>(tmp);
+			break;
+
+		case Type::ARRAY:
+			FREE<Net::Json::Array>(tmp);
+			break;
+
+		case Type::STRING:
+			FREE<Net::Json::BasicValue<char>>(tmp);
+			break;
+
+		case Type::INTEGER:
+			FREE<Net::Json::BasicValue<int>>(tmp);
+			break;
+
+		case Type::FLOAT:
+			FREE<Net::Json::BasicValue<float>>(tmp);
+			break;
+
+		case Type::DOUBLE:
+			FREE<Net::Json::BasicValue<double>>(tmp);
+			break;
+
+		case Type::BOOLEAN:
+			FREE<Net::Json::BasicValue<bool>>(tmp);
+			break;
+
+		default:
+			break;
+		}
+	}
+
 	this->value.clear();
 }
 
@@ -2477,6 +2520,52 @@ Net::Json::Array::~Array()
 
 void Net::Json::Array::Destroy()
 {
+	/*
+	* iterate through the values
+	* then manually free it to call its destructor
+	*/
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		switch (tmp->GetType())
+		{
+		case Type::NULLVALUE:
+			FREE<Net::Json::NullValue>(tmp);
+			break;
+
+		case Type::OBJECT:
+			FREE<Net::Json::Object>(tmp);
+			break;
+
+		case Type::ARRAY:
+			FREE<Net::Json::Array>(tmp);
+			break;
+
+		case Type::STRING:
+			FREE<Net::Json::BasicValue<char>>(tmp);
+			break;
+
+		case Type::INTEGER:
+			FREE<Net::Json::BasicValue<int>>(tmp);
+			break;
+
+		case Type::FLOAT:
+			FREE<Net::Json::BasicValue<float>>(tmp);
+			break;
+
+		case Type::DOUBLE:
+			FREE<Net::Json::BasicValue<double>>(tmp);
+			break;
+
+		case Type::BOOLEAN:
+			FREE<Net::Json::BasicValue<bool>>(tmp);
+			break;
+
+		default:
+			break;
+		}
+	}
+
 	this->value.clear();
 }
 
