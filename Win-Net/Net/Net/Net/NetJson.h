@@ -63,11 +63,8 @@ namespace Net
 					if (current_size >= 1)
 						memcpy((void*)new_container, container, current_size * sizeof(T));
 
-					if (container != nullptr)
-						free((void*)container);
-
+					FREE<T>(container);
 					container = new_container;
-
 					container[current_size] = value;
 					current_size++;
 				}
@@ -99,9 +96,7 @@ namespace Net
 						if (current_size >= 1)
 							memcpy(new_container, container, current_size * sizeof(T));
 
-						if (container != nullptr)
-							free(container);
-
+						FREE<T>(container);
 						container = new_container;
 						capacity /= 2;
 					}
@@ -163,8 +158,7 @@ namespace Net
 			{
 				if (capacity > 0)
 				{
-					if (container)
-						free(container);
+					FREE<T>(container);
 				}
 
 				current_size = 0;
