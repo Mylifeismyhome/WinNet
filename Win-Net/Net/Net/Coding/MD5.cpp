@@ -93,7 +93,7 @@ namespace Net
 				// Free
 				free(digits1);
 				free(digits2);
-				FREE(raw_answer);
+				FREE<char>(raw_answer);
 
 				return sig;
 			}

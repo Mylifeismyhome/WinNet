@@ -12,7 +12,7 @@ namespace Net
 
 		UniquePointer::~UniquePointer()
 		{
-			FREE(_pointer);
+			FREE<UniquePointer>(_pointer);
 		}
 	}
 

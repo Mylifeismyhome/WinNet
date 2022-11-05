@@ -59,7 +59,7 @@ namespace Import
 				if (fmanager.read(data, size))
 				{
 					mod.module = ::MemoryLoadLibrary(data, size);
-					FREE(data);
+					FREE<byte>(data);
 					break;
 				}
 

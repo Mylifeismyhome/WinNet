@@ -168,7 +168,7 @@ namespace Net
 			const auto read = fread(buffer, 1, size, file);
 			if (read != size)
 			{
-				FREE(buffer);
+				FREE<byte>(buffer);
 				return false;
 			}
 
@@ -339,7 +339,7 @@ namespace Net
 			const auto read = fread(buffer, 1, size, file);
 			if (read != size)
 			{
-				FREE(buffer);
+				FREE<byte>(buffer);
 				return false;
 			}
 

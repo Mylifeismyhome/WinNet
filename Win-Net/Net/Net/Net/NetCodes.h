@@ -41,7 +41,7 @@ namespace Net
 
 			void free()
 			{
-				FREE(Message);
+				FREE<char>(Message);
 			}
 		};
 

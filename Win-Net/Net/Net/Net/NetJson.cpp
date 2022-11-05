@@ -624,12 +624,12 @@ Net::Json::BasicValue<T>::~BasicValue()
 			&& cast->GetType() == Type::STRING
 			&& cast->Value())
 		{
-			FREE(cast->Value());
+			FREE<Net::Json::BasicObject>(cast->Value());
 		}
 	}
 
 	this->value = {};
-	FREE(this->key);
+	FREE<char>(this->key);
 	this->m_type = Type::NULLVALUE;
 }
 
@@ -936,7 +936,7 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 	if (cast->GetType() == Type::STRING
 		&& cast->Value())
 	{
-		FREE(cast->Value());
+		FREE<Net::Json::BasicObject>(cast->Value());
 	}
 	cast->SetValue(ptr, Type::STRING);
 }
@@ -1138,7 +1138,7 @@ bool Net::Json::Object::Append(const char* key, const char* value)
 	ptr[len] = 0;
 	if (!__append(key, ptr, Type::STRING))
 	{
-		FREE(ptr);
+		FREE<char>(ptr);
 		return false;
 	}
 

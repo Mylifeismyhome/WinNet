@@ -88,7 +88,7 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 	sprintf(buffer, CSTRING("'%s %s'"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 2] = '\0';
 	printf(buffer);
-	FREE(buffer);
+	FREE<char>(buffer);
 
 	printf(CSTRING(" "));
 
@@ -103,7 +103,7 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 
 	printf(buffer);
 
-	FREE(buffer);
+	FREE<char>(buffer);
 
 	if (!Net::Console::GetPrintFState())
 		SetConsoleOutputColor(WHITE);
@@ -137,7 +137,7 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
 			file.write(buffer);
 
-			FREE(buffer);
+			FREE<char>(buffer);
 		}
 		else
 		{
@@ -153,7 +153,7 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
 			file.write(buffer);
 
-			FREE(buffer);
+			FREE<char>(buffer);
 		}
 	}
 	else
@@ -167,7 +167,7 @@ static void __net_logmanager_output_log_a(__net_logmanager_array_entry_A_t entry
 			sprintf(buffer, CSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 			(*OnLogA)((int)entry.state, buffer);
-			FREE(buffer);
+			FREE<char>(buffer);
 		}
 	}
 }
@@ -188,7 +188,7 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 	swprintf(buffer, TIME_LENGTH + DATE_LENGTH + 2, CWSTRING("'%s %s'"), date, time);
 	buffer[TIME_LENGTH + DATE_LENGTH + 2] = '\0';
 	wprintf(buffer);
-	FREE(buffer);
+	FREE<wchar_t>(buffer);
 
 	wprintf(CWSTRING(" "));
 
@@ -203,7 +203,7 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 
 	wprintf(buffer);
 
-	FREE(buffer);
+	FREE<wchar_t>(buffer);
 
 	if (!Net::Console::GetPrintFState())
 		SetConsoleOutputColor(WHITE);
@@ -237,7 +237,7 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
 			file.write(buffer);
 
-			FREE(buffer);
+			FREE<wchar_t>(buffer);
 		}
 		else
 		{
@@ -253,7 +253,7 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			auto file = NET_FILEMANAGER(__net_output_fname, NET_FILE_WRITE | NET_FILE_APPAND);
 			file.write(buffer);
 
-			FREE(buffer);
+			FREE<wchar_t>(buffer);
 		}
 	}
 	else
@@ -267,7 +267,7 @@ static void __net_logmanager_output_log_w(__net_logmanager_array_entry_W_t entry
 			swprintf(buffer, bsize, CWSTRING("'%s %s' [%s] '%s' -> %s\n"), date, time, prefix.data(), entry.func.data(), entry.msg.data());
 			buffer[bsize] = '\0';
 			(*OnLogW)((int)entry.state, buffer);
-			FREE(buffer);
+			FREE<wchar_t>(buffer);
 		}
 	}
 }
@@ -439,7 +439,7 @@ namespace Net
 				__net__logmanager_holder_w.emplace_back(data);
 			}
 
-			FREE(func);
+			FREE<wchar_t>(func);
 		}
 
 		NET_EXPORT_FUNCTION void Log(const LogStates state, const char* func, Net::String msg)
@@ -722,7 +722,7 @@ namespace Net
 					__net__logmanager_holder_w.emplace_back(data);
 				}
 
-				FREE(func);
+				FREE<wchar_t>(func);
 			}
 
 			NET_EXPORT_FUNCTION void Log(const Console::LogStates state, const char* func, Net::String msg)

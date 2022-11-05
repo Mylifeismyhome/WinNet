@@ -9,7 +9,7 @@ Net::Server::IPRef::IPRef(const char* pointer)
 
 Net::Server::IPRef::~IPRef()
 {
-	FREE(pointer);
+	FREE<char>(pointer);
 }
 
 const char* Net::Server::IPRef::get() const
@@ -31,12 +31,12 @@ Net::Server::Server::Server()
 Net::Server::Server::~Server()
 {
 	for (auto& entry : socketoption)
-		FREE(entry);
+		FREE<SocketOptionInterface_t>(entry);
 
 	socketoption.clear();
 
 	for (auto& entry : option)
-		FREE(entry);
+		FREE<OptionInterface_t>(entry);
 
 	option.clear();
 }
@@ -369,7 +369,7 @@ void Net::Server::Server::peerInfo::clear()
 
 	cryption.deleteKeyPair();
 
-	FREE(totp_secret);
+	FREE<byte>(totp_secret);
 	totp_secret_len = 0;
 	curToken = 0;
 	lastToken = 0;
@@ -710,19 +710,19 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
 {
 	PEER_NOT_VALID(peer,
-		FREE(data);
+		FREE<byte>(data);
 	return;
 	);
 
 	if (peer->bErase)
 	{
-		FREE(data);
+		FREE<byte>(data);
 		return;
 	}
 
 	if (bPreviousSentFailed)
 	{
-		FREE(data);
+		FREE<byte>(data);
 		return;
 	}
 
@@ -760,7 +760,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 			else
 			{
 				bPreviousSentFailed = true;
-				FREE(data);
+				FREE<byte>(data);
 				ErasePeer(peer);
 				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
@@ -773,7 +773,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 		size -= res;
 	} while (size > 0);
 
-	FREE(data);
+	FREE<byte>(data);
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
@@ -1270,7 +1270,7 @@ NET_THREAD(PeerStartRoutine)
 		PKG[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 
-		FREE(b64);
+		FREE<byte>(b64);
 	}
 	/*
 		version -> all other
@@ -2233,7 +2233,7 @@ bool Net::Server::Server::CreateTOTPSecret(NET_PEER peer)
 	const auto strTime = ctime(&txTm);
 	peer->totp_secret_len = strlen(strTime);
 
-	FREE(peer->totp_secret);
+	FREE<byte>(peer->totp_secret);
 	peer->totp_secret = ALLOC<byte>(peer->totp_secret_len + 1);
 	memcpy(peer->totp_secret, strTime, peer->totp_secret_len);
 	peer->totp_secret[peer->totp_secret_len] = '\0';

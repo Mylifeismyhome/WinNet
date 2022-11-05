@@ -176,7 +176,7 @@ namespace Net
 					const auto  encLen = RSA_public_encrypt(static_cast<int>(size), data, tmpEnc, publicKey, RSA_PKCS1_OAEP_PADDING);
 					if (encLen > 0)
 					{
-						FREE(data);
+						FREE<byte>(data);
 						data = tmpEnc; // pointer swap
 						data[encLen] = '\0';
 						size = encLen;
@@ -187,7 +187,7 @@ namespace Net
 					}
 
 					NET_LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
-					FREE(tmpEnc);
+					FREE<byte>(tmpEnc);
 					RSA_free(publicKey);
 				}
 			}
@@ -244,7 +244,7 @@ namespace Net
 					const auto  decLen = RSA_private_decrypt(static_cast<int>(size), data, tmpDec, privateKey, RSA_PKCS1_OAEP_PADDING);
 					if (decLen > 0)
 					{
-						FREE(data);
+						FREE<byte>(data);
 						data = tmpDec; // pointer swap
 						data[decLen] = '\0';
 						size = decLen;
@@ -255,7 +255,7 @@ namespace Net
 					}
 
 					NET_LOG(CSTRING("RSA has been failed: %s"), ERR_reason_error_string(ERR_get_error()));
-					FREE(tmpDec);
+					FREE<byte>(tmpDec);
 					RSA_free(privateKey);
 				}
 			}

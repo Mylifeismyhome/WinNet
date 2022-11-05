@@ -16,7 +16,7 @@ namespace Net
 				encoder.Get(encoded, hexSize);
 				encoded[hexSize] = '\0';
 
-				FREE(out);
+				FREE<byte>(out);
 				out = encoded; // pointer swap
 				out[hexSize] = '\0';
 
@@ -42,7 +42,7 @@ namespace Net
 				encoder.Get(encoded, hexSize);
 				encoded[hexSize] = '\0';
 
-				FREE(data);
+				FREE<byte>(data);
 				data = encoded; // pointer swap
 				data[hexSize] = '\0';
 
@@ -68,7 +68,7 @@ namespace Net
 				decoder.Get(decoded, originalSize);
 				decoded[originalSize] = '\0';
 
-				FREE(data);
+				FREE<byte>(data);
 				data = decoded; // pointer swap
 				data[originalSize] = '\0';
 
@@ -94,7 +94,7 @@ namespace Net
 				decoder.Get(decoded, originalSize);
 				decoded[originalSize] = '\0';
 
-				FREE(data);
+				FREE<byte>(data);
 				data = decoded; // pointer swap
 				data[originalSize] = '\0';
 

@@ -98,12 +98,12 @@ namespace Net
 			Clear();
 
 			for (auto& entry : socketoption)
-				FREE(entry);
+				FREE<SocketOptionInterface_t>(entry);
 
 			socketoption.clear();
 
 			for (auto& entry : option)
-				FREE(entry);
+				FREE<OptionInterface_t>(entry);
 
 			option.clear();
 		}
@@ -680,7 +680,7 @@ namespace Net
 			clearData();
 			deleteRSAKeys();
 
-			FREE(totp_secret);
+			FREE<byte>(totp_secret);
 			totp_secret_len = 0;
 			curToken = 0;
 			lastToken = 0;
@@ -787,13 +787,13 @@ namespace Net
 		{
 			if (!GetSocket())
 			{
-				FREE(data);
+				FREE<byte>(data);
 				return;
 			}
 
 			if (bPreviousSentFailed)
 			{
-				FREE(data);
+				FREE<byte>(data);
 				return;
 			}
 
@@ -831,7 +831,7 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						FREE(data);
+						FREE<byte>(data);
 						Disconnect();
 						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
@@ -844,7 +844,7 @@ namespace Net
 				size -= res;
 			} while (size > 0);
 
-			FREE(data);
+			FREE<byte>(data);
 		}
 
 		void Client::SingleSend(NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed, const uint32_t sendToken)
@@ -2032,7 +2032,7 @@ namespace Net
 			const auto strTime = ctime(&txTm);
 			network.totp_secret_len = strlen(strTime);
 
-			FREE(network.totp_secret);
+			FREE<byte>(network.totp_secret);
 			network.totp_secret = ALLOC<byte>(network.totp_secret_len + 1);
 			memcpy(network.totp_secret, strTime, network.totp_secret_len);
 			network.totp_secret[network.totp_secret_len] = '\0';
@@ -2092,7 +2092,7 @@ namespace Net
 		reply[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
 		NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
 
-		FREE(b64);
+		FREE<byte>(b64);
 
 		// from now we use the Cryption, synced with Server
 		{

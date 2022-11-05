@@ -229,8 +229,8 @@ NET_THREAD(threadpool_manager)
 				}
 			}
 
-			FREE(pool->vPeers);
-			FREE(data);
+			FREE<Net::PeerPool::peerInfo_t>(pool->vPeers);
+			FREE<threadpool_manager_data_t>(data);
 			return NULL;
 		}
 
@@ -249,7 +249,7 @@ NET_THREAD(threadpool_manager)
 		}
 	}
 
-	FREE(data);
+	FREE<threadpool_manager_data_t>(data);
 	return NULL;
 }
 
@@ -261,7 +261,7 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 	pool->vPeers = ALLOC<Net::PeerPool::peerInfo_t*>(get_max_peers());
 	if (!pool->vPeers)
 	{
-		FREE(pool);
+		FREE<Net::PeerPool::peer_threadpool_t>(pool);
 		return;
 	}
 

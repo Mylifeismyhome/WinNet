@@ -74,7 +74,7 @@ namespace Net
 				res[rc++] = '=';
 			}
 
-			if (!preventDelete) FREE(data);
+			if (!preventDelete) FREE<byte>(data);
 
 			res[rc] = 0;
 			return res;
@@ -135,7 +135,7 @@ namespace Net
 				bin[cb++] = (A << 2) | (B >> 4);
 			}
 
-			if (!preventDelete) FREE(ascii);
+			if (!preventDelete) FREE<byte>(ascii);
 
 			bin[cb] = 0;
 			return bin;

@@ -107,7 +107,7 @@ namespace Net
 	{
 		NET_EXPORT_FUNCTION void GetRandString(char*& out, const size_t len)
 		{
-			FREE(out);
+			FREE<byte>(out);
 			out = ALLOC< char >(len + 1);
 
 			for (size_t i = 0; i < len; i++)
@@ -118,7 +118,7 @@ namespace Net
 
 		NET_EXPORT_FUNCTION void GetRandStringNew(BYTE*& out, const size_t len)
 		{
-			FREE(out);
+			FREE<byte>(out);
 			out = ALLOC< BYTE >(len + 1);
 
 			for (size_t i = 0; i < len; i++)

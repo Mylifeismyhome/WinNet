@@ -91,7 +91,7 @@ namespace Net
 			if (encrypt(data, size))
 			{
 				NET_BASE64::encode(data, out, size);
-				FREE(data);
+				FREE<byte>(data);
 				return true;
 			}
 
@@ -154,7 +154,7 @@ namespace Net
 			NET_BASE64::decode(data, out, size);
 			if (decrypt(out, size))
 			{
-				FREE(data);
+				FREE<byte>(data);
 				return true;
 			}
 
