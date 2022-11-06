@@ -305,72 +305,26 @@ TEST(JSON,
 	NET_LOG(doc.Serialize(Net::Json::SerializeType::FORMATTED));
 );
 
-static Net::String m_test()
-{
-	Net::String str("test");
-	return str;
-}
-
-static Net::Json::Object m_obect()
-{
-	Net::Json::Object m;
-	m["test"] = "akm";
-	return m;
-}
-
-static Net::Json::Object m_obj2(Net::Json::Object m)
-{
-	m["DICK"] = 1;
-	return m;
-}
-
 int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	std::cout << "start" << std::endl;
-	{
-		auto m = m_obect();
-		auto m2 = m_obj2(m);
-
-		/*Net::String str("test");
-		{
-			Net::String m_s("hasse");
-			str += ' ';
-			str += m_s;
-		}
-		str = m_test();*/
-	/*	Net::Json::Document m_Doc2;
-		m_Doc2["KILL"] = 1337;
-
-		Net::Json::Document m_Doc;
-		m_Doc["test"] = "ABC";
-		m_Doc["class"] = m_Doc2;
-		
-
-		std::cout << m_Doc.Serialize() << std::endl;*/
-
-		//std::cout << m.Serialize() << std::endl;
-		//std::cout << m2.Serialize() << std::endl;
-	}
-	std::cout << "end" << std::endl;
-
-	//RUN(Basic);
-	//RUN(Hex);
-	//RUN(Base32);
-	//RUN(Base64);
-	//RUN(MD5);
-	//RUN(SHA1);
-	//RUN(TOTP);
-	//RUN(AES);
-	//RUN(rsa);
-	//RUN(Directory);
-	//RUN(HTTP);
-	//RUN(HTTPS);
-	//RUN(TIMER);
-	////RUN(DATABASE);
-	//RUN(JSON);
-	//RUN(NTP);
+	RUN(Basic);
+	RUN(Hex);
+	RUN(Base32);
+	RUN(Base64);
+	RUN(MD5);
+	RUN(SHA1);
+	RUN(TOTP);
+	RUN(AES);
+	RUN(rsa);
+	RUN(Directory);
+	RUN(HTTP);
+	RUN(HTTPS);
+	RUN(TIMER);
+	//RUN(DATABASE);
+	RUN(JSON);
+	RUN(NTP);
 
 	NET_UNLOAD;
 
