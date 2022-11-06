@@ -129,7 +129,7 @@ namespace Net
 			{
 				if (_pointer == nullptr) return;
 				_pointer = this->decode(_pointer);
-				FREE(_pointer);
+				FREE<T>(_pointer);
 				_pointer = nullptr;
 				this->_key = 0;
 			}

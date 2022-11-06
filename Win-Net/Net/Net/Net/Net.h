@@ -181,7 +181,7 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 #endif
 
 			/*
-			* call the constructor explicity
+			* call constructor using placement new
 			*/
 			new (pointer) T(args...);
 
@@ -195,27 +195,6 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 		// failure on allocating
 		return nullptr;
 	}
-}
-
-__forceinline void NET_FREE_MEM(void* pointer)
-{
-	if (!pointer)
-		return;
-
-#ifdef NET_TEST_MEMORY_LEAKS
-	//printf("Deallocated: %p\n", pointer);
-	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
-	{
-		if (*it == pointer)
-		{
-			NET_TEST_MEMORY_LEAKS_POINTER_LIST.erase(it);
-			break;
-		}
-	}
-#endif
-
-	free(pointer);
-	pointer = nullptr;
 }
 
 template <typename T>
@@ -239,7 +218,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 	/*
 	* call destructor
 	*/
-	pointer->~T();
+	((T*)pointer)->~T();
 
 	free(pointer);
 	pointer = nullptr;

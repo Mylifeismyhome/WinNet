@@ -55,7 +55,7 @@ namespace Net
 			}
 			deflateEnd(&zInfo);
 
-			if (!skip_free) FREE(data);
+			if (!skip_free) FREE<byte>(data);
 
 			return(nRet);
 		}
@@ -93,8 +93,8 @@ namespace Net
 			size = stream.total_out;
 			inflateEnd(&stream);
 
-			FREE(out);
-			if (!skip_free) FREE(data);
+			FREE<byte>(out);
+			if (!skip_free) FREE<byte>(data);
 			data = ALLOC<BYTE>(size + 1);
 			size_t curPart = NULL;
 			size_t it = NULL;
@@ -142,8 +142,8 @@ namespace Net
 			size = stream.total_out;
 			inflateEnd(&stream);
 
-			FREE(out);
-			if (!skip_free) FREE(data);
+			FREE<byte>(out);
+			if (!skip_free) FREE<byte>(data);
 			out = ALLOC<BYTE>(size + 1);
 			size_t curPart = NULL;
 			size_t it = NULL;

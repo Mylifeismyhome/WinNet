@@ -13,172 +13,6 @@ namespace Net
 	{
 		class Document;
 
-		template <typename T>
-		class Vector
-		{
-		public:
-			Vector() : current_size(0), capacity(0), container(nullptr), stack(nullptr)
-			{
-			}
-
-			Vector(const Vector<T>& m_vector) : current_size(0), capacity(0), container(nullptr)
-			{
-				this->current_size = m_vector.current_size;
-				this->capacity = m_vector.capacity;
-		
-				T* copy_container = ALLOC<T>(this->capacity);
-				if (!copy_container) return;
-				memcpy((void*)copy_container, m_vector.container, sizeof(T) * this->capacity);
-				this->container = copy_container;
-
-				this->stack = m_vector.stack;
-			}
-
-			T* get()
-			{
-				return container;
-			}
-
-			T& operator[](const size_t i) const
-			{
-				return container[i];
-			}
-
-			void
-				push_back(
-					const T& value
-				)
-			{
-				if (current_size >= capacity)
-				{
-					if (!capacity)
-						capacity = 1;
-					else
-						capacity = capacity * 2;
-
-					T* new_container = ALLOC<T>(capacity);
-					if (!new_container) return;
-					memset((void*)new_container, 0, sizeof(T) * capacity);
-
-					if (current_size >= 1)
-						memcpy((void*)new_container, container, current_size * sizeof(T));
-
-					if (container != nullptr)
-						free((void*)container);
-
-					container = new_container;
-
-					container[current_size] = value;
-					current_size++;
-				}
-				else
-				{
-					container[current_size] = value;
-					current_size++;
-				}
-			}
-
-			void
-				erase(
-					const size_t erase_index
-				)
-			{
-				if (erase_index >= 0 &&
-					erase_index < current_size)
-				{
-					for (auto i = (erase_index + 1); i < current_size; i++)
-						container[i - 1] = container[i];
-
-					current_size--;
-
-					if (current_size < (capacity / 2))
-					{
-						auto new_container = ALLOC<T>(capacity / 2);
-						memset(new_container, 0, sizeof(T) * (capacity / 2));
-
-						if (current_size >= 1)
-							memcpy(new_container, container, current_size * sizeof(T));
-
-						if (container != nullptr)
-							free(container);
-
-						container = new_container;
-						capacity /= 2;
-					}
-				}
-			}
-
-			void
-				insert(
-					const T& value,
-					const size_t index
-				)
-			{
-				if (index >= 0 &&
-					index <= current_size)
-				{
-					if (current_size >= capacity)
-					{
-						if (capacity == 0)
-							capacity = 1;
-						else
-							capacity *= 2;
-
-						auto new_container = ALLOC<T>(capacity);
-						memset(new_container, 0, sizeof(T) * capacity);
-
-						if (current_size >= 1)
-						{
-							memcpy(new_container, container, index * sizeof(T));
-							new_container[index] = value;
-							memcpy(&new_container[index + 1], &container[index], (current_size - index) * sizeof(T));
-						}
-						else
-							new_container[0] = value;
-
-						current_size++;
-					}
-					else
-					{
-						current_size++;
-						for (auto i = (current_size - 1); i < index; i++)
-							container[i] = container[i - 1];
-
-						container[index] = value;
-					}
-				}
-				else if (index >= 0 &&
-					index == current_size)
-					this->push_back(value);
-			}
-
-			[[nodiscard]]
-			int
-				size() const
-			{
-				return static_cast<int>(current_size);
-			}
-
-			void clear()
-			{
-				if (capacity > 0)
-				{
-					if (container)
-						free(container);
-				}
-
-				current_size = 0;
-				capacity = 0;
-				container = nullptr;
-			}
-
-		private:
-			size_t current_size;
-			size_t capacity;
-			T* container;
-			void* stack;
-		};
-
 		class Convert
 		{
 		public:
@@ -220,36 +54,42 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			Vector<void*> value;
-			bool bSharedMemory;
+			std::vector<void*> value;
+			bool m_bSharedMemory;
 
 		protected:
 			void __push(void* ptr);
 
 		public:
-			BasicObject(bool bSharedMemory = false);
+			BasicObject();
 			~BasicObject();
 
-			Vector<void*> Value();
-			void Set(Vector<void*> value);
+			std::vector<void*> Value();
+			void Set(std::vector<void*> value);
+			void SetSharedMemory(bool m_bSharedMemory);
+			bool IsSharedMemory() const;
+			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
 		class BasicArray
 		{
 		protected:
 			Type m_type;
-			Vector<void*> value;
-			bool bSharedMemory;
+			std::vector<void*> value;
+			bool m_bSharedMemory;
 
 		protected:
 			void __push(void* ptr);
 
 		public:
-			BasicArray(bool bSharedMemory = false);
+			BasicArray();
 			~BasicArray();
 
-			Vector<void*> Value();
-			void Set(Vector<void*> value);
+			std::vector<void*> Value();
+			void Set(std::vector<void*> value);
+			void SetSharedMemory(bool m_bSharedMemory);
+			bool IsSharedMemory() const;
+			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
 		class Object;
@@ -270,7 +110,7 @@ namespace Net
 			void operator=(const int& value);
 			void operator=(const float& value);
 			void operator=(const double& value);
-			void operator=(const BasicObject& value);
+			void operator=(BasicObject& value);
 
 			void SetKey(const char* key);
 			void SetKey(Net::ViewString& key);
@@ -309,16 +149,19 @@ namespace Net
 
 		class BasicValueRead
 		{
-			void* ptr;
+			void* m_pValue;
+			void* m_pParent;
+			size_t m_iValueIndex;
+			Type m_ParentType;
 
 		public:
-			BasicValueRead(void* ptr);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType);
 			BasicValue<Object>* operator->() const;
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
-			BasicValueRead operator[](int idx);
+			BasicValueRead operator[](size_t idx);
 
 			operator bool();
 
@@ -348,6 +191,17 @@ namespace Net
 			bool m_reserved;
 		};
 
+		template<typename T>
+		struct TObjectGet
+		{
+			BasicValue<T>* m_pValue;
+			size_t m_iIndex;
+			Type m_Type;
+
+			TObjectGet();
+			TObjectGet(BasicValue<T>* m_pValue, size_t m_iIndex, Type m_Type);
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -355,16 +209,17 @@ namespace Net
 			bool __append(const char* key, T value, Type type);
 
 			template <typename T>
-			BasicValue<T>* __get(const char* key);
+			TObjectGet<T> __get(const char* key);
 
 			template <typename T>
-			BasicValue<T>* __get(Net::ViewString& key);
+			TObjectGet<T> __get(Net::ViewString& key);
 
-			bool DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString = false);
-			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
+			bool DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString = false);
+			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
 
 		public:
-			Object(bool bSharedMemory = false);
+			Object();
+			Object(Object& m_Object);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
@@ -374,6 +229,8 @@ namespace Net
 
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
+
+			void operator=(const Object& m_Object);
 
 			bool Append(const char* key, int value);
 			bool Append(const char* key, float value);
@@ -396,8 +253,8 @@ namespace Net
 			void Destroy();
 
 		private:
-			bool Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString);
-			bool Deserialize(Net::ViewString& vs, Vector<Net::ViewString*>& object_chain, bool m_prepareString);
+			bool Deserialize(Net::String& json, std::vector<char*>& object_chain, bool m_prepareString);
+			bool Deserialize(Net::ViewString& vs, std::vector<Net::ViewString*>& object_chain, bool m_prepareString);
 		};
 
 		class Array : public BasicArray
@@ -409,11 +266,14 @@ namespace Net
 			bool DeserializeAny(Net::ViewString&, bool m_prepareString = false);
 
 		public:
-			Array(bool bSharedMemory = false);
+			Array();
+			Array(Array& m_Array);
 			~Array();
 
-			BasicValueRead operator[](int idx);
-			BasicValueRead at(int idx);
+			BasicValueRead operator[](size_t idx);
+			BasicValueRead at(size_t idx);
+
+			void operator=(const Array& m_Array);
 
 			bool push(int value);
 			bool push(float value);
@@ -457,18 +317,20 @@ namespace Net
 			~Document();
 
 			Document& operator=(const Document& m_doc) NOEXCEPT;
+			void operator=(Object& m_Object);
+			void operator=(Array& m_Array);
 
 			Type GetType();
-			Object GetRootObject();
-			Array GetRootArray();
+			Object* GetRootObject();
+			Array* GetRootArray();
 
 			void SetFreeRootObject(bool);
 			void SetFreeRootArray(bool);
 
 			BasicValueRead operator[](const char* key);
-			BasicValueRead operator[](int idx);
+			BasicValueRead operator[](size_t idx);
 			BasicValueRead At(const char* key);
-			BasicValueRead At(int idx);
+			BasicValueRead At(size_t idx);
 
 			void Set(Object obj);
 			void Set(Object* obj);
@@ -482,5 +344,21 @@ namespace Net
 			bool Parse(Net::String json);
 			bool Parse(Net::ViewString& json);
 		};
-	}
+
+		template<typename T>
+		inline TObjectGet<T>::TObjectGet()
+		{
+			this->m_pValue = nullptr;
+			this->m_iIndex = INVALID_SIZE;
+			this->m_Type = Type::NULLVALUE;
+		}
+
+		template<typename T>
+		inline TObjectGet<T>::TObjectGet(BasicValue<T>* m_pValue, size_t m_iIndex, Type m_Type)
+		{
+			this->m_pValue = m_pValue;
+			this->m_iIndex = m_iIndex;
+			this->m_Type = m_Type;
+		}
+}
 }

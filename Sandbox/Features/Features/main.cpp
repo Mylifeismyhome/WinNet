@@ -17,6 +17,7 @@
 // cryption
 #include <Net/Cryption/AES.h>
 #include <Net/Cryption/RSA.h>
+#include <Net/Cryption/PointerCryption.h>
 
 // assets
 #include <Net/assets/manager/dirmanager.h>
@@ -57,7 +58,7 @@ TEST(Hex,
 
 		NET_LOG(CSTRING("Hex Decoded: %s"), data);
 
-		FREE(data);
+		FREE<byte>(data);
 );
 
 TEST(Base32,
@@ -79,7 +80,7 @@ TEST(Base32,
 
 		NET_LOG(CSTRING("Base32 Decoded: %s"), data);
 
-        FREE(data);
+        FREE<byte>(data);
 );
 
 TEST(Base64,
@@ -101,7 +102,7 @@ TEST(Base64,
 
 		NET_LOG(CSTRING("Base64 Decoded: %s"), data);
 
-        FREE(data);
+        FREE<byte>(data);
 );
 
 TEST(MD5,
@@ -112,7 +113,7 @@ TEST(MD5,
 
 		NET_LOG(CSTRING("MD5: %s"), buffer);
 
-		FREE(buffer);
+		FREE<byte>(buffer);
 );
 
 TEST(SHA1,
@@ -129,7 +130,7 @@ TEST(SHA1,
 
 		NET_LOG(CSTRING("SHA1: %s"), result);
 
-		FREE(result);
+		FREE<byte>(result);
 );
 
 TEST(TOTP,
@@ -158,7 +159,7 @@ TEST(AES,
 
 	NET_LOG(CSTRING("Decrypted: %s"), buffer);
 
-	FREE(buffer);
+	FREE<byte>(buffer);
 );
 
 TEST(rsa,
@@ -184,7 +185,7 @@ TEST(rsa,
 
 		const auto PublicKey = rsa.publicKey();
 		NET_LOG(CSTRING("PKEY: %s"), PublicKey.get());
-		FREE(buffer);
+		FREE<byte>(buffer);
 );
 
 TEST(Directory,
@@ -215,7 +216,7 @@ TEST(Directory,
 			if(fmanager.read(data, size))
 			{
 				NET_LOG_WARNING(CSTRING("%s"), data);
-				FREE(data);
+				FREE<byte>(data);
 			}
 			else
 			{

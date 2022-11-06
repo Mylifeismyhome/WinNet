@@ -207,7 +207,7 @@ MYSQL::~MYSQL()
 	}
 
 	msqldriver = nullptr;
-	FREE(lastError);
+	FREE<char>(lastError);
 }
 
 bool MYSQL::setup()
@@ -294,7 +294,7 @@ void MYSQL::unlock()
 
 void MYSQL::SetLastError(const char* in)
 {
-	FREE(lastError);
+	FREE<char>(lastError);
 
 	const auto size = strlen(in);
 	lastError = ALLOC<char>(size + 1);

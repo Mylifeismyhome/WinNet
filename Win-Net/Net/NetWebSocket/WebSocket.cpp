@@ -9,7 +9,7 @@ Net::WebSocket::IPRef::IPRef(const char* pointer)
 
 Net::WebSocket::IPRef::~IPRef()
 {
-	FREE(pointer);
+	FREE<char>(pointer);
 }
 
 const char* Net::WebSocket::IPRef::get() const
@@ -29,12 +29,12 @@ Net::WebSocket::Server::Server()
 Net::WebSocket::Server::~Server()
 {
 	for (auto& entry : socketoption)
-		FREE(entry);
+		FREE<SocketOptionInterface_t>(entry);
 
 	socketoption.clear();
 
 	for (auto& entry : option)
-		FREE(entry);
+		FREE<OptionInterface_t>(entry);
 
 	option.clear();
 }
@@ -916,7 +916,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				FREE(peer);
+				FREE<Net::WebSocket::Server::peerInfo>(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::would_block)
@@ -935,7 +935,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				FREE(peer);
+				FREE<Net::WebSocket::Server::peerInfo>(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::error)
@@ -945,7 +945,7 @@ NET_THREAD(Receive)
 				// erase him
 				server->ErasePeer(peer, true);
 
-				FREE(peer);
+				FREE<Net::WebSocket::Server::peerInfo>(peer);
 				return 0;
 			}
 			if (res == WebServerHandshake::success)
@@ -980,7 +980,7 @@ NET_THREAD(Receive)
 	// erase him
 	server->ErasePeer(peer, true);
 
-	FREE(peer);
+	FREE<Net::WebSocket::Server::peerInfo>(peer);
 	return 0;
 }
 
@@ -1058,7 +1058,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data
 
 	EncodeFrame(newBuffer, size + 1, peer, opc);
 
-	FREE(newBuffer);
+	FREE<byte>(newBuffer);
 }
 
 void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_length, NET_PEER peer, const unsigned char opc)

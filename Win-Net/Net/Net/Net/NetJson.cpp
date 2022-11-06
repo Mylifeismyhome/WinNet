@@ -540,18 +540,18 @@ bool Net::Json::Convert::is_boolean(Net::ViewString& vs)
 	return false;
 }
 
-Net::Json::BasicObject::BasicObject(bool bSharedMemory)
+Net::Json::BasicObject::BasicObject()
 {
 	this->m_type = Type::OBJECT;
 	this->value = {};
-	this->bSharedMemory = bSharedMemory;
+	this->m_bSharedMemory = false;
 }
 
 Net::Json::BasicObject::~BasicObject()
 {
 	this->m_type = Type::OBJECT;
 	this->value = {};
-	this->bSharedMemory = bSharedMemory;
+	this->m_bSharedMemory = false;
 }
 
 void Net::Json::BasicObject::__push(void* ptr)
@@ -559,28 +559,43 @@ void Net::Json::BasicObject::__push(void* ptr)
 	value.push_back(ptr);
 }
 
-Net::Json::Vector<void*> Net::Json::BasicObject::Value()
+std::vector<void*> Net::Json::BasicObject::Value()
 {
 	return this->value;
 }
 
-void Net::Json::BasicObject::Set(Vector<void*> value)
+void Net::Json::BasicObject::Set(std::vector<void*> value)
 {
 	this->value = value;
 }
 
-Net::Json::BasicArray::BasicArray(bool bSharedMemory)
+void Net::Json::BasicObject::SetSharedMemory(bool m_bSharedMemory)
+{
+	this->m_bSharedMemory = m_bSharedMemory;
+}
+
+bool Net::Json::BasicObject::IsSharedMemory() const
+{
+	return this->m_bSharedMemory;
+}
+
+void Net::Json::BasicObject::OnIndexChanged(size_t m_idx, void* m_pNew)
+{
+	this->value[m_idx] = m_pNew;
+}
+
+Net::Json::BasicArray::BasicArray()
 {
 	this->m_type = Type::ARRAY;
 	this->value = {};
-	this->bSharedMemory = bSharedMemory;
+	this->m_bSharedMemory = false;
 }
 
 Net::Json::BasicArray::~BasicArray()
 {
 	this->m_type = Type::ARRAY;
 	this->value = {};
-	this->bSharedMemory = false;
+	this->m_bSharedMemory = false;
 }
 
 void Net::Json::BasicArray::__push(void* ptr)
@@ -588,14 +603,29 @@ void Net::Json::BasicArray::__push(void* ptr)
 	value.push_back(ptr);
 }
 
-Net::Json::Vector<void*> Net::Json::BasicArray::Value()
+std::vector<void*> Net::Json::BasicArray::Value()
 {
 	return this->value;
 }
 
-void Net::Json::BasicArray::Set(Vector<void*> value)
+void Net::Json::BasicArray::Set(std::vector<void*> value)
 {
 	this->value = value;
+}
+
+void Net::Json::BasicArray::SetSharedMemory(bool m_bSharedMemory)
+{
+	this->m_bSharedMemory = m_bSharedMemory;
+}
+
+bool Net::Json::BasicArray::IsSharedMemory() const
+{
+	return this->m_bSharedMemory;
+}
+
+void Net::Json::BasicArray::OnIndexChanged(size_t m_idx, void* m_pNew)
+{
+	this->value[m_idx] = m_pNew;
 }
 
 template <typename T>
@@ -616,20 +646,18 @@ Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type t
 template <typename T>
 Net::Json::BasicValue<T>::~BasicValue()
 {
-	/* free string from heap */
-	if (this->m_type == Type::STRING)
+	/*
+	* string's are allocated into its own mem space before storing
+	* free it aswell
+	*/
+	if(this->m_type ==  Type::STRING)
 	{
-		auto cast = (BasicValue<char*>*)this;
-		if (cast
-			&& cast->GetType() == Type::STRING
-			&& cast->Value())
-		{
-			FREE(cast->Value());
-		}
+		auto m_pCast = (BasicValue<char*>*)this;
+		FREE<char>(m_pCast->Value());
 	}
 
 	this->value = {};
-	FREE(this->key);
+	FREE<char>(this->key);
 	this->m_type = Type::NULLVALUE;
 }
 
@@ -652,8 +680,13 @@ void Net::Json::BasicValue<T>::operator=(const double& value)
 }
 
 template <typename T>
-void Net::Json::BasicValue<T>::operator=(const BasicObject& value)
+void Net::Json::BasicValue<T>::operator=(BasicObject& value)
 {
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
 	((BasicValue<BasicObject>*)this)->SetValue(value, Type::OBJECT);
 }
 
@@ -820,46 +853,49 @@ Net::Json::NullValue::NullValue(int i)
 	this->SetType(Type::NULLVALUE);
 }
 
-Net::Json::BasicValueRead::BasicValueRead(void* ptr)
+Net::Json::BasicValueRead::BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType)
 {
-	this->ptr = ptr;
+	this->m_pValue = m_pValue;
+	this->m_pParent = m_pParent;
+	this->m_iValueIndex = m_iValueIndex;
+	this->m_ParentType = m_ParentType;
 }
 
 Net::Json::BasicValue<Net::Json::Object>* Net::Json::BasicValueRead::operator->() const
 {
-	return (BasicValue<Object>*)this->ptr;
+	return (BasicValue<Object>*)this->m_pValue;
 }
 
-static Net::Json::BasicValueRead object_to_BasicValueRead(void* ptr, const char* key)
+static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, const char* key)
 {
-	if (!ptr) return { nullptr };
-	auto cast = (Net::Json::BasicValueRead*)ptr;
-	if (!cast) return { nullptr };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	auto cast = (Net::Json::BasicValueRead*)m_pValue;
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Object>*)cast->operator->();
-	if (!cast2) return { nullptr };
-	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return cast2->Value()[key];
 }
 
-static Net::Json::BasicValueRead object_to_BasicValueRead(void* ptr, Net::ViewString& key)
+static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, Net::ViewString& key)
 {
-	if (!ptr) return { nullptr };
-	auto cast = (Net::Json::BasicValueRead*)ptr;
-	if (!cast) return { nullptr };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	auto cast = (Net::Json::BasicValueRead*)m_pValue;
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Object>*)cast->operator->();
-	if (!cast2) return { nullptr };
-	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return cast2->Value()[key];
 }
 
-static Net::Json::BasicValueRead object_to_BasicValueRead(void* ptr, int idx)
+static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, size_t idx)
 {
-	if (!ptr) return { nullptr };
-	auto cast = (Net::Json::BasicValueRead*)ptr;
-	if (!cast) return { nullptr };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	auto cast = (Net::Json::BasicValueRead*)m_pValue;
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Array>*)cast->operator->();
-	if (!cast2) return { nullptr };
-	if (cast2->GetType() != Net::Json::Type::ARRAY) return { nullptr };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (cast2->GetType() != Net::Json::Type::ARRAY) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return cast2->Value()[idx];
 }
 
@@ -878,16 +914,16 @@ Net::Json::BasicValueRead Net::Json::BasicValueRead::operator[](char* key)
 	return object_to_BasicValueRead(this, key);
 }
 
-Net::Json::BasicValueRead Net::Json::BasicValueRead::operator[](int idx)
+Net::Json::BasicValueRead Net::Json::BasicValueRead::operator[](size_t idx)
 {
 	return object_to_BasicValueRead(this, idx);
 }
 
 Net::Json::BasicValueRead::operator bool()
 {
-	if (!this->ptr) return false;
+	if (!this->m_pValue) return false;
 
-	auto cast = (Net::Json::BasicValueRead*)ptr;
+	auto cast = (Net::Json::BasicValueRead*)m_pValue;
 	if (!cast) return false;
 
 	return true;
@@ -895,80 +931,327 @@ Net::Json::BasicValueRead::operator bool()
 
 void Net::Json::BasicValueRead::operator=(const NullValue& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<NullValue>*)this->ptr)->SetValue(value, Type::NULLVALUE);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<NullValue>*)this->m_pValue);
+
+	if (cast->GetType() != Type::NULLVALUE)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<NullValue>* m_pNew = ALLOC<BasicValue<NullValue>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::NULLVALUE);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<NullValue>* m_pNew = ALLOC<BasicValue<NullValue>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::NULLVALUE);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::NULLVALUE);
 }
 
 void Net::Json::BasicValueRead::operator=(const int& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<int>*)this->ptr)->SetValue(value, Type::INTEGER);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<int>*)this->m_pValue);
+
+	if (cast->GetType() != Type::INTEGER)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<int>* m_pNew = ALLOC<BasicValue<int>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::INTEGER);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<int>* m_pNew = ALLOC<BasicValue<int>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::INTEGER);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::INTEGER);
 }
 
 void Net::Json::BasicValueRead::operator=(const float& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<float>*)this->ptr)->SetValue(value, Type::FLOAT);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<float>*)this->m_pValue);
+
+	if (cast->GetType() != Type::FLOAT)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<float>* m_pNew = ALLOC<BasicValue<float>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::FLOAT);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<float>* m_pNew = ALLOC<BasicValue<float>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::FLOAT);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::FLOAT);
 }
 
 void Net::Json::BasicValueRead::operator=(const double& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<double>*)this->ptr)->SetValue(value, Type::DOUBLE);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<double>*)this->m_pValue);
+
+	if (cast->GetType() != Type::DOUBLE)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<double>* m_pNew = ALLOC<BasicValue<double>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::DOUBLE);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<double>* m_pNew = ALLOC<BasicValue<double>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::DOUBLE);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::DOUBLE);
 }
 
 void Net::Json::BasicValueRead::operator=(const bool& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<bool>*)this->ptr)->SetValue(value, Type::BOOLEAN);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<bool>*)this->m_pValue);
+
+	if (cast->GetType() != Type::BOOLEAN)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<bool>* m_pNew = ALLOC<BasicValue<bool>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::BOOLEAN);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<bool>* m_pNew = ALLOC<BasicValue<bool>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::BOOLEAN);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::BOOLEAN);
 }
 
 void Net::Json::BasicValueRead::operator=(const char* value)
 {
-	if (!this->ptr) return;
+	if (!this->m_pValue) return;
 
 	size_t len = strlen(value);
 	char* ptr = ALLOC<char>(len + 1);
 	memcpy(ptr, value, len);
 	ptr[len] = 0;
 
-	auto cast = ((BasicValue<char*>*)this->ptr);
-	if (cast->GetType() == Type::STRING
-		&& cast->Value())
+	auto cast = ((BasicValue<char*>*)this->m_pValue);
+	if (cast->GetType() == Type::STRING)
 	{
-		FREE(cast->Value());
+		FREE<char>(cast->Value());
 	}
+	else
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<char*>* m_pNew = ALLOC<BasicValue<char*>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(ptr, Type::STRING);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if(this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<char*>* m_pNew = ALLOC<BasicValue<char*>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(ptr, Type::STRING);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
 	cast->SetValue(ptr, Type::STRING);
 }
 
 void Net::Json::BasicValueRead::operator=(BasicObject& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<BasicObject>*)this->ptr)->SetValue(value, Type::OBJECT);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
+
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
+
+	if (cast->GetType() != Type::OBJECT)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (BasicObject*)this->m_pParent;
+			BasicValue<BasicObject>* m_pNew = ALLOC<BasicValue<BasicObject>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::OBJECT);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<BasicObject>* m_pNew = ALLOC<BasicValue<BasicObject>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::OBJECT);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::OBJECT);
 }
 
 void Net::Json::BasicValueRead::operator=(BasicArray& value)
 {
-	if (!this->ptr) return;
-	((BasicValue<BasicArray>*)this->ptr)->SetValue(value, Type::ARRAY);
+	if (!this->m_pValue) return;
+	auto cast = ((BasicValue<BasicArray>*)this->m_pValue);
+
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
+
+	if (cast->GetType() != Type::ARRAY)
+	{
+		if (this->m_ParentType == Type::OBJECT)
+		{
+			auto m_pObject = (BasicArray*)this->m_pParent;
+			BasicValue<BasicArray>* m_pNew = ALLOC<BasicValue<BasicArray>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::ARRAY);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		else if (this->m_ParentType == Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<BasicArray>* m_pNew = ALLOC<BasicValue<BasicArray>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(value, Type::ARRAY);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+	}
+
+	cast->SetValue(value, Type::ARRAY);
 }
 
 void Net::Json::BasicValueRead::operator=(Document& value)
 {
-	if (!this->ptr) return;
+	if (!this->m_pValue) return;
 
 	// copy the document
 	switch (value.GetType())
 	{
 	case Net::Json::Type::OBJECT:
-		((BasicValue<BasicObject>*)this->ptr)->SetValue(value.GetRootObject(), Type::OBJECT);
+	{
 		value.SetFreeRootObject(false);
+		value.GetRootObject()->SetSharedMemory(true);
+
+		auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
+		if (cast->GetType() != Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<BasicObject>* m_pNew = ALLOC<BasicValue<BasicObject>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(*value.GetRootObject(), Type::OBJECT);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		cast->SetValue(*value.GetRootObject(), Type::OBJECT);
 		break;
+	}
 
 	case Net::Json::Type::ARRAY:
-		((BasicValue<BasicArray>*)this->ptr)->SetValue(value.GetRootArray(), Type::ARRAY);
+	{
 		value.SetFreeRootArray(false);
+		value.GetRootArray()->SetSharedMemory(true);
+
+		auto cast = ((BasicValue<BasicArray>*)this->m_pValue);
+		if (cast->GetType() != Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<BasicArray>* m_pNew = ALLOC<BasicValue<BasicArray>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(*value.GetRootArray(), Type::ARRAY);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+		cast->SetValue(*value.GetRootArray(), Type::ARRAY);
 		break;
+	}
 
 	default:
 		NET_LOG_ERROR(CSTRING("[Json] - Unable to copy document => invalid type"));
@@ -976,18 +1259,102 @@ void Net::Json::BasicValueRead::operator=(Document& value)
 	}
 }
 
-Net::Json::Object::Object(bool bSharedMemory)
-	: Net::Json::BasicObject::BasicObject(bSharedMemory)
+Net::Json::Object::Object()
+	: Net::Json::BasicObject::BasicObject()
 {
+}
+Net::Json::Object::Object(Object& m_Object)
+{
+	this->m_type = m_Object.m_type;
+	this->value = m_Object.value;
+	this->m_bSharedMemory = m_Object.m_bSharedMemory;
+
+	/*
+	* object moved
+	*/
+	m_Object.SetSharedMemory(true);
 }
 
 Net::Json::Object::~Object()
 {
-	if (!bSharedMemory) this->Destroy();
+	if (!this->IsSharedMemory())
+	{
+		this->Destroy();
+	}
 }
 
 void Net::Json::Object::Destroy()
 {
+	/*
+	* iterate through the values
+	* then manually free it to call its destructor
+	*/
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		switch (tmp->GetType())
+		{
+		case Type::NULLVALUE:
+			FREE<Net::Json::NullValue>(value[i]);
+			break;
+
+		case Type::OBJECT:
+			/*
+			* object is sharing its memory
+			*/
+			if (tmp->as_object()->IsSharedMemory())
+			{
+				/*
+				* its sharing its memory with our object
+				* manually destroy it
+				*/
+				tmp->as_object()->Destroy();
+			}
+
+			FREE<Net::Json::BasicValue<Net::Json::Object>>(value[i]);
+			break;
+
+		case Type::ARRAY:
+			/*
+			* array is sharing its memory
+			*/
+			if (tmp->as_array()->IsSharedMemory())
+			{
+				/*
+				* its sharing its memory with our object
+				* manually destroy it
+				*/
+				tmp->as_array()->Destroy();
+			}
+
+			FREE<Net::Json::BasicValue<Net::Json::Array>>(value[i]);
+			break;
+
+		case Type::STRING:
+			FREE<Net::Json::BasicValue<char>>(value[i]);
+			break;
+
+		case Type::INTEGER:
+			FREE<Net::Json::BasicValue<int>>(value[i]);
+			break;
+
+		case Type::FLOAT:
+			FREE<Net::Json::BasicValue<float>>(value[i]);
+			break;
+
+		case Type::DOUBLE:
+			FREE<Net::Json::BasicValue<double>>(value[i]);
+			break;
+
+		case Type::BOOLEAN:
+			FREE<Net::Json::BasicValue<bool>>(value[i]);
+			break;
+
+		default:
+			break;
+		}
+	}
+
 	this->value.clear();
 }
 
@@ -1003,7 +1370,7 @@ bool Net::Json::Object::__append(const char* key, T value, Type type)
 }
 
 template <typename T>
-Net::Json::BasicValue<T>* Net::Json::Object::__get(const char* key)
+Net::Json::TObjectGet<T> Net::Json::Object::__get(const char* key)
 {
 	for (size_t i = 0; i < value.size(); ++i)
 	{
@@ -1026,14 +1393,14 @@ Net::Json::BasicValue<T>* Net::Json::Object::__get(const char* key)
 		}
 
 		if (m_notMatch) continue;
-		return (BasicValue<T>*)value[i];
+		return { (BasicValue<T>*)value[i], i, tmp->GetType()};
 	}
 
-	return nullptr;
+	return {};
 }
 
 template <typename T>
-Net::Json::BasicValue<T>* Net::Json::Object::__get(Net::ViewString& key)
+Net::Json::TObjectGet<T> Net::Json::Object::__get(Net::ViewString& key)
 {
 	for (size_t i = 0; i < value.size(); ++i)
 	{
@@ -1055,10 +1422,10 @@ Net::Json::BasicValue<T>* Net::Json::Object::__get(Net::ViewString& key)
 		}
 
 		if (m_notMatch) continue;
-		return (BasicValue<T>*)value[i];
+		return { (BasicValue<T>*)value[i], i, tmp->GetType()};
 	}
 
-	return nullptr;
+	return {};
 }
 
 Net::Json::BasicValueRead Net::Json::Object::operator[](const char* key)
@@ -1073,34 +1440,34 @@ Net::Json::BasicValueRead Net::Json::Object::operator[](Net::ViewString& key)
 
 Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 {
-	auto ptr = this->__get<Object>(key);
-	if (!ptr)
+	auto m_pEntry = this->__get<Object>(key);
+	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
-		return { heap };
+		return { heap, this, this->value.size() - 1, Net::Json::Type::OBJECT };
 	}
 
-	return { ptr };
+	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type };
 }
 
 Net::Json::BasicValueRead Net::Json::Object::At(Net::ViewString& key)
 {
-	auto ptr = this->__get<Object>(key);
-	if (!ptr)
+	auto m_pEntry = this->__get<Object>(key);
+	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
-		return { heap };
+		return { heap, this, this->value.size() - 1, Net::Json::Type::OBJECT };
 	}
 
-	return { ptr };
+	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type };
 }
 
 template<typename T>
@@ -1108,6 +1475,18 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* value)
 {
 	this->__push(value);
 	return value;
+}
+
+void Net::Json::Object::operator=(const Object& m_Object)
+{
+	this->m_type = m_Object.m_type;
+	this->value = m_Object.value;
+	this->m_bSharedMemory = m_Object.m_bSharedMemory;
+
+	/*
+	* object moved
+	*/
+	const_cast<Net::Json::Object*>(&m_Object)->SetSharedMemory(true);
 }
 
 bool Net::Json::Object::Append(const char* key, int value)
@@ -1138,7 +1517,7 @@ bool Net::Json::Object::Append(const char* key, const char* value)
 	ptr[len] = 0;
 	if (!__append(key, ptr, Type::STRING))
 	{
-		FREE(ptr);
+		FREE<char>(ptr);
 		return false;
 	}
 
@@ -1271,13 +1650,13 @@ Net::String Net::Json::Object::Stringify(SerializeType type)
 /* wrapper */
 bool Net::Json::Object::Deserialize(Net::String& json, bool m_prepareString)
 {
-	Vector<char*> object_chain = {};
+	std::vector<char*> object_chain = {};
 	return this->Deserialize(json, object_chain, m_prepareString);
 }
 
 bool Net::Json::Object::Deserialize(Net::ViewString& vs, bool m_prepareString)
 {
-	Vector<Net::ViewString*> object_chain = {};
+	std::vector<Net::ViewString*> object_chain = {};
 	return this->Deserialize(vs, object_chain, m_prepareString);
 }
 
@@ -1306,7 +1685,7 @@ bool Net::Json::Object::Parse(Net::ViewString& json)
 * also, it will push it to the memory
 * it uses recursive calls to deserialize children from object's and array's
 */
-bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vector<char*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString)
 {
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
@@ -1317,7 +1696,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	auto pValue = valueRef.get();
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](object_chain[0]) };
@@ -1368,7 +1747,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 				if (!this->Deserialize(value, object_chain, m_prepareString))
 					return false;
 			}
-			object_chain.erase(object_chain.size() - 1);
+			object_chain.pop_back();
 
 			return true;
 		}
@@ -1401,7 +1780,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 		{
 			// array seem to be fine, now call it's deserializer
 			{
-				Net::Json::Array arr(true);
+				Net::Json::Array arr;
 				if (!arr.Deserialize(value, m_prepareString))
 				{
 					// @todo: add logging
@@ -1637,7 +2016,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, Vec
 	return false;
 }
 
-bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, Vector<Net::ViewString*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString)
 {
 	if (!key.valid() || !value.valid())
 	{
@@ -1652,7 +2031,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](*object_chain[0]) };
@@ -1694,17 +2073,17 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[key] = (BasicObject)Net::Json::Object(true);
+					obj[key] = (BasicObject)Net::Json::Object();
 				}
 				else
 				{
-					this->operator[](key) = (BasicObject)Net::Json::Object(true);
+					this->operator[](key) = (BasicObject)Net::Json::Object();
 				}
 
 				if (!this->Deserialize(value, object_chain, m_prepareString))
 					return false;
 			}
-			object_chain.erase(object_chain.size() - 1);
+			object_chain.pop_back();
 
 			return true;
 		}
@@ -1737,7 +2116,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		{
 			// array seem to be fine, now call it's deserializer
 			{
-				Net::Json::Array arr(true);
+				Net::Json::Array arr;
 				if (!arr.Deserialize(value, m_prepareString))
 				{
 					// @todo: add logging
@@ -2118,7 +2497,7 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 *		- it checks if the key is a string
 *		- it checks if the key contains any double-qoutes and if it does then it checks if they are escaped
 */
-bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::Deserialize(Net::String& json, std::vector<char*>& object_chain, bool m_prepareString)
 {
 	/*
 	* Prepare the json string before parsing
@@ -2142,7 +2521,7 @@ bool Net::Json::Object::Deserialize(Net::String& json, Vector<char*>& object_cha
 	return this->Deserialize(vs, m_prepareString);
 }
 
-bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<Net::ViewString*>& object_chain, bool m_prepareString)
+bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::ViewString*>& object_chain, bool m_prepareString)
 {
 	/*
 	* Prepare the json string before parsing
@@ -2465,18 +2844,103 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, Vector<Net::ViewStrin
 	return true;
 }
 
-Net::Json::Array::Array(bool bSharedMemory)
-	: Net::Json::BasicArray::BasicArray(bSharedMemory)
+Net::Json::Array::Array()
+	: Net::Json::BasicArray::BasicArray()
 {
+}
+
+Net::Json::Array::Array(Array& m_Array)
+{
+	this->m_type = m_Array.m_type;
+	this->value = m_Array.value;
+	this->m_bSharedMemory = m_Array.m_bSharedMemory;
+
+	/*
+	* array moved
+	*/
+	m_Array.SetSharedMemory(true);
 }
 
 Net::Json::Array::~Array()
 {
-	if (!bSharedMemory) this->Destroy();
+	if (!this->IsSharedMemory())
+	{
+		this->Destroy();
+	}
 }
 
 void Net::Json::Array::Destroy()
 {
+	/*
+	* iterate through the values
+	* then manually free it to call its destructor
+	*/
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		auto tmp = (BasicValue<void*>*)value[i];
+		switch (tmp->GetType())
+		{
+		case Type::NULLVALUE:
+			FREE<Net::Json::NullValue>(value[i]);
+			break;
+
+		case Type::OBJECT:
+			/*
+			* object is sharing its memory
+			*/
+			if (tmp->as_object()->IsSharedMemory())
+			{
+				/*
+				* its sharing its memory with our object
+				* manually destroy it
+				*/
+				tmp->as_object()->Destroy();
+			}
+
+			FREE<Net::Json::BasicValue<Net::Json::Object>>(value[i]);
+			break;
+
+		case Type::ARRAY:
+			/*
+			* array is sharing its memory
+			*/
+			if (tmp->as_array()->IsSharedMemory())
+			{
+				/*
+				* its sharing its memory with our object
+				* manually destroy it
+				*/
+				tmp->as_array()->Destroy();
+			}
+
+			FREE<Net::Json::BasicValue<Net::Json::Array>>(value[i]);
+			break;
+
+		case Type::STRING:
+			FREE<Net::Json::BasicValue<char>>(value[i]);
+			break;
+
+		case Type::INTEGER:
+			FREE<Net::Json::BasicValue<int>>(value[i]);
+			break;
+
+		case Type::FLOAT:
+			FREE<Net::Json::BasicValue<float>>(value[i]);
+			break;
+
+		case Type::DOUBLE:
+			FREE<Net::Json::BasicValue<double>>(value[i]);
+			break;
+
+		case Type::BOOLEAN:
+			FREE<Net::Json::BasicValue<bool>>(value[i]);
+			break;
+
+		default:
+			break;
+		}
+	}
+
 	this->value.clear();
 }
 
@@ -2490,15 +2954,27 @@ bool Net::Json::Array::emplace_back(T value, Type type)
 	return true;
 }
 
-Net::Json::BasicValueRead Net::Json::Array::operator[](int idx)
+Net::Json::BasicValueRead Net::Json::Array::operator[](size_t idx)
 {
-	if (idx >= value.size()) return { nullptr };
-	return { this->value[idx] };
+	if (idx >= value.size()) return { nullptr, this, idx, Net::Json::Type::ARRAY };
+	return { this->value[idx], this, idx, Net::Json::Type::ARRAY };
 }
 
-Net::Json::BasicValueRead Net::Json::Array::at(int idx)
+Net::Json::BasicValueRead Net::Json::Array::at(size_t idx)
 {
 	return this->operator[](idx);
+}
+
+void Net::Json::Array::operator=(const Array& m_Array)
+{
+	this->m_type = m_Array.m_type;
+	this->value = m_Array.value;
+	this->m_bSharedMemory = m_Array.m_bSharedMemory;
+
+	/*
+	* array moved
+	*/
+	const_cast<Net::Json::Array*>(&m_Array)->SetSharedMemory(true);
 }
 
 bool Net::Json::Array::push(int value)
@@ -2533,11 +3009,21 @@ bool Net::Json::Array::push(const char* value)
 
 bool Net::Json::Array::push(Object value)
 {
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
 	return this->emplace_back(value, Type::OBJECT);
 }
 
 bool Net::Json::Array::push(Array value)
 {
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
 	return this->emplace_back(value, Type::ARRAY);
 }
 
@@ -2717,7 +3203,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
-			Net::Json::Object obj(true);
+			Net::Json::Object obj;
 			if (!obj.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
@@ -2753,7 +3239,7 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 		else if (m_type == Net::Json::Type::ARRAY)
 		{
 			// array seem to be fine, now call it's deserializer
-			Net::Json::Array arr(true);
+			Net::Json::Array arr;
 			if (!arr.Deserialize(value, m_prepareString))
 			{
 				// @todo: add logging
@@ -2971,7 +3457,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		else if (m_type == Net::Json::Type::OBJECT)
 		{
 			// object seem to be fine, now call it's deserializer
-			Net::Json::Object obj(true);
+			Net::Json::Object obj;
 			if (!obj.Deserialize(vs, m_prepareString))
 			{
 				// @todo: add logging
@@ -3007,7 +3493,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		else if (m_type == Net::Json::Type::ARRAY)
 		{
 			// array seem to be fine, now call it's deserializer
-			Net::Json::Array arr(true);
+			Net::Json::Array arr;
 			if (!arr.Deserialize(vs, m_prepareString))
 			{
 				// @todo: add logging
@@ -3559,19 +4045,35 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXC
 	return *this;
 }
 
+void Net::Json::Document::operator=(Object& m_Object)
+{
+	m_Object.SetSharedMemory(true);
+	this->root_obj = m_Object;
+	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
+}
+
+void Net::Json::Document::operator=(Array& m_Array)
+{
+	m_Array.SetSharedMemory(true);
+	this->root_array = m_Array;
+	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
+}
+
 Net::Json::Type Net::Json::Document::GetType()
 {
 	return this->m_type;
 }
 
-Net::Json::Object Net::Json::Document::GetRootObject()
+Net::Json::Object* Net::Json::Document::GetRootObject()
 {
-	return this->root_obj;
+	return &this->root_obj;
 }
 
-Net::Json::Array Net::Json::Document::GetRootArray()
+Net::Json::Array* Net::Json::Document::GetRootArray()
 {
-	return this->root_array;
+	return &this->root_array;
 }
 
 void Net::Json::Document::SetFreeRootObject(bool m_free)
@@ -3587,8 +4089,8 @@ void Net::Json::Document::SetFreeRootArray(bool m_free)
 void Net::Json::Document::Init()
 {
 	/* by default its an object */
-	this->root_obj = { true };
-	this->root_array = { true };
+	this->root_obj = {};
+	this->root_array = {};
 	this->m_free_root_obj = true;
 	this->m_free_root_array = true;
 	this->m_type = Type::OBJECT;
@@ -3602,50 +4104,58 @@ void Net::Json::Document::Clear()
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr };
+	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return this->root_obj.At(key);
 }
 
-Net::Json::BasicValueRead Net::Json::Document::operator[](int idx)
+Net::Json::BasicValueRead Net::Json::Document::operator[](size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr };
+	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return this->root_array.at(idx);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr };
+	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return this->root_obj.At(key);
 }
 
-Net::Json::BasicValueRead Net::Json::Document::At(int idx)
+Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr };
+	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::NULLVALUE };
 	return this->root_array.at(idx);
 }
 
 void Net::Json::Document::Set(Object obj)
 {
+	obj.SetSharedMemory(true);
 	this->root_obj = obj;
 	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
 }
 
 void Net::Json::Document::Set(Object* obj)
 {
+	obj->SetSharedMemory(true);
 	this->root_obj = *obj;
 	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
 }
 
 void Net::Json::Document::Set(Array arr)
 {
+	arr.SetSharedMemory(true);
 	this->root_array = arr;
 	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
 }
 
 void Net::Json::Document::Set(Array* arr)
 {
+	arr->SetSharedMemory(true);
 	this->root_array = *arr;
 	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
 }
 
 Net::String Net::Json::Document::Serialize(SerializeType type)

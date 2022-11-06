@@ -522,7 +522,7 @@ namespace Net
 						rc = Ws2_32::setsockopt(con, IPPROTO_IP, IP_OPTIONS, (char*)&ipopt, sizeof(ipopt));
 						if (rc == SOCKET_ERROR)
 						{
-							FREE(icmpbuf);
+							FREE<char>(icmpbuf);
 							Ws2_32::freeaddrinfo(localsockaddr);
 							Ws2_32::closesocket(con);
 							Ws2_32::WSACleanup();
@@ -539,7 +539,7 @@ namespace Net
 				if (rc == SOCKET_ERROR)
 				{
 					NET_LOG_ERROR(CSTRING("[ICMP] - Unable to bind sockets"));
-					FREE(icmpbuf);
+					FREE<char>(icmpbuf);
 					Ws2_32::freeaddrinfo(localsockaddr);
 					Ws2_32::closesocket(con);
 					Ws2_32::WSACleanup();
@@ -566,7 +566,7 @@ namespace Net
 				if (rc == SOCKET_ERROR)
 				{
 					NET_LOG_ERROR(CSTRING("[ICMP]  - Sending the frame request has been failed with error %d"), WSAGetLastError());
-					FREE(icmpbuf);
+					FREE<char>(icmpbuf);
 					Ws2_32::freeaddrinfo(localsockaddr);
 					Ws2_32::closesocket(con);
 					Ws2_32::WSACleanup();
@@ -578,7 +578,7 @@ namespace Net
 				if (rc == WAIT_FAILED)
 				{
 					NET_LOG_ERROR(CSTRING("[ICMP]  - Waiting for single object failed with error: %d"), WSAGetLastError());
-					FREE(icmpbuf);
+					FREE<char>(icmpbuf);
 					Ws2_32::freeaddrinfo(localsockaddr);
 					Ws2_32::closesocket(con);
 					Ws2_32::WSACleanup();
@@ -588,7 +588,7 @@ namespace Net
 				if (rc == WAIT_TIMEOUT)
 				{
 					NET_LOG_ERROR(CSTRING("[ICMP]  - Timeout occured!"));
-					FREE(icmpbuf);
+					FREE<char>(icmpbuf);
 					Ws2_32::freeaddrinfo(localsockaddr);
 					Ws2_32::closesocket(con);
 					Ws2_32::WSACleanup();
@@ -615,7 +615,7 @@ namespace Net
 					con = INVALID_SOCKET;
 				}
 
-				FREE(icmpbuf);
+				FREE<char>(icmpbuf);
 				Ws2_32::freeaddrinfo(localsockaddr);
 				Ws2_32::WSACleanup();
 				return time;

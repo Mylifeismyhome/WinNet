@@ -71,7 +71,7 @@ const char* Net::RawData_t::key() const
 
 void Net::RawData_t::set(byte* pointer)
 {
-	if (do_free()) FREE(_data);
+	if (do_free()) FREE<byte>(_data);
 	_data = pointer;
 }
 
@@ -80,7 +80,7 @@ void Net::RawData_t::free()
 	if (!this->_valid) return;
 
 	// only free the passed reference if we allow it
-	if (do_free()) FREE(this->_data);
+	if (do_free()) FREE<byte>(this->_data);
 
 	this->_data = nullptr;
 	this->_size = 0;
@@ -108,7 +108,7 @@ void Net::Packet::AddRaw(const char* Key, BYTE* data, const size_t size, const b
 			if (free_after_sent)
 			{
 				NET_LOG_ERROR(CSTRING("Duplicated Key, buffer gets automaticly deleted from heap to avoid memory leaks"));
-				FREE(data);
+				FREE<byte>(data);
 				return;
 			}
 

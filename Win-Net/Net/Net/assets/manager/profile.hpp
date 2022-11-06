@@ -39,7 +39,7 @@ namespace Net
 			void clear()
 			{
 				peer = nullptr;
-				FREE(ext);
+				FREE<void>(ext);
 			}
 
 			template <typename T>
@@ -86,7 +86,7 @@ namespace Net
 
 			~Profile()
 			{
-				FREE(data);
+				FREE<Net::Manager::Profile_t>(data);
 				max_entries = 0;
 			}
 

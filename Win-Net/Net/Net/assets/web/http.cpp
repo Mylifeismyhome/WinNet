@@ -96,8 +96,8 @@ Net::Web::HeaderData_t::HeaderData_t(const char* key, unsigned char* value, cons
 
 void Net::Web::HeaderData_t::free()
 {
-	FREE(this->key);
-	FREE(this->value);
+	FREE<char>(this->key);
+	FREE<char>(this->value);
 }
 
 Net::Web::Head::Head()
@@ -234,7 +234,7 @@ void Net::Web::Head::URL_Encode(char*& buffer) const
 		hex.push_back(lut[c & 15]);
 	}
 
-	FREE(buffer);
+	FREE<char>(buffer);
 	buffer = ALLOC<char>(hex.size() + 1);
 	memcpy(buffer, hex.data(), hex.size());
 }
@@ -305,7 +305,7 @@ void Net::Web::Head::URL_Decode(char*& buffer) const
 		}
 	}
 
-	FREE(buffer);
+	FREE<char>(buffer);
 	buffer = ALLOC<char>(ascii.size() + 1);
 	memcpy(buffer, ascii.data(), ascii.size());
 }

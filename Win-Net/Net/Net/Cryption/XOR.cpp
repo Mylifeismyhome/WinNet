@@ -160,6 +160,7 @@ namespace Net
 			this->_Key = other._Key;
 			this->_size = other._size;
 			this->_actual_size = other._actual_size;
+			this->_bfree = other._bfree;
 
 			return *this;
 		}
@@ -213,7 +214,7 @@ namespace Net
             _actual_size = size();
 			_buffer = str;
 			_Key = 0;
-			_bfree = false;
+			_bfree = m_free;
 
 			encrypt();
 		}
@@ -294,17 +295,9 @@ namespace Net
 		{
 			_Key = 0;
 
-			/*
-			* if we do not free the buffer
-			* then we decrypt it
-			*/
-			if (_bfree)
+			if (this->_bfree)
 			{
 				_buffer.free();
-			}
-			else
-			{
-				this->decrypt();
 			}
 
 			_size = INVALID_SIZE;
