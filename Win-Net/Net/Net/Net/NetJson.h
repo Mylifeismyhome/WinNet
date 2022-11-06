@@ -311,10 +311,12 @@ namespace Net
 			~Document();
 
 			Document& operator=(const Document& m_doc) NOEXCEPT;
+			void operator=(Object& m_Object);
+			void operator=(Array& m_Array);
 
 			Type GetType();
-			Object GetRootObject();
-			Array GetRootArray();
+			Object* GetRootObject();
+			Array* GetRootArray();
 
 			void SetFreeRootObject(bool);
 			void SetFreeRootArray(bool);
@@ -342,6 +344,7 @@ namespace Net
 		{
 			this->m_pValue = nullptr;
 			this->m_iIndex = INVALID_SIZE;
+			this->m_Type = Type::NULLVALUE;
 		}
 
 		template<typename T>

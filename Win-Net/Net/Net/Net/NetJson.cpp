@@ -1135,6 +1135,12 @@ void Net::Json::BasicValueRead::operator=(BasicObject& value)
 	if (!this->m_pValue) return;
 	auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
 
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
+
 	if (cast->GetType() != Type::OBJECT)
 	{
 		if (this->m_ParentType == Type::OBJECT)
@@ -1159,11 +1165,6 @@ void Net::Json::BasicValueRead::operator=(BasicObject& value)
 		}
 	}
 
-	/*
-	* ok, so BasicObject is now linking to this tree
-	* so do not permit it to destroy its data-set
-	*/
-	value.SetSharedMemory(true);
 	cast->SetValue(value, Type::OBJECT);
 }
 
@@ -1171,6 +1172,12 @@ void Net::Json::BasicValueRead::operator=(BasicArray& value)
 {
 	if (!this->m_pValue) return;
 	auto cast = ((BasicValue<BasicArray>*)this->m_pValue);
+
+	/*
+	* ok, so BasicObject is now linking to this tree
+	* so do not permit it to destroy its data-set
+	*/
+	value.SetSharedMemory(true);
 
 	if (cast->GetType() != Type::ARRAY)
 	{
@@ -1195,11 +1202,7 @@ void Net::Json::BasicValueRead::operator=(BasicArray& value)
 			return;
 		}
 	}
-	/*
-	* ok, so BasicObject is now linking to this tree
-	* so do not permit it to destroy its data-set
-	*/
-	value.SetSharedMemory(true);
+
 	cast->SetValue(value, Type::ARRAY);
 }
 
@@ -1211,14 +1214,44 @@ void Net::Json::BasicValueRead::operator=(Document& value)
 	switch (value.GetType())
 	{
 	case Net::Json::Type::OBJECT:
-		((BasicValue<BasicObject>*)this->m_pValue)->SetValue(value.GetRootObject(), Type::OBJECT);
+	{
 		value.SetFreeRootObject(false);
+		value.GetRootObject()->SetSharedMemory(true);
+
+		auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
+		if (cast->GetType() != Type::OBJECT)
+		{
+			auto m_pObject = (Object*)this->m_pParent;
+			BasicValue<BasicObject>* m_pNew = ALLOC<BasicValue<BasicObject>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(*value.GetRootObject(), Type::OBJECT);
+			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Object>>(this->m_pValue);
+			return;
+		}
+		cast->SetValue(*value.GetRootObject(), Type::OBJECT);
 		break;
+	}
 
 	case Net::Json::Type::ARRAY:
-		((BasicValue<BasicArray>*)this->m_pValue)->SetValue(value.GetRootArray(), Type::ARRAY);
+	{
 		value.SetFreeRootArray(false);
+		value.GetRootArray()->SetSharedMemory(true);
+
+		auto cast = ((BasicValue<BasicArray>*)this->m_pValue);
+		if (cast->GetType() != Type::ARRAY)
+		{
+			auto m_pArray = (Array*)this->m_pParent;
+			BasicValue<BasicArray>* m_pNew = ALLOC<BasicValue<BasicArray>>();
+			m_pNew->SetKey(cast->Key());
+			m_pNew->SetValue(*value.GetRootArray(), Type::ARRAY);
+			m_pArray->OnIndexChanged(this->m_iValueIndex, m_pNew);
+			FREE<BasicValue<Array>>(this->m_pValue);
+			return;
+		}
+		cast->SetValue(*value.GetRootArray(), Type::ARRAY);
 		break;
+	}
 
 	default:
 		NET_LOG_ERROR(CSTRING("[Json] - Unable to copy document => invalid type"));
@@ -1691,7 +1724,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 				if (!this->Deserialize(value, object_chain, m_prepareString))
 					return false;
 			}
-			object_chain.erase(object_chain.end());
+			object_chain.pop_back();
 
 			return true;
 		}
@@ -2027,7 +2060,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 				if (!this->Deserialize(value, object_chain, m_prepareString))
 					return false;
 			}
-			object_chain.erase(object_chain.end());
+			object_chain.pop_back();
 
 			return true;
 		}
@@ -3965,19 +3998,35 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXC
 	return *this;
 }
 
+void Net::Json::Document::operator=(Object& m_Object)
+{
+	m_Object.SetSharedMemory(true);
+	this->root_obj = m_Object;
+	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
+}
+
+void Net::Json::Document::operator=(Array& m_Array)
+{
+	m_Array.SetSharedMemory(true);
+	this->root_array = m_Array;
+	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
+}
+
 Net::Json::Type Net::Json::Document::GetType()
 {
 	return this->m_type;
 }
 
-Net::Json::Object Net::Json::Document::GetRootObject()
+Net::Json::Object* Net::Json::Document::GetRootObject()
 {
-	return this->root_obj;
+	return &this->root_obj;
 }
 
-Net::Json::Array Net::Json::Document::GetRootArray()
+Net::Json::Array* Net::Json::Document::GetRootArray()
 {
-	return this->root_array;
+	return &this->root_array;
 }
 
 void Net::Json::Document::SetFreeRootObject(bool m_free)
@@ -4032,26 +4081,34 @@ Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 
 void Net::Json::Document::Set(Object obj)
 {
+	obj.SetSharedMemory(true);
 	this->root_obj = obj;
 	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
 }
 
 void Net::Json::Document::Set(Object* obj)
 {
+	obj->SetSharedMemory(true);
 	this->root_obj = *obj;
 	this->m_type = Type::OBJECT;
+	this->SetFreeRootObject(true);
 }
 
 void Net::Json::Document::Set(Array arr)
 {
+	arr.SetSharedMemory(true);
 	this->root_array = arr;
 	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
 }
 
 void Net::Json::Document::Set(Array* arr)
 {
+	arr->SetSharedMemory(true);
 	this->root_array = *arr;
 	this->m_type = Type::ARRAY;
+	this->SetFreeRootArray(true);
 }
 
 Net::String Net::Json::Document::Serialize(SerializeType type)
