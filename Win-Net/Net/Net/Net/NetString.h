@@ -79,6 +79,8 @@ namespace Net
 		void Construct(const char);
 		void Construct(const char*, ...);
 
+		void Destroy();
+
 	public:
 		String();
 		String(char);

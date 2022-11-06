@@ -222,7 +222,7 @@ namespace Net
 		* instead of allocating new space and copy this string
 		* we just move it's pointer into ours
 		*/
-		_string.free();
+		this->Destroy();
 		_string = RUNTIMEXOR(str);
 		_free_size = INVALID_SIZE;
 	}
@@ -267,6 +267,11 @@ namespace Net
 		this->_free_size = INVALID_SIZE;
 	}
 
+	void Net::String::Destroy()
+	{
+		_string.free();
+	}
+
 	void String::copy(const String& in)
 	{
 		auto cast = const_cast<String*>(&in);
@@ -274,7 +279,7 @@ namespace Net
 		auto ref = cast->get();
 		auto pBuffer = ref.get();
 
-		this->_string.free();
+		this->Destroy();
 		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
 		this->_free_size = INVALID_SIZE;
 	}
@@ -282,22 +287,18 @@ namespace Net
 	void String::move(const String& in)
 	{
 		auto cast = const_cast<String*>(&in);
-
 		_string = cast->_string;
 		_free_size = cast->_free_size;
 
 		/*
-		* set _string to nullptr
-		* we moved the pointer to a new object
+		* object moved
 		*/
 		cast->_string.lost_reference();
-		cast->_string = RUNTIMEXOR();
-		cast->_free_size = INVALID_SIZE;
 	}
 
 	String::~String()
 	{
-		_string.free();
+		this->Destroy();
 	}
 
 	/*
@@ -441,7 +442,7 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		this->_string.free();
+		this->Destroy();
 		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 		this->_free_size = INVALID_SIZE;
 	}
@@ -467,9 +468,9 @@ namespace Net
 		va_end(vaArgs);
 #endif
 
-		this->_string.free();
-		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
-		this->_free_size = INVALID_SIZE;
+		this->Destroy();
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
+		_free_size = INVALID_SIZE;
 	}
 
 	void String::set(const String& in, ...)
@@ -479,11 +480,7 @@ namespace Net
 		auto ref = cast->get();
 		auto ptr = ref.get();
 
-		/*
-		* cast it to const char*
-		* so we will perform a copy
-		*/
-		this->_string.free();
+		this->Destroy();
 		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(ptr));
 		this->_free_size = INVALID_SIZE;
 	}
@@ -527,7 +524,7 @@ namespace Net
 				data.get()[_string.size()] = in;
 				data.get()[newLen] = '\0';
 
-				_string.free();
+				this->Destroy();
 				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
 			}
 		}
@@ -566,7 +563,7 @@ namespace Net
 				memcpy(&data.get()[_string.size()], buffer, buffer_len);
 				data.get()[newSize] = '\0';
 
-				_string.free();
+				this->Destroy();
 				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
 				_free_size = INVALID_SIZE;
 
@@ -675,7 +672,7 @@ namespace Net
 
 	void String::clear()
 	{
-		_string.free();
+		this->Destroy();
 	}
 
 	bool String::empty()
@@ -1293,7 +1290,7 @@ namespace Net
 			++j;
 		}
 
-		_string.free();
+		this->Destroy();
 		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
@@ -1322,7 +1319,7 @@ namespace Net
 		memcpy(&replace[i], r, rSize);
 		memcpy(&replace[i + rSize], &str.get()[i + 1], size() - i - 1);
 
-		_string.free();
+		this->Destroy();
 		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
@@ -1358,7 +1355,7 @@ namespace Net
 		}
 		replace[replaceSize] = '\0';
 
-		_string.free();
+		this->Destroy();
 		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
@@ -1399,7 +1396,7 @@ namespace Net
 		}
 		replace[replaceSize] = '\0';
 
-		_string.free();
+		this->Destroy();
 		_string = RUNTIMEXOR(replace, true);
 		return true;
 	}
