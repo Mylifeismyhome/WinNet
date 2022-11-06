@@ -68,6 +68,7 @@ namespace Net
 			void Set(std::vector<void*> value);
 			void SetSharedMemory(bool m_bSharedMemory);
 			bool IsSharedMemory() const;
+			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
 		class BasicArray
@@ -88,6 +89,7 @@ namespace Net
 			void Set(std::vector<void*> value);
 			void SetSharedMemory(bool m_bSharedMemory);
 			bool IsSharedMemory() const;
+			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
 		class Object;
@@ -149,15 +151,17 @@ namespace Net
 		{
 			void* m_pValue;
 			void* m_pParent;
+			size_t m_iValueIndex;
+			Type m_ParentType;
 
 		public:
-			BasicValueRead(void* m_pValue, void* m_pParent);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType);
 			BasicValue<Object>* operator->() const;
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
-			BasicValueRead operator[](int idx);
+			BasicValueRead operator[](size_t idx);
 
 			operator bool();
 
@@ -187,6 +191,17 @@ namespace Net
 			bool m_reserved;
 		};
 
+		template<typename T>
+		struct TObjectGet
+		{
+			BasicValue<T>* m_pValue;
+			size_t m_iIndex;
+			Type m_Type;
+
+			TObjectGet();
+			TObjectGet(BasicValue<T>* m_pValue, size_t m_iIndex, Type m_Type);
+		};
+
 		/* an object has no fixed data type since it stores anything json can supports */
 		class Object : public BasicObject
 		{
@@ -194,10 +209,10 @@ namespace Net
 			bool __append(const char* key, T value, Type type);
 
 			template <typename T>
-			BasicValue<T>* __get(const char* key);
+			TObjectGet<T> __get(const char* key);
 
 			template <typename T>
-			BasicValue<T>* __get(Net::ViewString& key);
+			TObjectGet<T> __get(Net::ViewString& key);
 
 			bool DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString = false);
 			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
@@ -251,8 +266,8 @@ namespace Net
 			Array();
 			~Array();
 
-			BasicValueRead operator[](int idx);
-			BasicValueRead at(int idx);
+			BasicValueRead operator[](size_t idx);
+			BasicValueRead at(size_t idx);
 
 			bool push(int value);
 			bool push(float value);
@@ -305,9 +320,9 @@ namespace Net
 			void SetFreeRootArray(bool);
 
 			BasicValueRead operator[](const char* key);
-			BasicValueRead operator[](int idx);
+			BasicValueRead operator[](size_t idx);
 			BasicValueRead At(const char* key);
-			BasicValueRead At(int idx);
+			BasicValueRead At(size_t idx);
 
 			void Set(Object obj);
 			void Set(Object* obj);
@@ -321,5 +336,20 @@ namespace Net
 			bool Parse(Net::String json);
 			bool Parse(Net::ViewString& json);
 		};
-	}
+
+		template<typename T>
+		inline TObjectGet<T>::TObjectGet()
+		{
+			this->m_pValue = nullptr;
+			this->m_iIndex = INVALID_SIZE;
+		}
+
+		template<typename T>
+		inline TObjectGet<T>::TObjectGet(BasicValue<T>* m_pValue, size_t m_iIndex, Type m_Type)
+		{
+			this->m_pValue = m_pValue;
+			this->m_iIndex = m_iIndex;
+			this->m_Type = m_Type;
+		}
+}
 }
