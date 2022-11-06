@@ -311,13 +311,29 @@ int main()
 
 	std::cout << "start" << std::endl;
 	{
-		Net::Json::Document m_doc;
-		m_doc["ABC"] = "test";
-		m_doc["test"] = 1335;
-		m_doc["test3"] = true;
-		m_doc["test4"] = 1.25f;
-		m_doc["test5"] = 1.252323232324245242342;
-		m_doc["test6"] = Net::Json::NullValue();
+		Net::Json::Object m_obj;
+		{
+			Net::Json::Object m_obj2;
+			{
+				Net::Json::Array m_arr;
+				m_arr.push(1227);
+				m_obj2["AffeArr"] = m_arr;
+			}
+			m_obj2["Affe"] = 1337;
+			m_obj["Chris"] = m_obj2;
+		}
+		m_obj["test"] = "test";
+		/*Net::Json::Array m_arr;
+		{
+			Net::Json::Object m_obj;
+			m_obj["test"] = "akja";
+
+			m_arr.push(1);
+			m_arr.push("test");
+			m_arr.push(Net::Json::NullValue());
+			m_arr.push(m_obj);
+		}
+		std::cout << m_arr.Stringify() << std::endl;*/
 	}
 	std::cout << "end" << std::endl;
 
