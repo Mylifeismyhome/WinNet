@@ -219,6 +219,7 @@ namespace Net
 
 		public:
 			Object();
+			Object(Object& m_Object);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
@@ -228,6 +229,8 @@ namespace Net
 
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
+
+			void operator=(const Object& m_Object);
 
 			bool Append(const char* key, int value);
 			bool Append(const char* key, float value);
@@ -264,10 +267,13 @@ namespace Net
 
 		public:
 			Array();
+			Array(Array& m_Array);
 			~Array();
 
 			BasicValueRead operator[](size_t idx);
 			BasicValueRead at(size_t idx);
+
+			void operator=(const Array& m_Array);
 
 			bool push(int value);
 			bool push(float value);

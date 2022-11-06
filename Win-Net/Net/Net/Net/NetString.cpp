@@ -229,8 +229,7 @@ namespace Net
 
 	String::String(const String& in)
 	{
-		auto cast = const_cast<String*>(&in);
-		copy(*cast);
+		move(in);
 	}
 
 	void String::Construct(const char in)
@@ -334,7 +333,7 @@ namespace Net
 
 	void Net::String::operator=(const String& in)
 	{
-		copy(in);
+		move(in);
 	}
 
 	void Net::String::operator+=(const char* in)

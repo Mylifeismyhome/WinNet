@@ -305,13 +305,42 @@ TEST(JSON,
 	NET_LOG(doc.Serialize(Net::Json::SerializeType::FORMATTED));
 );
 
+static Net::String m_test()
+{
+	Net::String str("test");
+	return str;
+}
+
+static Net::Json::Object m_obect()
+{
+	Net::Json::Object m;
+	m["test"] = "akm";
+	return m;
+}
+
+static Net::Json::Object m_obj2(Net::Json::Object m)
+{
+	m["DICK"] = 1;
+	return m;
+}
+
 int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
 	std::cout << "start" << std::endl;
 	{
-		Net::Json::Document m_Doc2;
+		auto m = m_obect();
+		auto m2 = m_obj2(m);
+
+		/*Net::String str("test");
+		{
+			Net::String m_s("hasse");
+			str += ' ';
+			str += m_s;
+		}
+		str = m_test();*/
+	/*	Net::Json::Document m_Doc2;
 		m_Doc2["KILL"] = 1337;
 
 		Net::Json::Document m_Doc;
@@ -319,7 +348,10 @@ int main()
 		m_Doc["class"] = m_Doc2;
 		
 
-		//std::cout << m_Doc.Serialize() << std::endl;
+		std::cout << m_Doc.Serialize() << std::endl;*/
+
+		//std::cout << m.Serialize() << std::endl;
+		//std::cout << m2.Serialize() << std::endl;
 	}
 	std::cout << "end" << std::endl;
 

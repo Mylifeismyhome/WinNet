@@ -1263,6 +1263,17 @@ Net::Json::Object::Object()
 	: Net::Json::BasicObject::BasicObject()
 {
 }
+Net::Json::Object::Object(Object& m_Object)
+{
+	this->m_type = m_Object.m_type;
+	this->value = m_Object.value;
+	this->m_bSharedMemory = m_Object.m_bSharedMemory;
+
+	/*
+	* object moved
+	*/
+	m_Object.SetSharedMemory(true);
+}
 
 Net::Json::Object::~Object()
 {
@@ -1464,6 +1475,18 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* value)
 {
 	this->__push(value);
 	return value;
+}
+
+void Net::Json::Object::operator=(const Object& m_Object)
+{
+	this->m_type = m_Object.m_type;
+	this->value = m_Object.value;
+	this->m_bSharedMemory = m_Object.m_bSharedMemory;
+
+	/*
+	* object moved
+	*/
+	const_cast<Net::Json::Object*>(&m_Object)->SetSharedMemory(true);
 }
 
 bool Net::Json::Object::Append(const char* key, int value)
@@ -2826,6 +2849,18 @@ Net::Json::Array::Array()
 {
 }
 
+Net::Json::Array::Array(Array& m_Array)
+{
+	this->m_type = m_Array.m_type;
+	this->value = m_Array.value;
+	this->m_bSharedMemory = m_Array.m_bSharedMemory;
+
+	/*
+	* array moved
+	*/
+	m_Array.SetSharedMemory(true);
+}
+
 Net::Json::Array::~Array()
 {
 	if (!this->IsSharedMemory())
@@ -2928,6 +2963,18 @@ Net::Json::BasicValueRead Net::Json::Array::operator[](size_t idx)
 Net::Json::BasicValueRead Net::Json::Array::at(size_t idx)
 {
 	return this->operator[](idx);
+}
+
+void Net::Json::Array::operator=(const Array& m_Array)
+{
+	this->m_type = m_Array.m_type;
+	this->value = m_Array.value;
+	this->m_bSharedMemory = m_Array.m_bSharedMemory;
+
+	/*
+	* array moved
+	*/
+	const_cast<Net::Json::Array*>(&m_Array)->SetSharedMemory(true);
 }
 
 bool Net::Json::Array::push(int value)
