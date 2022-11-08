@@ -1740,11 +1740,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = ALLOC<Net::Json::Object>();
+					obj[pKey] = Net::Json::Object();
 				}
 				else
 				{
-					this->operator[](pKey) = ALLOC<Net::Json::Object>();
+					this->operator[](pKey) = Net::Json::Object();
 				}
 
 				if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -4020,12 +4020,27 @@ Net::Json::Document::Document()
 	this->Init();
 }
 
+Net::Json::Document::Document(Document& m_Doc)
+{
+	this->m_type = m_Doc.m_type;
+	this->root_obj = m_Doc.root_obj;
+	this->root_array = m_Doc.root_array;
+	this->m_free_root_obj = m_Doc.m_free_root_obj;
+	this->m_free_root_array = m_Doc.m_free_root_array;
+
+	/*
+	* document moved
+	*/
+	m_Doc.SetFreeRootObject(false);
+	m_Doc.SetFreeRootArray(false);
+}
+
 Net::Json::Document::~Document()
 {
 	this->Clear();
 }
 
-Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXCEPT
+Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
 {
 	// Guard self assignment
 	if (this == &m_doc)
@@ -4045,8 +4060,8 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXC
 	* do not free objects on heap
 	* they are still in use
 	*/
-	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_obj = false;
-	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_array = false;
+	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootObject(false);
+	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootArray(false);
 
 	return *this;
 }
