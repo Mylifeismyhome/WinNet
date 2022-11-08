@@ -633,7 +633,7 @@ Net::Json::BasicValue<T>::BasicValue()
 {
 	this->value = {};
 	this->key = nullptr;
-	this->m_type = Type::NULLVALUE;
+	this->m_type = Type::UNKNOWN;
 }
 
 template <typename T>
@@ -658,7 +658,7 @@ Net::Json::BasicValue<T>::~BasicValue()
 
 	this->value = {};
 	FREE<char>(this->key);
-	this->m_type = Type::NULLVALUE;
+	this->m_type = Type::UNKNOWN;
 }
 
 template <typename T>
@@ -868,34 +868,34 @@ Net::Json::BasicValue<Net::Json::Object>* Net::Json::BasicValueRead::operator->(
 
 static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, const char* key)
 {
-	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast = (Net::Json::BasicValueRead*)m_pValue;
-	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Object>*)cast->operator->();
-	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
-	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
+	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return cast2->Value()[key];
 }
 
 static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, Net::ViewString& key)
 {
-	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast = (Net::Json::BasicValueRead*)m_pValue;
-	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Object>*)cast->operator->();
-	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
-	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
+	if (cast2->GetType() != Net::Json::Type::OBJECT) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return cast2->Value()[key];
 }
 
 static Net::Json::BasicValueRead object_to_BasicValueRead(void* m_pValue, size_t idx)
 {
-	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!m_pValue) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast = (Net::Json::BasicValueRead*)m_pValue;
-	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	auto cast2 = (Net::Json::BasicValue<Net::Json::Array>*)cast->operator->();
-	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
-	if (cast2->GetType() != Net::Json::Type::ARRAY) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (!cast2) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
+	if (cast2->GetType() != Net::Json::Type::ARRAY) return { nullptr, nullptr, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return cast2->Value()[idx];
 }
 
@@ -1294,6 +1294,9 @@ void Net::Json::Object::Destroy()
 		auto tmp = (BasicValue<void*>*)value[i];
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::NULLVALUE:
 			FREE<Net::Json::NullValue>(value[i]);
 			break;
@@ -1444,7 +1447,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
@@ -1460,7 +1463,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(Net::ViewString& key)
 	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
@@ -1687,7 +1690,7 @@ bool Net::Json::Object::Parse(Net::ViewString& json)
 */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString)
 {
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	auto keyRef = key.get();
 	auto pKey = keyRef.get();
@@ -1696,7 +1699,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 	auto pValue = valueRef.get();
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](object_chain[0]) };
@@ -1737,11 +1740,11 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = ALLOC<Net::Json::Object>();
+					obj[pKey] = Net::Json::Object();
 				}
 				else
 				{
-					this->operator[](pKey) = ALLOC<Net::Json::Object>();
+					this->operator[](pKey) = Net::Json::Object();
 				}
 
 				if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -2028,10 +2031,10 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		return false;
 	}
 
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](*object_chain[0]) };
@@ -2073,11 +2076,11 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[key] = (BasicObject)Net::Json::Object();
+					obj[key] = Net::Json::Object();
 				}
 				else
 				{
-					this->operator[](key) = (BasicObject)Net::Json::Object();
+					this->operator[](key) = Net::Json::Object();
 				}
 
 				if (!this->Deserialize(value, object_chain, m_prepareString))
@@ -2125,11 +2128,11 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 				if (object_chain.size() > 0)
 				{
-					obj[key] = (BasicArray)arr;
+					obj[key] = arr;
 				}
 				else
 				{
-					this->operator[](key) = (BasicArray)arr;
+					this->operator[](key) = arr;
 				}
 			}
 
@@ -2880,6 +2883,9 @@ void Net::Json::Array::Destroy()
 		auto tmp = (BasicValue<void*>*)value[i];
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::NULLVALUE:
 			FREE<Net::Json::NullValue>(value[i]);
 			break;
@@ -3172,7 +3178,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json)
 
 bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 {
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	auto valueRef = value.get();
 	auto pValue = valueRef.get();
@@ -3429,7 +3435,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		return false;
 	}
 
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	/*
 	* check for object
@@ -4014,12 +4020,27 @@ Net::Json::Document::Document()
 	this->Init();
 }
 
+Net::Json::Document::Document(Document& m_Doc)
+{
+	this->m_type = m_Doc.m_type;
+	this->root_obj = m_Doc.root_obj;
+	this->root_array = m_Doc.root_array;
+	this->m_free_root_obj = m_Doc.m_free_root_obj;
+	this->m_free_root_array = m_Doc.m_free_root_array;
+
+	/*
+	* document moved
+	*/
+	m_Doc.SetFreeRootObject(false);
+	m_Doc.SetFreeRootArray(false);
+}
+
 Net::Json::Document::~Document()
 {
 	this->Clear();
 }
 
-Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXCEPT
+Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
 {
 	// Guard self assignment
 	if (this == &m_doc)
@@ -4039,8 +4060,8 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc) NOEXC
 	* do not free objects on heap
 	* they are still in use
 	*/
-	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_obj = false;
-	const_cast<Net::Json::Document*>(&m_doc)->m_free_root_array = false;
+	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootObject(false);
+	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootArray(false);
 
 	return *this;
 }
@@ -4104,25 +4125,25 @@ void Net::Json::Document::Clear()
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return this->root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return this->root_array.at(idx);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (this->m_type != Net::Json::Type::OBJECT) return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return this->root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+	if (this->m_type != Net::Json::Type::ARRAY) return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 	return this->root_array.at(idx);
 }
 

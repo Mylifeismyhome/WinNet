@@ -34,7 +34,8 @@ namespace Net
 
 		enum class Type
 		{
-			NULLVALUE = 0, // fucking C and its NULL macro
+			UNKNOWN = 0,
+			NULLVALUE,
 			OBJECT,
 			ARRAY,
 			STRING,
@@ -314,9 +315,10 @@ namespace Net
 
 		public:
 			Document();
+			Document(Document& m_Doc);
 			~Document();
 
-			Document& operator=(const Document& m_doc) NOEXCEPT;
+			Document& operator=(const Document& m_doc);
 			void operator=(Object& m_Object);
 			void operator=(Array& m_Array);
 
