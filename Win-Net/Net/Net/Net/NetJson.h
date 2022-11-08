@@ -34,7 +34,8 @@ namespace Net
 
 		enum class Type
 		{
-			NULLVALUE = 0, // fucking C and its NULL macro
+			UNKNOWN = 0,
+			NULLVALUE,
 			OBJECT,
 			ARRAY,
 			STRING,

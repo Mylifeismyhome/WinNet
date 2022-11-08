@@ -1270,7 +1270,7 @@ NET_THREAD(PeerStartRoutine)
 		PKG[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
 		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
 
-		FREE<byte>(b64);
+		//FREE<byte>(b64);
 	}
 	/*
 		version -> all other

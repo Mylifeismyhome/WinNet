@@ -633,7 +633,7 @@ Net::Json::BasicValue<T>::BasicValue()
 {
 	this->value = {};
 	this->key = nullptr;
-	this->m_type = Type::NULLVALUE;
+	this->m_type = Type::UNKNOWN;
 }
 
 template <typename T>
@@ -658,7 +658,7 @@ Net::Json::BasicValue<T>::~BasicValue()
 
 	this->value = {};
 	FREE<char>(this->key);
-	this->m_type = Type::NULLVALUE;
+	this->m_type = Type::UNKNOWN;
 }
 
 template <typename T>
@@ -1294,6 +1294,9 @@ void Net::Json::Object::Destroy()
 		auto tmp = (BasicValue<void*>*)value[i];
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::NULLVALUE:
 			FREE<Net::Json::NullValue>(value[i]);
 			break;
@@ -1444,7 +1447,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
@@ -1460,7 +1463,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(Net::ViewString& key)
 	if (!m_pEntry.m_pValue)
 	{
 		BasicValue<Object>* heap = ALLOC<BasicValue<Object>>();
-		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE };
+		if (!heap) return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN };
 		heap->SetType(Type::OBJECT);
 		heap->SetKey(key);
 		this->__push(heap);
@@ -1687,7 +1690,7 @@ bool Net::Json::Object::Parse(Net::ViewString& json)
 */
 bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString)
 {
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	auto keyRef = key.get();
 	auto pKey = keyRef.get();
@@ -1696,7 +1699,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 	auto pValue = valueRef.get();
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](object_chain[0]) };
@@ -2028,10 +2031,10 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 		return false;
 	}
 
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	// with object chain
-	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::NULLVALUE);
+	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN);
 	if (object_chain.size() > 0)
 	{
 		obj = { this->operator[](*object_chain[0]) };
@@ -2409,6 +2412,9 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::OBJECT:
 		{
 			if (!tmp->as_object()->TrySerialize(type, st, iterations + 1))
@@ -2880,6 +2886,9 @@ void Net::Json::Array::Destroy()
 		auto tmp = (BasicValue<void*>*)value[i];
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::NULLVALUE:
 			FREE<Net::Json::NullValue>(value[i]);
 			break;
@@ -3172,7 +3181,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json)
 
 bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 {
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	auto valueRef = value.get();
 	auto pValue = valueRef.get();
@@ -3429,7 +3438,7 @@ bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 		return false;
 	}
 
-	Net::Json::Type m_type = Net::Json::Type::NULLVALUE;
+	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	/*
 	* check for object
@@ -3706,6 +3715,9 @@ bool Net::Json::Array::TrySerialize(SerializeType type, SerializeT& st, size_t i
 		auto tmp = (BasicValue<void*>*)value[i];
 		switch (tmp->GetType())
 		{
+		case Type::UNKNOWN:
+			break;
+
 		case Type::OBJECT:
 		{
 			if (!tmp->as_object()->TrySerialize(type, st, iterations + 1))
