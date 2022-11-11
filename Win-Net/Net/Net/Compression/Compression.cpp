@@ -6,156 +6,258 @@ namespace Net
 	{
 		const size_t chunk = 1024;
 
-		struct ChunkVector
+		struct TChunk
 		{
-			byte data[chunk];
+			byte m_bufferChunk[chunk];
+			size_t m_total_out;
 
-			explicit ChunkVector(byte* data, const int err, const size_t listSize, const size_t totalOut)
+			TChunk()
 			{
-				memset(this->data, NULL, chunk);
-				memcpy(this->data, data, err == Z_STREAM_END ? totalOut - listSize * chunk : chunk);
+				memset(this->m_bufferChunk, 0, chunk);
+			}
+
+			explicit TChunk(byte* m_bufferIn, const size_t totalOut)
+			{
+				memset(this->m_bufferChunk, 0, chunk);
+				write(m_bufferIn, totalOut);
+			}
+
+			void write(byte* m_bufferIn, const size_t totalOut)
+			{
+				memcpy(this->m_bufferChunk, m_bufferIn, totalOut);
+				this->m_total_out = totalOut;
 			}
 		};
 
 		int ZLib::Compress(BYTE*& data, size_t& size, const ZLIB_CompressionLevel level)
 		{
-			z_stream zInfo = { 0 };
-			zInfo.total_in = zInfo.avail_in = size;
-			zInfo.total_out = zInfo.avail_out = size;
-			zInfo.next_in = data;
-			zInfo.next_out = data;
+			z_stream m_zInfo = { Z_NULL };
+			m_zInfo.next_in = data;
+			m_zInfo.avail_in = size;
 
-			int nErr, nRet = -1;
-			nErr = deflateInit(&zInfo, Z_DEFAULT_COMPRESSION);
-			if (nErr == Z_OK) {
-				nErr = deflate(&zInfo, Z_FINISH);
-				if (nErr == Z_STREAM_END) {
-					nRet = zInfo.total_out;
-				}
+			auto m_result = deflateInit(&m_zInfo, (int)level);
+			if (m_result != Z_OK)
+			{
+				deflateEnd(&m_zInfo);
+				return Z_ERRNO;
 			}
-			deflateEnd(&zInfo);
-			return(nRet);
-		}
 
-		int ZLib::Compress(BYTE*& data, BYTE*& out, size_t& size, const ZLIB_CompressionLevel level, const bool skip_free)
-		{
-			z_stream zInfo = { 0 };
-			zInfo.total_in = zInfo.avail_in = size;
-			zInfo.total_out = zInfo.avail_out = size;
-			zInfo.next_in = data;
-			zInfo.next_out = out;
+			BYTE m_chunkBuffer[chunk];
+			std::vector<TChunk> m_vChunk = {};
+			size_t m_total_out = 0;
+			do
+			{
+				m_zInfo.next_out = m_chunkBuffer;
+				m_zInfo.avail_out = chunk;
+				m_zInfo.avail_in = m_zInfo.avail_out;
 
-			int nErr, nRet = -1;
-			nErr = deflateInit(&zInfo, Z_DEFAULT_COMPRESSION);
-			if (nErr == Z_OK) {
-				nErr = deflate(&zInfo, Z_FINISH);
-				if (nErr == Z_STREAM_END) {
-					nRet = zInfo.total_out;
+				m_result = deflate(&m_zInfo, Z_FINISH);
+				if (m_result != Z_OK && m_result != Z_STREAM_END)
+				{
+					return m_result;
 				}
-			}
-			deflateEnd(&zInfo);
 
-			if (!skip_free) FREE<byte>(data);
+				TChunk m_chunk = {};
+				m_chunk.write(m_chunkBuffer, m_zInfo.total_out);
+				m_vChunk.emplace_back(m_chunk);
+				m_total_out += m_zInfo.total_out;
+			} while (m_result != Z_STREAM_END);
+			deflateEnd(&m_zInfo);
 
-			return(nRet);
-		}
-
-		int ZLib::Decompress(BYTE*& data, size_t& size, const bool skip_free)
-		{
-			z_stream stream;
-			stream.zalloc = (alloc_func)nullptr;
-			stream.zfree = (free_func)nullptr;
-			stream.opaque = (voidpf)nullptr;
-
-			auto err = inflateInit(&stream);
-			if (err != Z_OK) return err;
-
-			auto out = ALLOC<BYTE>(chunk + 1);
-
-			std::vector<ChunkVector> chunkList;
-
-			stream.next_out = out;
-			stream.avail_out = NULL;
-			stream.next_in = (z_const Bytef*)data;
-			stream.avail_in = static_cast<uInt>(size);
-
-			do {
-				stream.next_out = out;
-				stream.avail_out = chunk;
-				stream.avail_in = static_cast<uInt>(size);
-				err = inflate(&stream, Z_NO_FLUSH);
-
-				if (err == Z_OK
-					|| err == Z_STREAM_END)
-					chunkList.emplace_back(ChunkVector(out, err, chunkList.size(), stream.total_out));
-			} while (err == Z_OK);
-
-			size = stream.total_out;
-			inflateEnd(&stream);
-
-			FREE<byte>(out);
-			if (!skip_free) FREE<byte>(data);
+			/*
+			* create the new buffer
+			*/
+			size = m_total_out;
+			FREE<BYTE>(data);
 			data = ALLOC<BYTE>(size + 1);
-			size_t curPart = NULL;
-			size_t it = NULL;
-			for (const auto& entry : chunkList)
-			{
-				memcpy(&data[curPart], entry.data, it == chunkList.size() - 1 ? size - curPart : chunk);
-				curPart += chunk;
-				++it;
-			}
-			data[size] = '\0';
 
-			return err == Z_STREAM_END ? Z_OK : err;
+			size_t m_off = 0;
+			for (const auto& m_chunk : m_vChunk)
+			{
+				memcpy(&data[m_off], m_chunk.m_bufferChunk, m_chunk.m_total_out);
+				m_off += m_chunk.m_total_out;
+			}
+			data[size] = 0;
+
+			return Z_OK;
 		}
 
-		int ZLib::Decompress(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
+		int ZLib::Compress(BYTE*& data, BYTE*& out, size_t& size, const ZLIB_CompressionLevel level)
 		{
-			z_stream stream;
-			stream.zalloc = (alloc_func)nullptr;
-			stream.zfree = (free_func)nullptr;
-			stream.opaque = (voidpf)nullptr;
+			z_stream m_zInfo = { Z_NULL };
+			m_zInfo.next_in = data;
+			m_zInfo.avail_in = size;
 
-			auto err = inflateInit(&stream);
-			if (err != Z_OK) return err;
-
-			out = ALLOC<BYTE>(chunk + 1);
-
-			std::vector<ChunkVector> chunkList;
-
-			stream.next_out = out;
-			stream.avail_out = NULL;
-			stream.next_in = (z_const Bytef*)data;
-			stream.avail_in = static_cast<uInt>(size);
-
-			do {
-				stream.next_out = out;
-				stream.avail_out = chunk;
-				stream.avail_in = static_cast<uInt>(size);
-				err = inflate(&stream, Z_NO_FLUSH);
-
-				if (err == Z_OK
-					|| err == Z_STREAM_END)
-					chunkList.emplace_back(ChunkVector(out, err, chunkList.size(), stream.total_out));
-			} while (err == Z_OK);
-
-			size = stream.total_out;
-			inflateEnd(&stream);
-
-			FREE<byte>(out);
-			if (!skip_free) FREE<byte>(data);
-			out = ALLOC<BYTE>(size + 1);
-			size_t curPart = NULL;
-			size_t it = NULL;
-			for (const auto& entry : chunkList)
+			auto m_result = deflateInit(&m_zInfo, (int)level);
+			if (m_result != Z_OK)
 			{
-				memcpy(&out[curPart], entry.data, it == chunkList.size() - 1 ? size - curPart : chunk);
-				curPart += chunk;
-				++it;
+				deflateEnd(&m_zInfo);
+				return Z_ERRNO;
 			}
-			out[size] = '\0';
 
-			return err == Z_STREAM_END ? Z_OK : err;
+			BYTE m_chunkBuffer[chunk];
+			std::vector<TChunk> m_vChunk = {};
+			size_t m_total_out = 0;
+			do
+			{
+				m_zInfo.next_out = m_chunkBuffer;
+				m_zInfo.avail_out = chunk;
+				m_zInfo.avail_in = m_zInfo.avail_out;
+
+				m_result = deflate(&m_zInfo, Z_FINISH);
+				if (m_result != Z_OK && m_result != Z_STREAM_END)
+				{
+					return m_result;
+				}
+
+				TChunk m_chunk = {};
+				m_chunk.write(m_chunkBuffer, m_zInfo.total_out);
+				m_vChunk.emplace_back(m_chunk);
+				m_total_out += m_zInfo.total_out;
+			} while (m_result != Z_STREAM_END);
+			deflateEnd(&m_zInfo);
+
+			/*
+			* create the new buffer
+			*/
+			size = m_total_out;
+			FREE<BYTE>(out);
+			out = ALLOC<BYTE>(size + 1);
+
+			size_t m_off = 0;
+			for (const auto& m_chunk : m_vChunk)
+			{
+				memcpy(&out[m_off], m_chunk.m_bufferChunk, m_chunk.m_total_out);
+				m_off += m_chunk.m_total_out;
+			}
+			out[size] = 0;
+
+			return Z_OK;
+		}
+
+		int ZLib::Decompress(BYTE*& data, size_t& size)
+		{
+			z_stream m_zInfo = { 0 };
+			m_zInfo.zalloc = Z_NULL;
+			m_zInfo.zfree = Z_NULL;
+			m_zInfo.opaque = Z_NULL;
+
+			std::vector<TChunk> m_vChunk;
+			BYTE m_chunkBuffer[chunk];
+
+			auto m_result = inflateInit(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				return m_result;
+			}
+
+			size_t m_total_out = 0;
+			do
+			{
+				m_zInfo.avail_in = size;
+				m_zInfo.next_in = data;
+
+				do
+				{
+					m_zInfo.next_out = m_chunkBuffer;
+					m_zInfo.avail_out = chunk;
+					m_result = inflate(&m_zInfo, Z_NO_FLUSH);
+					if (m_result != Z_OK
+						&& m_result != Z_STREAM_END)
+					{
+						return m_result;
+					}
+
+					TChunk m_chunk;
+					m_chunk.write(m_chunkBuffer, m_zInfo.total_out);
+					m_vChunk.emplace_back(m_chunk);
+					m_total_out += m_zInfo.total_out;
+				} while (m_zInfo.avail_out == 0);
+			} while (m_result != Z_STREAM_END);
+
+			auto m_prevSize = size;
+			size = m_total_out;
+
+			m_result = inflateEnd(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				size = m_prevSize;
+				return m_result;
+			}
+
+			FREE<Byte>(data);
+			data = ALLOC<BYTE>(size + 1);
+			size_t m_off = 0;
+			for (const auto& m_chunk : m_vChunk)
+			{
+				memcpy(&data[m_off], m_chunk.m_bufferChunk, m_chunk.m_total_out);
+				m_off += m_chunk.m_total_out;
+			}
+			data[size] = 0;
+
+			return Z_OK;
+		}
+
+		int ZLib::Decompress(BYTE*& data, BYTE*& out, size_t& size)
+		{
+			z_stream m_zInfo = { 0 };
+			m_zInfo.zalloc = Z_NULL;
+			m_zInfo.zfree = Z_NULL;
+			m_zInfo.opaque = Z_NULL;
+
+			std::vector<TChunk> m_vChunk;
+			BYTE m_chunkBuffer[chunk];
+
+			auto m_result = inflateInit(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				return m_result;
+			}
+
+			size_t m_total_out = 0;
+			do
+			{
+				m_zInfo.avail_in = size;
+				m_zInfo.next_in = data;
+
+				do
+				{
+					m_zInfo.next_out = m_chunkBuffer;
+					m_zInfo.avail_out = chunk;
+					m_result = inflate(&m_zInfo, Z_NO_FLUSH);
+					if (m_result != Z_OK
+						&& m_result != Z_STREAM_END)
+					{
+						return m_result;
+					}
+
+					TChunk m_chunk;
+					m_chunk.write(m_chunkBuffer, m_zInfo.total_out);
+					m_vChunk.emplace_back(m_chunk);
+					m_total_out += m_zInfo.total_out;
+				} while (m_zInfo.avail_out == 0);
+			} while (m_result != Z_STREAM_END);
+
+			auto m_prevSize = size;
+			size = m_total_out;
+
+			m_result = inflateEnd(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				size = m_prevSize;
+				return m_result;
+			}
+
+			FREE<Byte>(out);
+			out = ALLOC<BYTE>(size + 1);
+			size_t m_off = 0;
+			for (const auto& m_chunk : m_vChunk)
+			{
+				memcpy(&out[m_off], m_chunk.m_bufferChunk, m_chunk.m_total_out);
+				m_off += m_chunk.m_total_out;
+			}
+			out[size] = 0;
+			return Z_OK;
 		}
 	}
 }

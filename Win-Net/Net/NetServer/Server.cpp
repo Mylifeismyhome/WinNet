@@ -2041,7 +2041,7 @@ void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, co
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION, skip_free);
+	NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION);
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
@@ -2063,7 +2063,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	NET_ZLIB::Decompress(data, out, size, skip_free);
+	NET_ZLIB::Decompress(data, out, size);
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif

@@ -1965,7 +1965,7 @@ namespace Net
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
-			NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION, skip_free);
+			NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION);
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
@@ -1987,7 +1987,7 @@ namespace Net
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
-			NET_ZLIB::Decompress(data, out, size, skip_free);
+			NET_ZLIB::Decompress(data, out, size);
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Decompressed data from size %llu to %llu"), PrevSize, size);
 #endif

@@ -6,6 +6,9 @@
 #include <Net/Net/NetString.h>
 #include <Net/Net/NetJson.h>
 
+// zlib
+#include <Net/Compression/Compression.h>
+
 // coding
 #include <Net/Coding/Hex.h>
 #include <Net/Coding/BASE32.h>
@@ -309,12 +312,30 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	Net::Json::Document m_doc;
-	if (!m_doc.Deserialize((const char*)R"({"available_server":[{"server_name":"mainserver","server_address":"164.68.127.226","server_port":7100},{"server_name":"updateserver","server_address":"164.68.127.226","server_port":7101}]})"))
+	NET_FILEMANAGER fmanager("test.txt", NET_FILE_READ);
+
+	BYTE* m_bytes = 0;
+	size_t m_size = 0;
+	if (fmanager.read(m_bytes, m_size))
 	{
-		return 0;
+		size_t m_outSize = m_size;
+		NET_ZLIB::Compress(m_bytes, m_size);
+
+		{
+			NET_FILEMANAGER fmanagerOut("test_comp-def.txt", NET_FILE_DISCARD | NET_FILE_WRITE);
+			fmanagerOut.write(m_bytes, m_size);
+		}
+
+		BYTE* m_out = ALLOC<BYTE>(m_outSize);
+		NET_ZLIB::Decompress(m_bytes, m_out, m_size);
+
+		{
+			NET_FILEMANAGER fmanagerOut("test_comp-inf.txt", NET_FILE_DISCARD | NET_FILE_WRITE);
+			fmanagerOut.write(m_out, m_size);
+		}
+
+		FREE<BYTE>(m_bytes);
 	}
-	std::cout << m_doc.Serialize() << std::endl;
 
 	//RUN(Basic);
 	//RUN(Hex);

@@ -21,9 +21,9 @@ namespace Net
 		namespace ZLib
 		{
 			int Compress(BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION);
-			int Compress(BYTE*&, BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION, bool = false);
-			int Decompress(BYTE*&, size_t&, bool = false);
-			int Decompress(BYTE*&, BYTE*&, size_t&, bool = false);
+			int Compress(BYTE*&, BYTE*&, size_t&, ZLIB_CompressionLevel = ZLIB_CompressionLevel::BEST_COMPRESSION);
+			int Decompress(BYTE*&, size_t&);
+			int Decompress(BYTE*&, BYTE*&, size_t&);
 		}
 	}
 }
