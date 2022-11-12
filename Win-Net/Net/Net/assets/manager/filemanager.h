@@ -109,7 +109,7 @@ namespace Net
 			bool write(const char*);
 			bool write(const wchar_t*);
 			bool size(size_t&);
-			void clear()const;
+			void flush();
 			void close();
 			ErrorCodes getLastError() const;
 			FileManagerErrorRef ErrorDescription(ErrorCodes) const;
@@ -137,7 +137,7 @@ namespace Net
 			bool write(const char*);
 			bool write(const wchar_t*);
 			bool size(size_t&);
-			void clear()const;
+			void flush();
 			void close();
 			ErrorCodes getLastError() const;
 			FileManagerErrorRef ErrorDescription(ErrorCodes) const;

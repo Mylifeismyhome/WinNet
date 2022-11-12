@@ -312,47 +312,22 @@ int main()
 {
 	NET_INITIALIZE(Net::ENABLE_LOGGING);
 
-	NET_FILEMANAGER fmanager("test.txt", NET_FILE_READ);
-
-	BYTE* m_bytes = 0;
-	size_t m_size = 0;
-	if (fmanager.read(m_bytes, m_size))
-	{
-		size_t m_outSize = m_size;
-		NET_ZLIB::Compress(m_bytes, m_size);
-
-		{
-			NET_FILEMANAGER fmanagerOut("test_comp-def.txt", NET_FILE_DISCARD | NET_FILE_WRITE);
-			fmanagerOut.write(m_bytes, m_size);
-		}
-
-		BYTE* m_out = ALLOC<BYTE>(m_outSize);
-		NET_ZLIB::Decompress(m_bytes, m_out, m_size);
-
-		{
-			NET_FILEMANAGER fmanagerOut("test_comp-inf.txt", NET_FILE_DISCARD | NET_FILE_WRITE);
-			fmanagerOut.write(m_out, m_size);
-		}
-
-		FREE<BYTE>(m_bytes);
-	}
-
-	//RUN(Basic);
-	//RUN(Hex);
-	//RUN(Base32);
-	//RUN(Base64);
-	//RUN(MD5);
-	//RUN(SHA1);
-	//RUN(TOTP);
-	//RUN(AES);
-	//RUN(rsa);
-	//RUN(Directory);
-	//RUN(HTTP);
-	//RUN(HTTPS);
-	//RUN(TIMER);
-	////RUN(DATABASE);
-	//RUN(JSON);
-	//RUN(NTP);
+	RUN(Basic);
+	RUN(Hex);
+	RUN(Base32);
+	RUN(Base64);
+	RUN(MD5);
+	RUN(SHA1);
+	RUN(TOTP);
+	RUN(AES);
+	RUN(rsa);
+	RUN(Directory);
+	RUN(HTTP);
+	RUN(HTTPS);
+	RUN(TIMER);
+	//RUN(DATABASE);
+	RUN(JSON);
+	RUN(NTP);
 
 	NET_UNLOAD;
 
