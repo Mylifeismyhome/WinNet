@@ -193,6 +193,19 @@ size_t Net::Packet::Packet::GetRawDataFullSize() const
 	return size;
 }
 
+Net::RawData_t* Net::Packet::GetRaw(const char* Key)
+{
+	for (auto& raw : this->raw)
+	{
+		if (!strcmp(raw.key(), Key))
+		{
+			return &raw;
+		}
+	}
+
+	return nullptr;
+}
+
 Net::String Net::Packet::Stringify()
 {
 	return this->json.Serialize(Net::Json::SerializeType::UNFORMATTED);
