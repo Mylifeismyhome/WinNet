@@ -54,6 +54,8 @@ namespace Net
 				return Z_DATA_ERROR;
 			}
 
+			m_iSizeCompressed = m_zInfo.total_out;
+
 			m_result = deflateEnd(&m_zInfo);
 			if (m_result != Z_OK)
 			{
