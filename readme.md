@@ -2,7 +2,7 @@
 ---
 <br/>
 
-## <span style="color:purple;font-weight: 600">[BUILD UP ON]</span>
+## <span style="color:purple;font-weight: 600">[DEPENDENCIES]</span>
 > - OpenSSL
 > - Crypto++
 > - ZLib

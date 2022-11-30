@@ -27,13 +27,6 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 
 static const char* GetModeA(const uint8_t Mode)
 {
-	if (Mode == NET_FILE_WRITE)
-		return ("wb");
-	if (Mode == NET_FILE_READ)
-		return ("rb");
-	if (Mode == NET_FILE_APPAND)
-		return ("ab");
-
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
@@ -47,18 +40,18 @@ static const char* GetModeA(const uint8_t Mode)
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
 		return ("rb+");
 
+	if (Mode == NET_FILE_WRITE || Mode == NET_FILE_DISCARD)
+		return ("wb");
+	if (Mode == NET_FILE_READ)
+		return ("rb");
+	if (Mode == NET_FILE_APPAND)
+		return ("ab");
+
 	return ("rb");
 }
 
 static const wchar_t* GetModeW(const uint8_t Mode)
 {
-	if (Mode == NET_FILE_WRITE)
-		return (L"wb");
-	if (Mode == NET_FILE_READ)
-		return (L"rb");
-	if (Mode == NET_FILE_APPAND)
-		return (L"ab");
-
 	if (Mode == (NET_FILE_READ | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_WRITE | NET_FILE_APPAND)
 		|| Mode == (NET_FILE_READ | NET_FILE_WRITE | NET_FILE_APPAND))
@@ -71,6 +64,13 @@ static const wchar_t* GetModeW(const uint8_t Mode)
 
 	if (Mode == (NET_FILE_READ | NET_FILE_WRITE))
 		return (L"rb+");
+
+	if (Mode == NET_FILE_WRITE || Mode == NET_FILE_DISCARD)
+		return (L"wb");
+	if (Mode == NET_FILE_READ)
+		return (L"rb");
+	if (Mode == NET_FILE_APPAND)
+		return (L"ab");
 
 	return (L"rb");
 }
@@ -263,9 +263,29 @@ namespace Net
 			return false;
 		}
 
-		void FileManagerW::clear() const
+		void FileManagerW::flush()
 		{
-			fflush(file);
+			auto prev_mode = this->Mode;
+
+			/*
+			* open with mode discard
+			*/
+			this->closeFile();
+			this->Mode = NET_FILE_DISCARD;
+			if (!this->openFile())
+			{
+				return;
+			}
+
+			/*
+			* open with stored mode
+			*/
+			this->closeFile();
+			this->Mode = prev_mode;
+			if (!this->openFile())
+			{
+				return;
+			}
 		}
 
 		void FileManagerW::close()
@@ -434,9 +454,29 @@ namespace Net
 			return false;
 		}
 
-		void FileManagerA::clear() const
+		void FileManagerA::flush()
 		{
-			fflush(file);
+			auto prev_mode = this->Mode;
+
+			/*
+			* open with mode discard
+			*/
+			this->closeFile();
+			this->Mode = NET_FILE_DISCARD;
+			if (!this->openFile())
+			{
+				return;
+			}
+
+			/*
+			* open with stored mode
+			*/
+			this->closeFile();
+			this->Mode = prev_mode;
+			if (!this->openFile())
+			{
+				return;
+			}
 		}
 
 		void FileManagerA::close()

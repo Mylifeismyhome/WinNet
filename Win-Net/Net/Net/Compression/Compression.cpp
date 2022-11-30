@@ -4,158 +4,121 @@ namespace Net
 {
 	namespace Compression
 	{
-		const size_t chunk = 1024;
-
-		struct ChunkVector
+		int ZLib::Compress(BYTE* m_pUncompressed, size_t m_iSizeUncompressed, BYTE*& m_pCompressed, size_t& m_iSizeCompressed, const ZLIB_CompressionLevel level)
 		{
-			byte data[chunk];
+			z_stream m_zInfo = { Z_NULL };
+			m_zInfo.zalloc = Z_NULL;
+			m_zInfo.zfree = Z_NULL;
+			m_zInfo.opaque = Z_NULL;
 
-			explicit ChunkVector(byte* data, const int err, const size_t listSize, const size_t totalOut)
+			auto m_result = deflateInit(&m_zInfo, (int)level);
+			if (m_result != Z_OK)
 			{
-				memset(this->data, NULL, chunk);
-				memcpy(this->data, data, err == Z_STREAM_END ? totalOut - listSize * chunk : chunk);
+				return m_result;
 			}
-		};
 
-		int ZLib::Compress(BYTE*& data, size_t& size, const ZLIB_CompressionLevel level)
+			m_zInfo.next_in = m_pUncompressed;
+			m_zInfo.avail_in = m_iSizeUncompressed;
+
+			/*
+			* determinate the required space for the compressed buffer
+			*/
+			m_iSizeCompressed = deflateBound(&m_zInfo, m_iSizeUncompressed);
+
+			/*
+			* just in-case if m_pUncompressed is allocated
+			* free it before we leak memory
+			*/
+			FREE<BYTE>(m_pCompressed);
+			m_pCompressed = ALLOC<BYTE>(m_iSizeCompressed + 1);
+			m_pCompressed[m_iSizeCompressed] = 0;
+
+			m_zInfo.next_out = m_pCompressed;
+			m_zInfo.avail_out = m_iSizeCompressed;
+
+			m_result = deflate(&m_zInfo, Z_FINISH);
+
+			/*
+			* deflate should report Z_STREAM_END
+			*/
+			if (m_result != Z_STREAM_END)
+			{
+				return Z_DATA_ERROR;
+			}
+
+			/*
+			* check if deflate is not greedy
+			*/
+			if (m_zInfo.avail_in != 0)
+			{
+				return Z_DATA_ERROR;
+			}
+
+			m_iSizeCompressed = m_zInfo.total_out;
+
+			m_result = deflateEnd(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				return m_result;
+			}
+
+			return Z_OK;
+		}
+
+		int ZLib::Decompress(BYTE* m_pCompressed, size_t m_iSizeCompressed, BYTE*& m_pUncompressed, size_t m_iSizeUncompressed)
 		{
-			z_stream zInfo = { 0 };
-			zInfo.total_in = zInfo.avail_in = size;
-			zInfo.total_out = zInfo.avail_out = size;
-			zInfo.next_in = data;
-			zInfo.next_out = data;
+			z_stream m_zInfo = { Z_NULL };
+			m_zInfo.zalloc = Z_NULL;
+			m_zInfo.zfree = Z_NULL;
+			m_zInfo.opaque = Z_NULL;
 
-			int nErr, nRet = -1;
-			nErr = deflateInit(&zInfo, Z_DEFAULT_COMPRESSION);
-			if (nErr == Z_OK) {
-				nErr = deflate(&zInfo, Z_FINISH);
-				if (nErr == Z_STREAM_END) {
-					nRet = zInfo.total_out;
+			m_zInfo.next_in = m_pCompressed;
+			m_zInfo.avail_in = m_iSizeCompressed;
+
+			auto m_result = inflateInit(&m_zInfo);
+			if (m_result != Z_OK)
+			{
+				return m_result;
+			}
+
+			/*
+			* just in-case if m_pUncompressed is allocated
+			* free it before we leak memory
+			*/
+			FREE<BYTE>(m_pUncompressed);
+			m_pUncompressed = ALLOC<BYTE>(m_iSizeUncompressed + 1);
+			m_pUncompressed[m_iSizeUncompressed] = 0;
+
+			for (;;)
+			{
+				m_zInfo.next_out = m_pUncompressed;
+				m_zInfo.avail_out = m_iSizeUncompressed;
+				m_result = inflate(&m_zInfo, Z_NO_FLUSH);
+				if (m_result == Z_STREAM_END)
+				{
+					break;
+				}
+				else if (m_result != Z_OK)
+				{
+					return m_result;
 				}
 			}
-			deflateEnd(&zInfo);
-			return(nRet);
-		}
 
-		int ZLib::Compress(BYTE*& data, BYTE*& out, size_t& size, const ZLIB_CompressionLevel level, const bool skip_free)
-		{
-			z_stream zInfo = { 0 };
-			zInfo.total_in = zInfo.avail_in = size;
-			zInfo.total_out = zInfo.avail_out = size;
-			zInfo.next_in = data;
-			zInfo.next_out = out;
-
-			int nErr, nRet = -1;
-			nErr = deflateInit(&zInfo, Z_DEFAULT_COMPRESSION);
-			if (nErr == Z_OK) {
-				nErr = deflate(&zInfo, Z_FINISH);
-				if (nErr == Z_STREAM_END) {
-					nRet = zInfo.total_out;
-				}
-			}
-			deflateEnd(&zInfo);
-
-			if (!skip_free) FREE<byte>(data);
-
-			return(nRet);
-		}
-
-		int ZLib::Decompress(BYTE*& data, size_t& size, const bool skip_free)
-		{
-			z_stream stream;
-			stream.zalloc = (alloc_func)nullptr;
-			stream.zfree = (free_func)nullptr;
-			stream.opaque = (voidpf)nullptr;
-
-			auto err = inflateInit(&stream);
-			if (err != Z_OK) return err;
-
-			auto out = ALLOC<BYTE>(chunk + 1);
-
-			std::vector<ChunkVector> chunkList;
-
-			stream.next_out = out;
-			stream.avail_out = NULL;
-			stream.next_in = (z_const Bytef*)data;
-			stream.avail_in = static_cast<uInt>(size);
-
-			do {
-				stream.next_out = out;
-				stream.avail_out = chunk;
-				stream.avail_in = static_cast<uInt>(size);
-				err = inflate(&stream, Z_NO_FLUSH);
-
-				if (err == Z_OK
-					|| err == Z_STREAM_END)
-					chunkList.emplace_back(ChunkVector(out, err, chunkList.size(), stream.total_out));
-			} while (err == Z_OK);
-
-			size = stream.total_out;
-			inflateEnd(&stream);
-
-			FREE<byte>(out);
-			if (!skip_free) FREE<byte>(data);
-			data = ALLOC<BYTE>(size + 1);
-			size_t curPart = NULL;
-			size_t it = NULL;
-			for (const auto& entry : chunkList)
+			m_result = inflateEnd(&m_zInfo);
+			if (m_result != Z_OK)
 			{
-				memcpy(&data[curPart], entry.data, it == chunkList.size() - 1 ? size - curPart : chunk);
-				curPart += chunk;
-				++it;
+				return m_result;
 			}
-			data[size] = '\0';
 
-			return err == Z_STREAM_END ? Z_OK : err;
-		}
-
-		int ZLib::Decompress(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
-		{
-			z_stream stream;
-			stream.zalloc = (alloc_func)nullptr;
-			stream.zfree = (free_func)nullptr;
-			stream.opaque = (voidpf)nullptr;
-
-			auto err = inflateInit(&stream);
-			if (err != Z_OK) return err;
-
-			out = ALLOC<BYTE>(chunk + 1);
-
-			std::vector<ChunkVector> chunkList;
-
-			stream.next_out = out;
-			stream.avail_out = NULL;
-			stream.next_in = (z_const Bytef*)data;
-			stream.avail_in = static_cast<uInt>(size);
-
-			do {
-				stream.next_out = out;
-				stream.avail_out = chunk;
-				stream.avail_in = static_cast<uInt>(size);
-				err = inflate(&stream, Z_NO_FLUSH);
-
-				if (err == Z_OK
-					|| err == Z_STREAM_END)
-					chunkList.emplace_back(ChunkVector(out, err, chunkList.size(), stream.total_out));
-			} while (err == Z_OK);
-
-			size = stream.total_out;
-			inflateEnd(&stream);
-
-			FREE<byte>(out);
-			if (!skip_free) FREE<byte>(data);
-			out = ALLOC<BYTE>(size + 1);
-			size_t curPart = NULL;
-			size_t it = NULL;
-			for (const auto& entry : chunkList)
+			/*
+			* check for bad inflate
+			*/
+			if (m_zInfo.total_out != 2 * m_iSizeUncompressed + m_iSizeCompressed / 2) 
 			{
-				memcpy(&out[curPart], entry.data, it == chunkList.size() - 1 ? size - curPart : chunk);
-				curPart += chunk;
-				++it;
+				return Z_DATA_ERROR;
 			}
-			out[size] = '\0';
 
-			return err == Z_STREAM_END ? Z_OK : err;
+			return Z_OK;
 		}
 	}
 }

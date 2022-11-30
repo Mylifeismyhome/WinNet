@@ -82,6 +82,7 @@ namespace Net
 		std::vector<Net::RawData_t>& GetRawData();
 		bool HasRawData() const;
 		size_t GetRawDataFullSize() const;
+		Net::RawData_t* GetRaw(const char* Key);
 
 		Net::String Stringify();
 	};
