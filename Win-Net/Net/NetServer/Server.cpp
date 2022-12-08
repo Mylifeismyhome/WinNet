@@ -1639,7 +1639,7 @@ struct TPacketExcecute
 	Net::Packet* m_packet;
 	Net::Server::Server* m_server;
 	NET_PEER m_peer;
-	int m_id;
+	int m_packetId;
 };
 
 NET_THREAD(ThreadPacketExecute)
@@ -1650,12 +1650,8 @@ NET_THREAD(ThreadPacketExecute)
 		return 1;
 	}
 
-	auto content = *tpe->m_packet;
-	content.Data().SetFreeRootObject(false);
-	content.Data().SetFreeRootArray(false);
-
-	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_id, content))
-		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_id, content))
+	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
+		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
 			tpe->m_server->DisconnectPeer(tpe->m_peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 
 	FREE<Net::Packet>(tpe->m_packet);
@@ -1670,8 +1666,8 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	);
 
 	NET_CPOINTER<BYTE> data;
-	Net::Packet* pPacket = ALLOC<Net::Packet>();
-	if (!pPacket)
+	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
+	if (!pPacket.valid())
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
@@ -1750,6 +1746,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 		if (!peer->cryption.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
 		{
+			pPacket.free();
 			AESKey.free();
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptKeyBase64);
@@ -1758,6 +1755,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 		if (!peer->cryption.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
 		{
+			pPacket.free();
 			AESKey.free();
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptIVBase64);
@@ -1767,6 +1765,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		NET_AES aes;
 		if (!aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())))
 		{
+			pPacket.free();
 			AESKey.free();
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
@@ -1847,11 +1846,12 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
 					{
+						pPacket.free();
 						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 						return;
 					}
 
-					pPacket->AddRaw(entry);
+					pPacket.get()->AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1898,6 +1898,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), dataSize))
 				{
+					pPacket.free();
 					data.free();
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 					return;
@@ -1982,7 +1983,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						entry.set_free(true);
 					}
 
-					pPacket->AddRaw(entry);
+					pPacket.get()->AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -2035,6 +2036,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 	if (!data.valid())
 	{
+		pPacket.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
 	}
@@ -2043,7 +2045,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	* parse json
 	* get packet id from it
 	* and json content
-	* 
+	*
 	* pass the json content into pPacket object
 	*/
 	int packetId = -1;
@@ -2051,6 +2053,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		Net::Json::Document doc;
 		if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))
 		{
+			pPacket.free();
 			data.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 			return;
@@ -2060,6 +2063,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 
 		if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
 		{
+			pPacket.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
 			return;
 		}
@@ -2067,6 +2071,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		packetId = doc[CSTRING("ID")]->as_int();
 		if (packetId < 0)
 		{
+			pPacket.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
 			return;
 		}
@@ -2074,17 +2079,18 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
 			&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
 		{
+			pPacket.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
 			return;
 		}
 
 		if (doc[CSTRING("CONTENT")]->is_object())
 		{
-			pPacket->Data().Set(doc[CSTRING("CONTENT")]->as_object());
+			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
 		}
 		else if (doc[CSTRING("CONTENT")]->is_array())
 		{
-			pPacket->Data().Set(doc[CSTRING("CONTENT")]->as_array());
+			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
 		}
 	}
 
@@ -2094,36 +2100,26 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 	{
 		TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
-		tpe->m_packet = pPacket;
+		tpe->m_packet = pPacket.get();
 		tpe->m_server = this;
 		tpe->m_peer = peer;
-		tpe->m_id = packetId;
-		if (!Net::Thread::Create(ThreadPacketExecute, tpe))
+		tpe->m_packetId = packetId;
+		if (Net::Thread::Create(ThreadPacketExecute, tpe))
 		{
-			FREE<TPacketExcecute>(tpe);
-
-			/*
-			* failed to create a thread
-			* instead execute in current thread
-			*/
-			if (!CheckDataN(peer, packetId, *pPacket))
-				if (!CheckData(peer, packetId, *pPacket))
-					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-
-			FREE<Net::Packet>(pPacket);
+			return;
 		}
-	}
-	else
-	{
-		/*
-		* execute in current thread
-		*/
-		if (!CheckDataN(peer, packetId, *pPacket))
-			if (!CheckData(peer, packetId, *pPacket))
-				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 
-		FREE<Net::Packet>(pPacket);
+		FREE<TPacketExcecute>(tpe);
 	}
+
+	/*
+	* execute in current thread
+	*/
+	if (!CheckDataN(peer, packetId, *pPacket.ref().get()))
+		if (!CheckData(peer, packetId, *pPacket.ref().get()))
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+
+	pPacket.free();
 }
 
 void Net::Server::Server::CompressData(BYTE*& data, size_t& size)

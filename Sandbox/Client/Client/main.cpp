@@ -24,7 +24,7 @@ int main()
 	NET_LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
-	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
+	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{

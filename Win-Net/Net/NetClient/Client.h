@@ -288,10 +288,8 @@ namespace Net
 			bool bReceiveThread;
 			DWORD DoReceive();
 
-		private:
-			bool CheckDataN(int id, NET_PACKET& pkg);
-
 		public:
+			bool CheckDataN(int id, NET_PACKET& pkg);
 			NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKET& pkg) { return false; }
 
 		private:
