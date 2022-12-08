@@ -20,7 +20,6 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 ---
-<br/>
 
 ## **BUILD HIERARCHY**
 ### NetCore
@@ -38,11 +37,7 @@
 ### NetWebSocket
 - NetCore
 
-<br/>
-
 ---
-
-<br/>
 
 ## **BUILD OPTIONS**
 ### Windows
@@ -54,11 +49,7 @@
 - [x] Static Build
 - [ ] Shared Build
 
-<br/>
-
 ---
-
-<br/>
 
 ## **HOW TO BUILD**
 ## Windows
@@ -111,11 +102,8 @@ Automatically runs in BUILD.bat
 	make sandboxserver
 	make sandboxwebsocket
 	make sandboxfeatures (use it to test functionality of NetCore Features)
-<br/>
 
 ---
-
-<br/>
 
 ## **FEATURES**
 >### TCP ONLY
@@ -182,5 +170,5 @@ Automatically runs in BUILD.bat
 - ## [x] Raw bytes for file sharing
 
 ## Websocket
-- ## [x] Plain
-- ## [x] TLS
+- [x] Plain
+- [x] TLS
