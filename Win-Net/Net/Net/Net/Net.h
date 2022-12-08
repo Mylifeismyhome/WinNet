@@ -690,6 +690,16 @@ namespace WebServerHandshake
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
 #define NET_OPT_NET_PROTOCOL_CHECK_TIME (1 << 25)
 
+/* Server & Client Option */
+
+/*
+* this option will force the library to spawn a thread to execute the packet in there
+* without this option, any callback that might perform some big job will block the socket from further execution
+* enable this option to perform the job in a seperate thread
+*/
+#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 26)
+#define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
+
 /* DEFAULT OPTION VALUES */
 #define NET_OPT_DEFAULT_MAX_PACKET_SIZE 65535
 #define NET_OPT_DEFAULT_RSA_SIZE 1024

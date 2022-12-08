@@ -382,6 +382,13 @@ void Net::WebSocket::Server::DisconnectPeer(NET_PEER peer, const int code)
 		return;
 	);
 
+	/*
+	* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
+	* that threads might call DisconnectPeer
+	* soo require a mutex to block it
+	*/
+	std::lock_guard<std::mutex> guard(peer->_mutex_disconnectPeer);
+
 	if (code == 0)
 	{
 		NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected"), SERVERNAME(this), peer->IPAddr().get());
@@ -1505,54 +1512,126 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	peer->network.clear();
 }
 
+struct TPacketExcecute
+{
+	Net::Packet* m_packet;
+	Net::WebSocket::Server* m_server;
+	NET_PEER m_peer;
+	int m_packetId;
+};
+
+NET_THREAD(ThreadPacketExecute)
+{
+	auto tpe = (TPacketExcecute*)parameter;
+	if (!tpe)
+	{
+		return 1;
+	}
+
+	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
+		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
+			tpe->m_server->DisconnectPeer(tpe->m_peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+
+	FREE<Net::Packet>(tpe->m_packet);
+	FREE<TPacketExcecute>(tpe);
+	return 0;
+}
+
 void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
 {
 	PEER_NOT_VALID(peer,
 		return;
 	);
 
-	if (!data) return;
-
-	NET_PACKET PKG;
-	if (!PKG.Deserialize(reinterpret_cast<char*>(data)))
+	if (!data)
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
 	}
 
-	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
+	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
+	if (!pPacket.valid())
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
 	}
 
-	const auto id = PKG[CSTRING("ID")]->as_int();
-	if (id < 0)
+	/*
+	* parse json
+	* get packet id from it
+	* and json content
+	*
+	* pass the json content into pPacket object
+	*/
+	int packetId = -1;
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
-		return;
+		Net::Json::Document doc;
+		if (!doc.Deserialize(reinterpret_cast<char*>(data)))
+		{
+			pPacket.free();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+			return;
+		}
+
+		if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
+		{
+			pPacket.free();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+			return;
+		}
+
+		packetId = doc[CSTRING("ID")]->as_int();
+		if (packetId < 0)
+		{
+			pPacket.free();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+			return;
+		}
+
+		if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
+			&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
+		{
+			pPacket.free();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+			return;
+		}
+
+		if (doc[CSTRING("CONTENT")]->is_object())
+		{
+			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
+		}
+		else if (doc[CSTRING("CONTENT")]->is_array())
+		{
+			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
+		}
 	}
 
-	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
-		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
+	/*
+	* check for option async to execute the callback in a seperate thread
+	*/
+	if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
-		return;
+		TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
+		tpe->m_packet = pPacket.get();
+		tpe->m_server = this;
+		tpe->m_peer = peer;
+		tpe->m_packetId = packetId;
+		if (Net::Thread::Create(ThreadPacketExecute, tpe))
+		{
+			return;
+		}
+
+		FREE<TPacketExcecute>(tpe);
 	}
 
-	NET_PACKET Content;
-	if (PKG[CSTRING("CONTENT")]->is_object())
-	{
-		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
-	}
-	else if (PKG[CSTRING("CONTENT")]->is_array())
-	{
-		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
-	}
-
-	if (!CheckDataN(peer, id, Content))
-		if (!CheckData(peer, id, Content))
+	/*
+	* execute in current thread
+	*/
+	if (!CheckDataN(peer, packetId, *pPacket.ref().get()))
+		if (!CheckData(peer, packetId, *pPacket.ref().get()))
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+
+	pPacket.free();
 }
 
 void Net::WebSocket::Server::onSSLTimeout(NET_PEER peer)

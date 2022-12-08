@@ -521,9 +521,15 @@ namespace Net
 
 		bool Client::Disconnect()
 		{
+			/*
+			* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
+			* that threads might call Disconnect
+			* soo require a mutex to block it
+			*/
+			std::lock_guard<std::mutex> guard(this->_mutex_disconnect);
+
 			if (!IsConnected())
 			{
-				NET_LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
 				return false;
 			}
 
@@ -535,23 +541,6 @@ namespace Net
 
 			NET_LOG_SUCCESS(CSTRING("[NET] - Disconnected from server"));
 			return true;
-		}
-
-		void Client::Timeout()
-		{
-			if (!IsConnected())
-			{
-				NET_LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
-				return;
-			}
-
-			// connection has been closed
-			ConnectionClosed();
-
-			// callback
-			OnTimeout();
-
-			NET_LOG_ERROR(CSTRING("[NET] - Connection has been closed, server did not answer anymore (TIMEOUT)"));
 		}
 
 		void Client::ConnectionClosed()
@@ -1550,10 +1539,43 @@ namespace Net
 			network.clearData();
 		}
 
+
+		struct TPacketExcecute
+		{
+			Net::Packet* m_packet;
+			Net::Client::Client* m_client;
+			int m_packetId;
+		};
+
+		NET_THREAD(ThreadPacketExecute)
+		{
+			auto tpe = (TPacketExcecute*)parameter;
+			if (!tpe)
+			{
+				return 1;
+			}
+
+			if (!tpe->m_client->CheckDataN(tpe->m_packetId, *tpe->m_packet))
+				if (!tpe->m_client->CheckData(tpe->m_packetId, *tpe->m_packet))
+				{
+					tpe->m_client->Disconnect();
+					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
+				}
+
+			FREE<Net::Packet>(tpe->m_packet);
+			FREE<TPacketExcecute>(tpe);
+			return 0;
+		}
+
 		void Client::ExecutePackage()
 		{
 			NET_CPOINTER<BYTE> data;
-			Packet Content;
+			NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
+			if (!pPacket.valid())
+			{
+				Disconnect();
+				return;
+			}
 
 			/* Crypt */
 			if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -1628,6 +1650,7 @@ namespace Net
 
 				if (!network.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
 				{
+					pPacket.free();
 					AESKey.free();
 					AESIV.free();
 					Disconnect();
@@ -1637,6 +1660,7 @@ namespace Net
 
 				if (!network.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
 				{
+					pPacket.free();
 					AESKey.free();
 					AESIV.free();
 					Disconnect();
@@ -1647,6 +1671,7 @@ namespace Net
 				NET_AES aes;
 				if (!aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())))
 				{
+					pPacket.free();
 					AESKey.free();
 					AESIV.free();
 					Disconnect();
@@ -1728,12 +1753,13 @@ namespace Net
 							/* decrypt aes */
 							if (!aes.decrypt(entry.value(), entry.size()))
 							{
+								pPacket.free();
 								Disconnect();
 								NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 								return;
 							}
 
-							Content.AddRaw(entry);
+							pPacket.get()->AddRaw(entry);
 							key.free();
 
 							offset += packageSize;
@@ -1779,6 +1805,7 @@ namespace Net
 						/* decrypt aes */
 						if (!aes.decrypt(data.get(), packageSize))
 						{
+							pPacket.free();
 							data.free();
 							Disconnect();
 							NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
@@ -1864,7 +1891,7 @@ namespace Net
 								entry.set_free(true);
 							}
 
-							Content.AddRaw(entry);
+							pPacket.get()->AddRaw(entry);
 							key.free();
 
 							offset += packageSize;
@@ -1917,60 +1944,90 @@ namespace Net
 
 			if (!data.valid())
 			{
+				pPacket.free();
 				Disconnect();
 				NET_LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
 				return;
 			}
 
-			NET_PACKET PKG;
-			if (!PKG.Deserialize(reinterpret_cast<char*>(data.get())))
+			int packetId = -1;
 			{
+				Net::Json::Document doc;
+				if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))
+				{
+					pPacket.free();
+					data.free();
+					Disconnect();
+					NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
+					return;
+				}
+
 				data.free();
-				Disconnect();
-				NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
-				return;
+
+				if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
+				{
+					pPacket.free();
+					Disconnect();
+					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+					return;
+				}
+
+				packetId = doc[CSTRING("ID")]->as_int();
+				if (packetId < 0)
+				{
+					pPacket.free();
+					Disconnect();
+					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+					return;
+				}
+
+				if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
+					&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
+				{
+					pPacket.free();
+					Disconnect();
+					NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
+					return;
+				}
+
+				if (doc[CSTRING("CONTENT")]->is_object())
+				{
+					pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
+				}
+				else if (doc[CSTRING("CONTENT")]->is_array())
+				{
+					pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
+				}
 			}
 
-			data.free();
-
-			if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
+			/*
+			* check for option async to execute the callback in a seperate thread
+			*/
+			if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 			{
-				Disconnect();
-				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-				return;
+				TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
+				tpe->m_packet = pPacket.get();
+				tpe->m_client = this;
+				tpe->m_packetId = packetId;
+				if (Net::Thread::Create(ThreadPacketExecute, tpe))
+				{
+					return;
+				}
+
+				FREE<TPacketExcecute>(tpe);
 			}
 
-			const auto id = PKG[CSTRING("ID")]->as_int();
-			if (id < 0)
-			{
-				Disconnect();
-				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-				return;
-			}
-
-			if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
-				&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
-			{
-				Disconnect();
-				NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
-				return;
-			}
-
-			if (PKG[CSTRING("CONTENT")]->is_object())
-			{
-				Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
-			}
-			else if (PKG[CSTRING("CONTENT")]->is_array())
-			{
-				Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
-			}
-
-			if (!CheckDataN(id, Content))
-				if (!CheckData(id, Content))
+			/*
+			* execute in current thread
+			*/
+			if (!CheckDataN(packetId, *pPacket.ref().get()))
+				if (!CheckData(packetId, *pPacket.ref().get()))
 				{
 					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 				}
+
+			pPacket.free();
 		}
 
 		void Client::CompressData(BYTE*& data, size_t& size)
@@ -2185,7 +2242,7 @@ namespace Net
 		if (!(PKG[CSTRING("code")] && PKG[CSTRING("code")]->is_int()))
 		{
 			// Callback
-			OnForcedDisconnect(-1);
+			OnConnectionClosed(-1);
 			return;
 		}
 
@@ -2196,7 +2253,7 @@ namespace Net
 			OnVersionMismatch();
 
 		// Callback
-		OnForcedDisconnect(code);
+		OnConnectionClosed(code);
 		NET_END_PACKET;
 	}
 }

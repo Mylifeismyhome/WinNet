@@ -83,8 +83,10 @@ namespace Net
 	{
 		Net::Json::Document json;
 		std::vector<Net::RawData_t> raw;
+		bool freeRaw;
 
 	public:
+		Packet();
 		~Packet();
 
 		Net::Json::BasicValueRead operator[](const char* key)
@@ -102,6 +104,7 @@ namespace Net
 
 		void SetJson(Net::Json::Document& doc);
 		void SetRaw(const std::vector<Net::RawData_t>& raw);
+		void SetFreeRaw(bool freeRaw);
 
 		std::vector<Net::RawData_t>& GetRawData();
 		bool HasRawData() const;

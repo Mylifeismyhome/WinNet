@@ -1324,15 +1324,14 @@ void Net::Json::Object::Destroy()
 
 		case Type::OBJECT:
 			/*
-			* object is sharing its memory
+			*	object is sharing its memory
+			*	associated object is now having the ownership of this object
+			*	do not destroy the object yet
+			*	the leader will do that for us
 			*/
 			if (tmp->as_object()->IsSharedMemory())
 			{
-				/*
-				* its sharing its memory with our object
-				* manually destroy it
-				*/
-				tmp->as_object()->Destroy();
+				break;
 			}
 
 			FREE<Net::Json::BasicValue<Net::Json::Object>>(value[i]);
@@ -1340,15 +1339,14 @@ void Net::Json::Object::Destroy()
 
 		case Type::ARRAY:
 			/*
-			* array is sharing its memory
+			*	array is sharing its memory
+			*	associated object is now having the ownership of this object
+			*	do not destroy the object yet
+			*	the leader will do that for us
 			*/
 			if (tmp->as_array()->IsSharedMemory())
 			{
-				/*
-				* its sharing its memory with our object
-				* manually destroy it
-				*/
-				tmp->as_array()->Destroy();
+				break;
 			}
 
 			FREE<Net::Json::BasicValue<Net::Json::Array>>(value[i]);
@@ -1505,7 +1503,7 @@ void Net::Json::Object::operator=(const Object& m_Object)
 {
 	this->m_type = m_Object.m_type;
 	this->value = m_Object.value;
-	this->m_bSharedMemory = m_Object.m_bSharedMemory;
+	this->m_bSharedMemory = false;
 
 	/*
 	* object moved
@@ -2913,15 +2911,14 @@ void Net::Json::Array::Destroy()
 
 		case Type::OBJECT:
 			/*
-			* object is sharing its memory
+			*	object is sharing its memory
+			*	associated object is now having the ownership of this object
+			*	do not destroy the object yet
+			*	the leader will do that for us
 			*/
 			if (tmp->as_object()->IsSharedMemory())
 			{
-				/*
-				* its sharing its memory with our object
-				* manually destroy it
-				*/
-				tmp->as_object()->Destroy();
+				break;
 			}
 
 			FREE<Net::Json::BasicValue<Net::Json::Object>>(value[i]);
@@ -2929,15 +2926,14 @@ void Net::Json::Array::Destroy()
 
 		case Type::ARRAY:
 			/*
-			* array is sharing its memory
+			*	array is sharing its memory
+			*	associated object is now having the ownership of this object
+			*	do not destroy the object yet
+			*	the leader will do that for us
 			*/
 			if (tmp->as_array()->IsSharedMemory())
 			{
-				/*
-				* its sharing its memory with our object
-				* manually destroy it
-				*/
-				tmp->as_array()->Destroy();
+				break;
 			}
 
 			FREE<Net::Json::BasicValue<Net::Json::Array>>(value[i]);
@@ -2996,7 +2992,7 @@ void Net::Json::Array::operator=(const Array& m_Array)
 {
 	this->m_type = m_Array.m_type;
 	this->value = m_Array.value;
-	this->m_bSharedMemory = m_Array.m_bSharedMemory;
+	this->m_bSharedMemory = false;
 
 	/*
 	* array moved
@@ -4170,7 +4166,6 @@ Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 
 void Net::Json::Document::Set(Object obj)
 {
-	obj.SetSharedMemory(true);
 	this->root_obj = obj;
 	this->m_type = Type::OBJECT;
 	this->SetFreeRootObject(true);
@@ -4178,7 +4173,6 @@ void Net::Json::Document::Set(Object obj)
 
 void Net::Json::Document::Set(Object* obj)
 {
-	obj->SetSharedMemory(true);
 	this->root_obj = *obj;
 	this->m_type = Type::OBJECT;
 	this->SetFreeRootObject(true);
@@ -4186,7 +4180,6 @@ void Net::Json::Document::Set(Object* obj)
 
 void Net::Json::Document::Set(Array arr)
 {
-	arr.SetSharedMemory(true);
 	this->root_array = arr;
 	this->m_type = Type::ARRAY;
 	this->SetFreeRootArray(true);
@@ -4194,7 +4187,6 @@ void Net::Json::Document::Set(Array arr)
 
 void Net::Json::Document::Set(Array* arr)
 {
-	arr->SetSharedMemory(true);
 	this->root_array = *arr;
 	this->m_type = Type::ARRAY;
 	this->SetFreeRootArray(true);

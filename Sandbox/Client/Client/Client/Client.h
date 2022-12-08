@@ -7,8 +7,7 @@ NET_CLASS(Client, NET_CLIENT)
 {
 	NET_CALLBACK(void, OnConnected);
 	NET_CALLBACK(void, OnDisconnected);
-	NET_CALLBACK(void, OnForcedDisconnect, int);
-	NET_CALLBACK(void, OnTimeout);
+	NET_CALLBACK(void, OnConnectionClosed, int);
 	NET_CALLBACK(void, OnKeysReceived);
 	NET_CALLBACK(void, OnKeysFailed);
 	NET_CALLBACK(void, OnConnectionEstabilished);

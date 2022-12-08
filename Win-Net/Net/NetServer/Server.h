@@ -210,6 +210,8 @@ namespace Net
 
 				NET_HANDLE_TIMER hWaitForNetProtocol;
 
+				std::mutex _mutex_disconnectPeer;
+
 				peerInfo()
 				{
 					UniqueID = INVALID_UID;
@@ -261,8 +263,6 @@ namespace Net
 			bool ValidHeader(NET_PEER, bool&);
 			void ProcessPackages(NET_PEER);
 			void ExecutePackage(NET_PEER);
-
-			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
 
 			/* Native Packages */
 			NET_DECLARE_PACKET(RSAHandshake);
@@ -357,6 +357,7 @@ namespace Net
 			bool Close();
 
 			NET_DEFINE_CALLBACK(void, Tick) {}
+			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
 			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET& pkg) { return false; }
 			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
 			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
