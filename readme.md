@@ -69,8 +69,7 @@
 3. Enter perl path (as example: C:\Strawberry)
 4. Enter nasm path (as example: C:\Users\Tobias\AppData\Local\bin\NASM)
 > ## <span style="color:red;font-weight: 800">[WARNING]</span>
-> using '<span style="color:yellow;font-weight: 400">setx</span>' to set nasm path to system environment.
-Automatically runs in BUILD.bat
+> uses '<span style="color:yellow;font-weight: 400">setx</span>' to set nasm path to system environment.
 
 ## Linux
 ### build all
