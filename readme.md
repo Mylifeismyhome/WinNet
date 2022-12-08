@@ -108,16 +108,11 @@ Automatically runs in BUILD.bat
 ## **FEATURES**
 >### TCP ONLY
 >>#### using WinSocket for Windows build and Unix Socket for Linux build
-
-[x] Client
-
-[x] Server
-
-[x] Websocket
-
-[x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
-
-[x] Non-Blocking
+- [x] Client
+- [x] Server
+- [x] Websocket
+- [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
+- [x] Non-Blocking
 
 ## Classes
 ## Net
