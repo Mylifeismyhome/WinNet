@@ -109,65 +109,68 @@ Automatically runs in BUILD.bat
 >### TCP ONLY
 >>#### using WinSocket for Windows build and Unix Socket for Linux build
 
-## [x] Client
-## [x] Server
-## [x] Websocket
-## [x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
-## [x] Non-Blocking
-</br>
+[x] Client
+
+[x] Server
+
+[x] Websocket
+
+[x] Peer Thread Pooling (definable amount of allowed peers inside a thread)
+
+[x] Non-Blocking
 
 ## Classes
 ## Net
-- ## [x] Http/s
-- ## [x] String
-- ## [x] Json
-- ## [x] Packet
+- [x] Http/s
+- [x] String
+- [x] Json
+- [x] Packet
 
 ## Database
-- ## [x] Mysql
+- [x] Mysql
 
 ## Cryption
-- ## [x] AES
-- ## [x] RSA
-- ## [x]  Pointer
-- ## [x]  XOR Runtime & Compiletime
+- [x] AES
+- [x] RSA
+- [x]  Pointer
+- [x]  XOR Runtime & Compiletime
 
 ## Compression
-- ## [x] ZLib
+- [x] ZLib
 
 ## Coding
-- ## [x] Base32
-- ## [x] Base64
-- ## [x] Hex
-- ## [x] MD5
-- ## [x] SHA1
+- [x] Base32
+- [x] Base64
+- [x] Hex
+- [x] MD5
+- [x] SHA1
 
 ## Auth
-- ## [x] TOTP
+- [x] TOTP
 
 ## Manager
-- ## [x] Directory
-- ## [x] File
-- ## [x] Logging
+- [x] Directory
+- [x] File
+- [x] Logging
 
 ## Handler
-- ## [x] Thread
-- ## [x] Timer
+- [x] Thread
+- [x] Timer
 
 ## Protocol
-- ## [x] NTP
-- ## [x] ICMP
+- [x] NTP
+- [x] ICMP
 
 ## Windows
-- ## [x] Import Resolver
+- [x] Import Resolver
 
 ## Communication between Server & Client
-- ## [x] Plain
-- ## [x] Crypted using RSA + AES
-- ## [ ] Compression
-- ## [x] TOTP to abort incoming packets that reached the defined allowed time
-- ## [x] Json for data sharing
-- ## [x] Raw bytes for file sharing
+- [x] Plain
+- [x] Crypted using RSA + AES
+- [ ] Compression
+- [x] TOTP to abort incoming packets that reached the defined allowed time
+- [x] Json for data sharing
+- [x] Raw bytes for file sharing
 
 ## Websocket
 - [x] Plain
