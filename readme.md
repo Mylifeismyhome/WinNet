@@ -73,7 +73,7 @@
 
 ## Linux
 ### build all
-	make all (includes dependencies)
+	make all (include dependencies)
 	make build
 	make sandbox
 ### build dependencies
