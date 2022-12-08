@@ -187,7 +187,6 @@ namespace Net
 				NET_UID UniqueID;
 				SOCKET pSocket;
 				struct sockaddr_in client_addr;
-				float lastaction;
 
 				bool estabilished;
 
@@ -205,6 +204,8 @@ namespace Net
 
 				typeLatency latency;
 				NET_HANDLE_TIMER hCalcLatency;
+
+				std::mutex _mutex_disconnectPeer;
 
 				peerInfo()
 				{

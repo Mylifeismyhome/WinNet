@@ -382,6 +382,13 @@ void Net::WebSocket::Server::DisconnectPeer(NET_PEER peer, const int code)
 		return;
 	);
 
+	/*
+	* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
+	* that threads might call DisconnectPeer
+	* soo require a mutex to block it
+	*/
+	std::lock_guard<std::mutex> guard(peer->_mutex_disconnectPeer);
+
 	if (code == 0)
 	{
 		NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): has been disconnected"), SERVERNAME(this), peer->IPAddr().get());

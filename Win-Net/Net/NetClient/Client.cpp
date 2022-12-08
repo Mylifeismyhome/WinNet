@@ -521,9 +521,15 @@ namespace Net
 
 		bool Client::Disconnect()
 		{
+			/*
+			* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
+			* that threads might call Disconnect
+			* soo require a mutex to block it
+			*/
+			std::lock_guard<std::mutex> guard(this->_mutex_disconnect);
+
 			if (!IsConnected())
 			{
-				NET_LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
 				return false;
 			}
 
@@ -535,23 +541,6 @@ namespace Net
 
 			NET_LOG_SUCCESS(CSTRING("[NET] - Disconnected from server"));
 			return true;
-		}
-
-		void Client::Timeout()
-		{
-			if (!IsConnected())
-			{
-				NET_LOG_ERROR(CSTRING("[NET] - Can't disconnect from server, reason: not connected!"));
-				return;
-			}
-
-			// connection has been closed
-			ConnectionClosed();
-
-			// callback
-			OnTimeout();
-
-			NET_LOG_ERROR(CSTRING("[NET] - Connection has been closed, server did not answer anymore (TIMEOUT)"));
 		}
 
 		void Client::ConnectionClosed()
@@ -2253,7 +2242,7 @@ namespace Net
 		if (!(PKG[CSTRING("code")] && PKG[CSTRING("code")]->is_int()))
 		{
 			// Callback
-			OnForcedDisconnect(-1);
+			OnConnectionClosed(-1);
 			return;
 		}
 
@@ -2264,7 +2253,7 @@ namespace Net
 			OnVersionMismatch();
 
 		// Callback
-		OnForcedDisconnect(code);
+		OnConnectionClosed(code);
 		NET_END_PACKET;
 	}
 }

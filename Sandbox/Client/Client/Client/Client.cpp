@@ -29,10 +29,9 @@ void Client::OnDisconnected()
 	Net::Timer::Clear(hTimer);
 }
 
-void Client::OnForcedDisconnect(int) {}
+void Client::OnConnectionClosed(int) {}
 void Client::OnKeysFailed() {}
 void Client::OnKeysReceived() {}
-void Client::OnTimeout() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_PACKET(Client, Test)

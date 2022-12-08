@@ -164,6 +164,7 @@ namespace Net
 
 		public:
 			Network network;
+			std::mutex _mutex_disconnect;
 
 		private:
 			DWORD optionBitFlag;
@@ -248,8 +249,6 @@ namespace Net
 
 			void SetRecordingData(bool);
 
-			void Timeout();
-
 			/* clear all stored data */
 			void ConnectionClosed();
 
@@ -316,8 +315,7 @@ namespace Net
 		protected:
 			NET_DEFINE_CALLBACK(void, OnConnected) {}
 			NET_DEFINE_CALLBACK(void, OnDisconnected) {}
-			NET_DEFINE_CALLBACK(void, OnForcedDisconnect, int code) {}
-			NET_DEFINE_CALLBACK(void, OnTimeout) {}
+			NET_DEFINE_CALLBACK(void, OnConnectionClosed, int code) {}
 			NET_DEFINE_CALLBACK(void, OnKeysReceived) {}
 			NET_DEFINE_CALLBACK(void, OnKeysFailed) {}
 			NET_DEFINE_CALLBACK(void, OnConnectionEstabilished) {}

@@ -210,6 +210,8 @@ namespace Net
 
 				NET_HANDLE_TIMER hWaitForNetProtocol;
 
+				std::mutex _mutex_disconnectPeer;
+
 				peerInfo()
 				{
 					UniqueID = INVALID_UID;

@@ -416,6 +416,13 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 		return;
 	);
 
+	/*
+	* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
+	* that threads might call DisconnectPeer
+	* soo require a mutex to block it
+	*/
+	std::lock_guard<std::mutex> guard(peer->_mutex_disconnectPeer);
+
 	if (!skipNotify)
 	{
 		NET_PACKET PKG;
