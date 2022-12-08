@@ -658,17 +658,17 @@ namespace Net
 			return connected;
 		}
 
-		size_t Client::GetNextPackageSize() const
+		size_t Client::GetNextPacketSize() const
 		{
 			return network.data_full_size;
 		}
 
-		size_t Client::GetReceivedPackageSize() const
+		size_t Client::GetReceivedPacketSize() const
 		{
 			return network.data_size;
 		}
 
-		float Client::GetReceivedPackageSizeAsPerc() const
+		float Client::GetReceivedPacketSizeAsPerc() const
 		{
 			// Avoid dividing zero with zero
 			if (network.data_size <= 0)
@@ -992,20 +992,20 @@ namespace Net
 		}
 
 		/*
-		*							Visualisation of package structure in NET
+		*							Visualisation of packet structure in NET
 		*	------------------------------------------------------------------------------------------
 		*				CRYPTED VERSION					|		NON-CRYPTED VERSION
 		*	------------------------------------------------------------------------------------------
 		*	{KEYWORD}{SIZE}DATA
 		*	------------------------------------------------------------------------------------------
-		*	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
-		*		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
+		*	{BEGIN PACKET}								*		{BEGIN PACKET}
+		*		{PACKET SIZE}{...}						*			{PACKET SIZE}{...}
 		*			{KEY}{...}...						*						-
 		*			{IV}{...}...						*						-
 		*			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
 		*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
 		*			{DATA}{...}...						*				{DATA}{...}...
-		*	{END PACKAGE}								*		{END PACKAGE}
+		*	{END PACKET}								*		{END PACKET}
 		*
 		*/
 		void Client::DoSend(const int id, NET_PACKET& pkg)
@@ -1107,7 +1107,7 @@ namespace Net
 
 				combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + strlen(NET_AES_IV) + aesKeySize + IVSize + 8;
 
-				// Append Raw data package size
+				// Append Raw data packet size
 				if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
 				std::string dataSizeStr = std::to_string(dataBufferSize);
@@ -1119,34 +1119,34 @@ namespace Net
 				const auto IVSizeStr = std::to_string(IVSize);
 				combinedSize += IVSizeStr.length();
 
-				const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
+				const auto EntirePacketSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 				auto bPreviousSentFailed = false;
 
-				/* Append Package Header */
+				/* Append Packet Header */
 				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
-				// Append Package Size Syntax
+				// Append Packet Size Syntax
 				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
-				/* Append Package Key */
+				/* Append Packet Key */
 				SingleSend(NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 				SingleSend(KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(Key, aesKeySize, bPreviousSentFailed, sendToken);
 
-				/* Append Package IV */
+				/* Append Packet IV */
 				SingleSend(NET_AES_IV, strlen(NET_AES_IV), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 				SingleSend(IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(IV, IVSize, bPreviousSentFailed, sendToken);
 
-				/* Append Package Data */
+				/* Append Packet Data */
 				if (PKG.HasRawData())
 				{
 					for (auto& data : PKG.GetRawData())
@@ -1181,7 +1181,7 @@ namespace Net
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
-				/* Append Package Footer */
+				/* Append Packet Footer */
 				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 			}
 			else
@@ -1205,26 +1205,26 @@ namespace Net
 
 				combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + 4;
 
-				// Append Raw data package size
+				// Append Raw data packet size
 				if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
 				std::string dataSizeStr = std::to_string(dataBufferSize);
 				combinedSize += dataSizeStr.length();
 
-				const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
+				const auto EntirePacketSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 				auto bPreviousSentFailed = false;
 
-				/* Append Package Header */
+				/* Append Packet Header */
 				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
-				// Append Package Size Syntax
+				// Append Packet Size Syntax
 				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
-				/* Append Package Data */
+				/* Append Packet Data */
 				if (PKG.HasRawData())
 				{
 					for (auto& data : PKG.GetRawData())
@@ -1259,26 +1259,26 @@ namespace Net
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
-				/* Append Package Footer */
+				/* Append Packet Footer */
 				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 			}
 		}
 
 		/*
-		*							Visualisation of package structure in NET
+		*							Visualisation of packet structure in NET
 		*	------------------------------------------------------------------------------------------
 		*				CRYPTED VERSION					|		NON-CRYPTED VERSION
 		*	------------------------------------------------------------------------------------------
 		*	{KEYWORD}{SIZE}DATA
 		*	------------------------------------------------------------------------------------------
-		*	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
-		*		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
+		*	{BEGIN PACKET}								*		{BEGIN PACKET}
+		*		{PACKET SIZE}{...}						*			{PACKET SIZE}{...}
 		*			{KEY}{...}...								*						-
 		*			{IV}{...}...									*						-
 		*			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
 		*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
 		*			{DATA}{...}...								*				{DATA}{...}...
-		*	{END PACKAGE}									*		{END PACKAGE}
+		*	{END PACKET}									*		{END PACKET}
 		*
 		 */
 		DWORD Client::DoReceive()
@@ -1307,7 +1307,7 @@ namespace Net
 					return FREQUENZ;
 				}
 
-				ProcessPackages();
+				ProcessPackets();
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				return FREQUENZ;
 			}
@@ -1350,7 +1350,7 @@ namespace Net
 			}
 
 			memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-			ProcessPackages();
+			ProcessPackets();
 			return 0;
 		}
 
@@ -1431,7 +1431,7 @@ namespace Net
 			return true;
 		}
 
-		void Client::ProcessPackages()
+		void Client::ProcessPackets()
 		{
 			// check valid data size
 			if (!network.data_size)
@@ -1497,7 +1497,7 @@ namespace Net
 				}
 			}
 
-			// keep going until we have received the entire package
+			// keep going until we have received the entire packet
 			if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
 
 			if (!already_checked)
@@ -1519,8 +1519,8 @@ namespace Net
 				return;
 			}
 
-			// Execute the package
-			ExecutePackage();
+			// Execute the packet
+			ExecutePacket();
 
 			// re-alloc buffer
 			const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
@@ -1567,7 +1567,7 @@ namespace Net
 			return 0;
 		}
 
-		void Client::ExecutePackage()
+		void Client::ExecutePacket()
 		{
 			NET_CPOINTER<BYTE> data;
 			NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
@@ -1722,7 +1722,7 @@ namespace Net
 							offset += strlen(NET_RAW_DATA);
 
 							// read size
-							size_t packageSize = 0;
+							size_t packetSize = 0;
 							{
 								for (auto y = offset; y < network.data_size; ++y)
 								{
@@ -1732,7 +1732,7 @@ namespace Net
 										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 										dataSizeStr.get()[psize] = '\0';
-										packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+										packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 										dataSizeStr.free();
 
 										offset += psize + 2;
@@ -1741,7 +1741,7 @@ namespace Net
 								}
 							}
 
-							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
 							/* Decompression */
 							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1762,7 +1762,7 @@ namespace Net
 							pPacket.get()->AddRaw(entry);
 							key.free();
 
-							offset += packageSize;
+							offset += packetSize;
 						}
 					}
 
@@ -1772,7 +1772,7 @@ namespace Net
 						offset += NET_DATA_LEN;
 
 						// read size
-						size_t packageSize = 0;
+						size_t packetSize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
 							{
@@ -1782,7 +1782,7 @@ namespace Net
 									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
-									packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 									dataSizeStr.free();
 
 									offset += psize + 2;
@@ -1792,18 +1792,18 @@ namespace Net
 						}
 
 						// read the data
-						data = ALLOC<BYTE>(packageSize + 1);
-						memcpy(data.get(), &network.data.get()[offset], packageSize);
-						data.get()[packageSize] = '\0';
+						data = ALLOC<BYTE>(packetSize + 1);
+						memcpy(data.get(), &network.data.get()[offset], packetSize);
+						data.get()[packetSize] = '\0';
 
-						offset += packageSize;
+						offset += packetSize;
 
 						/* Decompression */
 						//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-						//	DecompressData(data.reference().get(), packageSize, true);
+						//	DecompressData(data.reference().get(), packetSize, true);
 
 						/* decrypt aes */
-						if (!aes.decrypt(data.get(), packageSize))
+						if (!aes.decrypt(data.get(), packetSize))
 						{
 							pPacket.free();
 							data.free();
@@ -1863,7 +1863,7 @@ namespace Net
 							offset += strlen(NET_RAW_DATA);
 
 							// read size
-							size_t packageSize = 0;
+							size_t packetSize = 0;
 							{
 								for (auto y = offset; y < network.data_size; ++y)
 								{
@@ -1873,7 +1873,7 @@ namespace Net
 										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 										dataSizeStr.get()[psize] = '\0';
-										packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+										packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 										dataSizeStr.free();
 
 										offset += psize + 2;
@@ -1882,7 +1882,7 @@ namespace Net
 								}
 							}
 
-							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packageSize, false };
+							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
 							/* Decompression */
 							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1894,7 +1894,7 @@ namespace Net
 							pPacket.get()->AddRaw(entry);
 							key.free();
 
-							offset += packageSize;
+							offset += packetSize;
 						}
 					}
 
@@ -1904,7 +1904,7 @@ namespace Net
 						offset += NET_DATA_LEN;
 
 						// read size
-						size_t packageSize = 0;
+						size_t packetSize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
 							{
@@ -1914,7 +1914,7 @@ namespace Net
 									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
 									dataSizeStr.get()[psize] = '\0';
-									packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 									dataSizeStr.free();
 
 									offset += psize + 2;
@@ -1924,15 +1924,15 @@ namespace Net
 						}
 
 						// read the data
-						data = ALLOC<BYTE>(packageSize + 1);
-						memcpy(data.get(), &network.data.get()[offset], packageSize);
-						data.get()[packageSize] = '\0';
+						data = ALLOC<BYTE>(packetSize + 1);
+						memcpy(data.get(), &network.data.get()[offset], packetSize);
+						data.get()[packetSize] = '\0';
 
-						offset += packageSize;
+						offset += packetSize;
 
 						/* Decompression */
 						//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-							//DecompressData(data.reference().get(), packageSize);
+							//DecompressData(data.reference().get(), packetSize);
 					}
 
 					// we have reached the end of reading
@@ -2126,10 +2126,10 @@ namespace Net
 		}
 
 		NET_NATIVE_PACKET_DEFINITION_BEGIN(Client);
-		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake);
-		NET_DEFINE_PACKET(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage);
-		NET_DEFINE_PACKET(EstabilishConnectionPackage, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage);
-		NET_DEFINE_PACKET(ClosePackage, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage);
+		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_RSAHandshake);
+		NET_DEFINE_PACKET(Version, NET_NATIVE_PACKET_ID::PKG_Version);
+		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_Estabilish);
+		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_Close);
 		NET_PACKET_DEFINITION_END;
 
 		NET_BEGIN_PACKET(Client, RSAHandshake);
@@ -2171,7 +2171,7 @@ namespace Net
 		Net::Coding::Base64::encode(b64, b64len);
 
 		reply[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, reply);
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_RSAHandshake, reply);
 
 		FREE<byte>(b64);
 
@@ -2189,7 +2189,7 @@ namespace Net
 		}
 		NET_END_PACKET;
 
-		NET_BEGIN_PACKET(Client, VersionPackage);
+		NET_BEGIN_PACKET(Client, Version);
 		if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 		{
 			Disconnect();
@@ -2209,10 +2209,10 @@ namespace Net
 		reply[CSTRING("Revision")] = Version::Revision();
 		const auto Key = Version::Key().get();
 		reply[CSTRING("Key")] = Key.get();
-		NET_SEND(NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, reply);
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_Version, reply);
 		NET_END_PACKET;
 
-		NET_BEGIN_PACKET(Client, EstabilishConnectionPackage);
+		NET_BEGIN_PACKET(Client, EstabilishConnection);
 		if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
 		{
 			Disconnect();
@@ -2233,7 +2233,7 @@ namespace Net
 		OnConnectionEstabilished();
 		NET_END_PACKET;
 
-		NET_BEGIN_PACKET(Client, ClosePackage);
+		NET_BEGIN_PACKET(Client, Close);
 		// connection has been closed
 		ConnectionClosed();
 

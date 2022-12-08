@@ -35,5 +35,5 @@ void Client::OnKeysReceived() {}
 void Client::OnVersionMismatch() {}
 
 NET_BEGIN_PACKET(Client, Test)
-NET_LOG("Received Package from Server");
+NET_LOG("Received Packet from Server");
 NET_END_PACKET
