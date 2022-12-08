@@ -1078,7 +1078,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data
 
 	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
-	// write package id as big endian
+	// write packet id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);
 	newBuffer[0] = (id >> 24) & 0xFF;
 	newBuffer[1] = (id >> 16) & 0xFF;
@@ -1363,7 +1363,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	if (OPC == NET_OPCODE_PING)
 	{
 		NET_PACKET pong;
-		DoSend(peer, NET_WS_CONTROL_PACKAGE, pong, NET_OPCODE_PONG);
+		DoSend(peer, NET_WS_CONTROL_PACKET, pong, NET_OPCODE_PONG);
 		peer->network.clear();
 		return;
 	}
@@ -1490,10 +1490,10 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 			if (OPC == NET_OPCODE_TEXT || OPC == NET_OPCODE_BINARY)
 			{
 				if (!peer->network.dataFragmentValid())
-					ProcessPackage(peer, peer->network.getData(), peer->network.getDataSize());
+					ProcessPacket(peer, peer->network.getData(), peer->network.getDataSize());
 				else
 				{
-					ProcessPackage(peer, peer->network.getDataFragmented(), peer->network.getDataFragmentSize());
+					ProcessPacket(peer, peer->network.getDataFragmented(), peer->network.getDataFragmentSize());
 					peer->network.setDataFragmented(nullptr);
 					peer->network.setDataFragmentSize(NULL);
 				}
@@ -1537,7 +1537,7 @@ NET_THREAD(ThreadPacketExecute)
 	return 0;
 }
 
-void Net::WebSocket::Server::ProcessPackage(NET_PEER peer, BYTE* data, const size_t size)
+void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size_t size)
 {
 	PEER_NOT_VALID(peer,
 		return;

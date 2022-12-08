@@ -280,9 +280,9 @@ namespace Net
 			void SetConnected(bool);
 			bool IsConnected() const;
 
-			size_t GetNextPackageSize() const;
-			size_t GetReceivedPackageSize() const;
-			float GetReceivedPackageSizeAsPerc() const;
+			size_t GetNextPacketSize() const;
+			size_t GetReceivedPacketSize() const;
+			float GetReceivedPacketSizeAsPerc() const;
 
 			bool bReceiveThread;
 			DWORD DoReceive();
@@ -302,15 +302,15 @@ namespace Net
 
 		private:
 			bool ValidHeader(bool&);
-			void ProcessPackages();
-			void ExecutePackage();
+			void ProcessPackets();
+			void ExecutePacket();
 			bool CreateTOTPSecret();
 
 			NET_DECLARE_PACKET(RSAHandshake);
-			NET_DECLARE_PACKET(KeysPackage);
-			NET_DECLARE_PACKET(VersionPackage);
-			NET_DECLARE_PACKET(EstabilishConnectionPackage);
-			NET_DECLARE_PACKET(ClosePackage);
+			NET_DECLARE_PACKET(Keys);
+			NET_DECLARE_PACKET(Version);
+			NET_DECLARE_PACKET(EstabilishConnection);
+			NET_DECLARE_PACKET(Close);
 
 		protected:
 			NET_DEFINE_CALLBACK(void, OnConnected) {}

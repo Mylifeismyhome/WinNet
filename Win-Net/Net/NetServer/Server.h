@@ -246,9 +246,9 @@ namespace Net
 		private:
 			NET_PEER CreatePeer(sockaddr_in, SOCKET);
 
-			size_t GetNextPackageSize(NET_PEER);
-			size_t GetReceivedPackageSize(NET_PEER);
-			float GetReceivedPackageSizeAsPerc(NET_PEER);
+			size_t GetNextPacketSize(NET_PEER);
+			size_t GetReceivedPacketSize(NET_PEER);
+			float GetReceivedPacketSizeAsPerc(NET_PEER);
 
 			DWORD optionBitFlag;
 			std::vector<OptionInterface_t*> option;
@@ -261,12 +261,12 @@ namespace Net
 			bool bRunning;
 
 			bool ValidHeader(NET_PEER, bool&);
-			void ProcessPackages(NET_PEER);
-			void ExecutePackage(NET_PEER);
+			void ProcessPackets(NET_PEER);
+			void ExecutePacket(NET_PEER);
 
-			/* Native Packages */
+			/* Native Packets */
 			NET_DECLARE_PACKET(RSAHandshake);
-			NET_DECLARE_PACKET(VersionPackage);
+			NET_DECLARE_PACKET(Version);
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);

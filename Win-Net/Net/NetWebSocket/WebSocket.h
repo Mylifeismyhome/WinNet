@@ -95,7 +95,7 @@ CONSTEXPR auto NET_OPCODE_CLOSE = 0x8;
 CONSTEXPR auto NET_OPCODE_PING = 0x9;
 CONSTEXPR auto NET_OPCODE_PONG = 0xA;
 
-CONSTEXPR auto NET_WS_CONTROL_PACKAGE = -1; // used to send a ping or pong frame
+CONSTEXPR auto NET_WS_CONTROL_PACKET = -1; // used to send a ping or pong frame
 CONSTEXPR auto NET_WS_FIN = 0x80;
 CONSTEXPR auto NET_WS_OPCODE = 0xF;
 CONSTEXPR auto NET_WS_MASK = 0x7F;
@@ -244,7 +244,7 @@ namespace Net
 
 			void DecodeFrame(NET_PEER);
 			void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
-			void ProcessPackage(NET_PEER, BYTE*, size_t);
+			void ProcessPacket(NET_PEER, BYTE*, size_t);
 
 		public:
 			Server();

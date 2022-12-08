@@ -4,7 +4,7 @@
 
 namespace Sandbox
 {
-	NET_DEFINE_PACKAGES(Packet,
+	NET_DEFINE_PACKETS(Packet,
 		PKG_TEST
 	);
 }

@@ -24,8 +24,8 @@
 
 #pragma once
 
-#define NET_NATIVE_PACKAGE_ID Net::NativePacket::PacketTypes
-#define NET_LAST_PACKAGE_ID Net::NativePacket::PacketTypes::PKG_LAST_PACKAGE
+#define NET_NATIVE_PACKET_ID Net::NativePacket::PacketTypes
+#define NET_LAST_PACKET_ID Net::NativePacket::PacketTypes::PKG_LAST_PACKET
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetPacket.h>
@@ -38,11 +38,11 @@ namespace Net
 		enum PacketTypes
 		{
 			PKG_RSAHandshake = 0,
-			PKG_VersionPackage,
-			PKG_EstabilishPackage,
-			PKG_ClosePackage,
+			PKG_Version,
+			PKG_Estabilish,
+			PKG_Close,
 
-			PKG_LAST_PACKAGE
+			PKG_LAST_PACKET
 		};
 	}
 }

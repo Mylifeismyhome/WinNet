@@ -337,7 +337,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 	return true;
 }
 
-size_t Net::Server::Server::GetNextPackageSize(NET_PEER peer)
+size_t Net::Server::Server::GetNextPacketSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return 0;
@@ -346,7 +346,7 @@ size_t Net::Server::Server::GetNextPackageSize(NET_PEER peer)
 	return peer->network.getDataFullSize();
 }
 
-size_t Net::Server::Server::GetReceivedPackageSize(NET_PEER peer)
+size_t Net::Server::Server::GetReceivedPacketSize(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return 0;
@@ -355,7 +355,7 @@ size_t Net::Server::Server::GetReceivedPackageSize(NET_PEER peer)
 	return peer->network.getDataSize();
 }
 
-float Net::Server::Server::GetReceivedPackageSizeAsPerc(NET_PEER peer)
+float Net::Server::Server::GetReceivedPacketSizeAsPerc(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return 0.0f;
@@ -427,7 +427,7 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 	{
 		NET_PACKET PKG;
 		PKG[CSTRING("code")] = code;
-		NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_ClosePackage, pkg);
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Close, pkg);
 	}
 
 	if (code == 0)
@@ -949,20 +949,20 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 }
 
 /*
-*							Visualisation of package structure in NET
+*							Visualisation of packet structure in NET
 *	---------------------------------------------------------------------------------------------------------------------------------
 *				CRYPTED VERSION					|		NON-CRYPTED VERSION
 *	---------------------------------------------------------------------------------------------------------------------------------
 *	{KEYWORD}{SIZE}DATA
 *	---------------------------------------------------------------------------------------------------------------------------------
-*	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
-*		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
+*	{BEGIN PACKET}								*		{BEGIN PACKET}
+*		{PACKET SIZE}{...}						*			{PACKET SIZE}{...}
 *			{KEY}{...}...						*						-
 *			{IV}{...}...						*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
 *			{RAW DATA}{...}...					*				{RAW DATA}{...}...
 *			{DATA}{...}...						*				{DATA}{...}...
-*	{END PACKAGE}								*		{END PACKAGE}
+*	{END PACKET}								*		{END PACKET}
 *
 */
 void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
@@ -1064,7 +1064,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
 
-		// Append Raw data package size
+		// Append Raw data packet size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
 		std::string dataSizeStr = std::to_string(dataBufferSize);
@@ -1076,34 +1076,34 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		const auto IVSizeStr = std::to_string(IVSize);
 		combinedSize += IVSizeStr.length();
 
-		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
+		const auto EntirePacketSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 		auto bPreviousSentFailed = false;
 
-		/* Append Package Header */
+		/* Append Packet Header */
 		SingleSend(peer, NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
-		// Append Package Size Syntax
+		// Append Packet Size Syntax
 		SingleSend(peer, NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
-		/* Append Package Key */
+		/* Append Packet Key */
 		SingleSend(peer, NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, Key, aesKeySize, bPreviousSentFailed, sendToken);
 
-		/* Append Package IV */
+		/* Append Packet IV */
 		SingleSend(peer, NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, IV, IVSize, bPreviousSentFailed, sendToken);
 
-		/* Append Package Data */
+		/* Append Packet Data */
 		if (PKG.HasRawData())
 		{
 			for (auto& data : PKG.GetRawData())
@@ -1138,7 +1138,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
-		/* Append Package Footer */
+		/* Append Packet Footer */
 		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 	else
@@ -1162,26 +1162,26 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + 4;
 
-		// Append Raw data package size
+		// Append Raw data packet size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
 
 		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
 
-		const auto EntirePackageSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
+		const auto EntirePacketSizeStr = std::to_string(combinedSize + std::to_string(combinedSize).length());
 
 		auto bPreviousSentFailed = false;
 
-		/* Append Package Header */
+		/* Append Packet Header */
 		SingleSend(peer, NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
 
-		// Append Package Size Syntax
+		// Append Packet Size Syntax
 		SingleSend(peer, NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-		SingleSend(peer, EntirePackageSizeStr.data(), EntirePackageSizeStr.length(), bPreviousSentFailed, sendToken);
+		SingleSend(peer, EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
-		/* Append Package Data */
+		/* Append Packet Data */
 		if (PKG.HasRawData())
 		{
 			for (auto& data : PKG.GetRawData())
@@ -1216,7 +1216,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
 
-		/* Append Package Footer */
+		/* Append Packet Footer */
 		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
 	}
 }
@@ -1299,7 +1299,7 @@ NET_THREAD(PeerStartRoutine)
 
 		NET_PACKET PKG;
 		PKG[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake, pkg);
+		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_RSAHandshake, pkg);
 
 		//FREE<byte>(b64);
 	}
@@ -1310,7 +1310,7 @@ NET_THREAD(PeerStartRoutine)
 	{
 		// keep it empty, we get it filled back
 		NET_PACKET PKG;
-		server->NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, pkg);
+		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Version, pkg);
 	}
 
 	peer->hWaitForNetProtocol = Net::Timer::Create(TimerPeerCheckAwaitNetProtocol, server->Isset(NET_OPT_NET_PROTOCOL_CHECK_TIME) ? server->GetOption<double>(NET_OPT_NET_PROTOCOL_CHECK_TIME) : NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME, parameter);
@@ -1366,20 +1366,20 @@ void Net::Server::Server::Acceptor()
 }
 
 /*
-*							Visualisation of package structure in NET
+*							Visualisation of packet structure in NET
 *	------------------------------------------------------------------------------------------
 *				CRYPTED VERSION					|		NON-CRYPTED VERSION
 *	------------------------------------------------------------------------------------------
 *	{KEYWORD}{SIZE}DATA
 *	------------------------------------------------------------------------------------------
-*	{BEGIN PACKAGE}								*		{BEGIN PACKAGE}
-*		{PACKAGE SIZE}{...}						*			{PACKAGE SIZE}{...}
-*			{KEY}{...}...								*						-
-*			{IV}{...}...									*						-
+*	{BEGIN PACKET}								*		{BEGIN PACKET}
+*		{PACKET SIZE}{...}						*			{PACKET SIZE}{...}
+*			{KEY}{...}...						*						-
+*			{IV}{...}...						*						-
 *			{RAW DATA KEY}{...}...				*				{RAW DATA KEY}{...}...
-*			{RAW DATA}{...}...						*				{RAW DATA}{...}...
-*			{DATA}{...}...								*				{DATA}{...}...
-*	{END PACKAGE}									*		{END PACKAGE}
+*			{RAW DATA}{...}...					*				{RAW DATA}{...}...
+*			{DATA}{...}...						*				{DATA}{...}...
+*	{END PACKET}								*		{END PACKET}
 *
  */
 bool Net::Server::Server::DoReceive(NET_PEER peer)
@@ -1412,7 +1412,7 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 			return true;
 		}
 
-		ProcessPackages(peer);
+		ProcessPackets(peer);
 		peer->network.reset();
 		return true;
 	}
@@ -1452,7 +1452,7 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 	}
 
 	peer->network.reset();
-	ProcessPackages(peer);
+	ProcessPackets(peer);
 	return false;
 }
 
@@ -1531,7 +1531,7 @@ bool Net::Server::Server::ValidHeader(NET_PEER peer, bool& use_old_token)
 	return true;
 }
 
-void Net::Server::Server::ProcessPackages(NET_PEER peer)
+void Net::Server::Server::ProcessPackets(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1600,7 +1600,7 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 		}
 	}
 
-	// keep going until we have received the entire package
+	// keep going until we have received the entire packet
 	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE || peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
 	if (!already_checked)
@@ -1621,8 +1621,8 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 		return;
 	}
 
-	// Execute the package
-	ExecutePackage(peer);
+	// Execute the packet
+	ExecutePacket(peer);
 
 	// re-alloc buffer
 	const auto leftSize = static_cast<int>(peer->network.getDataSize() - peer->network.getDataFullSize()) > 0 ? peer->network.getDataSize() - peer->network.getDataFullSize() : INVALID_SIZE;
@@ -1666,7 +1666,7 @@ NET_THREAD(ThreadPacketExecute)
 	return 0;
 }
 
-void Net::Server::Server::ExecutePackage(NET_PEER peer)
+void Net::Server::Server::ExecutePacket(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
 		return;
@@ -1822,7 +1822,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = 0;
+					size_t packetSize = 0;
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
@@ -1832,7 +1832,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 								NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 								dataSizeStr.get()[psize] = '\0';
-								packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+								packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 								dataSizeStr.free();
 
 								offset += psize + 2;
@@ -1841,7 +1841,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1861,7 +1861,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					pPacket.get()->AddRaw(entry);
 					key.free();
 
-					offset += packageSize;
+					offset += packetSize;
 				}
 			}
 
@@ -1871,7 +1871,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = 0;
+				size_t packetSize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -1881,7 +1881,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
-							packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+							packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
 
 							offset += psize + 2;
@@ -1891,16 +1891,16 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				}
 
 				// read the data
-				size_t dataSize = packageSize;
+				size_t dataSize = packetSize;
 				data = ALLOC<BYTE>(dataSize + 1);
 				memcpy(data.get(), &peer->network.getData()[offset], dataSize);
 				data.get()[dataSize] = '\0';
 
-				offset += packageSize;
+				offset += packetSize;
 
 				/* Decompression */
 			//	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-				//	DecompressData(data.reference().get(), packageSize, true);
+				//	DecompressData(data.reference().get(), packetSize, true);
 
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), dataSize))
@@ -1962,7 +1962,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					offset += strlen(NET_RAW_DATA);
 
 					// read size
-					size_t packageSize = 0;
+					size_t packetSize = 0;
 					{
 						for (auto y = offset; y < peer->network.getDataSize(); ++y)
 						{
@@ -1972,7 +1972,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 								NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 								dataSizeStr.get()[psize] = '\0';
-								packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+								packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 								dataSizeStr.free();
 
 								offset += psize + 2;
@@ -1981,7 +1981,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						}
 					}
 
-					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packageSize, false };
+					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
 					/* Decompression */
 					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1993,7 +1993,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 					pPacket.get()->AddRaw(entry);
 					key.free();
 
-					offset += packageSize;
+					offset += packetSize;
 				}
 			}
 
@@ -2003,7 +2003,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				offset += NET_DATA_LEN;
 
 				// read size
-				size_t packageSize = 0;
+				size_t packetSize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
@@ -2013,7 +2013,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
 							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
 							dataSizeStr.get()[psize] = '\0';
-							packageSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+							packetSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
 							dataSizeStr.free();
 
 							offset += psize + 2;
@@ -2023,15 +2023,15 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 				}
 
 				// read the data
-				data = ALLOC<BYTE>(packageSize + 1);
-				memcpy(data.get(), &peer->network.getData()[offset], packageSize);
-				data.get()[packageSize] = '\0';
+				data = ALLOC<BYTE>(packetSize + 1);
+				memcpy(data.get(), &peer->network.getData()[offset], packetSize);
+				data.get()[packetSize] = '\0';
 
-				offset += packageSize;
+				offset += packetSize;
 
 				/* Decompression */
 				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					//DecompressData(data.reference().get(), packageSize);
+					//DecompressData(data.reference().get(), packetSize);
 			}
 
 			// we have reached the end of reading
@@ -2174,8 +2174,8 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 }
 
 NET_NATIVE_PACKET_DEFINITION_BEGIN(Net::Server::Server)
-NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKAGE_ID::PKG_RSAHandshake)
-NET_DEFINE_PACKET(VersionPackage, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage)
+NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_RSAHandshake)
+NET_DEFINE_PACKET(Version, NET_NATIVE_PACKET_ID::PKG_Version)
 NET_PACKET_DEFINITION_END
 
 NET_BEGIN_PACKET(Net::Server::Server, RSAHandshake)
@@ -2223,10 +2223,10 @@ NET_LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this
 
 // keep it empty, we get it filled back
 Packet Version;
-NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_VersionPackage, Version);
+NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Version, Version);
 NET_END_PACKET
 
-NET_BEGIN_PACKET(Net::Server::Server, VersionPackage)
+NET_BEGIN_PACKET(Net::Server::Server, Version)
 if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
 {
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
@@ -2263,7 +2263,7 @@ if ((majorVersion == Version::Major())
 	peer->NetVersionMatched = true;
 
 	Packet estabilish;
-	NET_SEND(peer, NET_NATIVE_PACKAGE_ID::PKG_EstabilishPackage, estabilish);
+	NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Estabilish, estabilish);
 
 	peer->estabilished = true;
 

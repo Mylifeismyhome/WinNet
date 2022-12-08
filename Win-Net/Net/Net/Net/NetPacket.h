@@ -30,15 +30,15 @@ pkg1.SetRaw(pkg2.GetRawData());
 
 ///////////////////////////////////////////////////////////
 ///														///
-///		  FAST PACKAGE ID IMPLEMENTATION				///
+///			FAST PACKET ID IMPLEMENTATION				///
 ///														///
 //////////////////////////////////////////////////////////
-#define NET_DEFINE_PACKAGES(name, first, ...) \
+#define NET_DEFINE_PACKETS(name, first, ...) \
 namespace name \
 { \
 	enum T##name \
 	{ \
-	first = NET_LAST_PACKAGE_ID, \
+	first = NET_LAST_PACKET_ID, \
 	__VA_ARGS__ \
 	}; \
 }

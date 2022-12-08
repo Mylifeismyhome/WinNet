@@ -249,7 +249,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 }
 
 ////////////////////////////////////////////////////
-//    SECTION - Package Prefix & Suffix     //
+//    SECTION - PACKET Prefix & Suffix     //
 //////////////////////////////////////////////////
 #define NET_PACKET_BRACKET_OPEN CSTRING("{")
 #define NET_PACKET_BRACKET_CLOSE CSTRING("}")
@@ -260,12 +260,12 @@ __forceinline void NET_FREE_MEM(void* pointer)
 #define NET_DATA CSTRING("{DATA}")
 #define NET_DATA_LEN 6
 
-#define NET_PACKET_HEADER CSTRING("{BEGIN PACKAGE}")
+#define NET_PACKET_HEADER CSTRING("{BEGIN PACKET}")
 #define NET_PACKET_HEADER_LEN 15
-#define NET_PACKET_FOOTER CSTRING("{END PACKAGE}")
+#define NET_PACKET_FOOTER CSTRING("{END PACKET}")
 #define NET_PACKET_FOOTER_LEN 13
 
-#define NET_PACKET_SIZE CSTRING("{PACKAGE SIZE}")
+#define NET_PACKET_SIZE CSTRING("{PACKET SIZE}")
 #define NET_PACKET_SIZE_LEN 14
 
 // Key is crypted using RSA
@@ -679,7 +679,7 @@ namespace WebServerHandshake
 #define NET_OPT_WS_NO_HANDSHAKE (1 << 17)
 #define NET_OPT_DISABLE_LATENCY_REQUEST (1 << 18)
 
-/* RELEVANT TO NTP PROTOCOL (ANTI-PACKAGE EMULATION) */
+/* RELEVANT TO NTP PROTOCOL (ANTI-PACKET EMULATION) */
 #define NET_OPT_USE_NTP (1 << 19)
 #define NET_OPT_NTP_HOST (1 << 20)
 #define NET_OPT_NTP_PORT (1 << 21)
@@ -724,7 +724,7 @@ namespace WebServerHandshake
 #define NET_OPT_DEFAULT_WS_CUSTOM_ORIGIN CSTRING("localhost")
 #define NET_OPT_DEFAULT_WS_NO_HANDSHAKE false
 
-/* RELEVANT TO NTP PROTOCOL (ANTI-PACKAGE EMULATION) */
+/* RELEVANT TO NTP PROTOCOL (ANTI-PACKET EMULATION) */
 #define NET_OPT_DEFAULT_USE_NTP false
 #define NET_OPT_DEFAULT_NTP_HOST Net::Protocol::NTP::ResolveHostname(CSTRING("time.google.com"))
 #define NET_OPT_DEFAULT_NTP_PORT 123
