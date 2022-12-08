@@ -1634,6 +1634,35 @@ void Net::Server::Server::ProcessPackages(NET_PEER peer)
 	peer->network.clear();
 }
 
+struct TPacketExcecute
+{
+	Net::Packet* m_packet;
+	Net::Server::Server* m_server;
+	NET_PEER m_peer;
+	int m_id;
+};
+
+NET_THREAD(ThreadPacketExecute)
+{
+	auto tpe = (TPacketExcecute*)parameter;
+	if (!tpe)
+	{
+		return 1;
+	}
+
+	auto content = *tpe->m_packet;
+	content.Data().SetFreeRootObject(false);
+	content.Data().SetFreeRootArray(false);
+
+	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_id, content))
+		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_id, content))
+			tpe->m_server->DisconnectPeer(tpe->m_peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+
+	FREE<Net::Packet>(tpe->m_packet);
+	FREE<TPacketExcecute>(tpe);
+	return 0;
+}
+
 void Net::Server::Server::ExecutePackage(NET_PEER peer)
 {
 	PEER_NOT_VALID(peer,
@@ -1641,7 +1670,12 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 	);
 
 	NET_CPOINTER<BYTE> data;
-	Packet Content;
+	Net::Packet* pPacket = ALLOC<Net::Packet>();
+	if (!pPacket)
+	{
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		return;
+	}
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
@@ -1817,7 +1851,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						return;
 					}
 
-					Content.AddRaw(entry);
+					pPacket->AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -1948,7 +1982,7 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 						entry.set_free(true);
 					}
 
-					Content.AddRaw(entry);
+					pPacket->AddRaw(entry);
 					key.free();
 
 					offset += packageSize;
@@ -2005,48 +2039,91 @@ void Net::Server::Server::ExecutePackage(NET_PEER peer)
 		return;
 	}
 
-	NET_PACKET PKG;
-	if (!PKG.Deserialize(reinterpret_cast<char*>(data.get())))
+	/*
+	* parse json
+	* get packet id from it
+	* and json content
+	* 
+	* pass the json content into pPacket object
+	*/
+	int packetId = -1;
 	{
+		Net::Json::Document doc;
+		if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))
+		{
+			data.free();
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+			return;
+		}
+
 		data.free();
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
-		return;
+
+		if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
+		{
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+			return;
+		}
+
+		packetId = doc[CSTRING("ID")]->as_int();
+		if (packetId < 0)
+		{
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+			return;
+		}
+
+		if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
+			&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
+		{
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+			return;
+		}
+
+		if (doc[CSTRING("CONTENT")]->is_object())
+		{
+			pPacket->Data().Set(doc[CSTRING("CONTENT")]->as_object());
+		}
+		else if (doc[CSTRING("CONTENT")]->is_array())
+		{
+			pPacket->Data().Set(doc[CSTRING("CONTENT")]->as_array());
+		}
 	}
 
-	data.free();
-
-	if (!(PKG[CSTRING("ID")] && PKG[CSTRING("ID")]->is_int()))
+	/*
+	* check for option async to execute the callback in a seperate thread
+	*/
+	if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
-		return;
-	}
+		TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
+		tpe->m_packet = pPacket;
+		tpe->m_server = this;
+		tpe->m_peer = peer;
+		tpe->m_id = packetId;
+		if (!Net::Thread::Create(ThreadPacketExecute, tpe))
+		{
+			FREE<TPacketExcecute>(tpe);
 
-	const auto id = PKG[CSTRING("ID")]->as_int();
-	if (id < 0)
-	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
-		return;
-	}
+			/*
+			* failed to create a thread
+			* instead execute in current thread
+			*/
+			if (!CheckDataN(peer, packetId, *pPacket))
+				if (!CheckData(peer, packetId, *pPacket))
+					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 
-	if (!(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_object())
-		&& !(PKG[CSTRING("CONTENT")] && PKG[CSTRING("CONTENT")]->is_array()))
-	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
-		return;
+			FREE<Net::Packet>(pPacket);
+		}
 	}
+	else
+	{
+		/*
+		* execute in current thread
+		*/
+		if (!CheckDataN(peer, packetId, *pPacket))
+			if (!CheckData(peer, packetId, *pPacket))
+				DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 
-	if (PKG[CSTRING("CONTENT")]->is_object())
-	{
-		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_object());
+		FREE<Net::Packet>(pPacket);
 	}
-	else if (PKG[CSTRING("CONTENT")]->is_array())
-	{
-		Content.Data().Set(PKG[CSTRING("CONTENT")]->as_array());
-	}
-
-	if (!CheckDataN(peer, id, Content))
-		if (!CheckData(peer, id, Content))
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 }
 
 void Net::Server::Server::CompressData(BYTE*& data, size_t& size)

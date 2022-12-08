@@ -112,10 +112,22 @@ void Net::RawData_t::free()
 	this->_valid = false;
 }
 
+Net::Packet::Packet::Packet()
+{
+	this->json = {};
+	this->raw = {};
+	this->freeRaw = true;
+}
+
 Net::Packet::Packet::~Packet()
 {
-	/* free all raw data */
-	for (auto& entry : this->raw) entry.free();
+	if (this->freeRaw)
+	{
+		for (auto& entry : this->raw)
+		{
+			entry.free();
+		}
+	}
 }
 
 Net::Json::Document& Net::Packet::Data()
@@ -183,6 +195,11 @@ void Net::Packet::SetJson(Net::Json::Document& doc)
 void Net::Packet::SetRaw(const std::vector<Net::RawData_t>& raw)
 {
 	this->raw = raw;
+}
+
+void Net::Packet::SetFreeRaw(bool freeRaw)
+{
+	this->freeRaw = freeRaw;
 }
 
 std::vector<Net::RawData_t>& Net::Packet::Packet::GetRawData()
