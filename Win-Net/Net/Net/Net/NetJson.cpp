@@ -1569,12 +1569,12 @@ size_t Net::Json::Object::CalcLengthForSerialize()
 		else if (tmp->GetType() == Type::INTEGER)
 		{
 			if (tmp->as_int() == 0) m_size += 1;
-			else m_size += floor(log10(abs(tmp->as_int()))) + 1;
+			else m_size += (size_t)floor(log10(abs(tmp->as_int()))) + 1;
 		}
 		else if (tmp->GetType() == Type::FLOAT)
 		{
 			int digits = 0;
-			long cnum = tmp->as_float();
+			long cnum = (long)tmp->as_float();
 			while (cnum > 0) //count no of digits before floating point
 			{
 				digits++;
@@ -1603,7 +1603,7 @@ size_t Net::Json::Object::CalcLengthForSerialize()
 		else if (tmp->GetType() == Type::DOUBLE)
 		{
 			int digits = 0;
-			long cnum = tmp->as_double();
+			long cnum = (long)tmp->as_double();
 			while (cnum > 0) //count no of digits before floating point
 			{
 				digits++;
@@ -3078,12 +3078,12 @@ size_t Net::Json::Array::CalcLengthForSerialize()
 		else if (tmp->GetType() == Type::INTEGER)
 		{
 			if (tmp->as_int() == 0) m_size += 1;
-			else m_size += floor(log10(abs(tmp->as_int()))) + 1;
+			else m_size += (size_t)floor(log10(abs(tmp->as_int()))) + 1;
 		}
 		else if (tmp->GetType() == Type::FLOAT)
 		{
 			int digits = 0;
-			long cnum = tmp->as_float();
+			long cnum = (long)tmp->as_float();
 			while (cnum > 0) //count no of digits before floating point
 			{
 				digits++;
@@ -3112,7 +3112,7 @@ size_t Net::Json::Array::CalcLengthForSerialize()
 		else if (tmp->GetType() == Type::DOUBLE)
 		{
 			int digits = 0;
-			long cnum = tmp->as_double();
+			long cnum = (long)tmp->as_double();
 			while (cnum > 0) //count no of digits before floating point
 			{
 				digits++;
