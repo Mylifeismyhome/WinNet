@@ -59,6 +59,7 @@ namespace Net
 		char _key[256];
 		byte* _data;
 		size_t _size;
+		size_t _original_size; // for compression
 		bool _free_after_sent; /* by default this value is set to TRUE */
 		bool _valid;
 
@@ -77,6 +78,10 @@ namespace Net
 		const char* key() const;
 		void set(byte* pointer);
 		void free();
+
+		void set_original_size(size_t size);
+		size_t original_size() const;
+		size_t& original_size();
 	};
 
 	class Packet
@@ -108,7 +113,7 @@ namespace Net
 
 		std::vector<Net::RawData_t>& GetRawData();
 		bool HasRawData() const;
-		size_t GetRawDataFullSize() const;
+		size_t GetRawDataFullSize(bool bCompression) const;
 		Net::RawData_t* GetRaw(const char* Key);
 
 		Net::String Stringify();

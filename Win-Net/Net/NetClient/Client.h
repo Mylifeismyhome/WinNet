@@ -108,6 +108,7 @@ namespace Net
 				size_t data_size;
 				size_t data_full_size;
 				size_t data_offset;
+				size_t data_original_uncompressed_size;
 				bool recordingData;
 				NET_RSA RSA;
 				bool RSAHandshake; // set to true as soon as we have the public key from the Server
@@ -140,6 +141,7 @@ namespace Net
 					data_size = 0;
 					data_full_size = 0;
 					data_offset = 0;
+					data_original_uncompressed_size = 0;
 					recordingData = false;
 					RSAHandshake = false;
 					estabilished = false;
@@ -254,8 +256,8 @@ namespace Net
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
-			void DecompressData(BYTE*&, size_t&);
-			void DecompressData(BYTE*&, BYTE*&, size_t&, bool = false);
+			void DecompressData(BYTE*&, size_t&, size_t);
+			void DecompressData(BYTE*&, BYTE*&, size_t&, size_t, bool = false);
 
 		public:
 			Client();
