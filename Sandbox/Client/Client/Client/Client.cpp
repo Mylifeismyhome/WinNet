@@ -1,8 +1,6 @@
 #include "Client.h"
 #include <Net/assets/thread.h>
 
-#include <Net/assets/manager/filemanager.h>
-
 NET_PACKET_DEFINITION_BEGIN(Client)
 NET_DEFINE_PACKET(Test, Sandbox::Packet::PKG_TEST)
 NET_PACKET_DEFINITION_END
@@ -24,20 +22,6 @@ void Client::OnConnected() {}
 void Client::OnConnectionEstabilished()
 {
 	hTimer = Net::Timer::Create(Test, 1000, this);
-
-	// send raw file to client
-	NET_FILEMANAGERA fm("test.jpg", NET_FILE_READ);
-
-	BYTE* buff = nullptr;
-	size_t size = 0;
-	if (fm.read(buff, size))
-	{
-		NET_PACKET pkg;
-		pkg.AddRaw("Image", buff, size);
-		NET_SEND(Sandbox::Packet::PKG_TEST_RAW, pkg);
-
-		//FREE<BYTE>(buff);
-	}
 }
 
 void Client::OnDisconnected()

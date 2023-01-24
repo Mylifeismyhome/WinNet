@@ -25,7 +25,7 @@ int main()
 #endif
 
 	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
-	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, false });
+	client.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{

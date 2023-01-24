@@ -5,7 +5,6 @@
 namespace Sandbox
 {
 	NET_DEFINE_PACKETS(Packet,
-		PKG_TEST,
-		PKG_TEST_RAW
+		PKG_TEST
 	);
 }

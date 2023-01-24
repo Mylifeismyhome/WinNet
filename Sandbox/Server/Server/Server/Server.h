@@ -14,5 +14,4 @@ NET_CLASS(Server, NET_SERVER)
 
 public:
 	NET_DECLARE_PACKET(Test);
-	NET_DECLARE_PACKET(TestRaw);
 };

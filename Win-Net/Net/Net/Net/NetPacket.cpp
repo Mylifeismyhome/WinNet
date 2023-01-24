@@ -29,6 +29,7 @@ Net::RawData_t::RawData_t()
 	memset(this->_key, 0, 256);
 	this->_data = nullptr;
 	this->_size = 0;
+	this->_original_size = 0;
 	this->_free_after_sent = false;
 	this->_valid = false;
 }
@@ -38,6 +39,7 @@ Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size)
 	strcpy(this->_key, name);
 	this->_data = pointer;
 	this->_size = size;
+	this->_original_size = size;
 	this->_free_after_sent = true;
 	this->_valid = true;
 }
@@ -47,6 +49,7 @@ Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size, co
 	strcpy(this->_key, name);
 	this->_data = pointer;
 	this->_size = size;
+	this->_original_size = size;
 	this->_free_after_sent = free_after_sent;
 	this->_valid = true;
 }
@@ -110,6 +113,21 @@ void Net::RawData_t::free()
 	this->_size = 0;
 
 	this->_valid = false;
+}
+
+void Net::RawData_t::set_original_size(size_t size)
+{
+	this->_original_size = size;
+}
+
+size_t Net::RawData_t::original_size() const
+{
+	return _original_size;
+}
+
+size_t& Net::RawData_t::original_size()
+{
+	return _original_size;
 }
 
 Net::Packet::Packet::Packet()
@@ -212,7 +230,7 @@ bool Net::Packet::Packet::HasRawData() const
 	return !this->raw.empty();
 }
 
-size_t Net::Packet::Packet::GetRawDataFullSize() const
+size_t Net::Packet::Packet::GetRawDataFullSize(bool bCompression) const
 {
 	size_t size = 0;
 	for (auto& entry : this->raw)
@@ -222,6 +240,16 @@ size_t Net::Packet::Packet::GetRawDataFullSize() const
 		const auto KeyLengthStr = std::to_string(strlen(entry.key()) + 1);
 		size += KeyLengthStr.size();
 		size += 1;
+
+		if (bCompression)
+		{
+			size += strlen(NET_RAW_DATA_ORIGINAL_SIZE);
+			size += 1;
+			const auto rawDataOriginalLengthStr = std::to_string(entry.original_size());
+			size += rawDataOriginalLengthStr.size();
+			size += 1;
+		}
+
 		size += strlen(NET_RAW_DATA);
 		size += 1;
 		const auto rawDataLengthStr = std::to_string(entry.size());

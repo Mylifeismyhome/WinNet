@@ -161,7 +161,7 @@
 ## Communication between Server & Client
 - [x] Plain
 - [x] Crypted using RSA + AES
-- [ ] Compression
+- [x] Compression
 - [x] TOTP to abort incoming packets that reached the defined allowed time
 - [x] Json for data sharing
 - [x] Raw bytes for file sharing
