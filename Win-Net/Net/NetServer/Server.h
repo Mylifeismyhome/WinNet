@@ -130,6 +130,7 @@ namespace Net
 				size_t _data_size;
 				size_t _data_full_size;
 				size_t _data_offset;
+				size_t _data_original_uncompressed_size;
 				std::mutex _mutex_send;
 
 				network_t()
@@ -156,6 +157,9 @@ namespace Net
 
 				void SetDataOffset(size_t);
 				size_t getDataOffset() const;
+
+				void SetUncompressedSize(size_t);
+				size_t getUncompressedSize() const;
 
 				bool dataValid() const;
 
@@ -270,8 +274,8 @@ namespace Net
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
-			void DecompressData(BYTE*&, size_t&);
-			void DecompressData(BYTE*&, BYTE*&, size_t&, bool = false);
+			void DecompressData(BYTE*&, size_t&, size_t);
+			void DecompressData(BYTE*&, BYTE*&, size_t&, size_t, bool = false);
 			bool CreateTOTPSecret(NET_PEER);
 
 		public:

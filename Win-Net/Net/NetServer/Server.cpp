@@ -115,6 +115,7 @@ void Net::Server::Server::network_t::clear()
 	_data_size = 0;
 	_data_full_size = 0;
 	_data_offset = 0;
+	_data_original_uncompressed_size = 0;
 }
 
 void Net::Server::Server::network_t::setDataSize(const size_t size)
@@ -145,6 +146,16 @@ void Net::Server::Server::network_t::SetDataOffset(const size_t offset)
 size_t Net::Server::Server::network_t::getDataOffset() const
 {
 	return _data_offset;
+}
+
+void Net::Server::Server::network_t::SetUncompressedSize(const size_t size)
+{
+	_data_original_uncompressed_size = size;
+}
+
+size_t Net::Server::Server::network_t::getUncompressedSize() const
+{
+	return _data_original_uncompressed_size;
 }
 
 bool Net::Server::Server::network_t::dataValid() const
@@ -1035,6 +1046,14 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 			return;
 		}
 
+		/* Compression */
+		size_t original_dataBufferSize = dataBufferSize;
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			/* Compress Data */
+			CompressData(dataBuffer.reference().get(), dataBufferSize);
+		}
+
 		/* Crypt Buffer using AES and Encode to Base64 */
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
@@ -1045,24 +1064,17 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 				aes.encrypt(data.value(), data.size());
 		}
 
+		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
+
 		/* Compression */
 		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
-			/* Compress Data */
-			//CompressData(dataBuffer.reference().get(), dataBufferSize, true);
+			combinedSize += NET_UNCOMPRESSED_PACKET_SIZE_LEN;
+			combinedSize += 2; // begin & end tag
 
-			/* Compress Raw Data */
-			if (PKG.HasRawData())
-			{
-				for (auto& entry : PKG.GetRawData())
-				{
-					CompressData(entry.value(), entry.size());
-					entry.set_free(true);
-				}
-			}
+			std::string original_dataBufferSize_str = std::to_string(original_dataBufferSize);
+			combinedSize += original_dataBufferSize_str.length();
 		}
-
-		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
 
 		// Append Raw data packet size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
@@ -1088,6 +1100,18 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
 		SingleSend(peer, EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+
+		/* Append Original Uncompressed Packet Size */
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			const auto UnCompressedPacketSizeStr = std::to_string(original_dataBufferSize + std::to_string(original_dataBufferSize).length());
+
+			SingleSend(peer, NET_UNCOMPRESSED_PACKET_SIZE, NET_UNCOMPRESSED_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
+			SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+			SingleSend(peer, UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, sendToken);
+			SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		}
 
 		/* Append Packet Key */
 		SingleSend(peer, NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
@@ -1118,6 +1142,21 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
 
+				//// Append Original Size
+				///* Compression */
+				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				//{
+				//	const auto OriginalSizeStr = std::to_string(data.size() + std::to_string(data.size()).length());
+
+				//	SingleSend(peer, NET_RAW_DATA_ORIGINAL_SIZE, strlen(NET_RAW_DATA_ORIGINAL_SIZE), bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+
+				//	// now compress data
+				//	//CompressData(data.value(), data.size());
+				//}
+
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
@@ -1144,23 +1183,24 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 	else
 	{
 		/* Compression */
+		size_t original_dataBufferSize = dataBufferSize;
 		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
 		{
 			/* Compress Data */
-			//CompressData(dataBuffer.reference().get(), dataBufferSize);
-
-			/* Compress Raw Data */
-			if (PKG.HasRawData())
-			{
-				for (auto& entry : PKG.GetRawData())
-				{
-					CompressData(entry.value(), entry.size());
-					entry.set_free(true);
-				}
-			}
+			CompressData(dataBuffer.reference().get(), dataBufferSize);
 		}
 
 		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + 4;
+
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			combinedSize += NET_UNCOMPRESSED_PACKET_SIZE_LEN;
+			combinedSize += 2; // begin & end tag
+
+			std::string original_dataBufferSize_str = std::to_string(original_dataBufferSize);
+			combinedSize += original_dataBufferSize_str.length();
+		}
 
 		// Append Raw data packet size
 		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize();
@@ -1181,6 +1221,18 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 
+		/* Append Original Uncompressed Packet Size */
+		/* Compression */
+		if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+		{
+			const auto UnCompressedPacketSizeStr = std::to_string(original_dataBufferSize + std::to_string(original_dataBufferSize).length());
+
+			SingleSend(peer, NET_UNCOMPRESSED_PACKET_SIZE, NET_UNCOMPRESSED_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
+			SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+			SingleSend(peer, UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, sendToken);
+			SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+		}
+
 		/* Append Packet Data */
 		if (PKG.HasRawData())
 		{
@@ -1195,6 +1247,21 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 				SingleSend(peer, KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
 				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
 				SingleSend(peer, data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
+
+				// Append Original Size
+				///* Compression */
+				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				//{
+				//	const auto OriginalSizeStr = std::to_string(data.size() + std::to_string(data.size()).length());
+
+				//	SingleSend(peer, NET_RAW_DATA_ORIGINAL_SIZE, strlen(NET_RAW_DATA_ORIGINAL_SIZE), bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, sendToken);
+				//	SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+
+				//	// now compress data
+				//	//CompressData(data.value(), data.size());
+				//}
 
 				// Append Raw Data
 				SingleSend(peer, NET_RAW_DATA, strlen(NET_RAW_DATA), bPreviousSentFailed, sendToken);
@@ -1600,6 +1667,25 @@ void Net::Server::Server::ProcessPackets(NET_PEER peer)
 		}
 	}
 
+	/* Compression */
+	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+	{
+		const size_t start = peer->network.getDataOffset() + NET_UNCOMPRESSED_PACKET_SIZE_LEN + 2;
+		for (size_t i = start; i < peer->network.getDataSize(); ++i)
+		{
+			// iterate until we have found the end tag
+			if (!memcmp(&peer->network.getData()[i], NET_PACKET_BRACKET_CLOSE, 1))
+			{
+				peer->network.SetDataOffset(i);
+				const auto size = i - start;
+				char* end = (char*)peer->network.getData()[start] + size;
+				peer->network.SetUncompressedSize(strtoull((const char*)&peer->network.getData()[start], &end, 10));
+
+				break;
+			}
+		}
+	}
+
 	// keep going until we have received the entire packet
 	if (!peer->network.getDataFullSize() || peer->network.getDataFullSize() == INVALID_SIZE || peer->network.getDataSize() < peer->network.getDataFullSize()) return;
 
@@ -1660,6 +1746,16 @@ NET_THREAD(ThreadPacketExecute)
 	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
 		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
 			tpe->m_server->DisconnectPeer(tpe->m_peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+
+	/* hence we had to create a copy to work with this data in seperate thread, we also have to handle the deletion of this block */
+	if (tpe->m_packet->HasRawData())
+	{
+		std::vector<Net::RawData_t>& rawData = tpe->m_packet->GetRawData();
+		for (auto& data : rawData)
+		{
+			data.free();
+		}
+	}
 
 	FREE<Net::Packet>(tpe->m_packet);
 	FREE<TPacketExcecute>(tpe);
@@ -1843,12 +1939,12 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
-					/* Decompression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					{
-						DecompressData(entry.value(), entry.value(), entry.size(), true);
-						entry.set_free(true);
-					}
+					///* Decompression */
+					//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					//{
+					//	DecompressData(entry.value(), entry.value(), entry.size(), true);
+					//	entry.set_free(true);
+					//}
 
 					/* decrypt aes */
 					if (!aes.decrypt(entry.value(), entry.size()))
@@ -1856,6 +1952,14 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 						pPacket.free();
 						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 						return;
+					}
+
+					/* in seperate thread we need to create a copy of this data-set */
+					if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
+					{
+						BYTE* copy = ALLOC<BYTE>(entry.size());
+						memcpy(copy, entry.value(), entry.size());
+						entry.set(copy);
 					}
 
 					pPacket.get()->AddRaw(entry);
@@ -1898,10 +2002,6 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 				offset += packetSize;
 
-				/* Decompression */
-			//	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-				//	DecompressData(data.reference().get(), packetSize, true);
-
 				/* decrypt aes */
 				if (!aes.decrypt(data.get(), dataSize))
 				{
@@ -1910,10 +2010,16 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 					return;
 				}
+
+				/* Decompression */
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				{
+					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
+				}
 			}
 
 			// we have reached the end of reading
-			if (offset + NET_PACKET_FOOTER_LEN == peer->network.getDataFullSize())
+			if (offset + NET_PACKET_FOOTER_LEN >= peer->network.getDataFullSize())
 				break;
 
 		} while (true);
@@ -1983,11 +2089,19 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
-					/* Decompression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					///* Decompression */
+					//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					//{
+					//	DecompressData(entry.value(), entry.value(), entry.size(), true);
+					//	entry.set_free(true);
+					//}
+
+					/* in seperate thread we need to create a copy of this data-set */
+					if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 					{
-						DecompressData(entry.value(), entry.value(), entry.size(), true);
-						entry.set_free(true);
+						BYTE* copy = ALLOC<BYTE>(entry.size());
+						memcpy(copy, entry.value(), entry.size());
+						entry.set(copy);
 					}
 
 					pPacket.get()->AddRaw(entry);
@@ -2030,12 +2144,14 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				offset += packetSize;
 
 				/* Decompression */
-				//if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-					//DecompressData(data.reference().get(), packetSize);
+				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				{
+					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
+				}
 			}
 
 			// we have reached the end of reading
-			if (offset + NET_PACKET_FOOTER_LEN == peer->network.getDataFullSize())
+			if (offset + NET_PACKET_FOOTER_LEN >= peer->network.getDataFullSize())
 				break;
 
 		} while (true);
@@ -2134,7 +2250,14 @@ void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Compress(data, size);
+
+	BYTE* m_pCompressed = 0;
+	size_t m_iCompressedLen = 0;
+	NET_ZLIB::Compress(data, size, m_pCompressed, m_iCompressedLen);
+	FREE<BYTE>(data);
+	data = m_pCompressed;
+	size = m_iCompressedLen;
+
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
@@ -2145,29 +2268,60 @@ void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, co
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Compress(data, out, size, ZLIB_CompressionLevel::BEST_COMPRESSION);
+
+	BYTE* m_pCompressed = 0;
+	size_t m_iCompressedLen = 0;
+	NET_ZLIB::Compress(data, size, m_pCompressed, m_iCompressedLen);
+
+	if (!skip_free)
+	{
+		FREE<BYTE>(data);
+	}
+
+	out = m_pCompressed;
+	size = m_iCompressedLen;
+
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
-void Net::Server::Server::DecompressData(BYTE*& data, size_t& size)
+void Net::Server::Server::DecompressData(BYTE*& data, size_t& size, size_t original_size)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Decompress(data, size);
+
+	BYTE* m_pUnCompressed = 0;
+	size_t m_iUncompressedLen = original_size;
+	NET_ZLIB::Decompress(data, size, m_pUnCompressed, m_iUncompressedLen);
+	FREE<BYTE>(data);
+	data = m_pUnCompressed;
+	size = m_iUncompressedLen;
+
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
-void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
+void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, size_t original_size, const bool skip_free)
 {
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
-	//NET_ZLIB::Decompress(data, out, size);
+
+	BYTE* m_pUnCompressed = 0;
+	size_t m_iUncompressedLen = original_size;
+	NET_ZLIB::Decompress(data, size, m_pUnCompressed, m_iUncompressedLen);
+
+	if (!skip_free)
+	{
+		FREE<BYTE>(data);
+	}
+
+	out = m_pUnCompressed;
+	size = m_iUncompressedLen;
+
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
