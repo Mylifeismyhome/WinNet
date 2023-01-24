@@ -745,7 +745,11 @@ namespace WebServerHandshake
 #define NOEXCEPT noexcept
 #define CONSTEXPR const
 
-#define FUNCNAME CSTRING("")
+#ifdef BUILD_LINUX
+#define FUNCNAME __FUNCTION__
+#else
+#define FUNCNAME __FUNCTION__
+#endif
 
 #ifdef BUILD_LINUX
 #define __int64 long long
