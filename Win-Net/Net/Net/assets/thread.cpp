@@ -34,7 +34,7 @@ bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const p
 	return true;
 }
 #else
-bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
+HANDLE Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
 {
 #ifdef NET_DISABLE_IMPORT_NTDLL
 	std::thread(StartRoutine, parameter).detach();
@@ -46,16 +46,16 @@ bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const p
 	if (status != NET_STATUS_SUCCESS)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - NtCreateThreadEx failed with: %lu"), GetLastError());
-		return false;
+		return nullptr;
 	}
 
 	CONTEXT ctx;
 	ctx.ContextFlags = CONTEXT_ALL;
-	auto ret =	Kernel32::GetThreadContext(handle, &ctx);
+	auto ret = Kernel32::GetThreadContext(handle, &ctx);
 	if (!ret)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - GetThreadContext failed"), GetLastError());
-		return false;
+		return nullptr;
 	}
 
 #ifdef _WIN64
@@ -68,16 +68,16 @@ bool Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const p
 	if (!ret)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - SetThreadContext failed"), GetLastError());
-		return false;
+		return nullptr;
 	}
 
 	if (Kernel32::ResumeThread(handle) == (DWORD)-1)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - ResumeThread failed with: %lu"), GetLastError());
-		return false;
+		return nullptr;
 	}
 
-	return true;
+	return handle;
 #endif
 }
 #endif
