@@ -37,10 +37,17 @@ namespace Net
 	{
 		enum PacketTypes
 		{
-			PKG_RSAHandshake = 0,
-			PKG_Version,
-			PKG_Estabilish,
-			PKG_Close,
+			/* Init Server-Client Protocol option */
+			PKG_NetProtocolHandshake = 0,
+
+			/* Init Asymmetric Encryption */
+			PKG_NetAsymmetricHandshake,
+
+			PKG_NetEstabilish,
+			PKG_NetClose,
+
+			/* Net Hearbeat Packet to handle unused open sockets */
+			PKG_NetHeartbeat,
 
 			PKG_LAST_PACKET
 		};

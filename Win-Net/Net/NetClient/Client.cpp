@@ -490,25 +490,7 @@ namespace Net
 				if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry->opt, LAST_ERROR);
 			}
 
-			if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
-				/* create RSA Key Pair */
-				network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
-
 			network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
-
-			// if we use NTP execute the needed code
-			if (CreateTOTPSecret())
-			{
-				NET_LOG_DEBUG(CSTRING("[NET] - Successfully created TOTP-Hash"));
-			}
-
-			// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-			if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-				&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
-			{
-				network.hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
-				network.hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
-			}
 
 			// Create Loop-Receive Thread
 			Thread::Create(Receive, this);
@@ -2376,11 +2358,82 @@ namespace Net
 		}
 
 		NET_NATIVE_PACKET_DEFINITION_BEGIN(Client);
-		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_RSAHandshake);
-		NET_DEFINE_PACKET(Version, NET_NATIVE_PACKET_ID::PKG_Version);
-		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_Estabilish);
-		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_Close);
+		NET_DEFINE_PACKET(NetProtocolHandshake, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake);
+		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake);
+		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_NetEstabilish);
+		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_NetClose);
 		NET_PACKET_DEFINITION_END;
+
+		NET_BEGIN_PACKET(Client, NetProtocolHandshake);
+		if (PKG[CSTRING("NET_OPT_USE_CIPHER")] && PKG[CSTRING("NET_OPT_USE_CIPHER")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_CIPHER, PKG[CSTRING("NET_OPT_USE_CIPHER")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")] && PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")]->is_int())
+			{
+				this->SetOption<size_t>({ NET_OPT_CIPHER_RSA_SIZE, (size_t)PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")]->as_int() });
+			}
+
+			if (PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")] && PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")]->is_int())
+			{
+				this->SetOption<size_t>({ NET_OPT_CIPHER_AES_SIZE, (size_t)PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")]->as_int() });
+			}
+
+			/* create new keys */
+			network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+		}
+
+		if (PKG[CSTRING("NET_OPT_USE_COMPRESSION")] && PKG[CSTRING("NET_OPT_USE_COMPRESSION")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_COMPRESSION, PKG[CSTRING("NET_OPT_USE_COMPRESSION")]->as_boolean() });
+		}
+
+		if (PKG[CSTRING("NET_OPT_USE_NTP")] && PKG[CSTRING("NET_OPT_USE_NTP")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_NTP, PKG[CSTRING("NET_OPT_USE_NTP")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_NTP_HOST")] && PKG[CSTRING("NET_OPT_NTP_HOST")]->is_string())
+			{
+				this->SetOption<char*>({ NET_OPT_NTP_HOST, PKG[CSTRING("NET_OPT_NTP_HOST")]->as_string() });
+			}
+
+			if (PKG[CSTRING("NET_OPT_NTP_PORT")] && PKG[CSTRING("NET_OPT_NTP_PORT")]->as_int())
+			{
+				this->SetOption<u_short>({ NET_OPT_NTP_PORT, (u_short)PKG[CSTRING("NET_OPT_NTP_PORT")]->as_int() });
+			}
+
+			// spawn timer to sync clock with ntp server
+			network.hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
+			network.hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+		}
+
+		if (PKG[CSTRING("NET_OPT_USE_TOTP")] && PKG[CSTRING("NET_OPT_USE_TOTP")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_TOTP, PKG[CSTRING("NET_OPT_USE_TOTP")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_TOTP_INTERVAL")] && PKG[CSTRING("NET_OPT_TOTP_INTERVAL")]->as_int())
+			{
+				this->SetOption<int>({ NET_OPT_TOTP_INTERVAL, PKG[CSTRING("NET_OPT_TOTP_INTERVAL")]->as_int() });
+			}
+
+			// if we use NTP execute the needed code
+			if (CreateTOTPSecret())
+			{
+				NET_LOG_DEBUG(CSTRING("[NET] - Created TOTP-Secret."));
+			}
+		}
+
+		/* communication set */
+		// -> Response to Server with current Net Version
+		Net::Packet resp;
+		resp[CSTRING("NET_STATUS")] = 1;
+		resp[CSTRING("NET_MAJOR_VERSION")] = Version::Major();
+		resp[CSTRING("NET_MINOR_VERSION")] = Version::Minor();
+		resp[CSTRING("NET_REVISION_VERSION")] = Version::Revision();
+		const auto Key = Version::Key().get();
+		resp[CSTRING("NET_KEY")] = Key.get();
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, resp);
+		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, RSAHandshake);
 		if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
@@ -2402,7 +2455,7 @@ namespace Net
 			return;
 		}
 
-		if (!(pkg[CSTRING("PublicKey")] && pkg[CSTRING("PublicKey")]->is_string()))
+		if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string()))
 		{
 			Disconnect();
 			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
@@ -2410,26 +2463,28 @@ namespace Net
 		}
 
 		// send our generated Public Key to the Server
-		NET_PACKET reply;
-		auto MyPublicKey = network.RSA.publicKey();
+		{
+			auto MyPublicKey = network.RSA.publicKey();
 
-		size_t b64len = MyPublicKey.size();
-		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
-		memcpy(b64, MyPublicKey.data(), b64len);
-		b64[b64len] = 0;
+			size_t b64len = MyPublicKey.size();
+			BYTE* b64 = ALLOC<BYTE>(b64len + 1);
+			memcpy(b64, MyPublicKey.data(), b64len);
+			b64[b64len] = 0;
 
-		Net::Coding::Base64::encode(b64, b64len);
+			Net::Coding::Base64::encode(b64, b64len);
 
-		reply[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_RSAHandshake, reply);
+			NET_PACKET resp;
+			resp[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
+			NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake, resp);
 
-		FREE<byte>(b64);
+			FREE<byte>(b64);
+		}
 
 		// from now we use the Cryption, synced with Server
 		{
-			b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
-			b64 = ALLOC<BYTE>(b64len + 1);
-			memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
+			auto b64len = strlen(PKG[CSTRING("PublicKey")]->as_string());
+			auto b64 = ALLOC<BYTE>(b64len + 1);
+			memcpy(b64, PKG[CSTRING("PublicKey")]->as_string(), b64len);
 			b64[b64len] = 0;
 
 			Net::Coding::Base64::decode(b64, b64len);
@@ -2437,29 +2492,6 @@ namespace Net
 			network.RSA.setPublicKey(reinterpret_cast<char*>(b64));
 			network.RSAHandshake = true;
 		}
-		NET_END_PACKET;
-
-		NET_BEGIN_PACKET(Client, Version);
-		if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
-		{
-			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
-			return;
-		}
-		if (network.estabilished)
-		{
-			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
-			return;
-		}
-
-		NET_PACKET reply;
-		reply[CSTRING("MajorVersion")] = Version::Major();
-		reply[CSTRING("MinorVersion")] = Version::Minor();
-		reply[CSTRING("Revision")] = Version::Revision();
-		const auto Key = Version::Key().get();
-		reply[CSTRING("Key")] = Key.get();
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_Version, reply);
 		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, EstabilishConnection);

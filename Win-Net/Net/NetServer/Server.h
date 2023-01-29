@@ -269,8 +269,8 @@ namespace Net
 			void ExecutePacket(NET_PEER);
 
 			/* Native Packets */
+			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);
-			NET_DECLARE_PACKET(Version);
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);

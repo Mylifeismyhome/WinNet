@@ -308,6 +308,7 @@ namespace Net
 			void ExecutePacket();
 			bool CreateTOTPSecret();
 
+			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);
 			NET_DECLARE_PACKET(Keys);
 			NET_DECLARE_PACKET(Version);

@@ -438,7 +438,7 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 	{
 		NET_PACKET PKG;
 		PKG[CSTRING("code")] = code;
-		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Close, pkg);
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetClose, pkg);
 	}
 
 	if (code == 0)
@@ -1367,35 +1367,36 @@ NET_THREAD(PeerStartRoutine)
 	const auto server = data->server;
 
 	/*
-		rsa -> version -> all other
+	* Server send PKG_NetProtocolHandshake
+		-> Client Process Data and Response with Version Packet
+			-> Server Checks for Asymmetric Option and Responses with PKG_NetAsymmetricHandshake Packet
+				-> Client does do the same
+					-> done.
 	*/
-	if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
 	{
-		peer->cryption.createKeyPair(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+		Net::Packet pkg;
+		pkg[CSTRING("NET_OPT_USE_CIPHER")] = (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER);
+		if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
+		{
+			pkg[CSTRING("NET_OPT_CIPHER_RSA_SIZE")] = (int)(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+			pkg[CSTRING("NET_OPT_CIPHER_AES_SIZE")] = (int)(server->Isset(NET_OPT_CIPHER_AES_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE);
+		}
 
-		const auto PublicKey = peer->cryption.RSA.publicKey();
+		pkg[CSTRING("NET_OPT_USE_COMPRESSION")] = (server->Isset(NET_OPT_USE_COMPRESSION) ? server->GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+		pkg[CSTRING("NET_OPT_USE_NTP")] = (server->Isset(NET_OPT_USE_NTP) ? server->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP);
+		if (server->Isset(NET_OPT_USE_NTP) ? server->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			pkg[CSTRING("NET_OPT_NTP_HOST")] = (server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST);
+			pkg[CSTRING("NET_OPT_NTP_PORT")] = (server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+		}
 
-		size_t b64len = PublicKey.size();
-		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
-		memcpy(b64, PublicKey.data(), b64len);
-		b64[b64len] = 0;
+		pkg[CSTRING("NET_OPT_USE_TOTP")] = (server->Isset(NET_OPT_USE_TOTP) ? server->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP);
+		if (server->Isset(NET_OPT_USE_TOTP) ? server->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		{
+			pkg[CSTRING("NET_OPT_TOTP_INTERVAL")] = (server->Isset(NET_OPT_TOTP_INTERVAL) ? server->GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+		}
 
-		Net::Coding::Base64::encode(b64, b64len);
-
-		NET_PACKET PKG;
-		PKG[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_RSAHandshake, pkg);
-
-		//FREE<byte>(b64);
-	}
-	/*
-		version -> all other
-	*/
-	else
-	{
-		// keep it empty, we get it filled back
-		NET_PACKET PKG;
-		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Version, pkg);
+		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, pkg);
 	}
 
 	peer->hWaitForNetProtocol = Net::Timer::Create(TimerPeerCheckAwaitNetProtocol, server->Isset(NET_OPT_NET_PROTOCOL_CHECK_TIME) ? server->GetOption<double>(NET_OPT_NET_PROTOCOL_CHECK_TIME) : NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME, parameter);
@@ -2431,34 +2432,128 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 }
 
 NET_NATIVE_PACKET_DEFINITION_BEGIN(Net::Server::Server)
-NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_RSAHandshake)
-NET_DEFINE_PACKET(Version, NET_NATIVE_PACKET_ID::PKG_Version)
+NET_DEFINE_PACKET(NetProtocolHandshake, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake)
+NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake)
 NET_PACKET_DEFINITION_END
 
+NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
+if (!(PKG[CSTRING("NET_STATUS")] && PKG[CSTRING("NET_STATUS")]->is_int()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0, true);
+	return;
+}
+
+if (!(PKG[CSTRING("NET_MAJOR_VERSION")] && PKG[CSTRING("NET_MAJOR_VERSION")]->is_int()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0, true);
+	return;
+}
+
+if (!(PKG[CSTRING("NET_MINOR_VERSION")] && PKG[CSTRING("NET_MINOR_VERSION")]->is_int()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0, true);
+	return;
+}
+
+if (!(PKG[CSTRING("NET_REVISION_VERSION")] && PKG[CSTRING("NET_REVISION_VERSION")]->is_int()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0, true);
+	return;
+}
+
+if (!(PKG[CSTRING("NET_KEY")] && PKG[CSTRING("NET_KEY")]->is_string()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0, true);
+	return;
+}
+
+/* check Net Version does match */
+const auto NET_MAJOR_VERSION = (short)PKG[CSTRING("NET_MAJOR_VERSION")]->as_int();
+const auto NET_MINOR_VERSION = (short)PKG[CSTRING("NET_MINOR_VERSION")]->as_int();
+const auto NET_REVISION_VERSION = (short)PKG[CSTRING("NET_REVISION_VERSION")]->as_int();
+const auto NET_KEY = PKG[CSTRING("NET_KEY")]->as_string();
+
+if ((NET_MAJOR_VERSION == Version::Major())
+	&& (NET_MINOR_VERSION == Version::Minor())
+	&& (NET_REVISION_VERSION == Version::Revision())
+	&& strcmp(NET_KEY, Version::Key().data().data()) == 0)
+{
+	peer->NetVersionMatched = true;
+
+	/* check for cipher mode */
+	if (this->Isset(NET_OPT_USE_CIPHER) ? this->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
+	{
+		peer->cryption.createKeyPair(this->Isset(NET_OPT_CIPHER_RSA_SIZE) ? this->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+
+		const auto PublicKey = peer->cryption.RSA.publicKey();
+
+		size_t b64len = PublicKey.size();
+		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
+		memcpy(b64, PublicKey.data(), b64len);
+		b64[b64len] = 0;
+
+		Net::Coding::Base64::encode(b64, b64len);
+
+		NET_PACKET resp;
+		resp[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake, resp);
+
+		FREE<byte>(b64);
+	}
+	else
+	{
+		/* no cipher mode and version is checked aswell. Set Peer's connection to estabilished */
+		NET_PACKET resp;
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, resp);
+
+		peer->estabilished = true;
+
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
+
+		Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
+		peer->hWaitForNetProtocol = nullptr;
+
+		// callback
+		OnPeerEstabilished(peer);
+	}
+}
+else
+{
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer sent not matching Net-Version. Connection to Peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
+}
+NET_END_PACKET;
+
 NET_BEGIN_PACKET(Net::Server::Server, RSAHandshake)
+/* check for wrong protocol behaviour */
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent Asymmetric Handshake Packet, but cipher mode is disabled."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough cipher option is disabled"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
-if (peer->estabilished)
+else if (peer->estabilished)
 {
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent Asymmetric Handshake Packet, but peer's state is set to estabilished."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received rsa handshake frame altough estabilished"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
-if (peer->cryption.getHandshakeStatus())
+else if (peer->cryption.getHandshakeStatus())
 {
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent more than one Asymmetric Handshake Packet"), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received another rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
 if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
 {
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to Peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid rsa handshake frame"), SERVERNAME(this), peer->IPAddr().get());
 	return;
 }
 
@@ -2475,69 +2570,23 @@ if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // e
 	peer->cryption.setHandshakeStatus(true);
 }
 
-// RSA Handshake has been finished, keep going with normal process
-NET_LOG_PEER(CSTRING("'%s' :: [%s] => succeeded rsa handshake"), SERVERNAME(this), peer->IPAddr().get());
+NET_LOG_PEER(CSTRING("'%s' :: [%s] => Asymmetric Handshake with Peer was successful."), SERVERNAME(this), peer->IPAddr().get());
 
-// keep it empty, we get it filled back
-Packet Version;
-NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Version, Version);
-NET_END_PACKET
-
-NET_BEGIN_PACKET(Net::Server::Server, Version)
-if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !peer->cryption.getHandshakeStatus())
+/* Asymmetric Handshake done. Estabilish Peer connection */
 {
-	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => have not received a rsa handshake yet"), SERVERNAME(this), peer->IPAddr().get());
-	return;
-}
-if (peer->estabilished)
-{
-	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Version);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received another version frame"), SERVERNAME(this), peer->IPAddr().get());
-	return;
-}
-
-if (!(PKG[CSTRING("MajorVersion")] && PKG[CSTRING("MajorVersion")]->is_int())
-	|| !(PKG[CSTRING("MinorVersion")] && PKG[CSTRING("MinorVersion")]->is_int())
-	|| !(PKG[CSTRING("Revision")] && PKG[CSTRING("Revision")]->is_int())
-	|| !(PKG[CSTRING("Key")] && PKG[CSTRING("Key")]->is_string()))
-{
-	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => received an invalid version frame"), SERVERNAME(this), peer->IPAddr().get());
-	return;
-}
-
-const auto majorVersion = PKG[CSTRING("MajorVersion")]->as_int();
-const auto minorVersion = PKG[CSTRING("MinorVersion")]->as_int();
-const auto revision = PKG[CSTRING("Revision")]->as_int();
-const auto Key = PKG[CSTRING("Key")]->as_string();
-
-if ((majorVersion == Version::Major())
-	&& (minorVersion == Version::Minor())
-	&& (revision == Version::Revision())
-	&& strcmp(Key, Version::Key().data().data()) == 0)
-{
-	peer->NetVersionMatched = true;
-
-	Packet estabilish;
-	NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_Estabilish, estabilish);
+	/* Set Peer's connection to estabilished */
+	NET_PACKET resp;
+	NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, resp);
 
 	peer->estabilished = true;
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => estabilished"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
 	Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 	peer->hWaitForNetProtocol = nullptr;
 
 	// callback
 	OnPeerEstabilished(peer);
-}
-else
-{
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => sent different values in version frame:\n(%i.%i.%i-%s)"), SERVERNAME(this), peer->IPAddr().get(), majorVersion, minorVersion, revision, Key);
-
-	// version or key missmatch, disconnect peer
-	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_PACKET
 
