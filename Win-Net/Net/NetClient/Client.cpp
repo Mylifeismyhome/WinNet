@@ -2362,6 +2362,7 @@ namespace Net
 		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake);
 		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_NetEstabilish);
 		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_NetClose);
+		NET_DEFINE_PACKET(NetHeartbeat, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat);
 		NET_PACKET_DEFINITION_END;
 
 		NET_BEGIN_PACKET(Client, NetProtocolHandshake);
@@ -2536,6 +2537,11 @@ namespace Net
 
 		// Callback
 		OnConnectionClosed(code);
+		NET_END_PACKET;
+
+		NET_BEGIN_PACKET(Client, NetHeartbeat);
+		Net::Packet resp;
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
 		NET_END_PACKET;
 	}
 }

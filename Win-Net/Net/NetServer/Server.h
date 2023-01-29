@@ -213,6 +213,8 @@ namespace Net
 				uint32_t lastToken;
 
 				NET_HANDLE_TIMER hWaitForNetProtocol;
+				NET_HANDLE_TIMER hWaitHearbeatSend;
+				NET_HANDLE_TIMER hWaitHearbeatReceive;
 
 				std::mutex _mutex_disconnectPeer;
 
@@ -231,6 +233,8 @@ namespace Net
 					curToken = NULL;
 					lastToken = NULL;
 					hWaitForNetProtocol = nullptr;
+					hWaitHearbeatSend = nullptr;
+					hWaitHearbeatReceive = nullptr;
 				}
 
 				void clear();
@@ -271,6 +275,7 @@ namespace Net
 			/* Native Packets */
 			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);
+			NET_DECLARE_PACKET(NetHeartbeat);
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);

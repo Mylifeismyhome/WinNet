@@ -314,6 +314,7 @@ namespace Net
 			NET_DECLARE_PACKET(Version);
 			NET_DECLARE_PACKET(EstabilishConnection);
 			NET_DECLARE_PACKET(Close);
+			NET_DECLARE_PACKET(NetHeartbeat);
 
 		protected:
 			NET_DEFINE_CALLBACK(void, OnConnected) {}

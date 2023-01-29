@@ -1349,12 +1349,50 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 	auto peer = data->peer;
 	const auto server = data->server;
 
-	if (peer->hWaitForNetProtocol == nullptr) 	NET_STOP_TIMER;
+	if (peer->hWaitForNetProtocol == nullptr) NET_STOP_TIMER;
 
 	NET_LOG_PEER(CSTRING("'%s' :: [%s] => might not be using proper protocol"), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
+	NET_STOP_TIMER;
+}
+
+NET_TIMER(TimerPeerReceiveHeartbeat)
+{
+	const auto data = (Receive_t*)param;
+	if (!data) return 0;
+
+	auto peer = data->peer;
+	const auto server = data->server;
+
+	if (peer->hWaitHearbeatReceive == nullptr) 
+	{
+		FREE<Receive_t>(data);
+		NET_STOP_TIMER;
+	}
+
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not reply with heartbeat packet. Connection will be dropped by the Server."), SERVERNAME(server), peer->IPAddr().get());
+
+	server->ErasePeer(peer);
+
+	FREE<Receive_t>(data);
+	NET_STOP_TIMER;
+}
+
+NET_TIMER(TimerPeerSentHeartbeat)
+{
+	const auto data = (Receive_t*)param;
+	if (!data) return 0;
+
+	auto peer = data->peer;
+	const auto server = data->server;
+
+	Net::Packet pkg;
+	server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, pkg);
+
+	/* dispatch timer to await heartbeat packet response */
+	peer->hWaitHearbeatReceive = Net::Timer::Create(TimerPeerReceiveHeartbeat, server->Isset(NET_OPT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME) ? server->GetOption<double>(NET_OPT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME) : NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME, data);
 	NET_STOP_TIMER;
 }
 
@@ -2434,6 +2472,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 NET_NATIVE_PACKET_DEFINITION_BEGIN(Net::Server::Server)
 NET_DEFINE_PACKET(NetProtocolHandshake, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake)
 NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake)
+NET_DEFINE_PACKET(NetHeartbeat, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat)
 NET_PACKET_DEFINITION_END
 
 NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
@@ -2518,6 +2557,12 @@ if ((NET_MAJOR_VERSION == Version::Major())
 		Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 		peer->hWaitForNetProtocol = nullptr;
 
+		/* start net heartbeat routine */
+		auto parameter = ALLOC<Receive_t>();
+		parameter->peer = peer;
+		parameter->server = this;
+		peer->hWaitHearbeatSend = Net::Timer::Create(TimerPeerSentHeartbeat, this->Isset(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) ? this->GetOption<double>(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) : NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_INTERVAL, parameter);
+
 		// callback
 		OnPeerEstabilished(peer);
 	}
@@ -2585,10 +2630,28 @@ NET_LOG_PEER(CSTRING("'%s' :: [%s] => Asymmetric Handshake with Peer was success
 	Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 	peer->hWaitForNetProtocol = nullptr;
 
+	/* start net heartbeat routine */
+	auto parameter = ALLOC<Receive_t>();
+	parameter->peer = peer;
+	parameter->server = this;
+	peer->hWaitHearbeatSend = Net::Timer::Create(TimerPeerSentHeartbeat, this->Isset(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) ? this->GetOption<double>(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) : NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_INTERVAL, parameter);
+
 	// callback
 	OnPeerEstabilished(peer);
 }
 NET_END_PACKET
+
+NET_BEGIN_PACKET(Net::Server::Server, NetHeartbeat);
+/* stop receive timer first before continueing. */
+Net::Timer::WaitSingleObjectStopped(peer->hWaitHearbeatReceive);
+peer->hWaitHearbeatReceive = nullptr;
+
+/* start net heartbeat timer */
+auto parameter = ALLOC<Receive_t>();
+parameter->peer = peer;
+parameter->server = this;
+peer->hWaitHearbeatSend = Net::Timer::Create(TimerPeerSentHeartbeat, this->Isset(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) ? this->GetOption<double>(NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL) : NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_INTERVAL, parameter);
+NET_END_PACKET;
 
 void Net::Server::Server::add_to_peer_threadpool(Net::PeerPool::peerInfo_t info)
 {
