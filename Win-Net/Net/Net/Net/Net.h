@@ -707,7 +707,7 @@ namespace WebServerHandshake
 * without this option, any callback that might perform some big job will block the socket from further execution
 * enable this option to perform the job in a seperate thread
 */
-#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 26)
+#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 28)
 #define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
 
 /* DEFAULT OPTION VALUES */

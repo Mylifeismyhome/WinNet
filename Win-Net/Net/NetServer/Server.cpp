@@ -1344,7 +1344,10 @@ void OnPeerDelete(void* pdata)
 NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 {
 	const auto data = (Receive_t*)param;
-	if (!data) return 0;
+	if (!data)
+	{
+		NET_STOP_TIMER;
+	}
 
 	auto peer = data->peer;
 	const auto server = data->server;
@@ -1361,7 +1364,10 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 NET_TIMER(TimerPeerReceiveHeartbeat)
 {
 	const auto data = (Receive_t*)param;
-	if (!data) return 0;
+	if (!data)
+	{
+		NET_STOP_TIMER;
+	}
 
 	auto peer = data->peer;
 	const auto server = data->server;
@@ -1383,7 +1389,10 @@ NET_TIMER(TimerPeerReceiveHeartbeat)
 NET_TIMER(TimerPeerSentHeartbeat)
 {
 	const auto data = (Receive_t*)param;
-	if (!data) return 0;
+	if (!data)
+	{
+		NET_STOP_TIMER;
+	}
 
 	auto peer = data->peer;
 	const auto server = data->server;
