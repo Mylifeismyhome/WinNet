@@ -119,6 +119,8 @@ namespace Net
 				bool bLatency;
 				NET_HANDLE_TIMER hCalcLatency;
 
+				bool bUseTOTP;
+
 				/* TOTP secret */
 				byte* totp_secret;
 				size_t totp_secret_len;
@@ -129,8 +131,7 @@ namespace Net
 
 				/* time */
 				time_t curTime;
-				NET_HANDLE_TIMER hSyncClockNTP;
-				NET_HANDLE_TIMER hReSyncClockNTP;
+				NET_HANDLE_TIMER hNetSyncClock;
 
 				std::mutex _mutex_send;
 
@@ -150,12 +151,13 @@ namespace Net
 					latency = -1;
 					bLatency = false;
 					hCalcLatency = nullptr;
+					bUseTOTP = false;
 					totp_secret = nullptr;
 					totp_secret_len = 0;
 					curToken = 0;
 					lastToken = 0;
 					curTime = 0;
-					hSyncClockNTP = nullptr;
+					hNetSyncClock = nullptr;
 					m_heartbeat_sequence_number = -1;
 				}
 
@@ -309,7 +311,7 @@ namespace Net
 			bool ValidHeader(bool&);
 			void ProcessPackets();
 			void ExecutePacket();
-			bool CreateTOTPSecret();
+			void SetTOTPSecret(char* secret);
 
 			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);

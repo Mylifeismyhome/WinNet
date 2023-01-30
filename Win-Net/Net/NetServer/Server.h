@@ -204,6 +204,9 @@ namespace Net
 				typeLatency latency;
 				NET_HANDLE_TIMER hCalcLatency;
 
+				/* only allow using TOTP after the peer finished WinNet Handshake */
+				bool bUseTOTP;
+
 				/* TOTP secret */
 				byte* totp_secret;
 				size_t totp_secret_len;
@@ -230,6 +233,7 @@ namespace Net
 					NetVersionMatched = false;
 					latency = -1;
 					hCalcLatency = nullptr;
+					bUseTOTP = false;
 					totp_secret = nullptr;
 					totp_secret_len = NULL;
 					curToken = NULL;
@@ -251,8 +255,7 @@ namespace Net
 		public:
 			/* time */
 			time_t curTime;
-			NET_HANDLE_TIMER hSyncClockNTP;
-			NET_HANDLE_TIMER hReSyncClockNTP;
+			NET_HANDLE_TIMER hNetSyncClock;
 
 		private:
 			NET_PEER CreatePeer(sockaddr_in, SOCKET);
@@ -284,7 +287,6 @@ namespace Net
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
 			void DecompressData(BYTE*&, size_t&, size_t);
 			void DecompressData(BYTE*&, BYTE*&, size_t&, size_t, bool = false);
-			bool CreateTOTPSecret(NET_PEER);
 
 		public:
 			Server();
@@ -386,6 +388,8 @@ namespace Net
 
 			void Acceptor();
 			bool DoReceive(NET_PEER);
+
+			bool CreateTOTPSecret(NET_PEER);
 
 			NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 
