@@ -1366,7 +1366,7 @@ NET_TIMER(TimerPeerReceiveHeartbeat)
 	auto peer = data->peer;
 	const auto server = data->server;
 
-	if (peer->hWaitHearbeatReceive == nullptr) 
+	if (peer->hWaitHearbeatReceive == nullptr)
 	{
 		FREE<Receive_t>(data);
 		NET_STOP_TIMER;
@@ -1733,21 +1733,34 @@ void Net::Server::Server::ProcessPackets(NET_PEER peer)
 		}
 	}
 
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+	/* Decompression */
 	{
-		const size_t start = peer->network.getDataOffset() + NET_PACKET_ORIGINAL_SIZE_LEN + 2; // 2 - Begin & End Tag
-		for (size_t i = start; i < peer->network.getDataSize(); ++i)
+		/* iterate to find out if there is even a compression tag */
+		size_t startPos = 0;
+		for (size_t i = 0; i < peer->network.getDataSize(); ++i)
 		{
-			// iterate until we have found the end tag
-			if (!memcmp(&peer->network.getData()[i], NET_PACKET_BRACKET_CLOSE, 1))
+			if (!memcmp(&peer->network.getData()[i], NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN))
 			{
-				peer->network.SetDataOffset(i);
-				const auto size = i - start;
-				char* end = (char*)peer->network.getData()[start] + size;
-				peer->network.SetUncompressedSize(strtoull((const char*)&peer->network.getData()[start], &end, 10));
-
+				startPos = i + NET_PACKET_ORIGINAL_SIZE_LEN + 1;
 				break;
+			}
+		}
+
+		if (startPos != 0)
+		{
+			for (size_t i = startPos; i < peer->network.getDataSize(); ++i)
+			{
+				// iterate until we have found the end tag
+				if (!memcmp(&peer->network.getData()[i], NET_PACKET_BRACKET_CLOSE, 1))
+				{
+					peer->network.SetDataOffset(i);
+					const auto size = i - startPos - 1;
+					char* end = (char*)peer->network.getData()[startPos] + size;
+	
+					peer->network.SetUncompressedSize(strtoull((const char*)&peer->network.getData()[startPos], &end, 10));
+
+					break;
+				}
 			}
 		}
 	}
@@ -1979,34 +1992,31 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					offset += KeySize;
 				}
 
-				// looking for raw data original size tag
-				/* Compression */
+				/* Decompression */
 				size_t originalSize = 0;
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 				{
-					if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+					offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+					// read original size
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-						// read original size
-						for (auto y = offset; y < peer->network.getDataSize(); ++y)
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
-							if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
-							{
-								const auto psize = y - offset - 1;
-								NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
-								dataSizeStr.get()[psize] = '\0';
-								originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-								dataSizeStr.free();
+							const auto psize = y - offset - 1;
+							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
+							dataSizeStr.get()[psize] = '\0';
+							originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+							dataSizeStr.free();
 
-								offset += psize + 2;
-								break;
-							}
+							offset += psize + 2;
+							break;
 						}
 					}
 				}
 
+				// looking for raw data original size tag
 				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA, NET_RAW_DATA_LEN))
 				{
 					offset += NET_RAW_DATA_LEN;
@@ -2041,8 +2051,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 						return;
 					}
 
-					/* Compression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					/* Decompression */
+					if (originalSize != 0)
 					{
 						BYTE* copy = ALLOC<BYTE>(entry.size());
 						memcpy(copy, entry.value(), entry.size());
@@ -2050,7 +2060,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 						entry.set_original_size(originalSize);
 						DecompressData(entry.value(), entry.size(), entry.original_size());
-						entry.set_original_size(entry.size());
+						entry.set_original_size(0);
 					}
 
 					/* in seperate thread we need to create a copy of this data-set */
@@ -2110,10 +2120,11 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					return;
 				}
 
-				/* Compression */
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				/* Decompression */
+				if (peer->network.getUncompressedSize() != 0)
 				{
 					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
+					peer->network.SetUncompressedSize(0);
 				}
 			}
 
@@ -2163,29 +2174,26 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				}
 
 				// looking for raw data original size tag
-				/* Compression */
+				/* Decompression */
 				size_t originalSize = 0;
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 				{
-					if (!memcmp(&peer->network.getData()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+					offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+					// read original size
+					for (auto y = offset; y < peer->network.getDataSize(); ++y)
 					{
-						offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-						// read original size
-						for (auto y = offset; y < peer->network.getDataSize(); ++y)
+						if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
 						{
-							if (!memcmp(&peer->network.getData()[y], NET_PACKET_BRACKET_CLOSE, 1))
-							{
-								const auto psize = y - offset - 1;
-								NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-								memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
-								dataSizeStr.get()[psize] = '\0';
-								originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-								dataSizeStr.free();
+							const auto psize = y - offset - 1;
+							NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+							memcpy(dataSizeStr.get(), &peer->network.getData()[offset + 1], psize);
+							dataSizeStr.get()[psize] = '\0';
+							originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+							dataSizeStr.free();
 
-								offset += psize + 2;
-								break;
-							}
+							offset += psize + 2;
+							break;
 						}
 					}
 				}
@@ -2216,8 +2224,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
-					/* Compression */
-					if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+					/* Decompression */
+					if (originalSize != 0)
 					{
 						BYTE* copy = ALLOC<BYTE>(entry.size());
 						memcpy(copy, entry.value(), entry.size());
@@ -2225,7 +2233,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 						entry.set_original_size(originalSize);
 						DecompressData(entry.value(), entry.size(), entry.original_size());
-						entry.set_original_size(entry.size());
+						entry.set_original_size(0);
 					}
 
 					/* in seperate thread we need to create a copy of this data-set */
@@ -2275,10 +2283,11 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 				offset += packetSize;
 
-				/* Compression */
-				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+				/* Decompression */
+				if (peer->network.getUncompressedSize() != 0)
 				{
 					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
+					peer->network.SetUncompressedSize(0);
 				}
 			}
 
@@ -2375,17 +2384,12 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
 
 loc_packet_free:
-	// if we use compression mode here, then we had to take a copy of the buffer to process the algo to decompress the block, now we have to handle the deletion of this block
-	/* Compression */
-	if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+	if (pPacket.get()->HasRawData())
 	{
-		if (pPacket.get()->HasRawData())
+		std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
+		for (auto& data : rawData)
 		{
-			std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
-			for (auto& data : rawData)
-			{
-				data.free();
-			}
+			data.free();
 		}
 	}
 
@@ -2408,6 +2412,9 @@ void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
+
+	/* base64 encode it */
+	NET_BASE64::encode(data, size);
 }
 
 void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
@@ -2431,10 +2438,16 @@ void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, co
 #ifdef DEBUG
 	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
+
+	/* base64 encode it */
+	NET_BASE64::encode(out, size);
 }
 
 void Net::Server::Server::DecompressData(BYTE*& data, size_t& size, size_t original_size)
 {
+	/* base64 decode it */
+	NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif
@@ -2453,6 +2466,9 @@ void Net::Server::Server::DecompressData(BYTE*& data, size_t& size, size_t origi
 
 void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, size_t original_size, const bool skip_free)
 {
+	/* base64 decode it */
+	NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 	const auto PrevSize = size;
 #endif

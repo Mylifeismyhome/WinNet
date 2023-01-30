@@ -1561,21 +1561,33 @@ namespace Net
 				}
 			}
 
-			/* Compression */
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+			/* Decompression */
 			{
-				const size_t start = network.data_offset + NET_PACKET_ORIGINAL_SIZE_LEN + 2; // 2 - Begin & End Tag
-				for (size_t i = start; i < network.data_size; ++i)
+				/* iterate to find out if there is even a compression tag */
+				size_t startPos = 0;
+				for (size_t i = 0; i < network.data_size; ++i)
 				{
-					// iterate until we have found the end tag
-					if (!memcmp(&network.data.get()[i], NET_PACKET_BRACKET_CLOSE, 1))
+					if (!memcmp(&network.data.get()[i], NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN))
 					{
-						network.data_offset = i;
-						const auto size = i - start;
-						char* end = (char*)network.data.get()[start] + size;
-						network.data_original_uncompressed_size = strtoull((const char*)&network.data.get()[start], &end, 10);
-
+						startPos = i + NET_PACKET_ORIGINAL_SIZE_LEN + 1;
 						break;
+					}
+				}
+
+				if (startPos != 0)
+				{
+					for (size_t i = startPos; i < network.data_size; ++i)
+					{
+						// iterate until we have found the end tag
+						if (!memcmp(&network.data.get()[i], NET_PACKET_BRACKET_CLOSE, 1))
+						{
+							network.data_offset = i;
+							const auto size = i - startPos - 1;
+							char* end = (char*)network.data.get()[startPos] + size;
+							network.data_original_uncompressed_size = strtoull((const char*)&network.data.get()[startPos], &end, 10);
+
+							break;
+						}
 					}
 				}
 			}
@@ -1811,29 +1823,26 @@ namespace Net
 						}
 
 						// looking for raw data original size tag
-						/* Compression */
+						/* Decompression */
 						size_t originalSize = 0;
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 						{
-							if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+							offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+							// read original size
+							for (auto y = offset; y < network.data_size; ++y)
 							{
-								offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-								// read original size
-								for (auto y = offset; y < network.data_size; ++y)
+								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
-									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
-									{
-										const auto psize = y - offset - 1;
-										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
-										dataSizeStr.get()[psize] = '\0';
-										originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-										dataSizeStr.free();
+									const auto psize = y - offset - 1;
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
+									dataSizeStr.get()[psize] = '\0';
+									originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									dataSizeStr.free();
 
-										offset += psize + 2;
-										break;
-									}
+									offset += psize + 2;
+									break;
 								}
 							}
 						}
@@ -1873,8 +1882,8 @@ namespace Net
 								return;
 							}
 
-							/* Compression */
-							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+							/* Decompression */
+							if (originalSize != 0)
 							{
 								BYTE* copy = ALLOC<BYTE>(entry.size());
 								memcpy(copy, entry.value(), entry.size());
@@ -1882,7 +1891,7 @@ namespace Net
 
 								entry.set_original_size(originalSize);
 								DecompressData(entry.value(), entry.size(), entry.original_size());
-								entry.set_original_size(entry.size());
+								entry.set_original_size(0);
 							}
 
 							/* in seperate thread we need to create a copy of this data-set */
@@ -1942,10 +1951,11 @@ namespace Net
 							return;
 						}
 
-						/* Compression */
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						/* Decompression */
+						if (network.data_original_uncompressed_size != 0)
 						{
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
+							network.data_original_uncompressed_size = 0;
 						}
 					}
 
@@ -1995,29 +2005,26 @@ namespace Net
 						}
 
 						// looking for raw data original size tag
-						/* Compression */
+						/* Decompression */
 						size_t originalSize = 0;
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 						{
-							if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+							offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+							// read original size
+							for (auto y = offset; y < network.data_size; ++y)
 							{
-								offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-								// read original size
-								for (auto y = offset; y < network.data_size; ++y)
+								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
-									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
-									{
-										const auto psize = y - offset - 1;
-										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
-										dataSizeStr.get()[psize] = '\0';
-										originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-										dataSizeStr.free();
+									const auto psize = y - offset - 1;
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
+									dataSizeStr.get()[psize] = '\0';
+									originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									dataSizeStr.free();
 
-										offset += psize + 2;
-										break;
-									}
+									offset += psize + 2;
+									break;
 								}
 							}
 						}
@@ -2048,8 +2055,8 @@ namespace Net
 
 							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
-							/* Compression */
-							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+							/* Decompression */
+							if (originalSize != 0)
 							{
 								BYTE* copy = ALLOC<BYTE>(entry.size());
 								memcpy(copy, entry.value(), entry.size());
@@ -2108,9 +2115,10 @@ namespace Net
 						offset += packetSize;
 
 						/* Compression */
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (network.data_original_uncompressed_size != 0)
 						{
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
+							network.data_original_uncompressed_size = 0;
 						}
 					}
 
@@ -2207,17 +2215,12 @@ namespace Net
 				}
 
 		loc_packet_free:
-			// if we use compression mode here, then we had to take a copy of the buffer to process the algo to decompress the block, now we have to handle the deletion of this block
-			/* Compression */
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+			if (pPacket.get()->HasRawData())
 			{
-				if (pPacket.get()->HasRawData())
+				std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
+				for (auto& data : rawData)
 				{
-					std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
-					for (auto& data : rawData)
-					{
-						data.free();
-					}
+					data.free();
 				}
 			}
 
@@ -2240,6 +2243,9 @@ namespace Net
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
+
+			/* base64 encode it */
+			NET_BASE64::encode(data, size);
 		}
 
 		void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
@@ -2263,10 +2269,16 @@ namespace Net
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
+
+			/* base64 encode it */
+			NET_BASE64::encode(out, size);
 		}
 
 		void Client::DecompressData(BYTE*& data, size_t& size, size_t original_size)
 		{
+			/* base64 decode it */
+			NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
@@ -2285,6 +2297,9 @@ namespace Net
 
 		void Client::DecompressData(BYTE*& data, BYTE*& out, size_t& size, size_t original_size, const bool skip_free)
 		{
+			/* base64 decode it */
+			NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
