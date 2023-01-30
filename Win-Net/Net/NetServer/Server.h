@@ -216,6 +216,8 @@ namespace Net
 				NET_HANDLE_TIMER hWaitHearbeatSend;
 				NET_HANDLE_TIMER hWaitHearbeatReceive;
 
+				int m_heartbeat_expected_sequence_number;
+
 				std::mutex _mutex_disconnectPeer;
 
 				peerInfo()
@@ -235,6 +237,7 @@ namespace Net
 					hWaitForNetProtocol = nullptr;
 					hWaitHearbeatSend = nullptr;
 					hWaitHearbeatReceive = nullptr;
+					m_heartbeat_expected_sequence_number = -1;
 				}
 
 				void clear();

@@ -2540,7 +2540,11 @@ namespace Net
 		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, NetHeartbeat);
+		if (network.m_heartbeat_sequence_number >= INT_MAX)
+			network.m_heartbeat_sequence_number = -1;
+
 		Net::Packet resp;
+		resp[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
 		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
 		NET_END_PACKET;
 	}

@@ -1351,7 +1351,7 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 
 	if (peer->hWaitForNetProtocol == nullptr) NET_STOP_TIMER;
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => might not be using proper protocol"), SERVERNAME(server), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not response in time as expected from WinNet Protocol. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
@@ -1372,7 +1372,7 @@ NET_TIMER(TimerPeerReceiveHeartbeat)
 		NET_STOP_TIMER;
 	}
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not reply with heartbeat packet. Connection will be dropped by the Server."), SERVERNAME(server), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not reply with heartbeat packet. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
@@ -1387,6 +1387,11 @@ NET_TIMER(TimerPeerSentHeartbeat)
 
 	auto peer = data->peer;
 	const auto server = data->server;
+
+	if (peer->m_heartbeat_expected_sequence_number >= INT_MAX)
+		peer->m_heartbeat_expected_sequence_number = -1;
+
+	++peer->m_heartbeat_expected_sequence_number;
 
 	Net::Packet pkg;
 	server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, pkg);
@@ -1550,7 +1555,7 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 	{
 		peer->network.reset();
 		ErasePeer(peer);
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => connection gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 		return true;
 	}
 
@@ -2478,35 +2483,35 @@ NET_PACKET_DEFINITION_END
 NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
 if (!(PKG[CSTRING("NET_STATUS")] && PKG[CSTRING("NET_STATUS")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_MAJOR_VERSION")] && PKG[CSTRING("NET_MAJOR_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_MINOR_VERSION")] && PKG[CSTRING("NET_MINOR_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_REVISION_VERSION")] && PKG[CSTRING("NET_REVISION_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_KEY")] && PKG[CSTRING("NET_KEY")]->is_string()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
@@ -2569,7 +2574,7 @@ if ((NET_MAJOR_VERSION == Version::Major())
 }
 else
 {
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer sent not matching Net-Version. Connection to Peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer sent not matching Net-Version. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_PACKET;
@@ -2597,7 +2602,7 @@ else if (peer->cryption.getHandshakeStatus())
 
 if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to Peer will be dropped."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
@@ -2642,6 +2647,21 @@ NET_LOG_PEER(CSTRING("'%s' :: [%s] => Asymmetric Handshake with Peer was success
 NET_END_PACKET
 
 NET_BEGIN_PACKET(Net::Server::Server, NetHeartbeat);
+if (!(PKG[CSTRING("NET_SEQUENCE_NUMBER")] && PKG[CSTRING("NET_SEQUENCE_NUMBER")]->is_int()))
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_SEQUENCE_NUMBER' attribute in Heartbeat Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0);
+	return;
+}
+
+/* check for expected sequence number does match */
+if (peer->m_heartbeat_expected_sequence_number != PKG[CSTRING("NET_SEQUENCE_NUMBER")]->as_int())
+{
+	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Expected heartbeat sequence number does not match. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	DisconnectPeer(peer, 0);
+	return;
+}
+
 /* stop receive timer first before continueing. */
 Net::Timer::WaitSingleObjectStopped(peer->hWaitHearbeatReceive);
 peer->hWaitHearbeatReceive = nullptr;

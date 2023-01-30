@@ -134,6 +134,8 @@ namespace Net
 
 				std::mutex _mutex_send;
 
+				int m_heartbeat_sequence_number;
+
 				Network()
 				{
 					memset(dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
@@ -154,6 +156,7 @@ namespace Net
 					lastToken = 0;
 					curTime = 0;
 					hSyncClockNTP = nullptr;
+					m_heartbeat_sequence_number = -1;
 				}
 
 				void clear();
