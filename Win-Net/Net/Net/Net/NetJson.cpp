@@ -1499,7 +1499,7 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* value)
 	return value;
 }
 
-Net::Json::Object& Net::Json::Object::operator=(const Object& m_Object)
+void Net::Json::Object::operator=(const Object& m_Object)
 {
 	this->m_type = m_Object.m_type;
 	this->value = m_Object.value;

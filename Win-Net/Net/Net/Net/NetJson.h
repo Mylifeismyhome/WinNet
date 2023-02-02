@@ -252,7 +252,7 @@ namespace Net
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
 
-			Object& operator=(const Object& m_Object);
+			void operator=(const Object& m_Object);
 
 			bool Append(const char* key, int value);
 			bool Append(const char* key, float value);
