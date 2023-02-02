@@ -733,9 +733,11 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 
 	if (peer->bUseTOTP)
 	{
-		char* ptr = (char*)data;
-		for (size_t it = 0; it < size; ++it)
-			ptr[it] = ptr[it] ^ sendToken;
+		BYTE* pData = ALLOC<BYTE>(size + 1);
+		memcpy(pData, data, size);
+		pData[size] = 0;
+		SingleSend(peer, pData, size, bPreviousSentFailed, sendToken);
+		return;
 	}
 
 	do

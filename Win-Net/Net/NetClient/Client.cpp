@@ -740,9 +740,11 @@ namespace Net
 
 			if (network.bUseTOTP)
 			{
-				char* ptr = (char*)data;
-				for (size_t it = 0; it < size; ++it)
-					ptr[it] = ptr[it] ^ sendToken;
+				BYTE* pData = ALLOC<BYTE>(size + 1);
+				memcpy(pData, data, size);
+				pData[size] = 0;
+				SingleSend(pData, size, bPreviousSentFailed, sendToken);
+				return;
 			}
 
 			do
