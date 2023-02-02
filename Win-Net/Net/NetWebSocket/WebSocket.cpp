@@ -247,7 +247,7 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 		if (res < 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, res);
-			NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
+			NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 			ERR_clear_error();
 			return nullptr;
 		}
@@ -675,7 +675,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 			if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 			{
 				ErasePeer(peer);
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 				return WebServerHandshake::HandshakeRet_t::error;
 			}
 
@@ -717,9 +717,9 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if (errno != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (errno != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 				return WebServerHandshake::HandshakeRet_t::error;
@@ -733,7 +733,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 		{
 			peer->network.reset();
 			ErasePeer(peer);
-			NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
+			NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 			return WebServerHandshake::HandshakeRet_t::error;
 		}
 
@@ -868,9 +868,9 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 						ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-						if (errno != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+						if (errno != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 						return WebServerHandshake::HandshakeRet_t::error;
 					}
@@ -903,7 +903,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 		return WebServerHandshake::HandshakeRet_t::success;
 	}
 
-	NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): Something bad happen on Handshake"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => There was an problem encountered with the websocket handshake."), SERVERNAME(this), peer->IPAddr().get());
 
 	// clear data
 	peer->network.clear();
@@ -938,7 +938,7 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 			const auto res = server->Handshake(peer);
 			if (res == WebServerHandshake::peer_not_valid)
 			{
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to invalid socket!"), SERVERNAME(server), peer->IPAddr().get());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => There was an error encountered with the peer. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
 				server->ErasePeer(peer, true);
@@ -952,7 +952,7 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 			}
 			if (res == WebServerHandshake::missmatch)
 			{
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake missmatch!"), SERVERNAME(server), peer->IPAddr().get());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => Missmatch in the WebSocket handshake. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
 				server->ErasePeer(peer, true);
@@ -961,7 +961,7 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 			}
 			if (res == WebServerHandshake::error)
 			{
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): dropped due to handshake error!"), SERVERNAME(server), peer->IPAddr().get());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => There was an error on performing the WebSocket handshake. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 				// erase him
 				server->ErasePeer(peer, true);
@@ -974,7 +974,7 @@ Net::PeerPool::WorkStatus_t PeerWorker(void* pdata)
 				peer->estabilished = true;
 				server->OnPeerEstabilished(peer);
 
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): handshake has succesfully been performed"), SERVERNAME(server), peer->IPAddr().get());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => WebSocket handshake with peer was successful."), SERVERNAME(server), peer->IPAddr().get());
 			}
 
 			return Net::PeerPool::WorkStatus_t::CONTINUE;
@@ -1194,7 +1194,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 					if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 					{
 						ErasePeer(peer);
-						NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
+						NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 					}
 
 					return;
@@ -1220,7 +1220,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 					{
 						buf.free();
 						ErasePeer(peer);
-						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 						return;
 					}
 #else
@@ -1233,7 +1233,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 					{
 						buf.free();
 						ErasePeer(peer);
-						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
 					}
 #endif
@@ -1267,7 +1267,7 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 			if (err != SSL_ERROR_SSL && err != SSL_ERROR_WANT_READ)
 			{
 				ErasePeer(peer);
-				NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(err, true).c_str());
 			}
 
 			return true;
@@ -1308,9 +1308,9 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 				ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-				if (errno != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (errno != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 				return true;
@@ -1324,7 +1324,7 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 		{
 			peer->network.reset();
 			ErasePeer(peer);
-			NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
+			NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 			return true;
 		}
 
@@ -1371,7 +1371,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	if (OPC == NET_OPCODE_CLOSE)
 	{
 		ErasePeer(peer);
-		NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been gracefully closed"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 		return;
 	}
 	if (OPC == NET_OPCODE_PING)
@@ -1448,7 +1448,7 @@ void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 	else
 	{
 		ErasePeer(peer);
-		NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): connection has been closed due to unmasked message"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 		return;
 	}
 
@@ -1655,7 +1655,7 @@ void Net::WebSocket::Server::onSSLTimeout(NET_PEER peer)
 	);
 
 	ErasePeer(peer);
-	NET_LOG_PEER(CSTRING("[%s] - Peer ('%s'): timouted!"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer timeout exceeded."), SERVERNAME(this), peer->IPAddr().get());
 }
 
 NET_NATIVE_PACKET_DEFINITION_BEGIN(Net::WebSocket::Server)
