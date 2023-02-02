@@ -1440,65 +1440,6 @@ NET_TIMER(TimerPeerSentHeartbeat)
 	NET_STOP_TIMER;
 }
 
-NET_THREAD(PeerStartRoutine)
-{
-	const auto data = (Receive_t*)parameter;
-	if (!data) return 0;
-
-	auto peer = data->peer;
-	const auto server = data->server;
-
-	/*
-	* Server send PKG_NetProtocolHandshake
-		-> Client Process Data and Response with Version Packet
-			-> Server Checks for Asymmetric Option and Responses with PKG_NetAsymmetricHandshake Packet
-				-> Client does do the same
-					-> done.
-	*/
-	{
-		Net::Packet pkg;
-		pkg[CSTRING("NET_OPT_USE_CIPHER")] = (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER);
-		if (server->Isset(NET_OPT_USE_CIPHER) ? server->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
-		{
-			pkg[CSTRING("NET_OPT_CIPHER_RSA_SIZE")] = (int)(server->Isset(NET_OPT_CIPHER_RSA_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
-			pkg[CSTRING("NET_OPT_CIPHER_AES_SIZE")] = (int)(server->Isset(NET_OPT_CIPHER_AES_SIZE) ? server->GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE);
-		}
-
-		pkg[CSTRING("NET_OPT_USE_COMPRESSION")] = (server->Isset(NET_OPT_USE_COMPRESSION) ? server->GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
-		pkg[CSTRING("NET_OPT_USE_NTP")] = (server->Isset(NET_OPT_USE_NTP) ? server->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP);
-		if (server->Isset(NET_OPT_USE_NTP) ? server->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-		{
-			pkg[CSTRING("NET_OPT_NTP_HOST")] = (server->Isset(NET_OPT_NTP_HOST) ? server->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST);
-			pkg[CSTRING("NET_OPT_NTP_PORT")] = (server->Isset(NET_OPT_NTP_PORT) ? server->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-		}
-
-		pkg[CSTRING("NET_OPT_USE_TOTP")] = (server->Isset(NET_OPT_USE_TOTP) ? server->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP);
-		if (server->Isset(NET_OPT_USE_TOTP) ? server->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-		{
-			pkg[CSTRING("NET_OPT_TOTP_INTERVAL")] = (server->Isset(NET_OPT_TOTP_INTERVAL) ? server->GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
-
-			if (server->CreateTOTPSecret(peer))
-			{
-				NET_LOG_PEER(CSTRING("'%s' :: [%s] => Created 'TOTP-Secret' for peer."), SERVERNAME(server), peer->IPAddr().get());
-				pkg[CSTRING("NET_OPT_TOTP_SECRET")] = (char*)peer->totp_secret;
-			}
-		}
-
-		server->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, pkg);
-	}
-
-	peer->hWaitForNetProtocol = Net::Timer::Create(TimerPeerCheckAwaitNetProtocol, server->Isset(NET_OPT_NET_PROTOCOL_CHECK_TIME) ? server->GetOption<double>(NET_OPT_NET_PROTOCOL_CHECK_TIME) : NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME, parameter);
-
-	/* add peer to peer thread pool */
-	Net::PeerPool::peerInfo_t pInfo;
-	pInfo.SetPeer(parameter);
-	pInfo.SetWorker(&PeerWorker);
-	pInfo.SetCallbackOnDelete(&OnPeerDelete);
-	server->add_to_peer_threadpool(pInfo);
-
-	return 0;
-}
-
 void Net::Server::Server::Acceptor()
 {
 	/* This function manages all the incomming connection */
@@ -1533,10 +1474,63 @@ void Net::Server::Server::Acceptor()
 		}
 	} while (accept_socket == INVALID_SOCKET);
 
+	auto peer = CreatePeer(client_addr, accept_socket);
+	if (!peer)
+	{
+		return;
+	}
+
+	/*
+	* Server send PKG_NetProtocolHandshake
+		-> Client Process Data and Response with Version Packet
+			-> Server Checks for Asymmetric Option and Responses with PKG_NetAsymmetricHandshake Packet
+				-> Client does do the same
+					-> done.
+	*/
+	{
+		Net::Packet pkg;
+		pkg[CSTRING("NET_OPT_USE_CIPHER")] = (this->Isset(NET_OPT_USE_CIPHER) ? this->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER);
+		if (this->Isset(NET_OPT_USE_CIPHER) ? this->GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
+		{
+			pkg[CSTRING("NET_OPT_CIPHER_RSA_SIZE")] = (int)(this->Isset(NET_OPT_CIPHER_RSA_SIZE) ? this->GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+			pkg[CSTRING("NET_OPT_CIPHER_AES_SIZE")] = (int)(this->Isset(NET_OPT_CIPHER_AES_SIZE) ? this->GetOption<size_t>(NET_OPT_CIPHER_AES_SIZE) : NET_OPT_DEFAULT_AES_SIZE);
+		}
+
+		pkg[CSTRING("NET_OPT_USE_COMPRESSION")] = (this->Isset(NET_OPT_USE_COMPRESSION) ? this->GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+		pkg[CSTRING("NET_OPT_USE_NTP")] = (this->Isset(NET_OPT_USE_NTP) ? this->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP);
+		if (this->Isset(NET_OPT_USE_NTP) ? this->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			pkg[CSTRING("NET_OPT_NTP_HOST")] = (this->Isset(NET_OPT_NTP_HOST) ? this->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST);
+			pkg[CSTRING("NET_OPT_NTP_PORT")] = (this->Isset(NET_OPT_NTP_PORT) ? this->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+		}
+
+		pkg[CSTRING("NET_OPT_USE_TOTP")] = (this->Isset(NET_OPT_USE_TOTP) ? this->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP);
+		if (this->Isset(NET_OPT_USE_TOTP) ? this->GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		{
+			pkg[CSTRING("NET_OPT_TOTP_INTERVAL")] = (this->Isset(NET_OPT_TOTP_INTERVAL) ? this->GetOption<int>(NET_OPT_TOTP_INTERVAL) : NET_OPT_DEFAULT_TOTP_INTERVAL);
+
+			if (this->CreateTOTPSecret(peer))
+			{
+				NET_LOG_PEER(CSTRING("'%s' :: [%s] => Created 'TOTP-Secret' for peer."), SERVERNAME(this), peer->IPAddr().get());
+				pkg[CSTRING("NET_OPT_TOTP_SECRET")] = (char*)peer->totp_secret;
+			}
+		}
+
+		this->NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, pkg);
+	}
+
 	const auto pdata = ALLOC<Receive_t>();
 	pdata->server = this;
-	pdata->peer = CreatePeer(client_addr, accept_socket);
-	if (pdata->peer) Net::Thread::Create(PeerStartRoutine, pdata);
+	pdata->peer = peer;
+
+	peer->hWaitForNetProtocol = Net::Timer::Create(TimerPeerCheckAwaitNetProtocol, this->Isset(NET_OPT_NET_PROTOCOL_CHECK_TIME) ? this->GetOption<double>(NET_OPT_NET_PROTOCOL_CHECK_TIME) : NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME, pdata);
+
+	/* add peer to peer thread pool */
+	Net::PeerPool::peerInfo_t pInfo;
+	pInfo.SetPeer(pdata);
+	pInfo.SetWorker(&PeerWorker);
+	pInfo.SetCallbackOnDelete(&OnPeerDelete);
+	this->add_to_peer_threadpool(pInfo);
 }
 
 /*
@@ -1588,12 +1582,12 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 #endif
 
 			return true;
-		}
+	}
 
 		ProcessPackets(peer);
 		peer->network.reset();
 		return true;
-	}
+}
 
 	// graceful disconnect
 	if (data_size == 0)

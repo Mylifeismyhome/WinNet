@@ -75,6 +75,7 @@ return true; \
 #include <Net/Net/Net.h>
 #include <Net/Net/NetPacket.h>
 #include <Net/Net/NetCodes.h>
+#include <Net/Net/NetPeerPool.h>
 
 #ifndef BUILD_LINUX
 #pragma warning(disable: 4302)
@@ -225,9 +226,6 @@ namespace Net
 			};
 
 		private:
-			size_t _CounterPeersTable;
-			void IncreasePeersCounter();
-			void DecreasePeersCounter();
 			NET_PEER CreatePeer(sockaddr_in, SOCKET);
 
 			DWORD optionBitFlag;
@@ -245,6 +243,9 @@ namespace Net
 			void DecodeFrame(NET_PEER);
 			void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
 			void ProcessPacket(NET_PEER, BYTE*, size_t);
+
+		private:
+			Net::PeerPool::PeerPool_t PeerPoolManager;
 
 		public:
 			Server();
@@ -331,6 +332,13 @@ namespace Net
 			bool Run();
 			bool Close();
 
+			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t);
+			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t*);
+
+			size_t count_peers_all();
+			size_t count_peers(Net::PeerPool::peer_threadpool_t* pool);
+			size_t count_pools();
+
 			short Handshake(NET_PEER);
 			void Acceptor();
 
@@ -344,9 +352,7 @@ namespace Net
 			void DoSend(NET_PEER, uint32_t, NET_PACKET&, unsigned char = NET_OPCODE_TEXT);
 			void DoSend(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
-			size_t getCountPeers() const;
-
-			DWORD DoReceive(NET_PEER);
+			bool DoReceive(NET_PEER);
 
 			NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}
 			NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}

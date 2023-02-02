@@ -23,7 +23,11 @@ int main()
 #ifdef BUILD_LINUX
 		usleep(1000);
 #else
-		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d"), ws.getCountPeers()).get().get());
+#ifdef NET_X64
+		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d | Peer-Threads: %llu"), ws.count_peers_all(), ws.count_pools()).get().get());
+#else
+		SetConsoleTitle(Net::String(CSTRING("Peer(s): %d | Peer-Threads: %lu"), ws.count_peers_all(), ws.count_pools()).get().get());
+#endif
 		Sleep(1000);
 #endif
 	}
