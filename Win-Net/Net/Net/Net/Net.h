@@ -692,10 +692,17 @@ namespace WebServerHandshake
 #define NET_OPT_NTP_PORT (1 << 21)
 #define NET_OPT_USE_TOTP (1 << 22)
 #define NET_OPT_TOTP_INTERVAL (1 << 23)
-#define NET_OPT_NTP_SYNC_INTERVAL (1 << 24)
+#define NET_OPT_CLOCK_SYNC_INTERVAL (1 << 24)
 
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
 #define NET_OPT_NET_PROTOCOL_CHECK_TIME (1 << 25)
+
+#define NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL (1 << 26)
+#define NET_OPT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME (1 << 27)
+
+#define NET_OPT_MAX_PEERS_THREAD (1 << 28)
+
+#define NET_OPT_USE_HEARTBEAT (1 << 29)
 
 /* Server & Client Option */
 
@@ -704,7 +711,7 @@ namespace WebServerHandshake
 * without this option, any callback that might perform some big job will block the socket from further execution
 * enable this option to perform the job in a seperate thread
 */
-#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 26)
+#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 30)
 #define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
 
 /* DEFAULT OPTION VALUES */
@@ -737,10 +744,17 @@ namespace WebServerHandshake
 #define NET_OPT_DEFAULT_NTP_PORT 123
 #define NET_OPT_DEFAULT_USE_TOTP false
 #define NET_OPT_DEFAULT_TOTP_INTERVAL 60
-#define NET_OPT_DEFAULT_NTP_SYNC_INTERVAL 30000
+#define NET_OPT_DEFAULT_CLOCK_SYNC_INTERVAL 30000
 
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
 #define NET_OPT_DEFAULT_NET_PROTOCOL_CHECK_TIME 60000
+
+#define NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_INTERVAL 10000
+#define NET_OPT_DEFAULT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME 20000
+
+#define NET_OPT_DEFAULT_MAX_PEERS_THREAD 4
+
+#define NET_OPT_DEFAULT_USE_HEARTBEAT true
 
 #define NOEXCEPT noexcept
 #define CONSTEXPR const

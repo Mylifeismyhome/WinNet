@@ -64,36 +64,48 @@ namespace Net
 			NET_CONTINUE_TIMER;
 		}
 
-		NET_TIMER(NTPSyncClock)
-		{
-			const auto client = (Client*)param;
-			if (!client) NET_STOP_TIMER;
-			if (!client->IsConnected()) NET_CONTINUE_TIMER;
-
-			tm* tm = localtime(&client->network.curTime);
-			tm->tm_sec += 1;
-			client->network.curTime = mktime(tm);
-			NET_CONTINUE_TIMER;
-		}
-
-		NET_TIMER(NTPReSyncClock)
+		NET_TIMER(NetSyncClock)
 		{
 			const auto client = (Client*)param;
 			if (!client) NET_STOP_TIMER;
 
 			if (!client->IsConnected()) NET_CONTINUE_TIMER;
 
-			auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-				client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-			if (!time.valid())
+			if (client->Isset(NET_OPT_USE_NTP) ? client->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
 			{
-				NET_LOG_ERROR(CSTRING("[NET] - critical failure on calling NTP host"));
-				NET_CONTINUE_TIMER;
+				auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+				if (!time.valid())
+				{
+					NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
+					goto update_regular_clock;
+				}
+
+				client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+				
+#ifdef DEBUG
+				auto conv = gmtime(&client->network.curTime);
+				if (conv)
+				{
+					NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+				}
+#endif
+			}
+			else
+			{
+			update_regular_clock:
+				tm* tm = localtime(&client->network.curTime);
+				tm->tm_sec += 1;
+				client->network.curTime = mktime(tm);
+
+#ifdef DEBUG
+				auto conv = gmtime(&client->network.curTime);
+				if (conv)
+				{
+					NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+				}
+#endif
 			}
 
-			client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			Timer::SetTime(client->network.hReSyncClockNTP, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
 			NET_CONTINUE_TIMER;
 		}
 
@@ -490,25 +502,7 @@ namespace Net
 				if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry->opt, LAST_ERROR);
 			}
 
-			if (Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER)
-				/* create RSA Key Pair */
-				network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
-
 			network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
-
-			// if we use NTP execute the needed code
-			if (CreateTOTPSecret())
-			{
-				NET_LOG_DEBUG(CSTRING("[NET] - Successfully created TOTP-Hash"));
-			}
-
-			// spawn timer thread to sync clock with ntp - only effects having 2-step enabled
-			if ((Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-				&& (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP))
-			{
-				network.hSyncClockNTP = Timer::Create(NTPSyncClock, 1000, this);
-				network.hReSyncClockNTP = Timer::Create(NTPReSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
-			}
 
 			// Create Loop-Receive Thread
 			Thread::Create(Receive, this);
@@ -584,16 +578,10 @@ namespace Net
 				network.hCalcLatency = nullptr;
 			}
 
-			if (network.hSyncClockNTP)
+			if (network.hNetSyncClock)
 			{
-				Timer::WaitSingleObjectStopped(network.hSyncClockNTP);
-				network.hSyncClockNTP = nullptr;
-			}
-
-			if (network.hReSyncClockNTP)
-			{
-				Timer::WaitSingleObjectStopped(network.hReSyncClockNTP);
-				network.hReSyncClockNTP = nullptr;
+				Timer::WaitSingleObjectStopped(network.hNetSyncClock);
+				network.hNetSyncClock = nullptr;
 			}
 
 			SetConnected(false);
@@ -693,13 +681,13 @@ namespace Net
 			clearData();
 			deleteRSAKeys();
 
+			bUseTOTP = false;
 			FREE<byte>(totp_secret);
+			totp_secret = nullptr;
 			totp_secret_len = 0;
 			curToken = 0;
-			lastToken = 0;
 			curTime = 0;
-			hSyncClockNTP = nullptr;
-			hReSyncClockNTP = nullptr;
+			hNetSyncClock = nullptr;
 		}
 
 		void Client::Network::AllocData(const size_t size)
@@ -750,7 +738,7 @@ namespace Net
 			if (bPreviousSentFailed)
 				return;
 
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (network.bUseTOTP)
 			{
 				char* ptr = (char*)data;
 				for (size_t it = 0; it < size; ++it)
@@ -811,7 +799,7 @@ namespace Net
 				return;
 			}
 
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (network.bUseTOTP)
 			{
 				for (size_t it = 0; it < size; ++it)
 					data[it] = data[it] ^ sendToken;
@@ -875,7 +863,7 @@ namespace Net
 				return;
 			}
 
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (network.bUseTOTP)
 			{
 				for (size_t it = 0; it < size; ++it)
 					data.get()[it] = data.get()[it] ^ sendToken;
@@ -941,7 +929,7 @@ namespace Net
 				return;
 			}
 
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (network.bUseTOTP)
 			{
 				for (size_t it = 0; it < data.size(); ++it)
 					data.value()[it] = data.value()[it] ^ sendToken;
@@ -1020,9 +1008,10 @@ namespace Net
 
 			std::lock_guard<std::mutex> guard(network._mutex_send);
 
-			uint32_t sendToken = INVALID_UINT_SIZE;
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-				sendToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+			if (network.bUseTOTP)
+			{
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+			}
 
 			Net::Json::Document doc;
 			doc[CSTRING("ID")] = id;
@@ -1142,13 +1131,13 @@ namespace Net
 				auto bPreviousSentFailed = false;
 
 				/* Append Packet Header */
-				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, network.curToken);
 
 				// Append Packet Size Syntax
-				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 
 				/* Append Original Uncompressed Packet Size */
 				/* Compression */
@@ -1156,25 +1145,25 @@ namespace Net
 				{
 					const auto UnCompressedPacketSizeStr = std::to_string(original_dataBufferSize + std::to_string(original_dataBufferSize).length());
 
-					SingleSend(NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN, bPreviousSentFailed, sendToken);
-					SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-					SingleSend(UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, sendToken);
-					SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+					SingleSend(NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN, bPreviousSentFailed, network.curToken);
+					SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+					SingleSend(UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, network.curToken);
+					SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 				}
 
 				/* Append Packet Key */
-				SingleSend(NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(Key, aesKeySize, bPreviousSentFailed, sendToken);
+				SingleSend(NET_AES_KEY, NET_AES_KEY_LEN, bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(Key, aesKeySize, bPreviousSentFailed, network.curToken);
 
 				/* Append Packet IV */
-				SingleSend(NET_AES_IV, strlen(NET_AES_IV), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(IV, IVSize, bPreviousSentFailed, sendToken);
+				SingleSend(NET_AES_IV, strlen(NET_AES_IV), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(IV, IVSize, bPreviousSentFailed, network.curToken);
 
 				/* Append Packet Data */
 				if (PKG.HasRawData())
@@ -1182,14 +1171,14 @@ namespace Net
 					for (auto& data : PKG.GetRawData())
 					{
 						// Append Key
-						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
 
 						const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
-						SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-						SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
+						SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+						SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, network.curToken);
 
 						// Append Original Size
 						/* Compression */
@@ -1197,34 +1186,34 @@ namespace Net
 						{
 							const auto OriginalSizeStr = std::to_string(data.original_size() + std::to_string(data.original_size()).length());
 
-							SingleSend(NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN, bPreviousSentFailed, sendToken);
-							SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-							SingleSend(OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, sendToken);
-							SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+							SingleSend(NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN, bPreviousSentFailed, network.curToken);
+							SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+							SingleSend(OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, network.curToken);
+							SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 						}
 
 						// Append Raw Data
-						SingleSend(NET_RAW_DATA, NET_RAW_DATA_LEN, bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+						SingleSend(NET_RAW_DATA, NET_RAW_DATA_LEN, bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
 
 						const auto rawDataLengthStr = std::to_string(data.size());
 
-						SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-						SingleSend(data, bPreviousSentFailed, sendToken);
+						SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+						SingleSend(data, bPreviousSentFailed, network.curToken);
 
 						data.set_free(false);
 					}
 				}
 
-				SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
+				SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, network.curToken);
 
 				/* Append Packet Footer */
-				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, network.curToken);
 			}
 			else
 			{
@@ -1269,13 +1258,13 @@ namespace Net
 				auto bPreviousSentFailed = false;
 
 				/* Append Packet Header */
-				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_HEADER, NET_PACKET_HEADER_LEN, bPreviousSentFailed, network.curToken);
 
 				// Append Packet Size Syntax
-				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_SIZE, NET_PACKET_SIZE_LEN, bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(EntirePacketSizeStr.data(), EntirePacketSizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 
 				/* Append Original Uncompressed Packet Size */
 				/* Compression */
@@ -1283,10 +1272,10 @@ namespace Net
 				{
 					const auto UnCompressedPacketSizeStr = std::to_string(original_dataBufferSize + std::to_string(original_dataBufferSize).length());
 
-					SingleSend(NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN, bPreviousSentFailed, sendToken);
-					SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-					SingleSend(UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, sendToken);
-					SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+					SingleSend(NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN, bPreviousSentFailed, network.curToken);
+					SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+					SingleSend(UnCompressedPacketSizeStr.data(), UnCompressedPacketSizeStr.length(), bPreviousSentFailed, network.curToken);
+					SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 				}
 
 				/* Append Packet Data */
@@ -1295,14 +1284,14 @@ namespace Net
 					for (auto& data : PKG.GetRawData())
 					{
 						// Append Key
-						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
 
 						const auto KeyLengthStr = std::to_string(strlen(data.key()) + 1);
 
-						SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-						SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, sendToken);
+						SingleSend(KeyLengthStr.data(), KeyLengthStr.length(), bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+						SingleSend(data.key(), strlen(data.key()) + 1, bPreviousSentFailed, network.curToken);
 
 						// Append Original Size
 						/* Compression */
@@ -1310,34 +1299,34 @@ namespace Net
 						{
 							const auto OriginalSizeStr = std::to_string(data.original_size() + std::to_string(data.original_size()).length());
 
-							SingleSend(NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN, bPreviousSentFailed, sendToken);
-							SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
-							SingleSend(OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, sendToken);
-							SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
+							SingleSend(NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN, bPreviousSentFailed, network.curToken);
+							SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
+							SingleSend(OriginalSizeStr.data(), OriginalSizeStr.length(), bPreviousSentFailed, network.curToken);
+							SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
 						}
 
 						// Append Raw Data
-						SingleSend(NET_RAW_DATA, NET_RAW_DATA_LEN, bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, sendToken);
+						SingleSend(NET_RAW_DATA, NET_RAW_DATA_LEN, bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed, network.curToken);
 
 						const auto rawDataLengthStr = std::to_string(data.size());
 
-						SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, sendToken);
-						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-						SingleSend(data, bPreviousSentFailed, sendToken);
+						SingleSend(rawDataLengthStr.data(), rawDataLengthStr.length(), bPreviousSentFailed, network.curToken);
+						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+						SingleSend(data, bPreviousSentFailed, network.curToken);
 
 						data.set_free(false);
 					}
 				}
 
-				SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_OPEN, strlen(NET_PACKET_BRACKET_OPEN), bPreviousSentFailed, sendToken);
-				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, sendToken);
-				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, sendToken);
-				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, sendToken);
+				SingleSend(NET_DATA, NET_DATA_LEN, bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_OPEN, strlen(NET_PACKET_BRACKET_OPEN), bPreviousSentFailed, network.curToken);
+				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed, network.curToken);
+				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed, network.curToken);
+				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed, network.curToken);
 
 				/* Append Packet Footer */
-				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, sendToken);
+				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed, network.curToken);
 			}
 		}
 
@@ -1435,80 +1424,88 @@ namespace Net
 			return 0;
 		}
 
-		bool Client::ValidHeader(bool& use_old_token)
+		bool Client::ValidatePacketTOTP()
 		{
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (!network.bUseTOTP)
 			{
-				// shift the first bytes to check if we are using the correct token - using old token
+				return true;
+			}
+
+			// shift first bytes to check for packer header
+			for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+			{
+				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+			}
+
+			// check for packet header
+			if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
+			{
+				// shift back
 				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-					network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
-
-				if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 				{
-					// shift back
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
 
-					// shift the first bytes to check if we are using the correct token - using cur token
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-					if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
+				// re-sync clock
+				if (this->Isset(NET_OPT_USE_NTP) ? this->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+				{
+					auto time = Net::Protocol::NTP::Exec(this->Isset(NET_OPT_NTP_HOST) ? this->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, this->Isset(NET_OPT_NTP_PORT) ? this->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+					if (!time.valid())
 					{
-						// shift back
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						network.lastToken = network.curToken;
-						network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP ? network.curTime : time(nullptr), Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
-
-						// shift the first bytes to check if we are using the correct token - using new token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						// [PROTOCOL] - check header is actually valid
-						if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
-						{
-							network.clear();
-							Disconnect();
-							NET_LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
-							return false;
-						}
-
-						// sift back using new token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						use_old_token = false;
+						NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
+						goto update_regular_clock;
 					}
-					else
+
+					this->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+#ifdef DEBUG
+					auto conv = gmtime(&this->network.curTime);
+					if (conv)
 					{
-						// sift back using cur token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						use_old_token = false;
+						NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
 					}
+#endif
 				}
 				else
 				{
-					// sift back using old token
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+				update_regular_clock:
+					tm* tm = localtime(&this->network.curTime);
+					tm->tm_sec += 1;
+					this->network.curTime = mktime(tm);
+
+#ifdef DEBUG
+					auto conv = gmtime(&this->network.curTime);
+					if (conv)
+					{
+						NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+					}
+#endif
 				}
-			}
-			else
-			{
-				// [PROTOCOL] - check header is actually valid
+
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+
+				// shift first bytes to check for packer header
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+				{
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
+
+				// check for packet header
 				if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 				{
 					network.clear();
 					Disconnect();
-					NET_LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
+					NET_LOG_ERROR(CSTRING("[NET] - Packet is missing header"));
 					return false;
 				}
-			}
 
+				// shift back
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+				{
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
+			}
+			
 			return true;
 		}
 
@@ -1523,22 +1520,26 @@ namespace Net
 
 			if (network.data_size < NET_PACKET_HEADER_LEN) return;
 
-			auto use_old_token = true;
 			bool already_checked = false;
 
 			// [PROTOCOL] - read data full size from header
 			if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
 			{
 				already_checked = true;
-				if (!ValidHeader(use_old_token)) return;
+				if (!ValidatePacketTOTP())
+				{
+					return;
+				}
 
 				// read entire packet size
 				const size_t start = NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + 1;
 				for (size_t i = start; i < network.data_size; ++i)
 				{
 					// shift the bytes
-					if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
-						network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
+					if (network.bUseTOTP)
+					{
+						network.data.get()[i] = network.data.get()[i] ^ network.curToken;
+					}
 
 					// iterate until we have found the end tag
 					if (!memcmp(&network.data.get()[i], NET_PACKET_BRACKET_CLOSE, 1))
@@ -1558,40 +1559,25 @@ namespace Net
 							network.data = newBuffer; // pointer swap
 
 							// shift all the way back
-							if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+							if (network.bUseTOTP)
 							{
 								for (size_t it = start; it < i + 1; ++it)
-									network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+								{
+									network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+								}
 							}
 
 							return;
 						}
 
 						// shift all the way back
-						if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+						if (network.bUseTOTP)
 						{
 							for (size_t it = start; it < i + 1; ++it)
-								network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+							{
+								network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+							}
 						}
-
-						break;
-					}
-				}
-			}
-
-			/* Compression */
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
-			{
-				const size_t start = network.data_offset + NET_PACKET_ORIGINAL_SIZE_LEN + 2; // 2 - Begin & End Tag
-				for (size_t i = start; i < network.data_size; ++i)
-				{
-					// iterate until we have found the end tag
-					if (!memcmp(&network.data.get()[i], NET_PACKET_BRACKET_CLOSE, 1))
-					{
-						network.data_offset = i;
-						const auto size = i - start;
-						char* end = (char*)network.data.get()[start] + size;
-						network.data_original_uncompressed_size = strtoull((const char*)&network.data.get()[start], &end, 10);
 
 						break;
 					}
@@ -1602,13 +1588,49 @@ namespace Net
 			if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
 
 			if (!already_checked)
-				if (!ValidHeader(use_old_token)) return;
+			{
+				if (!ValidatePacketTOTP())
+				{
+					return;
+				}
+			}
 
 			// shift only as much as required
-			if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+			if (network.bUseTOTP)
 			{
 				for (size_t it = 0; it < network.data_full_size; ++it)
-					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+			}
+
+			/* Decompression */
+			{
+				/* iterate to find out if there is even a compression tag */
+				size_t startPos = 0;
+				for (size_t i = 0; i < network.data_size; ++i)
+				{
+					if (!memcmp(&network.data.get()[i], NET_PACKET_ORIGINAL_SIZE, NET_PACKET_ORIGINAL_SIZE_LEN))
+					{
+						startPos = i + NET_PACKET_ORIGINAL_SIZE_LEN + 1;
+						break;
+					}
+				}
+
+				if (startPos != 0)
+				{
+					for (size_t i = startPos; i < network.data_size; ++i)
+					{
+						// iterate until we have found the end tag
+						if (!memcmp(&network.data.get()[i], NET_PACKET_BRACKET_CLOSE, 1))
+						{
+							network.data_offset = i;
+							const auto size = i - startPos - 1;
+							char* end = (char*)network.data.get()[startPos] + size;
+							network.data_original_uncompressed_size = strtoull((const char*)&network.data.get()[startPos], &end, 10);
+
+							break;
+						}
+					}
+				}
 			}
 
 			// [PROTOCOL] - check footer is actually valid
@@ -1829,29 +1851,26 @@ namespace Net
 						}
 
 						// looking for raw data original size tag
-						/* Compression */
+						/* Decompression */
 						size_t originalSize = 0;
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 						{
-							if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+							offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+							// read original size
+							for (auto y = offset; y < network.data_size; ++y)
 							{
-								offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-								// read original size
-								for (auto y = offset; y < network.data_size; ++y)
+								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
-									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
-									{
-										const auto psize = y - offset - 1;
-										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
-										dataSizeStr.get()[psize] = '\0';
-										originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-										dataSizeStr.free();
+									const auto psize = y - offset - 1;
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
+									dataSizeStr.get()[psize] = '\0';
+									originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									dataSizeStr.free();
 
-										offset += psize + 2;
-										break;
-									}
+									offset += psize + 2;
+									break;
 								}
 							}
 						}
@@ -1891,8 +1910,8 @@ namespace Net
 								return;
 							}
 
-							/* Compression */
-							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+							/* Decompression */
+							if (originalSize != 0)
 							{
 								BYTE* copy = ALLOC<BYTE>(entry.size());
 								memcpy(copy, entry.value(), entry.size());
@@ -1900,7 +1919,7 @@ namespace Net
 
 								entry.set_original_size(originalSize);
 								DecompressData(entry.value(), entry.size(), entry.original_size());
-								entry.set_original_size(entry.size());
+								entry.set_original_size(0);
 							}
 
 							/* in seperate thread we need to create a copy of this data-set */
@@ -1960,10 +1979,11 @@ namespace Net
 							return;
 						}
 
-						/* Compression */
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						/* Decompression */
+						if (network.data_original_uncompressed_size != 0)
 						{
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
+							network.data_original_uncompressed_size = 0;
 						}
 					}
 
@@ -2013,29 +2033,26 @@ namespace Net
 						}
 
 						// looking for raw data original size tag
-						/* Compression */
+						/* Decompression */
 						size_t originalSize = 0;
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
 						{
-							if (!memcmp(&network.data.get()[offset], NET_RAW_DATA_ORIGINAL_SIZE, NET_RAW_DATA_ORIGINAL_SIZE_LEN))
+							offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
+
+							// read original size
+							for (auto y = offset; y < network.data_size; ++y)
 							{
-								offset += NET_RAW_DATA_ORIGINAL_SIZE_LEN;
-
-								// read original size
-								for (auto y = offset; y < network.data_size; ++y)
+								if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
 								{
-									if (!memcmp(&network.data.get()[y], NET_PACKET_BRACKET_CLOSE, 1))
-									{
-										const auto psize = y - offset - 1;
-										NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
-										memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
-										dataSizeStr.get()[psize] = '\0';
-										originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
-										dataSizeStr.free();
+									const auto psize = y - offset - 1;
+									NET_CPOINTER<BYTE> dataSizeStr(ALLOC<BYTE>(psize + 1));
+									memcpy(dataSizeStr.get(), &network.data.get()[offset + 1], psize);
+									dataSizeStr.get()[psize] = '\0';
+									originalSize = strtoull(reinterpret_cast<const char*>(dataSizeStr.get()), nullptr, 10);
+									dataSizeStr.free();
 
-										offset += psize + 2;
-										break;
-									}
+									offset += psize + 2;
+									break;
 								}
 							}
 						}
@@ -2066,8 +2083,8 @@ namespace Net
 
 							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
-							/* Compression */
-							if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+							/* Decompression */
+							if (originalSize != 0)
 							{
 								BYTE* copy = ALLOC<BYTE>(entry.size());
 								memcpy(copy, entry.value(), entry.size());
@@ -2126,9 +2143,10 @@ namespace Net
 						offset += packetSize;
 
 						/* Compression */
-						if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+						if (network.data_original_uncompressed_size != 0)
 						{
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
+							network.data_original_uncompressed_size = 0;
 						}
 					}
 
@@ -2146,7 +2164,7 @@ namespace Net
 				goto loc_packet_free;
 				return;
 			}
-			
+
 			int packetId = -1;
 			{
 				Net::Json::Document doc;
@@ -2225,17 +2243,12 @@ namespace Net
 				}
 
 		loc_packet_free:
-			// if we use compression mode here, then we had to take a copy of the buffer to process the algo to decompress the block, now we have to handle the deletion of this block
-			/* Compression */
-			if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
+			if (pPacket.get()->HasRawData())
 			{
-				if (pPacket.get()->HasRawData())
+				std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
+				for (auto& data : rawData)
 				{
-					std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
-					for (auto& data : rawData)
-					{
-						data.free();
-					}
+					data.free();
 				}
 			}
 
@@ -2258,6 +2271,9 @@ namespace Net
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
+
+			/* base64 encode it */
+			NET_BASE64::encode(data, size);
 		}
 
 		void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
@@ -2270,7 +2286,7 @@ namespace Net
 			size_t m_iCompressedLen = 0;
 			NET_ZLIB::Compress(data, size, m_pCompressed, m_iCompressedLen);
 
-			if(!skip_free)
+			if (!skip_free)
 			{
 				FREE<BYTE>(data);
 			}
@@ -2281,10 +2297,16 @@ namespace Net
 #ifdef DEBUG
 			NET_LOG_DEBUG(CSTRING("[NET] - Compressed data from size %llu to %llu"), PrevSize, size);
 #endif
+
+			/* base64 encode it */
+			NET_BASE64::encode(out, size);
 		}
 
 		void Client::DecompressData(BYTE*& data, size_t& size, size_t original_size)
 		{
+			/* base64 decode it */
+			NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
@@ -2303,6 +2325,9 @@ namespace Net
 
 		void Client::DecompressData(BYTE*& data, BYTE*& out, size_t& size, size_t original_size, const bool skip_free)
 		{
+			/* base64 decode it */
+			NET_BASE64::decode(data, size);
+
 #ifdef DEBUG
 			const auto PrevSize = size;
 #endif
@@ -2310,7 +2335,7 @@ namespace Net
 			BYTE* m_pUnCompressed = 0;
 			size_t m_iUncompressedLen = original_size;
 			NET_ZLIB::Decompress(data, size, m_pUnCompressed, m_iUncompressedLen);
-	
+
 			if (!skip_free)
 			{
 				FREE<BYTE>(data);
@@ -2324,63 +2349,135 @@ namespace Net
 #endif
 		}
 
-		bool Client::CreateTOTPSecret()
+		void Client::SetTOTPSecret(char* secret)
 		{
-			if (!(Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP))
-				return false;
-
-			network.curTime = time(nullptr);
-			if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
-			{
-				auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST,
-					Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
-
-				if (!time.valid())
-				{
-					NET_LOG_ERROR(CSTRING("[NET] - critical failure on calling NTP host"));
-					return false;
-				}
-
-				network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-			}
-
-#ifdef BUILD_LINUX
-			struct tm* tm = nullptr;
-			tm = gmtime(&network.curTime);
-			tm->tm_hour = Net::Util::roundUp(tm->tm_hour, 10);
-			tm->tm_min = Net::Util::roundUp(tm->tm_min, 10);
-			tm->tm_sec = 0;
-			const auto txTm = mktime(tm);
-#else
-			tm tm;
-			gmtime_s(&tm, &network.curTime);
-			tm.tm_hour = Net::Util::roundUp(tm.tm_hour, 10);
-			tm.tm_min = Net::Util::roundUp(tm.tm_min, 10);
-			tm.tm_sec = 0;
-			const auto txTm = mktime(&tm);
-#endif
-
-			const auto strTime = ctime(&txTm);
-			network.totp_secret_len = strlen(strTime);
+			network.totp_secret_len = strlen(secret);
 
 			FREE<byte>(network.totp_secret);
 			network.totp_secret = ALLOC<byte>(network.totp_secret_len + 1);
-			memcpy(network.totp_secret, strTime, network.totp_secret_len);
+			memcpy(network.totp_secret, secret, network.totp_secret_len);
 			network.totp_secret[network.totp_secret_len] = '\0';
-			Net::Coding::Base32::encode(network.totp_secret, network.totp_secret_len);
 
-			network.curToken = 0;
-			network.lastToken = 0;
-
-			return true;
+			network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+			NET_LOG_DEBUG(CSTRING("[NET] - Set TOTP-Secret."));
 		}
 
 		NET_NATIVE_PACKET_DEFINITION_BEGIN(Client);
-		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_RSAHandshake);
-		NET_DEFINE_PACKET(Version, NET_NATIVE_PACKET_ID::PKG_Version);
-		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_Estabilish);
-		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_Close);
+		NET_DEFINE_PACKET(NetProtocolHandshake, NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake);
+		NET_DEFINE_PACKET(RSAHandshake, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake);
+		NET_DEFINE_PACKET(EstabilishConnection, NET_NATIVE_PACKET_ID::PKG_NetEstabilish);
+		NET_DEFINE_PACKET(Close, NET_NATIVE_PACKET_ID::PKG_NetClose);
+		NET_DEFINE_PACKET(NetHeartbeat, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat);
 		NET_PACKET_DEFINITION_END;
+
+		NET_BEGIN_PACKET(Client, NetProtocolHandshake);
+		if (PKG[CSTRING("NET_OPT_USE_CIPHER")] && PKG[CSTRING("NET_OPT_USE_CIPHER")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_CIPHER, PKG[CSTRING("NET_OPT_USE_CIPHER")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")] && PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")]->is_int())
+			{
+				this->SetOption<size_t>({ NET_OPT_CIPHER_RSA_SIZE, (size_t)PKG[CSTRING("NET_OPT_CIPHER_RSA_SIZE")]->as_int() });
+			}
+
+			if (PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")] && PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")]->is_int())
+			{
+				this->SetOption<size_t>({ NET_OPT_CIPHER_AES_SIZE, (size_t)PKG[CSTRING("NET_OPT_CIPHER_AES_SIZE")]->as_int() });
+			}
+
+			/* create new keys */
+			network.createNewRSAKeys(Isset(NET_OPT_CIPHER_RSA_SIZE) ? GetOption<size_t>(NET_OPT_CIPHER_RSA_SIZE) : NET_OPT_DEFAULT_RSA_SIZE);
+		}
+
+		if (PKG[CSTRING("NET_OPT_USE_COMPRESSION")] && PKG[CSTRING("NET_OPT_USE_COMPRESSION")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_COMPRESSION, PKG[CSTRING("NET_OPT_USE_COMPRESSION")]->as_boolean() });
+		}
+
+		if (PKG[CSTRING("NET_OPT_USE_NTP")] && PKG[CSTRING("NET_OPT_USE_NTP")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_NTP, PKG[CSTRING("NET_OPT_USE_NTP")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_NTP_HOST")] && PKG[CSTRING("NET_OPT_NTP_HOST")]->is_string())
+			{
+				this->SetOption<char*>({ NET_OPT_NTP_HOST, strdup(PKG[CSTRING("NET_OPT_NTP_HOST")]->as_string()) });
+			}
+
+			if (PKG[CSTRING("NET_OPT_NTP_PORT")] && PKG[CSTRING("NET_OPT_NTP_PORT")]->is_int())
+			{
+				this->SetOption<u_short>({ NET_OPT_NTP_PORT, (u_short)PKG[CSTRING("NET_OPT_NTP_PORT")]->as_int() });
+			}
+		}
+
+		/* create thread to keep time in sync */
+		if (Isset(NET_OPT_USE_NTP) ? GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+		{
+			auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+			if (!time.valid())
+			{
+				NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
+				goto init_regular_clockSync;
+			}
+
+			network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+#ifdef DEBUG
+			auto conv = gmtime(&network.curTime);
+			if (conv)
+			{
+				NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+			}
+#endif
+		}
+		else
+		{
+		init_regular_clockSync:
+			network.curTime = time(nullptr);
+
+#ifdef DEBUG
+			auto conv = gmtime(&network.curTime);
+			if (conv)
+			{
+				NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+			}
+#endif
+		}
+
+		// dispatch syncing thread
+		network.hNetSyncClock = Timer::Create(NetSyncClock, Isset(NET_OPT_CLOCK_SYNC_INTERVAL) ? GetOption<double>(NET_OPT_CLOCK_SYNC_INTERVAL) : NET_OPT_DEFAULT_CLOCK_SYNC_INTERVAL, this);
+
+		if (PKG[CSTRING("NET_OPT_USE_TOTP")] && PKG[CSTRING("NET_OPT_USE_TOTP")]->is_boolean())
+		{
+			this->SetOption<bool>({ NET_OPT_USE_TOTP, PKG[CSTRING("NET_OPT_USE_TOTP")]->as_boolean() });
+
+			if (PKG[CSTRING("NET_OPT_TOTP_INTERVAL")] && PKG[CSTRING("NET_OPT_TOTP_INTERVAL")]->is_int())
+			{
+				this->SetOption<int>({ NET_OPT_TOTP_INTERVAL, PKG[CSTRING("NET_OPT_TOTP_INTERVAL")]->as_int() });
+			}
+
+			/* I do not have a better method than retrieving the secret from the server to be in sync, yet.*/
+			if (PKG[CSTRING("NET_OPT_TOTP_SECRET")] && PKG[CSTRING("NET_OPT_TOTP_SECRET")]->is_string())
+			{
+				SetTOTPSecret(PKG[CSTRING("NET_OPT_TOTP_SECRET")]->as_string());
+			}
+		}
+
+		/* communication set */
+		// -> Response to Server with current Net Version
+		Net::Packet resp;
+		resp[CSTRING("NET_STATUS")] = 1;
+		resp[CSTRING("NET_MAJOR_VERSION")] = Version::Major();
+		resp[CSTRING("NET_MINOR_VERSION")] = Version::Minor();
+		resp[CSTRING("NET_REVISION_VERSION")] = Version::Revision();
+		const auto Key = Version::Key().get();
+		resp[CSTRING("NET_KEY")] = Key.get();
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, resp);
+
+		if (Isset(NET_OPT_USE_TOTP) ? GetOption<bool>(NET_OPT_USE_TOTP) : NET_OPT_DEFAULT_USE_TOTP)
+		{
+			network.bUseTOTP = true;
+		}
+		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, RSAHandshake);
 		if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
@@ -2402,7 +2499,7 @@ namespace Net
 			return;
 		}
 
-		if (!(pkg[CSTRING("PublicKey")] && pkg[CSTRING("PublicKey")]->is_string()))
+		if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string()))
 		{
 			Disconnect();
 			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
@@ -2410,26 +2507,28 @@ namespace Net
 		}
 
 		// send our generated Public Key to the Server
-		NET_PACKET reply;
-		auto MyPublicKey = network.RSA.publicKey();
+		{
+			auto MyPublicKey = network.RSA.publicKey();
 
-		size_t b64len = MyPublicKey.size();
-		BYTE* b64 = ALLOC<BYTE>(b64len + 1);
-		memcpy(b64, MyPublicKey.data(), b64len);
-		b64[b64len] = 0;
+			size_t b64len = MyPublicKey.size();
+			BYTE* b64 = ALLOC<BYTE>(b64len + 1);
+			memcpy(b64, MyPublicKey.data(), b64len);
+			b64[b64len] = 0;
 
-		Net::Coding::Base64::encode(b64, b64len);
+			Net::Coding::Base64::encode(b64, b64len);
 
-		reply[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_RSAHandshake, reply);
+			NET_PACKET resp;
+			resp[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
+			NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake, resp);
 
-		FREE<byte>(b64);
+			FREE<byte>(b64);
+		}
 
 		// from now we use the Cryption, synced with Server
 		{
-			b64len = strlen(pkg[CSTRING("PublicKey")]->as_string());
-			b64 = ALLOC<BYTE>(b64len + 1);
-			memcpy(b64, pkg[CSTRING("PublicKey")]->as_string(), b64len);
+			auto b64len = strlen(PKG[CSTRING("PublicKey")]->as_string());
+			auto b64 = ALLOC<BYTE>(b64len + 1);
+			memcpy(b64, PKG[CSTRING("PublicKey")]->as_string(), b64len);
 			b64[b64len] = 0;
 
 			Net::Coding::Base64::decode(b64, b64len);
@@ -2437,29 +2536,6 @@ namespace Net
 			network.RSA.setPublicKey(reinterpret_cast<char*>(b64));
 			network.RSAHandshake = true;
 		}
-		NET_END_PACKET;
-
-		NET_BEGIN_PACKET(Client, Version);
-		if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && !network.RSAHandshake)
-		{
-			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has not performed a handshake yet, rejecting the frame"), FUNCTION_NAME);
-			return;
-		}
-		if (network.estabilished)
-		{
-			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a version frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
-			return;
-		}
-
-		NET_PACKET reply;
-		reply[CSTRING("MajorVersion")] = Version::Major();
-		reply[CSTRING("MinorVersion")] = Version::Minor();
-		reply[CSTRING("Revision")] = Version::Revision();
-		const auto Key = Version::Key().get();
-		reply[CSTRING("Key")] = Key.get();
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_Version, reply);
 		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, EstabilishConnection);
@@ -2504,6 +2580,15 @@ namespace Net
 
 		// Callback
 		OnConnectionClosed(code);
+		NET_END_PACKET;
+
+		NET_BEGIN_PACKET(Client, NetHeartbeat);
+		if (network.m_heartbeat_sequence_number >= INT_MAX)
+			network.m_heartbeat_sequence_number = -1;
+
+		Net::Packet resp;
+		resp[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
 		NET_END_PACKET;
 	}
 }

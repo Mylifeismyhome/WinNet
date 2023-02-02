@@ -119,20 +119,22 @@ namespace Net
 				bool bLatency;
 				NET_HANDLE_TIMER hCalcLatency;
 
+				bool bUseTOTP;
+
 				/* TOTP secret */
 				byte* totp_secret;
 				size_t totp_secret_len;
 
 				/* shift token */
 				uint32_t curToken;
-				uint32_t lastToken;
 
 				/* time */
 				time_t curTime;
-				NET_HANDLE_TIMER hSyncClockNTP;
-				NET_HANDLE_TIMER hReSyncClockNTP;
+				NET_HANDLE_TIMER hNetSyncClock;
 
 				std::mutex _mutex_send;
+
+				int m_heartbeat_sequence_number;
 
 				Network()
 				{
@@ -148,12 +150,13 @@ namespace Net
 					latency = -1;
 					bLatency = false;
 					hCalcLatency = nullptr;
+					bUseTOTP = false;
 					totp_secret = nullptr;
 					totp_secret_len = 0;
 					curToken = 0;
-					lastToken = 0;
 					curTime = 0;
-					hSyncClockNTP = nullptr;
+					hNetSyncClock = nullptr;
+					m_heartbeat_sequence_number = -1;
 				}
 
 				void clear();
@@ -303,16 +306,18 @@ namespace Net
 			void DoSend(int, NET_PACKET&);
 
 		private:
-			bool ValidHeader(bool&);
+			bool ValidatePacketTOTP();
 			void ProcessPackets();
 			void ExecutePacket();
-			bool CreateTOTPSecret();
+			void SetTOTPSecret(char* secret);
 
+			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);
 			NET_DECLARE_PACKET(Keys);
 			NET_DECLARE_PACKET(Version);
 			NET_DECLARE_PACKET(EstabilishConnection);
 			NET_DECLARE_PACKET(Close);
+			NET_DECLARE_PACKET(NetHeartbeat);
 
 		protected:
 			NET_DEFINE_CALLBACK(void, OnConnected) {}

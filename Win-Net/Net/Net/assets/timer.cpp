@@ -131,7 +131,13 @@ NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double tim
 	timer_t->finished = false;
 	timer_t->bdelete = bdelete;
 	timer_t->async = false;
+
+#ifndef BUILD_LINUX
+	timer_t->hThread = Thread::Create(NetTimerThread, timer_t);
+#else
 	Thread::Create(NetTimerThread, timer_t);
+#endif
+
 	return timer_t;
 }
 

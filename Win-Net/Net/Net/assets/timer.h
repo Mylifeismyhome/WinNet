@@ -47,6 +47,10 @@ namespace Net
 			bool finished;
 			bool bdelete;
 			bool async;
+
+#ifndef BUILD_LINUX
+			HANDLE hThread;
+#endif
 		};
 
 		NET_HANDLE_TIMER Create(NET_TimerRet(*)(void*), double, void* = nullptr, bool = false);

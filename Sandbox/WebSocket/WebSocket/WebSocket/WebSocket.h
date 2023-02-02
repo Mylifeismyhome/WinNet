@@ -10,4 +10,7 @@ NET_CLASS(WebSocket, NET_WEB_SOCKET)
 	NET_CALLBACK(void, OnPeerEstabilished, NET_PEER);
 	NET_CALLBACK(void, OnPeerUpdate, NET_PEER);
 	NET_CALLBACK(bool, CheckData, NET_PEER, int, NET_PACKET&);
+
+public:
+	NET_DECLARE_PACKET(NetReplyMessage);
 };

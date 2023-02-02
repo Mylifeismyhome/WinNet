@@ -56,7 +56,7 @@ namespace Net
 #ifdef BUILD_LINUX
 		bool Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
 #else
-		bool Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
+		HANDLE Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
 #endif
 	}
 }
