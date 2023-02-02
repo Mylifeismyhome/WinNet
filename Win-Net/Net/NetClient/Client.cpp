@@ -76,11 +76,19 @@ namespace Net
 				auto time = Net::Protocol::NTP::Exec(client->Isset(NET_OPT_NTP_HOST) ? client->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, client->Isset(NET_OPT_NTP_PORT) ? client->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 				if (!time.valid())
 				{
+					NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
 					goto update_regular_clock;
 				}
 
 				client->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
-				Net::Timer::SetTime(client->network.hNetSyncClock, client->Isset(NET_OPT_NTP_SYNC_INTERVAL) ? client->GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL);
+				
+#ifdef DEBUG
+				auto conv = gmtime(&client->network.curTime);
+				if (conv)
+				{
+					NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+				}
+#endif
 			}
 			else
 			{
@@ -88,7 +96,14 @@ namespace Net
 				tm* tm = localtime(&client->network.curTime);
 				tm->tm_sec += 1;
 				client->network.curTime = mktime(tm);
-				Net::Timer::SetTime(client->network.hNetSyncClock, 1000);
+
+#ifdef DEBUG
+				auto conv = gmtime(&client->network.curTime);
+				if (conv)
+				{
+					NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+				}
+#endif
 			}
 
 			NET_CONTINUE_TIMER;
@@ -668,9 +683,9 @@ namespace Net
 
 			bUseTOTP = false;
 			FREE<byte>(totp_secret);
+			totp_secret = nullptr;
 			totp_secret_len = 0;
 			curToken = 0;
-			lastToken = 0;
 			curTime = 0;
 			hNetSyncClock = nullptr;
 		}
@@ -995,7 +1010,7 @@ namespace Net
 
 			if (network.bUseTOTP)
 			{
-				//network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 			}
 
 			Net::Json::Document doc;
@@ -1409,80 +1424,88 @@ namespace Net
 			return 0;
 		}
 
-		bool Client::ValidHeader(bool& use_old_token)
+		bool Client::ValidatePacketTOTP()
 		{
-			if (network.bUseTOTP)
+			if (!network.bUseTOTP)
 			{
-				// shift the first bytes to check if we are using the correct token - using old token
+				return true;
+			}
+
+			// shift first bytes to check for packer header
+			for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+			{
+				network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+			}
+
+			// check for packet header
+			if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
+			{
+				// shift back
 				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-					network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
-
-				if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 				{
-					// shift back
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
 
-					// shift the first bytes to check if we are using the correct token - using cur token
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-					if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
+				// re-sync clock
+				if (this->Isset(NET_OPT_USE_NTP) ? this->GetOption<bool>(NET_OPT_USE_NTP) : NET_OPT_DEFAULT_USE_NTP)
+				{
+					auto time = Net::Protocol::NTP::Exec(this->Isset(NET_OPT_NTP_HOST) ? this->GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, this->Isset(NET_OPT_NTP_PORT) ? this->GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
+					if (!time.valid())
 					{
-						// shift back
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						network.lastToken = network.curToken;
-						//network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
-
-						// shift the first bytes to check if we are using the correct token - using new token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						// [PROTOCOL] - check header is actually valid
-						if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
-						{
-							network.clear();
-							Disconnect();
-							NET_LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
-							return false;
-						}
-
-						// sift back using new token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						use_old_token = false;
+						NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
+						goto update_regular_clock;
 					}
-					else
+
+					this->network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
+
+#ifdef DEBUG
+					auto conv = gmtime(&this->network.curTime);
+					if (conv)
 					{
-						// sift back using cur token
-						for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-							network.data.get()[it] = network.data.get()[it] ^ network.curToken;
-
-						use_old_token = false;
+						NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
 					}
+#endif
 				}
 				else
 				{
-					// sift back using old token
-					for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
-						network.data.get()[it] = network.data.get()[it] ^ network.lastToken;
+				update_regular_clock:
+					tm* tm = localtime(&this->network.curTime);
+					tm->tm_sec += 1;
+					this->network.curTime = mktime(tm);
+
+#ifdef DEBUG
+					auto conv = gmtime(&this->network.curTime);
+					if (conv)
+					{
+						NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+					}
+#endif
 				}
-			}
-			else
-			{
-				// [PROTOCOL] - check header is actually valid
+
+				network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
+
+				// shift first bytes to check for packer header
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+				{
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
+
+				// check for packet header
 				if (memcmp(&network.data.get()[0], NET_PACKET_HEADER, NET_PACKET_HEADER_LEN) != 0)
 				{
 					network.clear();
 					Disconnect();
-					NET_LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid header"));
+					NET_LOG_ERROR(CSTRING("[NET] - Packet is missing header"));
 					return false;
 				}
-			}
 
+				// shift back
+				for (size_t it = 0; it < NET_PACKET_HEADER_LEN; ++it)
+				{
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
+				}
+			}
+			
 			return true;
 		}
 
@@ -1497,14 +1520,13 @@ namespace Net
 
 			if (network.data_size < NET_PACKET_HEADER_LEN) return;
 
-			auto use_old_token = true;
 			bool already_checked = false;
 
 			// [PROTOCOL] - read data full size from header
 			if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
 			{
 				already_checked = true;
-				if (!ValidHeader(use_old_token))
+				if (!ValidatePacketTOTP())
 				{
 					return;
 				}
@@ -1516,7 +1538,7 @@ namespace Net
 					// shift the bytes
 					if (network.bUseTOTP)
 					{
-						network.data.get()[i] = network.data.get()[i] ^ (use_old_token ? network.lastToken : network.curToken);
+						network.data.get()[i] = network.data.get()[i] ^ network.curToken;
 					}
 
 					// iterate until we have found the end tag
@@ -1541,7 +1563,7 @@ namespace Net
 							{
 								for (size_t it = start; it < i + 1; ++it)
 								{
-									network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+									network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 								}
 							}
 
@@ -1553,13 +1575,31 @@ namespace Net
 						{
 							for (size_t it = start; it < i + 1; ++it)
 							{
-								network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
+								network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 							}
 						}
 
 						break;
 					}
 				}
+			}
+
+			// keep going until we have received the entire packet
+			if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
+
+			if (!already_checked)
+			{
+				if (!ValidatePacketTOTP())
+				{
+					return;
+				}
+			}
+
+			// shift only as much as required
+			if (network.bUseTOTP)
+			{
+				for (size_t it = 0; it < network.data_full_size; ++it)
+					network.data.get()[it] = network.data.get()[it] ^ network.curToken;
 			}
 
 			/* Decompression */
@@ -1591,19 +1631,6 @@ namespace Net
 						}
 					}
 				}
-			}
-
-			// keep going until we have received the entire packet
-			if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
-
-			if (!already_checked)
-				if (!ValidHeader(use_old_token)) return;
-
-			// shift only as much as required
-			if (network.bUseTOTP)
-			{
-				for (size_t it = 0; it < network.data_full_size; ++it)
-					network.data.get()[it] = network.data.get()[it] ^ (use_old_token ? network.lastToken : network.curToken);
 			}
 
 			// [PROTOCOL] - check footer is actually valid
@@ -2331,12 +2358,7 @@ namespace Net
 			memcpy(network.totp_secret, secret, network.totp_secret_len);
 			network.totp_secret[network.totp_secret_len] = '\0';
 
-			network.lastToken = network.curToken = 1;
-			//network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
-			//network.lastToken = network.curToken;
-
-			std::cout << network.curToken << std::endl;
-
+			network.curToken = Net::Coding::TOTP::generateToken(network.totp_secret, network.totp_secret_len, network.curTime, Isset(NET_OPT_TOTP_INTERVAL) ? (int)(GetOption<int>(NET_OPT_TOTP_INTERVAL) / 2) : (int)(NET_OPT_DEFAULT_TOTP_INTERVAL / 2));
 			NET_LOG_DEBUG(CSTRING("[NET] - Set TOTP-Secret."));
 		}
 
@@ -2378,7 +2400,7 @@ namespace Net
 
 			if (PKG[CSTRING("NET_OPT_NTP_HOST")] && PKG[CSTRING("NET_OPT_NTP_HOST")]->is_string())
 			{
-				this->SetOption<char*>({ NET_OPT_NTP_HOST, PKG[CSTRING("NET_OPT_NTP_HOST")]->as_string() });
+				this->SetOption<char*>({ NET_OPT_NTP_HOST, strdup(PKG[CSTRING("NET_OPT_NTP_HOST")]->as_string()) });
 			}
 
 			if (PKG[CSTRING("NET_OPT_NTP_PORT")] && PKG[CSTRING("NET_OPT_NTP_PORT")]->is_int())
@@ -2393,22 +2415,36 @@ namespace Net
 			auto time = Net::Protocol::NTP::Exec(Isset(NET_OPT_NTP_HOST) ? GetOption<char*>(NET_OPT_NTP_HOST) : NET_OPT_DEFAULT_NTP_HOST, Isset(NET_OPT_NTP_PORT) ? GetOption<u_short>(NET_OPT_NTP_PORT) : NET_OPT_DEFAULT_NTP_PORT);
 			if (!time.valid())
 			{
+				NET_LOG_ERROR(CSTRING("[NET] => There was an error on NTP Clock-Sync. Using fallback on regular method."));
 				goto init_regular_clockSync;
 			}
 
 			network.curTime = (time_t)(time.frame().txTm_s - NTP_TIMESTAMP_DELTA);
 
-			// dispatch syncing thread
-			network.hNetSyncClock = Timer::Create(NetSyncClock, Isset(NET_OPT_NTP_SYNC_INTERVAL) ? GetOption<int>(NET_OPT_NTP_SYNC_INTERVAL) : NET_OPT_DEFAULT_NTP_SYNC_INTERVAL, this);
+#ifdef DEBUG
+			auto conv = gmtime(&network.curTime);
+			if (conv)
+			{
+				NET_LOG_DEBUG(CSTRING("[NET] => NTP Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+			}
+#endif
 		}
 		else
 		{
 		init_regular_clockSync:
 			network.curTime = time(nullptr);
 
-			// dispatch syncing thread
-			network.hNetSyncClock = Timer::Create(NetSyncClock, 1000, this);
+#ifdef DEBUG
+			auto conv = gmtime(&network.curTime);
+			if (conv)
+			{
+				NET_LOG_DEBUG(CSTRING("[NET] => Clock-Sync >> %i:%i:%i"), conv->tm_hour, conv->tm_min, conv->tm_sec);
+			}
+#endif
 		}
+
+		// dispatch syncing thread
+		network.hNetSyncClock = Timer::Create(NetSyncClock, Isset(NET_OPT_CLOCK_SYNC_INTERVAL) ? GetOption<double>(NET_OPT_CLOCK_SYNC_INTERVAL) : NET_OPT_DEFAULT_CLOCK_SYNC_INTERVAL, this);
 
 		if (PKG[CSTRING("NET_OPT_USE_TOTP")] && PKG[CSTRING("NET_OPT_USE_TOTP")]->is_boolean())
 		{
@@ -2419,6 +2455,7 @@ namespace Net
 				this->SetOption<int>({ NET_OPT_TOTP_INTERVAL, PKG[CSTRING("NET_OPT_TOTP_INTERVAL")]->as_int() });
 			}
 
+			/* I do not have a better method than retrieving the secret from the server to be in sync, yet.*/
 			if (PKG[CSTRING("NET_OPT_TOTP_SECRET")] && PKG[CSTRING("NET_OPT_TOTP_SECRET")]->is_string())
 			{
 				SetTOTPSecret(PKG[CSTRING("NET_OPT_TOTP_SECRET")]->as_string());

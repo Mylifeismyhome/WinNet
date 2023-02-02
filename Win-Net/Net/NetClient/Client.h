@@ -127,7 +127,6 @@ namespace Net
 
 				/* shift token */
 				uint32_t curToken;
-				uint32_t lastToken;
 
 				/* time */
 				time_t curTime;
@@ -155,7 +154,6 @@ namespace Net
 					totp_secret = nullptr;
 					totp_secret_len = 0;
 					curToken = 0;
-					lastToken = 0;
 					curTime = 0;
 					hNetSyncClock = nullptr;
 					m_heartbeat_sequence_number = -1;
@@ -308,7 +306,7 @@ namespace Net
 			void DoSend(int, NET_PACKET&);
 
 		private:
-			bool ValidHeader(bool&);
+			bool ValidatePacketTOTP();
 			void ProcessPackets();
 			void ExecutePacket();
 			void SetTOTPSecret(char* secret);

@@ -213,7 +213,6 @@ namespace Net
 
 				/* shift token */
 				uint32_t curToken;
-				uint32_t lastToken;
 
 				NET_HANDLE_TIMER hWaitForNetProtocol;
 				NET_HANDLE_TIMER hWaitHearbeatSend;
@@ -237,7 +236,6 @@ namespace Net
 					totp_secret = nullptr;
 					totp_secret_len = NULL;
 					curToken = NULL;
-					lastToken = NULL;
 					hWaitForNetProtocol = nullptr;
 					hWaitHearbeatSend = nullptr;
 					hWaitHearbeatReceive = nullptr;
@@ -274,7 +272,7 @@ namespace Net
 
 			bool bRunning;
 
-			bool ValidHeader(NET_PEER, bool&);
+			bool ValidatePacketTOTP(NET_PEER);
 			void ProcessPackets(NET_PEER);
 			void ExecutePacket(NET_PEER);
 

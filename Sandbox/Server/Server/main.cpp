@@ -16,10 +16,10 @@ int main()
 	Server server;
 	server.SetOption<char*>({ NET_OPT_NAME, (char*)SANDBOX_SERVERNAME });
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
-	server.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, false });
+	server.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
 	server.SetOption<bool>({ NET_OPT_USE_COMPRESSION, true });
 	server.SetOption<bool>({ NET_OPT_USE_TOTP, true });
-	server.SetOption<bool>({ NET_OPT_USE_NTP, false });
+	server.SetOption<bool>({ NET_OPT_USE_NTP, true });
 
 #ifdef _USE_CIPHER_
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
