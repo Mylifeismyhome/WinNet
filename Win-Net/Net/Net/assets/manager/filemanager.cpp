@@ -36,8 +36,8 @@ static FILE* __convertWfname2Afname__fopen(const wchar_t* fname, const wchar_t* 
 
 	FILE* f = fopen(fnameA, ModeA);
 
-	FREE(fnameA);
-	FREE(ModeA);
+	FREE<char>(fnameA);
+	FREE<char>(ModeA);
 
 	return f;
 }

@@ -63,7 +63,7 @@ namespace Net
 			void clear()
 			{
 				peer = nullptr;
-				FREE<void>(ext);
+				FREE<byte>(ext);
 			}
 
 			template <typename T>

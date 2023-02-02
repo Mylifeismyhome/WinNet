@@ -34,7 +34,7 @@ NET_FILE_ATTRW::NET_FILE_ATTRW(struct dirent* data, wchar_t* path)
 
 	wcscpy(this->name, w_d_name);
 
-	FREE(w_d_name);
+	FREE<wchar_t>(w_d_name);
 
 	wcscpy(this->path, path);
 
@@ -130,7 +130,7 @@ namespace Net
 			if (!ignoreHomeDir)
 				actualPath = std::string(homeDirA() + folderNameA);
 
-			FREE(folderNameA);
+			FREE<char>(folderNameA);
 
 			struct stat sb;
 			if (!(stat(actualPath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
@@ -683,7 +683,7 @@ namespace Net
 
 					nextDir += w_d_name;
 
-					FREE(w_d_name);
+					FREE<wchar_t>(w_d_name);
 
 					scandir((wchar_t*)nextDir.c_str(), Vector, ignoreHomeDir);
 					continue;
