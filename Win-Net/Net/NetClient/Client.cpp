@@ -819,7 +819,7 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						FREE(data);
+						FREE<byte>(data);
 						Disconnect();
 						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 						return;
@@ -1702,6 +1702,8 @@ namespace Net
 
 		void Client::ExecutePacket()
 		{
+			int packetId = -1;
+
 			NET_CPOINTER<BYTE> data;
 			NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
 			if (!pPacket.valid())
@@ -2165,7 +2167,6 @@ namespace Net
 				return;
 			}
 
-			int packetId = -1;
 			{
 				Net::Json::Document doc;
 				if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))

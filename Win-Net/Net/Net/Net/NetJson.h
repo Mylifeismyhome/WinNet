@@ -132,7 +132,7 @@ namespace Net
 			void operator=(const int& value);
 			void operator=(const float& value);
 			void operator=(const double& value);
-			void operator=(BasicObject& value);
+			void operator=(const BasicObject& value);
 
 			void SetKey(const char* key);
 			void SetKey(Net::ViewString& key);
@@ -193,9 +193,9 @@ namespace Net
 			void operator=(const double& value);
 			void operator=(const bool& value);
 			void operator=(const char* value);
-			void operator=(BasicObject& value);
-			void operator=(BasicArray& value);
-			void operator=(Document& value);
+			void operator=(const BasicObject& value);
+			void operator=(const BasicArray& value);
+			void operator=(const Document& value);
 		};
 
 		enum class EDeserializeFlag

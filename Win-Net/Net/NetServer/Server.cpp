@@ -817,7 +817,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 			else
 			{
 				bPreviousSentFailed = true;
-				FREE(data);
+				FREE<byte>(data);
 				ErasePeer(peer);
 				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
@@ -1906,6 +1906,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		return;
 	);
 
+	int packetId = -1;
+
 	NET_CPOINTER<BYTE> data;
 	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
 	if (!pPacket.valid())
@@ -2371,7 +2373,6 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	*
 	* pass the json content into pPacket object
 	*/
-	int packetId = -1;
 	{
 		Net::Json::Document doc;
 		if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))

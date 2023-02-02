@@ -454,6 +454,13 @@ bool Net::WebSocket::Server::IsRunning() const
 	return bRunning;
 }
 
+#ifdef BUILD_LINUX
+static void usleep_wrapper(DWORD duration)
+{
+	usleep(duration * 1000);
+}
+#endif
+
 bool Net::WebSocket::Server::Run()
 {
 	if (IsRunning())
