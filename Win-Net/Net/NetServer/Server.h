@@ -82,8 +82,6 @@ return true; \
 #include <Net/Cryption/RSA.h>
 #include <Net/Coding/MD5.h>
 #include <Net/Coding/BASE64.h>
-#include <Net/Coding/BASE32.h>
-#include <Net/Coding/TOTP.h>
 #include <Net/Compression/Compression.h>
 
 //#include <Net/Protocol/ICMP.h>
@@ -204,16 +202,6 @@ namespace Net
 				typeLatency latency;
 				NET_HANDLE_TIMER hCalcLatency;
 
-				/* only allow using TOTP after the peer finished WinNet Handshake */
-				bool bUseTOTP;
-
-				/* TOTP secret */
-				byte* totp_secret;
-				size_t totp_secret_len;
-
-				/* shift token */
-				uint32_t curToken;
-
 				NET_HANDLE_TIMER hWaitForNetProtocol;
 				NET_HANDLE_TIMER hWaitHearbeatSend;
 				NET_HANDLE_TIMER hWaitHearbeatReceive;
@@ -232,10 +220,6 @@ namespace Net
 					NetVersionMatched = false;
 					latency = -1;
 					hCalcLatency = nullptr;
-					bUseTOTP = false;
-					totp_secret = nullptr;
-					totp_secret_len = NULL;
-					curToken = NULL;
 					hWaitForNetProtocol = nullptr;
 					hWaitHearbeatSend = nullptr;
 					hWaitHearbeatReceive = nullptr;
@@ -252,7 +236,6 @@ namespace Net
 
 		public:
 			/* time */
-			time_t curTime;
 			NET_HANDLE_TIMER hNetSyncClock;
 
 		private:
@@ -272,7 +255,6 @@ namespace Net
 
 			bool bRunning;
 
-			bool ValidatePacketTOTP(NET_PEER);
 			void ProcessPackets(NET_PEER);
 			void ExecutePacket(NET_PEER);
 
@@ -371,10 +353,10 @@ namespace Net
 			NET_DEFINE_CALLBACK(void, Tick) {}
 			bool CheckDataN(NET_PEER peer, int id, NET_PACKET& pkg);
 			NET_DEFINE_CALLBACK(bool, CheckData, NET_PEER peer, int id, NET_PACKET& pkg) { return false; }
-			void SingleSend(NET_PEER, const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, NET_CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_PEER, Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+			void SingleSend(NET_PEER, const char*, size_t, bool&);
+			void SingleSend(NET_PEER, BYTE*&, size_t, bool&);
+			void SingleSend(NET_PEER, NET_CPOINTER<BYTE>&, size_t, bool&);
+			void SingleSend(NET_PEER, Net::RawData_t&, bool&);
 			void DoSend(NET_PEER, int, NET_PACKET&);
 
 			void add_to_peer_threadpool(Net::PeerPool::peerInfo_t);
@@ -383,11 +365,10 @@ namespace Net
 			size_t count_peers_all();
 			size_t count_peers(Net::PeerPool::peer_threadpool_t* pool);
 			size_t count_pools();
+			Net::PeerPool::PeerPool_t* get_peer_pool();
 
 			void Acceptor();
 			bool DoReceive(NET_PEER);
-
-			bool CreateTOTPSecret(NET_PEER);
 
 			NET_DEFINE_CALLBACK(void, OnPeerUpdate, NET_PEER) {}
 

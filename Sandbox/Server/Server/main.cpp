@@ -18,8 +18,6 @@ int main()
 	server.SetOption<u_short>({ NET_OPT_PORT, SANDBOX_PORT });
 	server.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
 	server.SetOption<bool>({ NET_OPT_USE_COMPRESSION, false });
-	server.SetOption<bool>({ NET_OPT_USE_TOTP, true });
-	server.SetOption<bool>({ NET_OPT_USE_NTP, true });
 
 #ifdef _USE_CIPHER_
 	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
