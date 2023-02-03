@@ -119,53 +119,41 @@
 - [x] String
 - [x] Json
 - [x] Packet
-
-## Database
-- [x] Mysql
-
-## Cryption
-- [x] AES
-- [x] RSA
-- [x]  Pointer
-- [x]  XOR Runtime & Compiletime
-
-## Compression
-- [x] ZLib
-
-## Coding
-- [x] Base32
-- [x] Base64
-- [x] Hex
-- [x] MD5
-- [x] SHA1
-
-## Auth
-- [x] TOTP
-
-## Manager
-- [x] Directory
-- [x] File
-- [x] Logging
-
-## Handler
 - [x] Thread
 - [x] Timer
+- [x] Pointer encryption (Runtime)
+- [x] XOR-String encryption (Runtime & Compiletime)
+- [x] Directory-Manager
+- [x] File-Manager
+- [x] Log-Manager
 
-## Protocol
-- [x] NTP
-- [x] ICMP
+## Extern
+- [x] MySQL (c++ connector by Oracle)
+- [x] AES (OpenSSL)
+- [x] RSA (CryptoPP)
+- [x] ZLib
+- [x] Base32
+- [x] Base64
+- [x] Hex (CryptoPP)
+- [x] MD5
+- [x] SHA1
+- [x] TOTP (Time-Based one-time password)
+
+## Proctol
+- [x] NTP (Network Time Protocol)
+- [x] ICMP (Internet Control Message Protocol)
 
 ## Windows
-- [x] Import Resolver
+- [x] Custom import resolver
 
-## Communication between Server & Client
-- [x] Plain
-- [x] Crypted using RSA + AES
-- [x] Compression
-- [x] TOTP to abort incoming packets that reached the defined allowed time
-- [x] Json for data sharing
-- [x] Raw bytes for file sharing
+## Server & Client
+- [x] Unsafe plain communication.
+- [x] Safe hybrid-encrypted communication using RSA + AES combination.
+- [x] Compression mode using zlib algorithmus.
+- [x] JSON based packet data
+- [x] Raw packet data for large amount of bytes
+- [x] Ping measuring using ICMP
 
 ## Websocket
-- [x] Plain
-- [x] TLS
+- [x] Unsafe plain communication
+- [x] Safe communication using TLS (SSL)

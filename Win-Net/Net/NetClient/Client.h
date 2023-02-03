@@ -72,8 +72,6 @@ return true; \
 #include <Net/Cryption/RSA.h>
 #include <Net/Compression/Compression.h>
 #include <Net/Cryption/PointerCryption.h>
-#include <Net/Coding/BASE32.h>
-#include <Net/Coding/TOTP.h>
 
 //#include <Net/Protocol/ICMP.h>
 #include <Net/Protocol/NTP.h>
@@ -119,19 +117,6 @@ namespace Net
 				bool bLatency;
 				NET_HANDLE_TIMER hCalcLatency;
 
-				bool bUseTOTP;
-
-				/* TOTP secret */
-				byte* totp_secret;
-				size_t totp_secret_len;
-
-				/* shift token */
-				uint32_t curToken;
-
-				/* time */
-				time_t curTime;
-				NET_HANDLE_TIMER hNetSyncClock;
-
 				std::mutex _mutex_send;
 
 				int m_heartbeat_sequence_number;
@@ -150,12 +135,6 @@ namespace Net
 					latency = -1;
 					bLatency = false;
 					hCalcLatency = nullptr;
-					bUseTOTP = false;
-					totp_secret = nullptr;
-					totp_secret_len = 0;
-					curToken = 0;
-					curTime = 0;
-					hNetSyncClock = nullptr;
 					m_heartbeat_sequence_number = -1;
 				}
 
@@ -297,19 +276,17 @@ namespace Net
 			NET_DEFINE_CALLBACK(bool, CheckData, const int id, NET_PACKET& pkg) { return false; }
 
 		private:
-			void SingleSend(const char*, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(BYTE*&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(NET_CPOINTER<BYTE>&, size_t, bool&, uint32_t = INVALID_UINT_SIZE);
-			void SingleSend(Net::RawData_t&, bool&, uint32_t = INVALID_UINT_SIZE);
+			void SingleSend(const char*, size_t, bool&);
+			void SingleSend(BYTE*&, size_t, bool&);
+			void SingleSend(NET_CPOINTER<BYTE>&, size_t, bool&);
+			void SingleSend(Net::RawData_t&, bool&);
 
 		public:
 			void DoSend(int, NET_PACKET&);
 
 		private:
-			bool ValidatePacketTOTP();
 			void ProcessPackets();
 			void ExecutePacket();
-			void SetTOTPSecret(char* secret);
 
 			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);
