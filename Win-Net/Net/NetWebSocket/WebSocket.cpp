@@ -40,7 +40,7 @@ inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
 		return 0;
 	}
 
-	flags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+	flags = (flags | O_NONBLOCK);
 	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
 #else
 	unsigned long mode = 1;
