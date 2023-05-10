@@ -26,6 +26,28 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
+FORCEINLINE BYTE SetSocket2NonBlockingMode(SOCKET fd)
+{
+	if (fd < 0)
+	{
+		return 0;
+	}
+
+#ifdef BUILD_LINUX
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		return 0;
+	}
+
+	flags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
+#else
+	unsigned long mode = 1;
+	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
+#endif
+}
+
 Net::WebSocket::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
@@ -580,25 +602,16 @@ bool Net::WebSocket::Server::Run()
 		return false;
 	}
 
-#ifdef BUILD_LINUX
-	res = fcntl(GetListenSocket(), F_GETFL, 0);
-	if (res != SOCKET_ERROR)
+	/*
+	* This library is based on non-blocking sockets, so we need to set the socket to non-blocking mode
+	*/
+	if (SetSocket2NonBlockingMode(GetListenSocket()) == 0)
 	{
-		res = fcntl(GetListenSocket(), F_SETFL, flags | O_NONBLOCK);
-	}
-#else
-	u_long iMode = 1;
-	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
-#endif
-
-	if (res == SOCKET_ERROR)
-	{
-		NET_LOG_ERROR(CSTRING("[%s] - ioctlsocket failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("[%s] - failed to set socket to non-blocking mode\n\tclosing socket"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
-		return false;
 	}
 
 	// Setup the TCP listening socket
