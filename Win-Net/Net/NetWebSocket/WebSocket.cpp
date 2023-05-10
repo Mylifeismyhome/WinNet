@@ -580,9 +580,16 @@ bool Net::WebSocket::Server::Run()
 		return false;
 	}
 
-	// Set the mode of the socket to be nonblocking
+#ifdef BUILD_LINUX
+	res = fcntl(GetListenSocket(), F_GETFL, 0);
+	if (res != SOCKET_ERROR)
+	{
+		res = fcntl(GetListenSocket(), F_SETFL, flags | O_NONBLOCK);
+	}
+#else
 	u_long iMode = 1;
 	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
+#endif
 
 	if (res == SOCKET_ERROR)
 	{
