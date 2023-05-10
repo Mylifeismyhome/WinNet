@@ -216,7 +216,24 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 	peer->client_addr = client_addr;
 	peer->ssl = nullptr;
 
-	// Set socket options
+	/*
+	* Set default socket options for non-blocking mode
+	*/
+	{
+		timeval tv = {};
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+	}
+
+	/*
+	* Set/override socket options
+	*/
 	for (const auto& entry : socketoption)
 	{
 		const auto res = Ws2_32::setsockopt(peer->pSocket, entry->level, entry->opt, entry->value(), entry->optlen());
