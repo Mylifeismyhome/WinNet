@@ -155,13 +155,15 @@ namespace Net
 			{
 				if (data == nullptr)
 				{
-					return;
+					return nullptr;
 				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
 					if (data[i].Peer<void*>() == peer)
+					{
 						return data[i].ext;
+					}
 				}
 
 				return nullptr;
@@ -188,13 +190,15 @@ namespace Net
 			{
 				if (data == nullptr)
 				{
-					return;
+					return nullptr;
 				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
 					if (data[i].Peer<void*>() == peer)
+					{
 						return &data[i].data;
+					}
 				}
 
 				return nullptr;
