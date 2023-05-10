@@ -274,11 +274,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 #endif
 					{
 						bBlocked = true;
-#ifdef BUILD_LINUX
-						usleep(FREQUENZ(this) * 1000);
-#else
-						Kernel32::Sleep(FREQUENZ(this));
-#endif
+						continue;
 					}
 				}
 
@@ -650,7 +646,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -663,7 +658,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -709,7 +703,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -723,7 +716,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -772,7 +764,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -786,7 +777,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -838,7 +828,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -852,7 +841,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -1341,11 +1329,7 @@ void Net::Server::Server::Acceptor()
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
 			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ(this) * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ(this));
-#endif
+				continue;
 			}
 			else
 			{

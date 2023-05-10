@@ -352,11 +352,7 @@ namespace Net
 #endif
 								{
 									bBlocked = true;
-#ifdef BUILD_LINUX
-									usleep(FREQUENZ * 1000);
-#else
-									Kernel32::Sleep(FREQUENZ);
-#endif
+									continue;
 								}
 							}
 
@@ -394,11 +390,7 @@ namespace Net
 #endif
 							{
 								bBlocked = true;
-#ifdef BUILD_LINUX
-								usleep(FREQUENZ * 1000);
-#else
-								Kernel32::Sleep(FREQUENZ);
-#endif
+								continue;
 							}
 						}
 
@@ -508,14 +500,9 @@ namespace Net
 #else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
-
 						{
 							bBlocked = true;
-#ifdef BUILD_LINUX
-							usleep(FREQUENZ * 1000);
-#else
-							Kernel32::Sleep(FREQUENZ);
-#endif
+							continue;
 						}
 					}
 
@@ -687,7 +674,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -700,7 +686,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -741,7 +726,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -755,7 +739,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -799,7 +782,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -813,7 +795,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -860,7 +841,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -874,7 +854,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else

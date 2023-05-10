@@ -293,11 +293,7 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 #endif
 					{
 						bBlocked = true;
-#ifdef BUILD_LINUX
-						usleep(FREQUENZ(this) * 1000);
-#else
-						Kernel32::Sleep(FREQUENZ(this));
-#endif
+						continue;
 					}
 				}
 
@@ -860,13 +856,11 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ(this) * 1000);
 						continue;
 					}
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ(this));
 						continue;
 					}
 #endif
@@ -1023,11 +1017,7 @@ void Net::WebSocket::Server::Acceptor()
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
 			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ(this) * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ(this));
-#endif
+				continue;
 			}
 			else
 			{
@@ -1220,7 +1210,6 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ(this) * 1000);
 						continue;
 					}
 					else
@@ -1233,7 +1222,6 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ(this));
 						continue;
 					}
 					else
