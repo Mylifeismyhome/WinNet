@@ -26,6 +26,28 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
+inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
+{
+	if (fd < 0)
+	{
+		return 0;
+	}
+
+#ifdef BUILD_LINUX
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		return 0;
+	}
+
+	flags = (flags | O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
+#else
+	unsigned long mode = 1;
+	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
+#endif
+}
+
 namespace Net
 {
 	namespace Client
@@ -129,14 +151,6 @@ namespace Net
 		{
 			// use the bit flag to perform faster checks
 			return socketOptionBitFlag & opt;
-		}
-
-		bool Client::ChangeMode(const bool blocking)
-		{
-			auto ret = true;
-			unsigned long non_blocking = (blocking ? 0 : 1);
-			ret = (NET_NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking)) ? true : false;
-			return ret;
 		}
 
 		char* Client::ResolveHostname(const char* name)
@@ -394,7 +408,7 @@ namespace Net
 
 			if (GetSocket() == INVALID_SOCKET)
 			{
-				NET_LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), LAST_ERROR);
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  socket failed with error: %ld"), LAST_ERROR);
 
 #ifndef BUILD_LINUX
 				Ws2_32::WSACleanup();
@@ -407,7 +421,7 @@ namespace Net
 			{
 				SetSocket(INVALID_SOCKET);
 
-				NET_LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
 #ifndef BUILD_LINUX
 				Ws2_32::WSACleanup();
 #endif
@@ -420,17 +434,37 @@ namespace Net
 			// successfully connected
 			SetConnected(true);
 
-			// Set Mode
-			ChangeMode(Isset(NET_OPT_MODE_BLOCKING) ? GetOption<bool>(NET_OPT_MODE_BLOCKING) : NET_OPT_DEFAULT_MODE_BLOCKING);
+			/*
+			* This library is based on non-blocking sockets
+			* so we need to set the socket to non-blocking mode
+			*/
+			if (SetSocket2NonBlockingMode(GetSocket()) == 0)
+			{
+				SetSocket(INVALID_SOCKET);
 
-			// Set socket options
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), GetSocket());
+#ifndef BUILD_LINUX
+				Ws2_32::WSACleanup();
+#endif
+				return false;
+			}
+
+			/*
+			* Set/override socket options
+			*/
 			for (const auto& entry : socketoption)
 			{
 				const auto res = Ws2_32::setsockopt(GetSocket(), entry->level, entry->opt, entry->value(), entry->optlen());
-				if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry->opt, LAST_ERROR);
+				if (res == SOCKET_ERROR)
+				{
+					NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to apply socket option { %i : %i } for socket '%d'"), entry->opt, LAST_ERROR, GetSocket());
+				}
 			}
 
-			network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
+			/*
+			* disabled for now, will get replaced with a working version soon
+			*/
+			//network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 
 			// Create Loop-Receive Thread
 			Thread::Create(Receive, this);

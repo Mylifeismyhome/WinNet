@@ -245,8 +245,6 @@ namespace Net
 			Client();
 			~Client();
 
-			bool ChangeMode(bool);
-
 			char* ResolveHostname(const char*);
 			bool Connect(const char*, u_short);
 			bool Disconnect();
