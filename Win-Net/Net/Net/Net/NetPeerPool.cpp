@@ -79,11 +79,7 @@ void Net::PeerPool::peerInfo_t::SetWorker(WorkStatus_t(*fncWork)(void* peer))
 
 void* Net::PeerPool::peerInfo_t::GetWorker()
 {
-	if (this->fncWork)
-	{
-		return (void*)this->fncWork;
-	}
-
+	if (this->fncWork) return (void*)this->fncWork;
 	return nullptr;
 }
 
@@ -94,17 +90,35 @@ void Net::PeerPool::peerInfo_t::SetCallbackOnDelete(void (*fncCallbackOnDelete)(
 
 void* Net::PeerPool::peerInfo_t::GetCallbackOnDelete()
 {
-	if (this->fncCallbackOnDelete)
-	{
-		return (void*)this->fncCallbackOnDelete;
-	}
-
+	if (this->fncCallbackOnDelete) return (void*)this->fncCallbackOnDelete;
 	return nullptr;
 }
 
 Net::PeerPool::PeerPool_t::PeerPool_t()
 {
+	fncSleep = nullptr;
+	ms_sleep_time = 100;
 	max_peers = DEFAULT_MAX_PEER_COUNT;
+}
+
+void Net::PeerPool::PeerPool_t::set_sleep_time(DWORD ms_sleep_time)
+{
+	this->ms_sleep_time = ms_sleep_time;
+}
+
+DWORD Net::PeerPool::PeerPool_t::get_sleep_time()
+{
+	return this->ms_sleep_time;
+}
+
+void Net::PeerPool::PeerPool_t::set_sleep_function(void (*fncSleep)(DWORD time))
+{
+	this->fncSleep = fncSleep;
+}
+
+void* Net::PeerPool::PeerPool_t::get_sleep_function()
+{
+	return (void*)this->fncSleep;
 }
 
 void Net::PeerPool::PeerPool_t::set_max_peers(size_t max_peers)
@@ -151,6 +165,8 @@ NET_THREAD(threadpool_manager)
 
 	while (data)
 	{
+		BYTE take_rest = 1;
+
 		for (size_t i = 0; i < pClass->get_max_peers(); ++i)
 		{
 			auto& peer = pool->vPeers[i];
@@ -158,7 +174,9 @@ NET_THREAD(threadpool_manager)
 			{
 				auto waiting_peer = pClass->queue_pop();
 				if (waiting_peer)
+				{
 					peer = waiting_peer;
+				}
 
 				// process in next iteration
 				continue;
@@ -200,7 +218,7 @@ NET_THREAD(threadpool_manager)
 					for (size_t j = 0; j < pClass->get_max_peers(); ++j)
 					{
 						auto& target_peer = p->vPeers[j];
-						if (!target_peer)
+						if (target_peer == nullptr)
 						{
 							target_peer = peer;
 							peer = nullptr;
@@ -214,6 +232,7 @@ NET_THREAD(threadpool_manager)
 			// do not take a rest if we want to forward on processing worker function rapidly
 			case Net::PeerPool::WorkStatus_t::FORWARD:
 			{
+				take_rest = 0;
 				break;
 			}
 
@@ -230,6 +249,7 @@ NET_THREAD(threadpool_manager)
 			for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
 			{
 				auto p = *it;
+
 				// compare mem address
 				if (p == pool)
 				{
@@ -241,6 +261,16 @@ NET_THREAD(threadpool_manager)
 			FREE<Net::PeerPool::peerInfo_t>(pool->vPeers);
 			FREE<threadpool_manager_data_t>(data);
 			return NULL;
+		}
+
+		if (take_rest == 1)
+		{
+			auto fncSleepPointer = pClass->get_sleep_function();
+			if (fncSleepPointer)
+			{
+				auto fncSleep = reinterpret_cast<void (*)(DWORD time)>(fncSleepPointer);
+				(*fncSleep)(pClass->get_sleep_time());
+			}
 		}
 	}
 
@@ -280,7 +310,7 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 
 Net::PeerPool::peer_threadpool_t* Net::PeerPool::PeerPool_t::threadpool_get_free_slot_in_target_pool(peer_threadpool_t* current_pool)
 {
-	if (!peer_queue.empty())
+	if (peer_queue.empty() == 0)
 	{
 		return nullptr;
 	}
@@ -312,7 +342,7 @@ Net::PeerPool::peerInfo_t* Net::PeerPool::PeerPool_t::queue_pop()
 		return nullptr;
 	}
 
-//	const std::lock_guard<std::recursive_mutex> lock(peer_mutex);
+	//	const std::lock_guard<std::recursive_mutex> lock(peer_mutex);
 	auto peer = peer_queue.back();
 	peer_queue.pop_back();
 	return peer;

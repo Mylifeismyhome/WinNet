@@ -400,6 +400,12 @@ NET_THREAD(WorkThread)
 		* then run tick
 		*/
 		server->Tick();
+
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(server) * 1000);
+#else
+		Kernel32::Sleep(FREQUENZ(server));
+#endif
 	}
 
 	return 0;
@@ -445,7 +451,9 @@ static void usleep_wrapper(DWORD duration)
 bool Net::WebSocket::Server::Run()
 {
 	if (IsRunning())
+	{
 		return false;
+	}
 
 	/* SSL */
 	if (Isset(NET_OPT_SSL) ? GetOption<bool>(NET_OPT_SSL) : NET_OPT_DEFAULT_SSL)
@@ -605,6 +613,14 @@ bool Net::WebSocket::Server::Run()
 
 	auto max_peers = Isset(NET_OPT_MAX_PEERS_THREAD) ? GetOption<size_t>(NET_OPT_MAX_PEERS_THREAD) : NET_OPT_DEFAULT_MAX_PEERS_THREAD;
 	PeerPoolManager.set_max_peers(max_peers);
+
+	PeerPoolManager.set_sleep_time(FREQUENZ(this));
+
+#ifdef BUILD_LINUX
+	PeerPoolManager.set_sleep_function(&usleep_wrapper);
+#else
+	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
+#endif;
 
 	Thread::Create(WorkThread, this);
 
@@ -981,30 +997,23 @@ void Net::WebSocket::Server::Acceptor()
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
 
-	SOCKET accept_socket = INVALID_SOCKET;
-	do
+	SOCKET accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
+	if (accept_socket == INVALID_SOCKET)
 	{
-		accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
-		if (accept_socket == INVALID_SOCKET)
-		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+		if (errno != EWOULDBLOCK)
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+		if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
-			{
-				continue;
-			}
-			else
-			{
-				NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
-				return;
-			}
+		{
+			NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
 		}
-	} while (accept_socket == INVALID_SOCKET);
+
+		return;
+	}
 
 	auto peer = CreatePeer(client_addr, accept_socket);
-	if (!peer)
+	if (peer == nullptr)
 	{
 		return;
 	}
@@ -1215,9 +1224,9 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 		}
 
 		buf.free();
-				}
+	}
 	///////////////////////
-			}
+}
 
 bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 {
@@ -1315,11 +1324,11 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 		}
 
 		peer->network.reset();
-		}
+	}
 
 	DecodeFrame(peer);
 	return false;
-	}
+}
 
 void Net::WebSocket::Server::DecodeFrame(NET_PEER peer)
 {

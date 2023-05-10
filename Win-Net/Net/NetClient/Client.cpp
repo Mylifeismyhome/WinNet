@@ -1259,7 +1259,7 @@ namespace Net
 				ProcessPackets();
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				return FREQUENZ(this);
-			}
+		}
 
 			// graceful disconnect
 			if (data_size == 0)
@@ -1301,7 +1301,7 @@ namespace Net
 			memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 			ProcessPackets();
 			return 0;
-		}
+	}
 
 		void Client::ProcessPackets()
 		{
@@ -2021,7 +2021,7 @@ namespace Net
 
 			/* base64 encode it */
 			NET_BASE64::encode(data, size);
-		}
+}
 
 		void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 		{

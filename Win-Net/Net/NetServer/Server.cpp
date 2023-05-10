@@ -230,7 +230,10 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	for (const auto& entry : socketoption)
 	{
 		const auto res = Ws2_32::setsockopt(peer->pSocket, entry->level, entry->opt, entry->value(), entry->optlen());
-		if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("'%s' => unable to apply socket option { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
+		if (res == SOCKET_ERROR)
+		{
+			NET_LOG_ERROR(CSTRING("'%s' => unable to apply socket option { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
+		}
 	}
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
@@ -455,7 +458,13 @@ NET_THREAD(WorkThread)
 		* then run tick
 		*/
 		server->Tick();
-}
+
+#ifdef BUILD_LINUX
+		usleep(FREQUENZ(server) * 1000);
+#else
+		Kernel32::Sleep(FREQUENZ(server));
+#endif
+	}
 
 	return 0;
 }
@@ -572,6 +581,14 @@ bool Net::Server::Server::Run()
 
 	auto max_peers = Isset(NET_OPT_MAX_PEERS_THREAD) ? GetOption<size_t>(NET_OPT_MAX_PEERS_THREAD) : NET_OPT_DEFAULT_MAX_PEERS_THREAD;
 	PeerPoolManager.set_max_peers(max_peers);
+
+	PeerPoolManager.set_sleep_time(FREQUENZ(this));
+
+#ifdef BUILD_LINUX
+	PeerPoolManager.set_sleep_function(&usleep_wrapper);
+#else
+	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
+#endif;
 
 	Thread::Create(WorkThread, this);
 
@@ -1296,30 +1313,23 @@ void Net::Server::Server::Acceptor()
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
 
-	SOCKET accept_socket = INVALID_SOCKET;
-	do
+	SOCKET accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
+	if (accept_socket == INVALID_SOCKET)
 	{
-		accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
-		if (accept_socket == INVALID_SOCKET)
-		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+		if (errno != EWOULDBLOCK)
 #else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
+		if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
-			{
-				continue;
-			}
-			else
-			{
-				NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
-				return;
-			}
+		{
+			NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
 		}
-	} while (accept_socket == INVALID_SOCKET);
+
+		return;
+	}
 
 	auto peer = CreatePeer(client_addr, accept_socket);
-	if (!peer)
+	if (peer == nullptr)
 	{
 		return;
 	}
@@ -1408,12 +1418,12 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 #endif
 
 			return true;
-	}
+		}
 
 		ProcessPackets(peer);
 		peer->network.reset();
 		return true;
-}
+	}
 
 	// graceful disconnect
 	if (data_size == 0)
