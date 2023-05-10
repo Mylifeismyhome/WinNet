@@ -381,42 +381,27 @@ void Net::WebSocket::Server::DisconnectPeer(NET_PEER peer, const int code)
 	ErasePeer(peer);
 }
 
-/* Thread functions */
-NET_THREAD(TickThread)
+NET_THREAD(WorkThread)
 {
 	const auto server = (Net::WebSocket::Server*)parameter;
-	if (!server) return 0;
-
-	NET_LOG_DEBUG(CSTRING("[NET] - Tick thread has been started"));
-	while (server->IsRunning())
+	if (server == nullptr)
 	{
-		server->Tick();
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server) * 1000);
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
+		return 0;
 	}
-	NET_LOG_DEBUG(CSTRING("[NET] - Tick thread has been end"));
-	return 0;
-}
 
-NET_THREAD(AcceptorThread)
-{
-	const auto server = (Net::WebSocket::Server*)parameter;
-	if (!server) return 0;
-
-	NET_LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been started"));
 	while (server->IsRunning())
 	{
+		/*
+		* first accept new connections
+		*/
 		server->Acceptor();
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server) * 1000);
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
+
+		/*
+		* then run tick
+		*/
+		server->Tick();
 	}
-	NET_LOG_DEBUG(CSTRING("[NET] - Acceptor thread has been end"));
+
 	return 0;
 }
 
@@ -621,16 +606,7 @@ bool Net::WebSocket::Server::Run()
 	auto max_peers = Isset(NET_OPT_MAX_PEERS_THREAD) ? GetOption<size_t>(NET_OPT_MAX_PEERS_THREAD) : NET_OPT_DEFAULT_MAX_PEERS_THREAD;
 	PeerPoolManager.set_max_peers(max_peers);
 
-	PeerPoolManager.set_sleep_time(FREQUENZ(this));
-
-#ifdef BUILD_LINUX
-	PeerPoolManager.set_sleep_function(&usleep_wrapper);
-#else
-	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
-#endif;
-
-	Thread::Create(TickThread, this);
-	Thread::Create(AcceptorThread, this);
+	Thread::Create(WorkThread, this);
 
 	SetRunning(true);
 	NET_LOG_SUCCESS(CSTRING("[%s] - started on Port: %d"), SERVERNAME(this), SERVERPORT(this));
@@ -1056,7 +1032,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	//std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	Net::Json::Document doc;
 	doc[CSTRING("ID")] = static_cast<int>(id);
@@ -1087,7 +1063,7 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data
 
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
-	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	//std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	// write packet id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);

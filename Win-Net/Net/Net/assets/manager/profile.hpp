@@ -78,16 +78,21 @@ namespace Net
 			NET_PROFILE_DATA* data;
 			size_t max_entries;
 			size_t c_entries;
-			std::recursive_mutex critical;
 
 			size_t get_free_slot()
 			{
-				if (!data) return INVALID_SIZE;
-
-				std::lock_guard<std::recursive_mutex> guard(critical);
+				if (data == nullptr)
+				{
+					return INVALID_SIZE;
+				}
 
 				for (size_t i = 0; i < max_entries; ++i)
-					if (data[i].Peer<void*>() == nullptr) return i;
+				{
+					if (data[i].Peer<void*>() == nullptr) 
+					{
+						return i;
+					}
+				}
 
 				// indicates all slots are being in use
 				return INVALID_SIZE;
@@ -116,7 +121,10 @@ namespace Net
 
 			Net::Json::Document* Add(void* peer)
 			{
-				if (!data) return nullptr;
+				if (data == nullptr) 
+				{
+					return nullptr;
+				}
 
 				auto slot = get_free_slot();
 				if (slot == INVALID_SIZE) return nullptr;
@@ -127,7 +135,10 @@ namespace Net
 
 			void Remove(void* peer)
 			{
-				if (!data) return;
+				if (data == nullptr)
+				{
+					return;
+				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
@@ -142,7 +153,10 @@ namespace Net
 
 			void* peerExt(void* peer)
 			{
-				if (!data) return nullptr;
+				if (data == nullptr)
+				{
+					return;
+				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
@@ -155,7 +169,10 @@ namespace Net
 
 			void setPeerExt(void* peer, void* ext)
 			{
-				if (!data) return;
+				if (data == nullptr)
+				{
+					return;
+				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{
@@ -169,7 +186,10 @@ namespace Net
 
 			Net::Json::Document* peer(void* peer)
 			{
-				if (!data) return nullptr;
+				if (data == nullptr)
+				{
+					return;
+				}
 
 				for (size_t i = 0; i < max_entries; ++i)
 				{

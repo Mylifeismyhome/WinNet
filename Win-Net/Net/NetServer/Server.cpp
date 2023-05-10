@@ -436,38 +436,26 @@ bool Net::Server::Server::IsRunning() const
 	return bRunning;
 }
 
-NET_THREAD(TickThread)
+NET_THREAD(WorkThread)
 {
 	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return 0;
-
-	while (server->IsRunning())
+	if (server == nullptr)
 	{
-		server->Tick();
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server) * 1000);
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
+		return 0;
 	}
 
-	return 0;
-}
-
-NET_THREAD(AcceptorThread)
-{
-	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return 0;
-
 	while (server->IsRunning())
 	{
+		/*
+		* first accept new connections
+		*/
 		server->Acceptor();
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server) * 1000);
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
-	}
+
+		/*
+		* then run tick
+		*/
+		server->Tick();
+}
 
 	return 0;
 }
@@ -585,16 +573,7 @@ bool Net::Server::Server::Run()
 	auto max_peers = Isset(NET_OPT_MAX_PEERS_THREAD) ? GetOption<size_t>(NET_OPT_MAX_PEERS_THREAD) : NET_OPT_DEFAULT_MAX_PEERS_THREAD;
 	PeerPoolManager.set_max_peers(max_peers);
 
-	PeerPoolManager.set_sleep_time(FREQUENZ(this));
-
-#ifdef BUILD_LINUX
-	PeerPoolManager.set_sleep_function(&usleep_wrapper);
-#else
-	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
-#endif;
-
-	Thread::Create(TickThread, this);
-	Thread::Create(AcceptorThread, this);
+	Thread::Create(WorkThread, this);
 
 	SetRunning(true);
 	NET_LOG_SUCCESS(CSTRING("'%s' => running on port %d"), SERVERNAME(this), SERVERPORT(this));

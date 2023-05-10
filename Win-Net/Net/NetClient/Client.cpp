@@ -72,20 +72,10 @@ namespace Net
 			SetConnected(false);
 			optionBitFlag = 0;
 			socketOptionBitFlag = 0;
-			bReceiveThread = false;
 		}
 
 		Client::~Client()
 		{
-			while (bReceiveThread)
-			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ);
-#endif
-			}
-
 			Clear();
 
 			for (auto& entry : socketoption)
@@ -102,11 +92,11 @@ namespace Net
 		NET_THREAD(Receive)
 		{
 			const auto client = (Client*)parameter;
-			if (!client) return 0;
+			if (client == nullptr)
+			{
+				return 0;
+			}
 
-			client->bReceiveThread = true;
-
-			NET_LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 			while (client->IsConnected())
 			{
 #ifdef BUILD_LINUX
@@ -120,15 +110,12 @@ namespace Net
 			while (client && client->network.bLatency)
 			{
 #ifdef BUILD_LINUX
-				usleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) * 1000 : NET_OPT_DEFAULT_FREQUENZ * 1000);
+				usleep(FREQUENZ(client) * 1000);
 #else
-				Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+				Kernel32::Sleep(FREQUENZ(client));
 #endif
 			}
 
-			client->bReceiveThread = false;
-
-			NET_LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
 			return 0;
 		}
 
@@ -1243,8 +1230,10 @@ namespace Net
 		*/
 		DWORD Client::DoReceive()
 		{
-			if (!IsConnected())
-				return FREQUENZ;
+			if (IsConnected() == 0)
+			{
+				return FREQUENZ(this);
+			}
 
 			auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 			if (data_size == SOCKET_ERROR)
@@ -1264,12 +1253,12 @@ namespace Net
 					if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
-					return FREQUENZ;
+					return FREQUENZ(this);
 				}
 
 				ProcessPackets();
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				return FREQUENZ;
+				return FREQUENZ(this);
 			}
 
 			// graceful disconnect
@@ -1278,7 +1267,7 @@ namespace Net
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				Disconnect();
 				NET_LOG_PEER(CSTRING("Connection has been gracefully closed"));
-				return FREQUENZ;
+				return FREQUENZ(this);
 			}
 
 			if (!network.data.valid())

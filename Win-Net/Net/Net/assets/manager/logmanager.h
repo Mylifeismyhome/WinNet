@@ -130,16 +130,16 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_LOG_SUCCESS(...)
 #else
 #define NET_LOG(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::normal, FUNCNAME, __VA_ARGS__);
 
 #define NET_LOG_ERROR(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::error, FUNCNAME, __VA_ARGS__);
 
 #define NET_LOG_WARNING(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::warning, FUNCNAME, __VA_ARGS__);
 
 #define NET_LOG_SUCCESS(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::success, FUNCNAME, __VA_ARGS__);
 #endif
 
 #ifdef DEBUG
@@ -147,7 +147,7 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_LOG_DEBUG(...)
 #else
 #define NET_LOG_DEBUG(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::debug, FUNCNAME, __VA_ARGS__);
 #endif
 #else
 #define NET_LOG_DEBUG(...)
@@ -157,7 +157,7 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_LOG_PEER(...)
 #else
 #define NET_LOG_PEER(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::peer, FUNCNAME, __VA_ARGS__);
 #endif
 
 ////////////// LOG NO FUNCTION NAME
@@ -168,16 +168,16 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_NNET_LOG_SUCCESS(...)
 #else
 #define NET_NNET_LOG(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::normal, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::normal, CSTRING(""), __VA_ARGS__);
 
 #define NET_NNET_LOG_ERROR(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::error, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::error, CSTRING(""), __VA_ARGS__);
 
 #define NET_NNET_LOG_WARNING(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::warning, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::warning, CSTRING(""), __VA_ARGS__);
 
 #define NET_NNET_LOG_SUCCESS(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::success, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::success, CSTRING(""), __VA_ARGS__);
 #endif
 
 #ifdef DEBUG
@@ -185,7 +185,7 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_NNET_LOG_DEBUG(...)
 #else
 #define NET_NNET_LOG_DEBUG(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::debug, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::debug, CSTRING(""), __VA_ARGS__);
 #endif
 #else
 #define NNET_LOG_DEBUG(...)
@@ -195,21 +195,9 @@ Net::Console::NET_LOG(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #define NET_NNET_LOG_PEER(...)
 #else
 #define NET_NNET_LOG_PEER(...) \
-	Net::Manager::Log::Log(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
+	Net::Console::Log(Net::Console::LogStates::peer, CSTRING(""), __VA_ARGS__);
 #endif
 ///////////////////////
-
-/* LOG (FILENAME) */
-#ifdef NET_DISABLE_LOGMANAGER
-#define NET_BEGIN_NET_LOG(fname)
-#define NET_END_LOG
-#else
-#define NET_BEGIN_NET_LOG(fname) \
-	Net::Manager::Log::SetOutputName(fname);
-
-#define NET_END_LOG \
-	Net::Manager::Log::SetOutputName(CSTRING(""));
-#endif
 
 namespace Net
 {
@@ -228,6 +216,9 @@ namespace Net
 #endif
 		NET_EXPORT_FUNCTION tm TM_GetTime();
 #ifndef NET_DISABLE_LOGMANAGER
+		NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
+		NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
+
 		NET_EXPORT_FUNCTION std::string GetLogStatePrefix(LogStates);
 		NET_EXPORT_FUNCTION void Log(LogStates, const char*, const char*, ...);
 		NET_EXPORT_FUNCTION void Log(LogStates, const char*, const wchar_t*, ...);
@@ -240,26 +231,6 @@ namespace Net
 		NET_EXPORT_FUNCTION bool GetPrintFState();
 		NET_EXPORT_FUNCTION WORD GetColorFromState(LogStates);
 #endif
-	}
-
-	namespace Manager
-	{
-		namespace Log
-		{
-#ifndef NET_DISABLE_LOGMANAGER
-			void start();
-			void shutdown();
-			NET_EXPORT_FUNCTION void SetOutputName(const char*);
-			NET_EXPORT_FUNCTION void SetLogCallbackA(OnLogA_t);
-			NET_EXPORT_FUNCTION void SetLogCallbackW(OnLogW_t);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const char*, ...);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, const wchar_t*, ...);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::String);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::String&);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::ViewString);
-			NET_EXPORT_FUNCTION void Log(Console::LogStates, const char*, Net::ViewString&);
-#endif
-		}
 	}
 }
 NET_DSA_END

@@ -78,9 +78,6 @@ namespace Net
 			void threapool_push(peer_threadpool_t* pool);
 			void threadpool_add();
 
-			DWORD ms_sleep_time;
-			void (*fncSleep)(DWORD time);
-
 			size_t max_peers;
 
 		public:
@@ -92,12 +89,6 @@ namespace Net
 			std::recursive_mutex* get_peer_threadpool_mutex();
 
 			peer_threadpool_t* threadpool_get_free_slot_in_target_pool(peer_threadpool_t* from_pool);
-
-			void set_sleep_time(DWORD ms_sleep_time);
-			DWORD get_sleep_time();
-
-			void set_sleep_function(void (*fncSleep)(DWORD time));
-			void* get_sleep_function();
 
 			void set_max_peers(size_t max_peers);
 			size_t get_max_peers();
