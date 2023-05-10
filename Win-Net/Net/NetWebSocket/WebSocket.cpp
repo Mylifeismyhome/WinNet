@@ -239,6 +239,15 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 	peer->ssl = nullptr;
 
 	/*
+	* This library is based on non-blocking sockets, so we need to set the socket to non-blocking mode
+	*/
+	if (SetSocket2NonBlockingMode(socket) == 0)
+	{
+		NET_LOG_ERROR(CSTRING("[%s] - failed to set socket to non-blocking mode\n\tclosing socket"), SERVERNAME(this), LAST_ERROR);
+		return nullptr;
+	}
+
+	/*
 	* Set default socket options for non-blocking mode
 	*/
 	{
