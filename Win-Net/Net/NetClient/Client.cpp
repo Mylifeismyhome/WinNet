@@ -26,6 +26,28 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
+inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
+{
+	if (fd < 0)
+	{
+		return 0;
+	}
+
+#ifdef BUILD_LINUX
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		return 0;
+	}
+
+	flags = (flags | O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
+#else
+	unsigned long mode = 1;
+	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
+#endif
+}
+
 namespace Net
 {
 	namespace Client
@@ -72,20 +94,10 @@ namespace Net
 			SetConnected(false);
 			optionBitFlag = 0;
 			socketOptionBitFlag = 0;
-			bReceiveThread = false;
 		}
 
 		Client::~Client()
 		{
-			while (bReceiveThread)
-			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ);
-#endif
-			}
-
 			Clear();
 
 			for (auto& entry : socketoption)
@@ -102,11 +114,11 @@ namespace Net
 		NET_THREAD(Receive)
 		{
 			const auto client = (Client*)parameter;
-			if (!client) return 0;
+			if (client == nullptr)
+			{
+				return 0;
+			}
 
-			client->bReceiveThread = true;
-
-			NET_LOG_DEBUG(CSTRING("[NET] - Receive thread has been started"));
 			while (client->IsConnected())
 			{
 #ifdef BUILD_LINUX
@@ -120,15 +132,12 @@ namespace Net
 			while (client && client->network.bLatency)
 			{
 #ifdef BUILD_LINUX
-				usleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) * 1000 : NET_OPT_DEFAULT_FREQUENZ * 1000);
+				usleep(FREQUENZ(client) * 1000);
 #else
-				Kernel32::Sleep(client->Isset(NET_OPT_FREQUENZ) ? client->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ);
+				Kernel32::Sleep(FREQUENZ(client));
 #endif
 			}
 
-			client->bReceiveThread = false;
-
-			NET_LOG_DEBUG(CSTRING("[NET] - Receive thread has been end"));
 			return 0;
 		}
 
@@ -142,14 +151,6 @@ namespace Net
 		{
 			// use the bit flag to perform faster checks
 			return socketOptionBitFlag & opt;
-		}
-
-		bool Client::ChangeMode(const bool blocking)
-		{
-			auto ret = true;
-			unsigned long non_blocking = (blocking ? 0 : 1);
-			ret = (NET_NO_ERROR == Ws2_32::ioctlsocket(GetSocket(), FIONBIO, &non_blocking)) ? true : false;
-			return ret;
 		}
 
 		char* Client::ResolveHostname(const char* name)
@@ -352,11 +353,7 @@ namespace Net
 #endif
 								{
 									bBlocked = true;
-#ifdef BUILD_LINUX
-									usleep(FREQUENZ * 1000);
-#else
-									Kernel32::Sleep(FREQUENZ);
-#endif
+									continue;
 								}
 							}
 
@@ -394,11 +391,7 @@ namespace Net
 #endif
 							{
 								bBlocked = true;
-#ifdef BUILD_LINUX
-								usleep(FREQUENZ * 1000);
-#else
-								Kernel32::Sleep(FREQUENZ);
-#endif
+								continue;
 							}
 						}
 
@@ -415,7 +408,7 @@ namespace Net
 
 			if (GetSocket() == INVALID_SOCKET)
 			{
-				NET_LOG_ERROR(CSTRING("[Client] - socket failed with error: %ld"), LAST_ERROR);
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  socket failed with error: %ld"), LAST_ERROR);
 
 #ifndef BUILD_LINUX
 				Ws2_32::WSACleanup();
@@ -428,7 +421,7 @@ namespace Net
 			{
 				SetSocket(INVALID_SOCKET);
 
-				NET_LOG_ERROR(CSTRING("[Client] - failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failure on connecting to host: %s:%hu"), GetServerAddress(), GetServerPort());
 #ifndef BUILD_LINUX
 				Ws2_32::WSACleanup();
 #endif
@@ -441,23 +434,37 @@ namespace Net
 			// successfully connected
 			SetConnected(true);
 
-			// Set Mode
-			ChangeMode(Isset(NET_OPT_MODE_BLOCKING) ? GetOption<bool>(NET_OPT_MODE_BLOCKING) : NET_OPT_DEFAULT_MODE_BLOCKING);
+			/*
+			* This library is based on non-blocking sockets
+			* so we need to set the socket to non-blocking mode
+			*/
+			if (SetSocket2NonBlockingMode(GetSocket()) == 0)
+			{
+				SetSocket(INVALID_SOCKET);
 
-			/* Set Read Timeout */
-			timeval tv = {};
-			tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
-			tv.tv_usec = 0;
-			Ws2_32::setsockopt(GetSocket(), SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), GetSocket());
+#ifndef BUILD_LINUX
+				Ws2_32::WSACleanup();
+#endif
+				return false;
+			}
 
-			// Set socket options
+			/*
+			* Set/override socket options
+			*/
 			for (const auto& entry : socketoption)
 			{
 				const auto res = Ws2_32::setsockopt(GetSocket(), entry->level, entry->opt, entry->value(), entry->optlen());
-				if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("Following socket option could not been applied { %i : %i }"), entry->opt, LAST_ERROR);
+				if (res == SOCKET_ERROR)
+				{
+					NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to apply socket option { %i : %i } for socket '%d'"), entry->opt, LAST_ERROR, GetSocket());
+				}
 			}
 
-			network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
+			/*
+			* disabled for now, will get replaced with a working version soon
+			*/
+			//network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
 
 			// Create Loop-Receive Thread
 			Thread::Create(Receive, this);
@@ -508,14 +515,9 @@ namespace Net
 #else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
-
 						{
 							bBlocked = true;
-#ifdef BUILD_LINUX
-							usleep(FREQUENZ * 1000);
-#else
-							Kernel32::Sleep(FREQUENZ);
-#endif
+							continue;
 						}
 					}
 
@@ -687,7 +689,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -700,7 +701,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -741,7 +741,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -755,7 +754,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -799,7 +797,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -813,7 +810,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -860,7 +856,6 @@ namespace Net
 #ifdef BUILD_LINUX
 					if (errno == EWOULDBLOCK)
 					{
-						usleep(FREQUENZ * 1000);
 						continue;
 					}
 					else
@@ -874,7 +869,6 @@ namespace Net
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 					{
-						Kernel32::Sleep(FREQUENZ);
 						continue;
 					}
 					else
@@ -1264,8 +1258,10 @@ namespace Net
 		*/
 		DWORD Client::DoReceive()
 		{
-			if (!IsConnected())
-				return FREQUENZ;
+			if (IsConnected() == 0)
+			{
+				return FREQUENZ(this);
+			}
 
 			auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
 			if (data_size == SOCKET_ERROR)
@@ -1285,13 +1281,13 @@ namespace Net
 					if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
-					return FREQUENZ;
+					return FREQUENZ(this);
 				}
 
 				ProcessPackets();
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
-				return FREQUENZ;
-			}
+				return FREQUENZ(this);
+		}
 
 			// graceful disconnect
 			if (data_size == 0)
@@ -1299,7 +1295,7 @@ namespace Net
 				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				Disconnect();
 				NET_LOG_PEER(CSTRING("Connection has been gracefully closed"));
-				return FREQUENZ;
+				return FREQUENZ(this);
 			}
 
 			if (!network.data.valid())
@@ -1333,7 +1329,7 @@ namespace Net
 			memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 			ProcessPackets();
 			return 0;
-		}
+	}
 
 		void Client::ProcessPackets()
 		{
@@ -2053,7 +2049,7 @@ namespace Net
 
 			/* base64 encode it */
 			NET_BASE64::encode(data, size);
-		}
+}
 
 		void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 		{

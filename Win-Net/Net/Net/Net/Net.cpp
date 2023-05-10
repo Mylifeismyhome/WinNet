@@ -29,7 +29,6 @@
 #include <Net/Import/Ws2_32.hpp>
 
 extern void __Net_Enable_Logging();
-extern void __Net_Shutdown_Logging();
 
 #ifdef NET_TEST_MEMORY_LEAKS
 static void NET_TEST_MEMORY_SHOW_DIAGNOSTIC()
@@ -67,10 +66,6 @@ NET_EXPORT_FUNCTION void Net::load(int flag)
 
 NET_EXPORT_FUNCTION void Net::unload()
 {
-#ifndef NET_DISABLE_LOGMANAGER
-	__Net_Shutdown_Logging();
-#endif
-
 	Net::Codes::NetUnloadErrorCodes();
 
 #ifndef NET_DISABLE_IMPORT_WS2_32

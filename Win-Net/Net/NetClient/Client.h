@@ -61,7 +61,7 @@ return true; \
 
 #define NET_SEND DoSend
 
-#define FREQUENZ Isset(NET_OPT_FREQUENZ) ? GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
+#define FREQUENZ(x) x->Isset(NET_OPT_FREQUENZ) ? x->GetOption<DWORD>(NET_OPT_FREQUENZ) : NET_OPT_DEFAULT_FREQUENZ
 
 #include <Net/Net/Net.h>
 #include <Net/Net/NetPacket.h>
@@ -245,8 +245,6 @@ namespace Net
 			Client();
 			~Client();
 
-			bool ChangeMode(bool);
-
 			char* ResolveHostname(const char*);
 			bool Connect(const char*, u_short);
 			bool Disconnect();
@@ -268,7 +266,6 @@ namespace Net
 			size_t GetReceivedPacketSize() const;
 			float GetReceivedPacketSizeAsPerc() const;
 
-			bool bReceiveThread;
 			DWORD DoReceive();
 
 		public:

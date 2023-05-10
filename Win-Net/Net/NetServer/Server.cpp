@@ -26,6 +26,28 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
+inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
+{
+	if (fd < 0)
+	{
+		return 0;
+	}
+
+#ifdef BUILD_LINUX
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+	{
+		return 0;
+	}
+
+	flags = (flags | O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
+#else
+	unsigned long mode = 1;
+	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
+#endif
+}
+
 Net::Server::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
@@ -220,17 +242,42 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
 
-	/* Set Read Timeout */
-	timeval tv = {};
-	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
-	tv.tv_usec = 0;
-	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+	/*
+	* This library is based on non-blocking sockets
+	* so we need to set the socket to non-blocking mode
+	*/
+	if (SetSocket2NonBlockingMode(socket) == 0)
+	{
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), socket);
+		return nullptr;
+	}
 
-	// Set socket options
+	/*
+	* Set up socket for non-blocking mode
+	* Set everything to 0 so recv and send will return immediately
+	*/
+	{
+		timeval tv = {};
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
+		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+	}
+
+	/*
+	* Set/override socket options
+	*/
 	for (const auto& entry : socketoption)
 	{
 		const auto res = Ws2_32::setsockopt(peer->pSocket, entry->level, entry->opt, entry->value(), entry->optlen());
-		if (res == SOCKET_ERROR) NET_LOG_ERROR(CSTRING("'%s' => unable to apply socket option { %i : %i }"), SERVERNAME(this), entry->opt, LAST_ERROR);
+		if (res == SOCKET_ERROR)
+		{
+			NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply socket option { %i : %i } for socket '%d'"), SERVERNAME(this), entry->opt, LAST_ERROR, socket);
+		}
 	}
 
 	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
@@ -241,7 +288,7 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 		//peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
 	}
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => New peer connected."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => New peer connected."), SERVERNAME(this), peer->IPAddr().get());
 
 	// callback
 	OnPeerConnect(peer);
@@ -274,11 +321,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 #endif
 					{
 						bBlocked = true;
-#ifdef BUILD_LINUX
-						usleep(FREQUENZ(this) * 1000);
-#else
-						Kernel32::Sleep(FREQUENZ(this));
-#endif
+						continue;
 					}
 				}
 
@@ -309,7 +352,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 		OnPeerDisconnect(peer, Ws2_32::WSAGetLastError());
 #endif
 
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => finished"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => finished"), SERVERNAME(this), peer->IPAddr().get());
 
 		peer->clear();
 
@@ -410,11 +453,11 @@ void Net::Server::Server::DisconnectPeer(NET_PEER peer, const int code, const bo
 
 	if (code == 0)
 	{
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => disconnected"), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => disconnected"), SERVERNAME(this), peer->IPAddr().get());
 	}
 	else
 	{
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => disconnected due to the following reason '%s'"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => disconnected due to the following reason '%s'"), SERVERNAME(this), peer->IPAddr().get(), Net::Codes::NetGetErrorMessage(code));
 	}
 
 	ErasePeer(peer);
@@ -440,32 +483,26 @@ bool Net::Server::Server::IsRunning() const
 	return bRunning;
 }
 
-NET_THREAD(TickThread)
+NET_THREAD(WorkThread)
 {
 	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return 0;
-
-	while (server->IsRunning())
+	if (server == nullptr)
 	{
-		server->Tick();
-#ifdef BUILD_LINUX
-		usleep(FREQUENZ(server) * 1000);
-#else
-		Kernel32::Sleep(FREQUENZ(server));
-#endif
+		return 0;
 	}
 
-	return 0;
-}
-
-NET_THREAD(AcceptorThread)
-{
-	const auto server = (Net::Server::Server*)parameter;
-	if (!server) return 0;
-
 	while (server->IsRunning())
 	{
+		/*
+		* first accept new connections
+		*/
 		server->Acceptor();
+
+		/*
+		* then run tick
+		*/
+		server->Tick();
+
 #ifdef BUILD_LINUX
 		usleep(FREQUENZ(server) * 1000);
 #else
@@ -500,13 +537,13 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (res != NULL)
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => [WSAStartup] failed with error: %d"), SERVERNAME(this), res);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => [WSAStartup] failed with error: %d"), SERVERNAME(this), res);
 		return false;
 	}
 
 	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => unable to find usable version of [Winsock.dll]"), SERVERNAME(this));
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => unable to find usable version of [Winsock.dll]"), SERVERNAME(this));
 		Ws2_32::WSACleanup();
 		return false;
 	}
@@ -523,7 +560,7 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::getaddrinfo(NULLPTR, Port.data(), &hints, &result);
 
 	if (res != 0) {
-		NET_LOG_ERROR(CSTRING("'%s' => [getaddrinfo] failed with error: %d"), SERVERNAME(this), res);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => [getaddrinfo] failed with error: %d"), SERVERNAME(this), res);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
 #endif
@@ -535,7 +572,7 @@ bool Net::Server::Server::Run()
 
 	if (GetListenSocket() == INVALID_SOCKET)
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => creation of a listener socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => creation of a listener socket failed with error: %ld"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -543,13 +580,13 @@ bool Net::Server::Server::Run()
 		return false;
 	}
 
-	// Set the mode of the socket to be nonblocking
-	unsigned long iMode = 1;
-	res = Ws2_32::ioctlsocket(GetListenSocket(), FIONBIO, &iMode);
-
-	if (res == SOCKET_ERROR)
+	/*
+	* This library is based on non-blocking sockets
+	* so we need to set the socket to non-blocking mode
+	*/
+	if (SetSocket2NonBlockingMode(GetListenSocket()) == 0)
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => [ioctlsocket] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), GetListenSocket());
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -561,7 +598,7 @@ bool Net::Server::Server::Run()
 	res = Ws2_32::bind(GetListenSocket(), result->ai_addr, static_cast<int>(result->ai_addrlen));
 
 	if (res == SOCKET_ERROR) {
-		NET_LOG_ERROR(CSTRING("'%s' => [bind] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => [bind] failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::freeaddrinfo(result);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
@@ -578,7 +615,7 @@ bool Net::Server::Server::Run()
 
 	if (res == SOCKET_ERROR)
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => listen failed with error: %d"), SERVERNAME(this), LAST_ERROR);
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
@@ -597,11 +634,10 @@ bool Net::Server::Server::Run()
 	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
 #endif;
 
-	Thread::Create(TickThread, this);
-	Thread::Create(AcceptorThread, this);
+	Thread::Create(WorkThread, this);
 
 	SetRunning(true);
-	NET_LOG_SUCCESS(CSTRING("'%s' => running on port %d"), SERVERNAME(this), SERVERPORT(this));
+	NET_LOG_SUCCESS(CSTRING("WinNet :: Server('%s') => running on port %d"), SERVERNAME(this), SERVERPORT(this));
 	return true;
 }
 
@@ -609,7 +645,7 @@ bool Net::Server::Server::Close()
 {
 	if (!IsRunning())
 	{
-		NET_LOG_ERROR(CSTRING("'%s' => server is still running unable to close it"), SERVERNAME(this));
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => server is still running unable to close it"), SERVERNAME(this));
 		return false;
 	}
 
@@ -622,13 +658,15 @@ bool Net::Server::Server::Close()
 	SetRunning(false);
 
 	if (GetListenSocket())
+	{
 		Ws2_32::closesocket(GetListenSocket());
+	}
 
 #ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
 #endif
 
-	NET_LOG_DEBUG(CSTRING("'%s' => finished"), SERVERNAME(this));
+	NET_LOG_DEBUG(CSTRING("WinNet :: Server('%s') => finished"), SERVERNAME(this));
 	return true;
 }
 
@@ -638,9 +676,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 		return;
 	);
 
-	if (peer->bErase) return;
-	if (bPreviousSentFailed)
+	if (peer->bErase)
+	{
 		return;
+	}
+
+	if (bPreviousSentFailed)
+	{
+		return;
+	}
 
 	do
 	{
@@ -650,27 +694,25 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
 			{
 				bPreviousSentFailed = true;
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
 			{
 				bPreviousSentFailed = true;
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -709,7 +751,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -717,13 +758,12 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 				bPreviousSentFailed = true;
 				FREE<byte>(data);
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -731,7 +771,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 				bPreviousSentFailed = true;
 				FREE<byte>(data);
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -772,7 +812,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -780,13 +819,12 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -794,7 +832,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -838,7 +876,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 #ifdef BUILD_LINUX
 			if (errno == EWOULDBLOCK)
 			{
-				usleep(FREQUENZ(this) * 1000);
 				continue;
 			}
 			else
@@ -846,13 +883,12 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
 			}
 #else
 			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 			{
-				Kernel32::Sleep(FREQUENZ(this));
 				continue;
 			}
 			else
@@ -860,7 +896,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 				bPreviousSentFailed = true;
 				data.free();
 				ErasePeer(peer);
-				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
@@ -902,7 +938,9 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 	);
 
 	if (peer->bErase)
+	{
 		return;
+	}
 
 	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
@@ -1265,7 +1303,7 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 
 	if (peer->hWaitForNetProtocol == nullptr) NET_STOP_TIMER;
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not response in time as expected from WinNet Protocol. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer did not response in time as expected from WinNet Protocol. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
@@ -1289,7 +1327,7 @@ NET_TIMER(TimerPeerReceiveHeartbeat)
 		NET_STOP_TIMER;
 	}
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer did not reply with heartbeat packet. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer did not reply with heartbeat packet. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
 	server->ErasePeer(peer);
 
@@ -1329,34 +1367,23 @@ void Net::Server::Server::Acceptor()
 	auto client_addr = sockaddr_in();
 	socklen_t slen = sizeof(client_addr);
 
-	SOCKET accept_socket = INVALID_SOCKET;
-	do
+	SOCKET accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
+	if (accept_socket == INVALID_SOCKET)
 	{
-		accept_socket = Ws2_32::accept(GetListenSocket(), (sockaddr*)&client_addr, &slen);
-		if (accept_socket == INVALID_SOCKET)
+#ifdef BUILD_LINUX
+		if (errno != EWOULDBLOCK)
+#else
+		if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
+#endif
 		{
-#ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
-#else
-			if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
-#endif
-			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ(this) * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ(this));
-#endif
-			}
-			else
-			{
-				NET_LOG_ERROR(CSTRING("'%s' => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
-				return;
-			}
+			NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => [accept] failed with error %d"), SERVERNAME(this), LAST_ERROR);
 		}
-	} while (accept_socket == INVALID_SOCKET);
+
+		return;
+	}
 
 	auto peer = CreatePeer(client_addr, accept_socket);
-	if (!peer)
+	if (peer == nullptr)
 	{
 		return;
 	}
@@ -1439,25 +1466,25 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 			ErasePeer(peer);
 
 #ifdef BUILD_LINUX
-			if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
+			if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 #else
-			if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("'%s' :: [%s] => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
+			if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
 			return true;
-	}
+		}
 
 		ProcessPackets(peer);
 		peer->network.reset();
 		return true;
-}
+	}
 
 	// graceful disconnect
 	if (data_size == 0)
 	{
 		peer->network.reset();
 		ErasePeer(peer);
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to peer closed gracefully."), SERVERNAME(this), peer->IPAddr().get());
 		return true;
 	}
 
@@ -2203,7 +2230,7 @@ void Net::Server::Server::CompressData(BYTE*& data, size_t& size)
 	size = m_iCompressedLen;
 
 #ifdef DEBUG
-	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("WinNet :: Server('%s') => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 
 	/* base64 encode it */
@@ -2229,7 +2256,7 @@ void Net::Server::Server::CompressData(BYTE*& data, BYTE*& out, size_t& size, co
 	size = m_iCompressedLen;
 
 #ifdef DEBUG
-	NET_LOG_DEBUG(CSTRING("'%s' => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("WinNet :: Server('%s') => compressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 
 	/* base64 encode it */
@@ -2253,7 +2280,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, size_t& size, size_t origi
 	size = m_iUncompressedLen;
 
 #ifdef DEBUG
-	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("WinNet :: Server('%s') => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2279,7 +2306,7 @@ void Net::Server::Server::DecompressData(BYTE*& data, BYTE*& out, size_t& size, 
 	size = m_iUncompressedLen;
 
 #ifdef DEBUG
-	NET_LOG_DEBUG(CSTRING("'%s' => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
+	NET_LOG_DEBUG(CSTRING("WinNet :: Server('%s') => decompressed data from size %llu to %llu"), SERVERNAME(this), PrevSize, size);
 #endif
 }
 
@@ -2292,35 +2319,35 @@ NET_PACKET_DEFINITION_END
 NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
 if (!(PKG[CSTRING("NET_STATUS")] && PKG[CSTRING("NET_STATUS")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_MAJOR_VERSION")] && PKG[CSTRING("NET_MAJOR_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_MINOR_VERSION")] && PKG[CSTRING("NET_MINOR_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_REVISION_VERSION")] && PKG[CSTRING("NET_REVISION_VERSION")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
 if (!(PKG[CSTRING("NET_KEY")] && PKG[CSTRING("NET_KEY")]->is_string()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
@@ -2366,7 +2393,7 @@ if ((NET_MAJOR_VERSION == Version::Major())
 
 		peer->estabilished = true;
 
-		NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
 		Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 		peer->hWaitForNetProtocol = nullptr;
@@ -2386,7 +2413,7 @@ if ((NET_MAJOR_VERSION == Version::Major())
 }
 else
 {
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Peer sent not matching Net-Version. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer sent not matching Net-Version. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_PACKET;
@@ -2395,26 +2422,26 @@ NET_BEGIN_PACKET(Net::Server::Server, RSAHandshake)
 /* check for wrong protocol behaviour */
 if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent Asymmetric Handshake Packet, but cipher mode is disabled."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => Peer sent Asymmetric Handshake Packet, but cipher mode is disabled."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
 else if (peer->estabilished)
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent Asymmetric Handshake Packet, but peer's state is set to estabilished."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => Peer sent Asymmetric Handshake Packet, but peer's state is set to estabilished."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
 else if (peer->cryption.getHandshakeStatus())
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Peer sent more than one Asymmetric Handshake Packet"), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => Peer sent more than one Asymmetric Handshake Packet"), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
 
 if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
@@ -2432,7 +2459,7 @@ if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // e
 	peer->cryption.setHandshakeStatus(true);
 }
 
-NET_LOG_PEER(CSTRING("'%s' :: [%s] => Asymmetric Handshake with Peer was successful."), SERVERNAME(this), peer->IPAddr().get());
+NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Asymmetric Handshake with Peer was successful."), SERVERNAME(this), peer->IPAddr().get());
 
 /* Asymmetric Handshake done. Estabilish Peer connection */
 {
@@ -2442,7 +2469,7 @@ NET_LOG_PEER(CSTRING("'%s' :: [%s] => Asymmetric Handshake with Peer was success
 
 	peer->estabilished = true;
 
-	NET_LOG_PEER(CSTRING("'%s' :: [%s] => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
 	Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
 	peer->hWaitForNetProtocol = nullptr;
@@ -2464,7 +2491,7 @@ NET_END_PACKET
 NET_BEGIN_PACKET(Net::Server::Server, NetHeartbeat);
 if (!(PKG[CSTRING("NET_SEQUENCE_NUMBER")] && PKG[CSTRING("NET_SEQUENCE_NUMBER")]->is_int()))
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => missing or bad datatype of 'NET_SEQUENCE_NUMBER' attribute in Heartbeat Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_SEQUENCE_NUMBER' attribute in Heartbeat Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
@@ -2472,7 +2499,7 @@ if (!(PKG[CSTRING("NET_SEQUENCE_NUMBER")] && PKG[CSTRING("NET_SEQUENCE_NUMBER")]
 /* check for expected sequence number does match */
 if (peer->m_heartbeat_expected_sequence_number != PKG[CSTRING("NET_SEQUENCE_NUMBER")]->as_int())
 {
-	NET_LOG_ERROR(CSTRING("'%s' :: [%s] => Expected heartbeat sequence number does not match. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => Expected heartbeat sequence number does not match. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
