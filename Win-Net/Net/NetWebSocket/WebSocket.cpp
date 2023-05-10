@@ -1037,11 +1037,11 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, NET_PACKET
 	);
 
 	if (peer->bErase)
+	{
 		return;
+	}
 
-	SOCKET_NOT_VALID(peer->pSocket) return;
-
-	//std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	Net::Json::Document doc;
 	doc[CSTRING("ID")] = static_cast<int>(id);
@@ -1068,11 +1068,11 @@ void Net::WebSocket::Server::DoSend(NET_PEER peer, const uint32_t id, BYTE* data
 	);
 
 	if (peer->bErase)
+	{
 		return;
+	}
 
-	SOCKET_NOT_VALID(peer->pSocket) return;
-
-	//std::lock_guard<std::mutex> guard(peer->network._mutex_send);
+	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
 	// write packet id as big endian
 	auto newBuffer = ALLOC<BYTE>(size + 5);

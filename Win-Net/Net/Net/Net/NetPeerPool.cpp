@@ -133,7 +133,6 @@ size_t Net::PeerPool::PeerPool_t::get_max_peers()
 
 bool Net::PeerPool::PeerPool_t::check_more_threads_needed()
 {
-	//const std::lock_guard<std::recursive_mutex> lock(peer_threadpool_mutex);
 	for (const auto& pool : peer_threadpool)
 	{
 		if (count_peers(pool) != max_peers)
@@ -147,7 +146,6 @@ bool Net::PeerPool::PeerPool_t::check_more_threads_needed()
 
 void Net::PeerPool::PeerPool_t::threapool_push(peer_threadpool_t* pool)
 {
-	//const std::lock_guard<std::recursive_mutex> lock(peer_threadpool_mutex);
 	peer_threadpool.emplace_back(pool);
 }
 
@@ -210,7 +208,7 @@ NET_THREAD(threadpool_manager)
 			case Net::PeerPool::WorkStatus_t::CONTINUE:
 			{
 				/* move peers into available threads to reduce the amount of running threads */
-				//const std::lock_guard<std::recursive_mutex> lock(*pClass->get_peer_threadpool_mutex());
+				const std::lock_guard<std::recursive_mutex> lock(*pClass->get_peer_threadpool_mutex());
 				const auto p = pClass->threadpool_get_free_slot_in_target_pool(pool);
 				if (p)
 				{
@@ -245,7 +243,7 @@ NET_THREAD(threadpool_manager)
 		if (pClass->count_peers(pool) == 0)
 		{
 			// erase from vector
-			//const std::lock_guard<std::recursive_mutex> lock(*pClass->get_peer_threadpool_mutex());
+			const std::lock_guard<std::recursive_mutex> lock(*pClass->get_peer_threadpool_mutex());
 			for (auto it = pClass->get_peer_threadpool().begin(); it != pClass->get_peer_threadpool().end(); it++)
 			{
 				auto p = *it;
@@ -342,7 +340,6 @@ Net::PeerPool::peerInfo_t* Net::PeerPool::PeerPool_t::queue_pop()
 		return nullptr;
 	}
 
-	//	const std::lock_guard<std::recursive_mutex> lock(peer_mutex);
 	auto peer = peer_queue.back();
 	peer_queue.pop_back();
 	return peer;
@@ -360,7 +357,6 @@ std::recursive_mutex* Net::PeerPool::PeerPool_t::get_peer_threadpool_mutex()
 
 void Net::PeerPool::PeerPool_t::add(peerInfo_t info)
 {
-	//const std::lock_guard<std::recursive_mutex> lock(peer_mutex);
 	peer_queue.emplace_back(ALLOC<peerInfo_t, peerInfo_t>(1, info));
 
 	if (check_more_threads_needed())
@@ -371,7 +367,6 @@ void Net::PeerPool::PeerPool_t::add(peerInfo_t info)
 
 void Net::PeerPool::PeerPool_t::add(peerInfo_t* info)
 {
-	//const std::lock_guard<std::recursive_mutex> lock(peer_mutex);
 	peer_queue.emplace_back(info);
 
 	if (check_more_threads_needed())
@@ -384,7 +379,6 @@ size_t Net::PeerPool::PeerPool_t::count_peers_all()
 {
 	size_t peers = 0;
 
-	//const std::lock_guard<std::recursive_mutex> lock(peer_threadpool_mutex);
 	for (const auto pool : peer_threadpool)
 	{
 		for (size_t i = 0; i < get_max_peers(); ++i)

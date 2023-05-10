@@ -886,7 +886,9 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 	);
 
 	if (peer->bErase)
+	{
 		return;
+	}
 
 	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
