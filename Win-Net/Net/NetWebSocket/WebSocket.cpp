@@ -26,7 +26,7 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-FORCEINLINE BYTE SetSocket2NonBlockingMode(SOCKET fd)
+inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
 {
 	if (fd < 0)
 	{
