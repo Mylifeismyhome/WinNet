@@ -673,28 +673,27 @@ namespace WebServerHandshake
 #define NET_OPT_CIPHER_AES_SIZE (1 << 4)
 #define NET_OPT_USE_COMPRESSION (1 << 5)
 #define NET_OPT_INTERVAL_LATENCY (1 << 6)
-#define NET_OPT_TIMEOUT_TCP_READ (1 << 7)
-#define NET_OPT_NAME (1 << 8)
-#define NET_OPT_PORT (1 << 9)
-#define NET_OPT_SSL (1 << 10)
-#define NET_OPT_SSL_METHOD (1 << 11)
-#define NET_OPT_SSL_CERT (1 << 12)
-#define NET_OPT_SSL_KEY (1 << 13)
-#define NET_OPT_SSL_CA (1 << 14)
-#define NET_OPT_WS_CUSTOM_HANDSHAKE (1 << 15)
-#define NET_OPT_WS_CUSTOM_ORIGIN (1 << 16)
-#define NET_OPT_WS_NO_HANDSHAKE (1 << 17)
-#define NET_OPT_DISABLE_LATENCY_REQUEST (1 << 18)
+#define NET_OPT_NAME (1 << 7)
+#define NET_OPT_PORT (1 << 8)
+#define NET_OPT_SSL (1 << 9)
+#define NET_OPT_SSL_METHOD (1 << 10)
+#define NET_OPT_SSL_CERT (1 << 11)
+#define NET_OPT_SSL_KEY (1 << 12)
+#define NET_OPT_SSL_CA (1 << 13)
+#define NET_OPT_WS_CUSTOM_HANDSHAKE (1 << 14)
+#define NET_OPT_WS_CUSTOM_ORIGIN (1 << 15)
+#define NET_OPT_WS_NO_HANDSHAKE (1 << 16)
+#define NET_OPT_DISABLE_LATENCY_REQUEST (1 << 17)
 
 /* TIMER TO DISCONNECT PEERS FROM USING WRONG PROTOCOL */
-#define NET_OPT_NET_PROTOCOL_CHECK_TIME (1 << 19)
+#define NET_OPT_NET_PROTOCOL_CHECK_TIME (1 << 18)
 
-#define NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL (1 << 20)
-#define NET_OPT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME (1 << 21)
+#define NET_OPT_NET_PROTOCOL_HEARTBEAT_INTERVAL (1 << 19)
+#define NET_OPT_NET_PROTOCOL_HEARTBEAT_TOLERANT_TIME (1 << 20)
 
-#define NET_OPT_MAX_PEERS_THREAD (1 << 22)
+#define NET_OPT_MAX_PEERS_THREAD (1 << 21)
 
-#define NET_OPT_USE_HEARTBEAT (1 << 23)
+#define NET_OPT_USE_HEARTBEAT (1 << 22)
 
 /* Server & Client Option */
 
@@ -703,7 +702,7 @@ namespace WebServerHandshake
 * without this option, any callback that might perform some big job will block the socket from further execution
 * enable this option to perform the job in a seperate thread
 */
-#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 24)
+#define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 23)
 #define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
 
 /* DEFAULT OPTION VALUES */

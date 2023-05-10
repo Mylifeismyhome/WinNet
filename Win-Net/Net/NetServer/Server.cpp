@@ -220,12 +220,6 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
 
-	/* Set Read Timeout */
-	timeval tv = {};
-	tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
-	tv.tv_usec = 0;
-	Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
-
 	// Set socket options
 	for (const auto& entry : socketoption)
 	{

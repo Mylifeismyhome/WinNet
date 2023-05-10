@@ -339,9 +339,6 @@ namespace Net
 			size_t count_peers(Net::PeerPool::peer_threadpool_t* pool);
 			size_t count_pools();
 
-			short Handshake(NET_PEER);
-			void Acceptor();
-
 			SSL_CTX* ctx;
 			void onSSLTimeout(NET_PEER);
 
@@ -352,6 +349,8 @@ namespace Net
 			void DoSend(NET_PEER, uint32_t, NET_PACKET&, unsigned char = NET_OPCODE_TEXT);
 			void DoSend(NET_PEER, uint32_t, BYTE*, size_t, unsigned char = NET_OPCODE_BINARY);
 
+			short Handshake(NET_PEER);
+			void Acceptor();
 			bool DoReceive(NET_PEER);
 
 			NET_DEFINE_CALLBACK(void, OnPeerEstabilished, NET_PEER) {}

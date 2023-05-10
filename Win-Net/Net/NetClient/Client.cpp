@@ -423,12 +423,6 @@ namespace Net
 			// Set Mode
 			ChangeMode(Isset(NET_OPT_MODE_BLOCKING) ? GetOption<bool>(NET_OPT_MODE_BLOCKING) : NET_OPT_DEFAULT_MODE_BLOCKING);
 
-			/* Set Read Timeout */
-			timeval tv = {};
-			tv.tv_sec = Isset(NET_OPT_TIMEOUT_TCP_READ) ? GetOption<long>(NET_OPT_TIMEOUT_TCP_READ) : NET_OPT_DEFAULT_TIMEOUT_TCP_READ;
-			tv.tv_usec = 0;
-			Ws2_32::setsockopt(GetSocket(), SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
-
 			// Set socket options
 			for (const auto& entry : socketoption)
 			{
