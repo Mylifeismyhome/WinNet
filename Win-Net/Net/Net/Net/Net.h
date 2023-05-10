@@ -82,6 +82,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <cmath>
+#include <fcntl.h>
 #endif
 
 #ifndef BUILD_LINUX
