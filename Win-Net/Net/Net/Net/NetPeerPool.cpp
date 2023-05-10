@@ -258,7 +258,7 @@ NET_THREAD(threadpool_manager)
 			return NULL;
 		}
 
-		if (take_rest)
+		/*if (take_rest)
 		{
 			auto fncSleepPointer = pClass->get_sleep_function();
 			if (fncSleepPointer)
@@ -270,7 +270,7 @@ NET_THREAD(threadpool_manager)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(pClass->get_sleep_time()));
 			}
-		}
+		}*/
 	}
 
 	FREE<threadpool_manager_data_t>(data);
