@@ -157,3 +157,4 @@
 ## Websocket
 - [x] Unsafe plain communication
 - [x] Safe communication using TLS (SSL)
+- [x] Sanitize user input to prevent XSS
