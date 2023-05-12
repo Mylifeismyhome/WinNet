@@ -96,6 +96,50 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 #endif
 }
 
+BYTE Net::SetDefaultSocketOption(SOCKET s)
+{
+	BYTE ret = 0;
+
+	if (s == INVALID_SOCKET)
+	{
+		return ret;
+	}
+
+	/*
+	* Set up socket for non-blocking mode
+	*/
+#ifdef BUILD_LINUX
+	int flags = fcntl(s, F_GETFL, 0);
+	if (flags == -1)
+	{
+		return ret;
+	}
+
+	flags = (flags | O_NONBLOCK);
+	ret = (fcntl(s, F_SETFL, flags) == 0) ? 1 : 0;
+#else
+	unsigned long mode = 1;
+	ret = (Ws2_32::ioctlsocket(s, FIONBIO, &mode) == 0) ? 1 : 0;
+#endif
+
+	/*
+	* Set up socket for non-blocking mode
+	* Set everything to 0 so recv and send will return immediately
+	*/
+	timeval tv = {};
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
+	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+
+	ret = 1;
+	return ret;
+}
+
 std::string Net::sock_err::getString(const int err, const bool is_ssl)
 {
 	if (is_ssl)
@@ -278,4 +322,29 @@ bool Net::NET_STRING_IS_NUMBER(const std::string& s)
 {
 	return !s.empty() && std::find_if(s.begin(),
 		s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
+void Net::SanitizeInput(Net::String& input)
+{
+	constexpr const char* specialChars = R"(<>&\"')";
+	constexpr const char* encodedChars[] = { "&lt;", "&gt;", "&amp;", "&quot;", "&#39;" };
+
+	for (size_t i = 0; i < strlen(specialChars); i++)
+	{
+		input.replaceAll(specialChars[i], encodedChars[i]);
+	}
+}
+
+Net::String Net::SanitizedInput(Net::String& input)
+{
+	Net::String out(input);
+	SanitizeInput(out);
+	return out;
+}
+
+Net::String Net::SanitizedInput(char* input)
+{
+	Net::String out(input);
+	SanitizeInput(out);
+	return out;
 }

@@ -26,28 +26,6 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
-{
-	if (fd < 0)
-	{
-		return 0;
-	}
-
-#ifdef BUILD_LINUX
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		return 0;
-	}
-
-	flags = (flags | O_NONBLOCK);
-	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
-#else
-	unsigned long mode = 1;
-	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
-#endif
-}
-
 Net::WebSocket::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
@@ -238,30 +216,10 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 	peer->client_addr = client_addr;
 	peer->ssl = nullptr;
 
-	/*
-	* This library is based on non-blocking sockets
-	* so we need to set the socket to non-blocking mode
-	*/
-	if (SetSocket2NonBlockingMode(socket) == 0)
+	if (Net::SetDefaultSocketOption(socket) == 0)
 	{
-		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), socket);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), socket);
 		return nullptr;
-	}
-
-	/*
-	* Set up socket for non-blocking mode
-	* Set everything to 0 so recv and send will return immediately
-	*/
-	{
-		timeval tv = {};
-		tv.tv_sec = 0;
-		tv.tv_usec = 0;
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
 	}
 
 	/*
@@ -616,13 +574,9 @@ bool Net::WebSocket::Server::Run()
 		return false;
 	}
 
-	/*
-	* This library is based on non-blocking sockets
-	* so we need to set the socket to non-blocking mode
-	*/
-	if (SetSocket2NonBlockingMode(GetListenSocket()) == 0)
+	if (Net::SetDefaultSocketOption(GetListenSocket()) == 0)
 	{
-		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), GetListenSocket());
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), GetListenSocket());
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();

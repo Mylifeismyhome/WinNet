@@ -397,6 +397,8 @@ public:
 ////////////////////////////////////////////////////
 namespace Net
 {
+	class String;
+
 	enum NetOptions
 	{
 		NONE = 0,
@@ -412,6 +414,13 @@ namespace Net
 	{
 		std::string getString(const int, bool = false);
 	};
+
+	/*
+	* This function will set the default socket options
+	*  - nonblocking
+	*  - socket option that might block send/recv to 0
+	*/
+	BYTE SetDefaultSocketOption(SOCKET s);
 
 	namespace ssl
 	{
@@ -640,6 +649,10 @@ namespace Net
 	//    USEFULL FUNCTIONS    //
 	///////////////////////////////////
 	bool NET_STRING_IS_NUMBER(const std::string& s);
+
+	void SanitizeInput(String& input);
+	String SanitizedInput(String& input);
+	String SanitizedInput(char* input);
 }
 
 namespace ServerHandshake

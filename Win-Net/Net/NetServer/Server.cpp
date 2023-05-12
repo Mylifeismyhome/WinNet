@@ -26,28 +26,6 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
-{
-	if (fd < 0)
-	{
-		return 0;
-	}
-
-#ifdef BUILD_LINUX
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		return 0;
-	}
-
-	flags = (flags | O_NONBLOCK);
-	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
-#else
-	unsigned long mode = 1;
-	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
-#endif
-}
-
 Net::Server::IPRef::IPRef(const char* pointer)
 {
 	this->pointer = (char*)pointer;
@@ -242,13 +220,9 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
 
-	/*
-	* This library is based on non-blocking sockets
-	* so we need to set the socket to non-blocking mode
-	*/
-	if (SetSocket2NonBlockingMode(socket) == 0)
+	if (Net::SetDefaultSocketOption(socket) == 0)
 	{
-		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), socket);
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), socket);
 		return nullptr;
 	}
 
@@ -580,13 +554,9 @@ bool Net::Server::Server::Run()
 		return false;
 	}
 
-	/*
-	* This library is based on non-blocking sockets
-	* so we need to set the socket to non-blocking mode
-	*/
-	if (SetSocket2NonBlockingMode(GetListenSocket()) == 0)
+	if (Net::SetDefaultSocketOption(GetListenSocket()) == 0)
 	{
-		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), SERVERNAME(this), GetListenSocket());
+		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), GetListenSocket());
 		Ws2_32::closesocket(GetListenSocket());
 #ifndef BUILD_LINUX
 		Ws2_32::WSACleanup();
