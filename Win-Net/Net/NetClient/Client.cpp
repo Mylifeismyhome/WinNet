@@ -26,28 +26,6 @@
 #include <Net/Import/Kernel32.hpp>
 #include <Net/Import/Ws2_32.hpp>
 
-inline BYTE SetSocket2NonBlockingMode(SOCKET fd)
-{
-	if (fd < 0)
-	{
-		return 0;
-	}
-
-#ifdef BUILD_LINUX
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		return 0;
-	}
-
-	flags = (flags | O_NONBLOCK);
-	return (fcntl(fd, F_SETFL, flags) == 0) ? 1 : 0;
-#else
-	unsigned long mode = 1;
-	return (Ws2_32::ioctlsocket(fd, FIONBIO, &mode) == 0) ? 1 : 0;
-#endif
-}
-
 namespace Net
 {
 	namespace Client
@@ -434,18 +412,16 @@ namespace Net
 			// successfully connected
 			SetConnected(true);
 
-			/*
-			* This library is based on non-blocking sockets
-			* so we need to set the socket to non-blocking mode
-			*/
-			if (SetSocket2NonBlockingMode(GetSocket()) == 0)
+			if (Net::SetDefaultSocketOption(GetSocket()) == 0)
 			{
+				NET_LOG_ERROR(CSTRING("WinNet :: Client => failed to apply default socket option for '%d'\n\tdiscarding socket..."), GetSocket());
+
 				SetSocket(INVALID_SOCKET);
 
-				NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to enable non-blocking for socket '%d'\n\tdiscarding socket"), GetSocket());
 #ifndef BUILD_LINUX
 				Ws2_32::WSACleanup();
 #endif
+
 				return false;
 			}
 
