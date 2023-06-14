@@ -420,7 +420,7 @@ namespace Net
 	*  - nonblocking
 	*  - socket option that might block send/recv to 0
 	*/
-	BYTE SetDefaultSocketOption(SOCKET s);
+	BYTE SetDefaultSocketOption(SOCKET s, size_t receive_buffer_size);
 
 	namespace ssl
 	{
@@ -716,10 +716,11 @@ namespace WebServerHandshake
 * enable this option to perform the job in a seperate thread
 */
 #define NET_OPT_EXECUTE_PACKET_ASYNC (1 << 22)
-#define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
+
+#define NET_OPT_RECEIVE_BUFFER_SIZE (1 << 23)
 
 /* DEFAULT OPTION VALUES */
-#define NET_OPT_DEFAULT_MAX_PACKET_SIZE 0xFFF
+#define NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE 0xFFFF
 #define NET_OPT_DEFAULT_RSA_SIZE 1024
 #define NET_OPT_DEFAULT_AES_SIZE CryptoPP::AES::MAX_KEYLENGTH
 #define NET_OPT_DEFAULT_USE_CIPHER false
@@ -749,6 +750,8 @@ namespace WebServerHandshake
 #define NET_OPT_DEFAULT_MAX_PEERS_THREAD 4
 
 #define NET_OPT_DEFAULT_USE_HEARTBEAT true
+
+#define NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC false
 
 #define NOEXCEPT noexcept
 #define CONSTEXPR const

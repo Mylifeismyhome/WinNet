@@ -96,7 +96,7 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 #endif
 }
 
-BYTE Net::SetDefaultSocketOption(SOCKET s)
+BYTE Net::SetDefaultSocketOption(SOCKET s, size_t receive_buffer_size)
 {
 	if (s == INVALID_SOCKET)
 	{
@@ -129,7 +129,7 @@ BYTE Net::SetDefaultSocketOption(SOCKET s)
 	/*
 	* Set up socket buffer sizes
 	*/
-	const int bufferSize = NET_OPT_DEFAULT_MAX_PACKET_SIZE; // Adjust buffer size as needed
+	const size_t bufferSize = receive_buffer_size; // Adjust buffer size as needed
 	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVBUF, (const char*)&bufferSize, sizeof(bufferSize));
 	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDBUF, (const char*)&bufferSize, sizeof(bufferSize));
 

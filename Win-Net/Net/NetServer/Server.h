@@ -123,7 +123,8 @@ namespace Net
 		{
 			struct network_t
 			{
-				byte _dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+				NET_CPOINTER<byte> _dataReceive;
+				size_t _data_receive_size;
 				NET_CPOINTER<byte> _data;
 				size_t _data_size;
 				size_t _data_full_size;
@@ -146,6 +147,11 @@ namespace Net
 
 				void reset();
 				void clear();
+
+				void AllocReceiveBuffer(size_t size = NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE);
+				void ClearReceiveBuffer();
+				void ResetReceiveBuffer();
+				size_t GetReceiveBufferSize() const;
 
 				void setDataSize(size_t);
 				size_t getDataSize() const;

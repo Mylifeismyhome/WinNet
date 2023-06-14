@@ -104,7 +104,7 @@ byte* Net::Server::Server::network_t::getData() const
 
 void Net::Server::Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+	ResetReceiveBuffer();
 }
 
 void Net::Server::Server::network_t::clear()
@@ -114,6 +114,46 @@ void Net::Server::Server::network_t::clear()
 	_data_full_size = 0;
 	_data_offset = 0;
 	_data_original_uncompressed_size = 0;
+}
+
+void Net::Server::Server::network_t::AllocReceiveBuffer(size_t size)
+{
+	if (_dataReceive.valid())
+	{
+		ClearReceiveBuffer();
+	}
+
+	_dataReceive = ALLOC<byte>(size + 1);
+	memset(_dataReceive.get(), 0, size);
+	_dataReceive.get()[size] = 0;
+
+	_data_receive_size = size;
+}
+
+void Net::Server::Server::network_t::ClearReceiveBuffer()
+{
+	if (_dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	_dataReceive.free();
+	_data_receive_size = 0;
+}
+
+void Net::Server::Server::network_t::ResetReceiveBuffer()
+{
+	if (_dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	memset(_dataReceive.get(), 0, _data_receive_size);
+}
+
+size_t Net::Server::Server::network_t::GetReceiveBufferSize() const
+{
+	return _data_receive_size;
 }
 
 void Net::Server::Server::network_t::setDataSize(const size_t size)
@@ -163,7 +203,7 @@ bool Net::Server::Server::network_t::dataValid() const
 
 byte* Net::Server::Server::network_t::getDataReceive()
 {
-	return _dataReceive;
+	return _dataReceive.get();
 }
 #pragma endregion
 
@@ -220,7 +260,7 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	peer->pSocket = socket;
 	peer->client_addr = client_addr;
 
-	if (Net::SetDefaultSocketOption(socket) == 0)
+	if (Net::SetDefaultSocketOption(socket, (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE)) == 0)
 	{
 		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), socket);
 		return nullptr;
@@ -374,6 +414,7 @@ void Net::Server::Server::peerInfo::clear()
 
 	network.clear();
 	network.reset();
+	network.ClearReceiveBuffer();
 
 	cryption.deleteKeyPair();
 }
@@ -538,7 +579,7 @@ bool Net::Server::Server::Run()
 		return false;
 	}
 
-	if (Net::SetDefaultSocketOption(GetListenSocket()) == 0)
+	if (Net::SetDefaultSocketOption(GetListenSocket(), (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE)) == 0)
 	{
 		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), GetListenSocket());
 		Ws2_32::closesocket(GetListenSocket());
@@ -1342,6 +1383,8 @@ void Net::Server::Server::Acceptor()
 		return;
 	}
 
+	peer->network.AllocReceiveBuffer((Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE));
+
 	/*
 	* Server send PKG_NetProtocolHandshake
 		-> Client Process Data and Response with Version Packet
@@ -1407,7 +1450,7 @@ bool Net::Server::Server::DoReceive(NET_PEER peer)
 	SOCKET_NOT_VALID(peer->pSocket)
 		return true;
 
-	auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+	auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), peer->network.GetReceiveBufferSize(), 0);
 	if (data_size == SOCKET_ERROR)
 	{
 #ifdef BUILD_LINUX

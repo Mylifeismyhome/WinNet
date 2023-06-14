@@ -409,10 +409,7 @@ namespace Net
 			// clear the unused vector
 			socketoption.clear();
 
-			// successfully connected
-			SetConnected(true);
-
-			if (Net::SetDefaultSocketOption(GetSocket()) == 0)
+			if (Net::SetDefaultSocketOption(GetSocket(), (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE)) == 0)
 			{
 				NET_LOG_ERROR(CSTRING("WinNet :: Client => failed to apply default socket option for '%d'\n\tdiscarding socket..."), GetSocket());
 
@@ -436,6 +433,11 @@ namespace Net
 					NET_LOG_ERROR(CSTRING("WinNet :: Client =>  failed to apply socket option { %i : %i } for socket '%d'"), entry->opt, LAST_ERROR, GetSocket());
 				}
 			}
+
+			// successfully connected
+			SetConnected(true);
+
+			network.AllocReceiveBuffer((Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE));
 
 			/*
 			* disabled for now, will get replaced with a working version soon
@@ -512,6 +514,7 @@ namespace Net
 			}
 
 			SetConnected(false);
+			Clear();
 		}
 
 		void Client::Clear()
@@ -607,6 +610,42 @@ namespace Net
 			estabilished = false;
 			clearData();
 			deleteRSAKeys();
+			ClearReceiveBuffer();
+		}
+
+		void Client::Network::AllocReceiveBuffer(size_t size)
+		{
+			if (dataReceive.valid())
+			{
+				ClearReceiveBuffer();
+			}
+
+			dataReceive = ALLOC<byte>(size + 1);
+			memset(dataReceive.get(), 0, size);
+			dataReceive.get()[size] = 0;
+
+			data_receive_size = size;
+		}
+
+		void Client::Network::ClearReceiveBuffer()
+		{
+			if (dataReceive.valid() == 0)
+			{
+				return;
+			}
+
+			dataReceive.free();
+			data_receive_size = 0;
+		}
+
+		void Client::Network::ResetReceiveBuffer()
+		{
+			if (dataReceive.valid() == 0)
+			{
+				return;
+			}
+
+			memset(dataReceive.get(), 0, data_receive_size);
 		}
 
 		void Client::Network::AllocData(const size_t size)
@@ -666,7 +705,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-					}
+		}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -687,12 +726,12 @@ namespace Net
 						return;
 					}
 #endif
-				}
+	}
 				if (res < 0)
 					break;
 
 				size -= res;
-			} while (size > 0);
+} while (size > 0);
 		}
 
 		void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
@@ -718,7 +757,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-					}
+			}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -741,7 +780,7 @@ namespace Net
 						return;
 					}
 #endif
-				}
+		}
 				if (res < 0)
 					break;
 
@@ -774,7 +813,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-					}
+			}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -797,7 +836,7 @@ namespace Net
 						return;
 					}
 #endif
-				}
+		}
 				if (res < 0)
 					break;
 
@@ -833,7 +872,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-					}
+			}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -856,7 +895,7 @@ namespace Net
 						return;
 					}
 #endif
-				}
+		}
 				if (res < 0)
 					break;
 
@@ -1239,7 +1278,7 @@ namespace Net
 				return FREQUENZ(this);
 			}
 
-			auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+			auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive.get()), network.data_receive_size, 0);
 			if (data_size == SOCKET_ERROR)
 			{
 #ifdef BUILD_LINUX
@@ -1248,7 +1287,7 @@ namespace Net
 				if (Ws2_32::WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
 				{
-					memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+					network.ResetReceiveBuffer();
 					Disconnect();
 
 #ifdef BUILD_LINUX
@@ -1260,15 +1299,15 @@ namespace Net
 					return FREQUENZ(this);
 				}
 
+				network.ResetReceiveBuffer();
 				ProcessPackets();
-				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
 				return FREQUENZ(this);
-		}
+			}
 
 			// graceful disconnect
 			if (data_size == 0)
 			{
-				memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				Disconnect();
 				NET_LOG_PEER(CSTRING("Connection has been gracefully closed"));
 				return FREQUENZ(this);
@@ -1277,7 +1316,7 @@ namespace Net
 			if (!network.data.valid())
 			{
 				network.AllocData(data_size);
-				memcpy(network.data.get(), network.dataReceive, data_size);
+				memcpy(network.data.get(), network.dataReceive.get(), data_size);
 				network.data.get()[data_size] = '\0';
 				network.data_size = data_size;
 			}
@@ -1286,7 +1325,7 @@ namespace Net
 				if (network.data_full_size > 0
 					&& network.data_size + data_size < network.data_full_size)
 				{
-					memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+					memcpy(&network.data.get()[network.data_size], network.dataReceive.get(), data_size);
 					network.data_size += data_size;
 				}
 				else
@@ -1294,7 +1333,7 @@ namespace Net
 					/* store incomming */
 					const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
 					memcpy(newBuffer, network.data.get(), network.data_size);
-					memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+					memcpy(&newBuffer[network.data_size], network.dataReceive.get(), data_size);
 					newBuffer[network.data_size + data_size] = '\0';
 					network.data.free();
 					network.data = newBuffer; // pointer swap
@@ -1302,7 +1341,7 @@ namespace Net
 				}
 			}
 
-			memset(network.dataReceive, 0, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			network.ResetReceiveBuffer();
 			ProcessPackets();
 			return 0;
 	}
@@ -2001,10 +2040,10 @@ namespace Net
 				{
 					data.free();
 				}
-			}
+				}
 
 			pPacket.free();
-		}
+			}
 
 		void Client::CompressData(BYTE*& data, size_t& size)
 		{
@@ -2025,7 +2064,7 @@ namespace Net
 
 			/* base64 encode it */
 			NET_BASE64::encode(data, size);
-}
+		}
 
 		void Client::CompressData(BYTE*& data, BYTE*& out, size_t& size, const bool skip_free)
 		{
@@ -2255,5 +2294,5 @@ namespace Net
 		resp[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
 		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
 		NET_END_PACKET;
-	}
+		}
 }
