@@ -12,16 +12,18 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+<b>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+SOFTWARE.</b>
+
 ---
 
-## BUILD HIERARCHY
+## LIBRARY HIERARCHY
+
 ### NetCore
 - OpenSLL
 - Crypto++
@@ -40,11 +42,12 @@ SOFTWARE.
 ---
 
 ## BUILD OPTIONS
+
 ### Windows
 - [x] Static Build
 - [ ] Shared Build
 - [ ] DLL Only Build
-		
+
 ### Linux
 - [x] Static Build
 - [ ] Shared Build
@@ -52,7 +55,9 @@ SOFTWARE.
 ---
 
 ## HOW TO BUILD
+
 ### Windows
+
 Requires:
 - nasm
 - perl
@@ -75,6 +80,7 @@ Install and Compile:
 > Uses 'setx' to set NASM path to the system environment.
 
 ### Linux
+
 Build all:
 - `make all` (include dependencies)
 - `make build`
@@ -113,6 +119,7 @@ Build sandbox:
 ---
 
 ## FEATURES
+
 ### TCP ONLY
 Using WinSocket for Windows build and Unix Socket for Linux build.
 - [x] Client
@@ -122,6 +129,7 @@ Using WinSocket for Windows build and Unix Socket for Linux build.
 - [x] Non-Blocking
 
 ## Classes
+
 ### Net
 - [x] Http/s
 - [x] String
@@ -147,9 +155,8 @@ Using WinSocket for Windows build and Unix Socket for Linux build.
 - [x] SHA1
 - [x] TOTP (Time-Based One-Time Password)
 
-## Protocol
+## Implemented Protocol
 - [x] NTP (Network Time Protocol)
-- [x] ICMP (Internet Control Message Protocol)
 
 ## Windows
 - [x] Custom import resolver
