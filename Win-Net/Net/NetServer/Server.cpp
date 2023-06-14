@@ -227,22 +227,6 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 	}
 
 	/*
-	* Set up socket for non-blocking mode
-	* Set everything to 0 so recv and send will return immediately
-	*/
-	{
-		timeval tv = {};
-		tv.tv_sec = 0;
-		tv.tv_usec = 0;
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
-		Ws2_32::setsockopt(peer->pSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
-	}
-
-	/*
 	* Set/override socket options
 	*/
 	for (const auto& entry : socketoption)
