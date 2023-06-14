@@ -98,11 +98,9 @@ int Net::SocketOpt(SOCKET s, int level, int optname, SOCKET_OPT_TYPE optval, SOC
 
 BYTE Net::SetDefaultSocketOption(SOCKET s)
 {
-	BYTE ret = 0;
-
 	if (s == INVALID_SOCKET)
 	{
-		return ret;
+		return 0;
 	}
 
 	/*
@@ -112,32 +110,100 @@ BYTE Net::SetDefaultSocketOption(SOCKET s)
 	int flags = fcntl(s, F_GETFL, 0);
 	if (flags == -1)
 	{
-		return ret;
+		return 0;
 	}
 
 	flags = (flags | O_NONBLOCK);
 	ret = (fcntl(s, F_SETFL, flags) == 0) ? 1 : 0;
 #else
 	unsigned long mode = 1;
-	ret = (Ws2_32::ioctlsocket(s, FIONBIO, &mode) == 0) ? 1 : 0;
+	if(Ws2_32::ioctlsocket(s, FIONBIO, &mode) != 0)
+	{
+		return 0;
+	}
 #endif
 
 	/*
-	* Set up socket for non-blocking mode
+	* Set up socket buffer sizes
+	*/
+	const int bufferSize = NET_OPT_DEFAULT_MAX_PACKET_SIZE; // Adjust buffer size as needed
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVBUF, (const char*)&bufferSize, sizeof(bufferSize)) != 0)
+	{
+		return 0;
+	}
+
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDBUF, (const char*)&bufferSize, sizeof(bufferSize)) != 0)
+	{
+		return 0;
+	}
+
+	/*
 	* Set everything to 0 so recv and send will return immediately
 	*/
 	timeval tv = {};
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char*)&tv, sizeof tv);
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char*)&tv, sizeof tv);
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof tv);
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof tv);
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof tv);
-	Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof tv);
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDLOWAT, (char*)&tv, sizeof(tv)) != 0)
+	{
+		return 0;
+	}
 
-	ret = 1;
-	return ret;
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVLOWAT, (char*)&tv, sizeof(tv)) != 0)
+	{
+		return 0;
+	}
+
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv)) != 0)
+	{
+		return 0;
+	}
+
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv)) != 0)
+	{
+		return 0;
+	}
+
+	/*
+	* Enable linger, so if data is remaining in the buffer, process it first before closing
+	*/
+	struct linger linger_opt;
+	linger_opt.l_onoff = 1;
+	linger_opt.l_linger = 10; // Timeout of 10 seconds
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_LINGER, (char*)&linger_opt, sizeof(linger_opt)) != 0)
+	{
+		return 0;
+	}
+
+	/*
+	* Additional socket options for performance
+	*/
+	int enable = 1;
+
+	// Disable Nagle's algorithm (TCP_NODELAY)
+	if (Ws2_32::setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char*)&enable, sizeof(enable)) != 0)
+	{
+		return 0;
+	}
+
+	// Enable reuse of local address and port (SO_REUSEADDR)
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(enable)) != 0)
+	{
+		return 0;
+	}
+
+	// Enable keep-alive messages (SO_KEEPALIVE)
+	if (Ws2_32::setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (const char*)&enable, sizeof(enable)) != 0)
+	{
+		return 0;
+	}
+
+	// Enable TCP Fast Open (TCP_FASTOPEN)
+	if (Ws2_32::setsockopt(s, IPPROTO_TCP, TCP_FASTOPEN, (const char*)&enable, sizeof(enable)) != 0)
+	{
+		return 0;
+	}
+
+	return 1;
 }
 
 std::string Net::sock_err::getString(const int err, const bool is_ssl)
