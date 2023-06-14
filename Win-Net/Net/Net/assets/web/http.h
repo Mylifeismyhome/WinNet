@@ -98,11 +98,15 @@ namespace Net
 		{
 			Network_t();
 
-			byte dataReceive[NET_OPT_DEFAULT_MAX_PACKET_SIZE];
+			NET_CPOINTER<byte> dataReceive;
+			size_t data_receive_size;
 			NET_CPOINTER<byte> data;
 			size_t data_size;
 			size_t data_full_size;
 
+			void AllocReceiveBuffer(size_t size = NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE);
+			void ClearReceiveBuffer();
+			void ResetReceiveBuffer();
 			void AllocData(size_t);
 			void clearData();
 		};

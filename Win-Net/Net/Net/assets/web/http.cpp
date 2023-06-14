@@ -40,10 +40,46 @@ NET_EXPORT_FUNCTION Net::Web::Interface* CreateNetHTTPS(const char* address)
 NET_IGNORE_CONVERSION_NULL
 Net::Web::Network_t::Network_t()
 {
-	memset(dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+	dataReceive = nullptr;
+	data_receive_size = 0;
 	data = nullptr;
 	data_size = 0;
 	data_full_size = 0;
+}
+
+void Net::Web::Network_t::AllocReceiveBuffer(size_t size)
+{
+	if (dataReceive.valid())
+	{
+		ClearReceiveBuffer();
+	}
+
+	dataReceive = ALLOC<byte>(size + 1);
+	memset(dataReceive.get(), 0, size);
+	dataReceive.get()[size] = 0;
+
+	data_receive_size = size;
+}
+
+void Net::Web::Network_t::ClearReceiveBuffer()
+{
+	if (dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	dataReceive.free();
+	data_receive_size = 0;
+}
+
+void Net::Web::Network_t::ResetReceiveBuffer()
+{
+	if (dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	memset(dataReceive.get(), 0, data_receive_size);
 }
 
 void Net::Web::Network_t::AllocData(const size_t size)
@@ -749,6 +785,7 @@ bool Net::Web::HTTP::Init(const char* curl)
 		return false;
 	}
 
+	network.AllocReceiveBuffer(NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE);
 	return true;
 }
 
@@ -763,6 +800,8 @@ void Net::Web::HTTP::Unload()
 		freeaddrinfo(connectSocketAddr);
 		connectSocketAddr = nullptr;
 	}
+
+	network.ClearReceiveBuffer();
 }
 
 bool Net::Web::HTTP::IsInited() const
@@ -974,14 +1013,14 @@ size_t Net::Web::HTTP::DoReceive()
 		if (network.data_full_size != 0 && network.data_size >= network.data_full_size)
 			break;
 
-		data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive.get()), network.data_receive_size, 0);
 		if (data_size == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
 			switch (errno)
 			{
 			case EWOULDBLOCK:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 
 				// read until we have the Content-Length
 				if (network.data_full_size == 0)
@@ -1024,42 +1063,42 @@ size_t Net::Web::HTTP::DoReceive()
 				continue;
 
 			case ECONNREFUSED:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - ECONNREFUSED"));
 				return 0;
 
 			case EFAULT:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - EFAULT"));
 				return 0;
 
 			case EINTR:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - EINTR"));
 				return 0;
 
 			case EINVAL:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - EINVAL"));
 				return 0;
 
 			case ENOMEM:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOMEM"));
 				return 0;
 
 			case ENOTCONN:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOTCONN"));
 				return 0;
 
 			case ENOTSOCK:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - ENOTSOCK"));
 				return 0;
 
 			default:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
 			}
@@ -1067,57 +1106,57 @@ size_t Net::Web::HTTP::DoReceive()
 			switch (Ws2_32::WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - A successful WSAStartup() call must occur before using this function"));
 				return 0;
 
 			case WSAENETDOWN:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The network subsystem has failed"));
 				return 0;
 
 			case WSAEFAULT:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The buf parameter is not completely contained in a valid part of the user address space"));
 				return 0;
 
 			case WSAENOTCONN:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The socket is not connected"));
 				return 0;
 
 			case WSAEINTR:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The (blocking) call was canceled through WSACancelBlockingCall()"));
 				return 0;
 
 			case WSAEINPROGRESS:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback functione"));
 				return 0;
 
 			case WSAENETRESET:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been broken due to the keep-alive activity detecting a failure while the operation was in progress"));
 				return 0;
 
 			case WSAENOTSOCK:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The descriptor is not a socket"));
 				return 0;
 
 			case WSAEOPNOTSUPP:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - MSG_OOB was specified, but the socket is not stream-style such as type SOCK_STREAM, OOB data is not supported in the communication domain associated with this socket, or the socket is unidirectional and supports only send operations"));
 				return 0;
 
 			case WSAESHUTDOWN:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The socket has been shut down; it is not possible to receive on a socket after shutdown() has been invoked with how set to SD_RECEIVE or SD_BOTH"));
 				return 0;
 
 			case WSAEWOULDBLOCK:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 
 				// read until we have the Content-Length
 				if (network.data_full_size == 0)
@@ -1160,32 +1199,32 @@ size_t Net::Web::HTTP::DoReceive()
 				continue;
 
 			case WSAEMSGSIZE:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The message was too large to fit into the specified buffer and was truncated"));
 				return 0;
 
 			case WSAEINVAL:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The socket has not been bound with bind(), or an unknown flag was specified, or MSG_OOB was specified for a socket with SO_OOBINLINE enabled or (for byte stream sockets only) len was zero or negative"));
 				return 0;
 
 			case WSAECONNABORTED:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was terminated due to a time-out or other failure. The application should close the socket as it is no longer usable"));
 				return 0;
 
 			case WSAETIMEDOUT:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The connection has been dropped because of a network failure or because the peer system failed to respond"));
 				return 0;
 
 			case WSAECONNRESET:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - The virtual circuit was reset by the remote side executing a hard or abortive close.The application should close the socket as it is no longer usable.On a UDP - datagram socket this error would indicate that a previous send operation resulted in an ICMP Port Unreachable message"));
 				return 0;
 
 			default:
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTP] - Something bad happen..."));
 				return 0;
 			}
@@ -1194,14 +1233,14 @@ size_t Net::Web::HTTP::DoReceive()
 
 		if (data_size == 0)
 		{
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			network.ResetReceiveBuffer();
 			return network.data_size;
 		}
 
 		if (!network.data.valid())
 		{
 			network.AllocData(data_size);
-			memcpy(network.data.get(), network.dataReceive, data_size);
+			memcpy(network.data.get(), network.dataReceive.get(), data_size);
 			network.data.get()[data_size] = '\0';
 			network.data_size = data_size;
 		}
@@ -1210,7 +1249,7 @@ size_t Net::Web::HTTP::DoReceive()
 			if (network.data_full_size > 0
 				&& network.data_size + data_size < network.data_full_size)
 			{
-				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+				memcpy(&network.data.get()[network.data_size], network.dataReceive.get(), data_size);
 				network.data_size += data_size;
 			}
 			else
@@ -1218,7 +1257,7 @@ size_t Net::Web::HTTP::DoReceive()
 				/* store incomming */
 				const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
 				memcpy(newBuffer, network.data.get(), network.data_size);
-				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+				memcpy(&newBuffer[network.data_size], network.dataReceive.get(), data_size);
 				newBuffer[network.data_size + data_size] = '\0';
 				network.data = newBuffer; // pointer swap
 				network.data_size += data_size;
@@ -1565,6 +1604,7 @@ bool Net::Web::HTTPS::Init(const char* curl, const ssl::NET_SSL_METHOD METHOD)
 		return false;
 	}
 
+	network.AllocReceiveBuffer(NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE);
 	return true;
 }
 
@@ -1591,6 +1631,8 @@ void Net::Web::HTTPS::Unload()
 		freeaddrinfo(connectSocketAddr);
 		connectSocketAddr = nullptr;
 	}
+
+	network.ClearReceiveBuffer();
 }
 
 bool Net::Web::HTTPS::IsInited() const
@@ -1648,43 +1690,43 @@ size_t Net::Web::HTTPS::DoReceive()
 		if (network.data_full_size != 0 && network.data_size >= network.data_full_size)
 			break;
 
-		const auto data_size = SSL_read(ssl, network.dataReceive, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(ssl, network.dataReceive.get(), network.data_receive_size);
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(ssl, data_size);
 			if (err == SSL_ERROR_ZERO_RETURN)
 			{
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTPS] - The TLS/SSL peer has closed the connection for writing by sending the close_notify alert. No more data can be read. Note that SSL_ERROR_ZERO_RETURN does not necessarily indicate that the underlying transport has been closed"));
 				break;
 			}
 			if (err == SSL_ERROR_WANT_CONNECT || err == SSL_ERROR_WANT_ACCEPT)
 			{
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTPS] - The operation did not complete; the same TLS/SSL I/O function should be called again later. The underlying BIO was not connected yet to the peer and the call would block in connect()/accept(). The SSL function should be called again when the connection is established. These messages can only appear with a BIO_s_connect() or BIO_s_accept() BIO, respectively. In order to find out, when the connection has been successfully established, on many platforms select() or poll() for writing on the socket file descriptor can be used"));
 				return 0;
 			}
 			if (err == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTPS] - The operation did not complete because an application callback set by SSL_CTX_set_client_cert_cb() has asked to be called again. The TLS/SSL I/O function should be called again later. Details depend on the application"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SYSCALL)
 			{
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				NET_LOG_PEER(CSTRING("[HTTPS] - Some non - recoverable, fatal I / O error occurred.The OpenSSL error queue may contain more information on the error.For socket I / O on Unix systems, consult errno for details.If this error occurs then no further I / O operations should be performed on the connection and SSL_shutdown() must not be called.This value can also be returned for other errors, check the error queue for details"));
 				return 0;
 			}
 			if (err == SSL_ERROR_SSL)
 			{
 				/* Some servers did not close the connection properly */
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 				break;
 			}
 			if (err == SSL_ERROR_WANT_READ)
 			{
-				memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+				network.ResetReceiveBuffer();
 
 				// read until we have the Content-Length
 				if (network.data_full_size == 0)
@@ -1727,7 +1769,7 @@ size_t Net::Web::HTTPS::DoReceive()
 				continue;
 			}
 
-			memset(network.dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+			network.ResetReceiveBuffer();
 			NET_LOG_PEER(CSTRING("[HTTPS] - Something bad happen... on Receive"));
 			return 0;
 		}
@@ -1736,7 +1778,7 @@ size_t Net::Web::HTTPS::DoReceive()
 		if (!network.data.valid())
 		{
 			network.AllocData(data_size);
-			memcpy(network.data.get(), network.dataReceive, data_size);
+			memcpy(network.data.get(), network.dataReceive.get(), data_size);
 			network.data.get()[data_size] = '\0';
 			network.data_size = data_size;
 		}
@@ -1745,7 +1787,7 @@ size_t Net::Web::HTTPS::DoReceive()
 			if (network.data_full_size > 0
 				&& network.data_size + data_size < network.data_full_size)
 			{
-				memcpy(&network.data.get()[network.data_size], network.dataReceive, data_size);
+				memcpy(&network.data.get()[network.data_size], network.dataReceive.get(), data_size);
 				network.data_size += data_size;
 			}
 			else
@@ -1753,7 +1795,7 @@ size_t Net::Web::HTTPS::DoReceive()
 				/* store incomming */
 				const auto newBuffer = ALLOC<BYTE>(network.data_size + data_size + 1);
 				memcpy(newBuffer, network.data.get(), network.data_size);
-				memcpy(&newBuffer[network.data_size], network.dataReceive, data_size);
+				memcpy(&newBuffer[network.data_size], network.dataReceive.get(), data_size);
 				newBuffer[network.data_size + data_size] = '\0';
 				network.data = newBuffer; // pointer swap
 				network.data_size += data_size;

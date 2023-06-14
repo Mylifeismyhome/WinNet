@@ -76,6 +76,46 @@ bool Net::WebSocket::Server::Isset_SocketOpt(const DWORD opt) const
 }
 
 #pragma region Network Structure
+void Net::WebSocket::Server::network_t::AllocReceiveBuffer(size_t size)
+{
+	if (_dataReceive.valid())
+	{
+		ClearReceiveBuffer();
+	}
+
+	_dataReceive = ALLOC<byte>(size + 1);
+	memset(_dataReceive.get(), 0, size);
+	_dataReceive.get()[size] = 0;
+
+	_data_receive_size = size;
+}
+
+void Net::WebSocket::Server::network_t::ClearReceiveBuffer()
+{
+	if (_dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	_dataReceive.free();
+	_data_receive_size = 0;
+}
+
+void Net::WebSocket::Server::network_t::ResetReceiveBuffer()
+{
+	if (_dataReceive.valid() == 0)
+	{
+		return;
+	}
+
+	memset(_dataReceive.get(), 0, _data_receive_size);
+}
+
+size_t Net::WebSocket::Server::network_t::GetReceiveBufferSize() const
+{
+	return _data_receive_size;
+}
+
 void Net::WebSocket::Server::network_t::setData(byte* pointer)
 {
 	deallocData();
@@ -130,7 +170,7 @@ byte* Net::WebSocket::Server::network_t::getDataFragmented() const
 
 void Net::WebSocket::Server::network_t::reset()
 {
-	memset(_dataReceive, NULL, NET_OPT_DEFAULT_MAX_PACKET_SIZE * sizeof(byte));
+	ResetReceiveBuffer();
 }
 
 void Net::WebSocket::Server::network_t::clear()
@@ -172,7 +212,7 @@ bool Net::WebSocket::Server::network_t::dataFragmentValid() const
 
 byte* Net::WebSocket::Server::network_t::getDataReceive()
 {
-	return _dataReceive;
+	return _dataReceive.get();
 }
 #pragma endregion
 
@@ -216,7 +256,7 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 	peer->client_addr = client_addr;
 	peer->ssl = nullptr;
 
-	if (Net::SetDefaultSocketOption(socket) == 0)
+	if (Net::SetDefaultSocketOption(socket, (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE)) == 0)
 	{
 		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), socket);
 		return nullptr;
@@ -345,6 +385,7 @@ void Net::WebSocket::Server::peerInfo::clear()
 
 	network.clear();
 	network.reset();
+	network.ClearReceiveBuffer();
 
 	if (ssl)
 	{
@@ -574,7 +615,7 @@ bool Net::WebSocket::Server::Run()
 		return false;
 	}
 
-	if (Net::SetDefaultSocketOption(GetListenSocket()) == 0)
+	if (Net::SetDefaultSocketOption(GetListenSocket(), (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE)) == 0)
 	{
 		NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply default socket option for '%d'\n\tdiscarding socket..."), SERVERNAME(this), GetListenSocket());
 		Ws2_32::closesocket(GetListenSocket());
@@ -663,7 +704,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 	/* SSL */
 	if (peer->ssl)
 	{
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), peer->network.GetReceiveBufferSize());
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -699,7 +740,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), peer->network.GetReceiveBufferSize(), 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			peer->network.reset();
@@ -802,7 +843,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 		}
 
 		// Create Response
-		NET_CPOINTER<char> buffer(ALLOC<char>(NET_OPT_DEFAULT_MAX_PACKET_SIZE + 1));
+		NET_CPOINTER<char> buffer(ALLOC<char>(NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE + 1));
 		sprintf(buffer.get(), CSTRING("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n"), reinterpret_cast<char*>(enc_Sec_Key));
 
 		/* SSL */
@@ -1019,6 +1060,8 @@ void Net::WebSocket::Server::Acceptor()
 		return;
 	}
 
+	peer->network.AllocReceiveBuffer((Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE));
+
 	const auto pdata = ALLOC<Receive_t>();
 	pdata->server = this;
 	pdata->peer = peer;
@@ -1098,11 +1141,13 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 	SOCKET_NOT_VALID(peer->pSocket) return;
 
 	/* ENCODE FRAME */
-	auto frameCount = static_cast<int>(ceil((float)frame_length / NET_OPT_DEFAULT_MAX_PACKET_SIZE));
+	const auto receive_buffer_size = (Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE);
+
+	auto frameCount = static_cast<int>(ceil((float)frame_length / receive_buffer_size));
 	if (frameCount == 0)
 		frameCount = 1;
 
-	const int lastFrameBufferLength = (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) != 0 ? (frame_length % NET_OPT_DEFAULT_MAX_PACKET_SIZE) : (frame_length != 0 ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : 0);
+	const int lastFrameBufferLength = (frame_length % receive_buffer_size) != 0 ? (frame_length % receive_buffer_size) : (frame_length != 0 ? receive_buffer_size : 0);
 
 	size_t in_frame_offset = 0;
 	for (auto i = 0; i < frameCount; i++)
@@ -1110,7 +1155,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 		const unsigned char fin = (i != (frameCount - 1) ? 0 : NET_WS_FIN);
 		const unsigned char opcode = (i != 0 ? NET_OPCODE_CONTINUE : opc);
 
-		const size_t bufferLength = (i != (frameCount - 1) ? NET_OPT_DEFAULT_MAX_PACKET_SIZE : lastFrameBufferLength);
+		const size_t bufferLength = (i != (frameCount - 1) ? receive_buffer_size : lastFrameBufferLength);
 		NET_CPOINTER<char> buf;
 		size_t totalLength;
 
@@ -1240,7 +1285,7 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 
 	if (peer->ssl)
 	{
-		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE);
+		const auto data_size = SSL_read(peer->ssl, reinterpret_cast<char*>(peer->network.getDataReceive()), peer->network.GetReceiveBufferSize());
 		if (data_size <= 0)
 		{
 			const auto err = SSL_get_error(peer->ssl, data_size);
@@ -1275,7 +1320,7 @@ bool Net::WebSocket::Server::DoReceive(NET_PEER peer)
 	}
 	else
 	{
-		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), NET_OPT_DEFAULT_MAX_PACKET_SIZE, 0);
+		const auto data_size = Ws2_32::recv(peer->pSocket, reinterpret_cast<char*>(peer->network.getDataReceive()), peer->network.GetReceiveBufferSize(), 0);
 		if (data_size == SOCKET_ERROR)
 		{
 			peer->network.reset();
