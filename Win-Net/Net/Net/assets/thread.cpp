@@ -29,11 +29,11 @@
 #include <Net/assets/manager/logmanager.h>
 
 #ifdef BUILD_LINUX
-NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* parameter = nullptr)
+NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* parameter)
 {
 	pthread_t thread;
 	const auto result = pthread_create(&thread, nullptr, StartRoutine, parameter);
-	if (result != 0) 
+	if (result != 0)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - Failed to create '%d'"), result);
 		return 0;
@@ -41,16 +41,16 @@ NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* pa
 	return thread;
 }
 
-NET_THREAD_DWORD Net::Thread::WaitObject(NET_THREAD_HANDLE handle, NET_THREAD_DWORD t = INFINITE)
+NET_THREAD_DWORD Net::Thread::WaitObject(NET_THREAD_HANDLE handle, NET_THREAD_DWORD t)
 {
 	void* returnValue;
 	int result = pthread_join(handle, &returnValue);
-	if (result != 0) 
+	if (result != 0)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - Failed to join '%d'"), result);
 		return 0;
 	}
-	return static_cast<NET_THREAD_DWORD>(returnValue);
+	return reinterpret_cast<NET_THREAD_DWORD>(returnValue);
 }
 
 void Net::Thread::Close(NET_THREAD_HANDLE handle)

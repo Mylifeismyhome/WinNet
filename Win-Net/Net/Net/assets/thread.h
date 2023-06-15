@@ -26,7 +26,7 @@
 #include <Net/Net/Net.h>
 
 #ifdef BUILD_LINUX
-#include <thread>
+#include <pthread.h>
 #else
 #define NET_STATUS_SUCCESS    ((NTSTATUS)0x00000000L)
 #define NET_ThreadQuerySetWin32StartAddress 9
