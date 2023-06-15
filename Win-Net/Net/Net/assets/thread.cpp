@@ -28,7 +28,7 @@
 #include <Net/Import/Ntdll.hpp>
 #include <Net/assets/manager/logmanager.h>
 
-#ifdef NET_THREAD_USE_STD
+#ifdef BUILD_LINUX
 NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* parameter = nullptr)
 {
 	pthread_t thread;
