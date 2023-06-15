@@ -114,7 +114,10 @@ BYTE Net::SetDefaultSocketOption(SOCKET s, size_t receive_buffer_size)
 	}
 
 	flags = (flags | O_NONBLOCK);
-	ret = (fcntl(s, F_SETFL, flags) == 0) ? 1 : 0;
+	if (fcntl(s, F_SETFL, flags) != 0)
+	{
+		return 0;
+	}
 #else
 	unsigned long mode = 1;
 	if(Ws2_32::ioctlsocket(s, FIONBIO, &mode) != 0)
