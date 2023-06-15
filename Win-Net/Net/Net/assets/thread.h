@@ -23,29 +23,30 @@
 */
 
 #pragma once
-#define NET_no_init_all
-#define NET_STATUS_SUCCESS    ((NTSTATUS)0x00000000L)
-#define NET_ThreadQuerySetWin32StartAddress 9
-#define NET_THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER 0x00000004
-
 #include <Net/Net/Net.h>
 
 #ifdef BUILD_LINUX
 #include <thread>
+#else
+#define NET_STATUS_SUCCESS    ((NTSTATUS)0x00000000L)
+#define NET_ThreadQuerySetWin32StartAddress 9
+#define NET_THREAD_CREATE_FLAGS_HIDE_FROM_DEBUGGER 0x00000004
 #endif
 
-// on linux we just use std::thread - on windows we use winapi to create threads
 #ifdef BUILD_LINUX
-typedef DWORD NET_THREAD_DWORD;
-#define LPVOID void*
+typedef unsigned int NET_THREAD_DWORD;
+typedef void* (*NET_THREAD_FUNCTION)(void*);
 #define NET_THREAD(fnc) NET_THREAD_DWORD fnc(LPVOID parameter)
+#define NET_THREAD_HANDLE pthread_t
 #else
 #ifdef _WIN64
 typedef DWORD64 NET_THREAD_DWORD;
 #define NET_THREAD(fnc) NET_THREAD_DWORD WINAPI fnc(LPVOID parameter)
+#define NET_THREAD_HANDLE HANDLE
 #else
 typedef DWORD NET_THREAD_DWORD;
 #define NET_THREAD(fnc) NET_THREAD_DWORD WINAPIV fnc(LPVOID parameter)
+#define NET_THREAD_HANDLE HANDLE
 #endif
 #endif
 
@@ -54,9 +55,13 @@ namespace Net
 	namespace Thread
 	{
 #ifdef BUILD_LINUX
-		bool Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
+		NET_THREAD_HANDLE Create(NET_THREAD_FUNCTION function, void* parameter = nullptr);
+		NET_THREAD_DWORD WaitObject(NET_THREAD_HANDLE& h, NET_THREAD_DWORD t = INFINITE);
+		void Close(NET_THREAD_HANDLE& h);
 #else
-		HANDLE Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
+		NET_THREAD_HANDLE Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
+		NET_THREAD_DWORD WaitObject(NET_THREAD_HANDLE h, NET_THREAD_DWORD t = INFINITE);
+		void Close(NET_THREAD_HANDLE h);
 #endif
 	}
 }

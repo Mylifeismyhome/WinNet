@@ -209,9 +209,6 @@ namespace Net
 				/* Handshake */
 				bool handshake;
 
-				typeLatency latency;
-				NET_HANDLE_TIMER hCalcLatency;
-
 				std::mutex _mutex_disconnectPeer;
 
 				peerInfo()
@@ -223,8 +220,6 @@ namespace Net
 					bErase = false;
 					ssl = nullptr;
 					handshake = false;
-					latency = -1;
-					hCalcLatency = nullptr;
 				}
 
 				void clear();
@@ -249,6 +244,8 @@ namespace Net
 			void DecodeFrame(NET_PEER);
 			void EncodeFrame(BYTE*, size_t, NET_PEER, unsigned char = NET_OPCODE_TEXT);
 			void ProcessPacket(NET_PEER, BYTE*, size_t);
+
+			NET_THREAD_HANDLE hWorkThread;
 
 		private:
 			Net::PeerPool::PeerPool_t PeerPoolManager;

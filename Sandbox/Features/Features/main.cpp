@@ -266,7 +266,8 @@ NET_TIMER(TestTimer)
 
 TEST(TIMER,
 		const auto handle = Net::Timer::Create(TestTimer, 1000);
-		Net::Timer::WaitTimerFinished(handle); // infinite loop in our case
+		Net::Timer::WaitObject(handle); // infinite loop in our case
+		Net::Timer::Clear(handle);
 );
 
 TEST(DATABASE,

@@ -24,7 +24,6 @@
 
 #include <Net/assets/timer.h>
 #include <Net/Import/Kernel32.hpp>
-#include <Net/assets/thread.h>
 
 #ifndef BUILD_LINUX
 static int gettimeofday(struct timeval* tp, struct timezone* tzp)
@@ -51,23 +50,42 @@ static int gettimeofday(struct timeval* tp, struct timezone* tzp)
 #include <sys/time.h>
 #endif
 
+static void OnNetTimerThreadFinished(void* param)
+{
+	if (param == nullptr)
+	{
+		return;
+	}
+
+	auto pTimer = reinterpret_cast<Net::Timer::Timer_t*>(param);
+	Net::Thread::Close(pTimer->hThread);
+	pTimer->hThread = nullptr;
+
+	if (pTimer->param)
+	{
+		if (pTimer->bdelete)
+		{
+			delete pTimer->param;
+			pTimer->param = nullptr;
+		}
+	}
+}
+
 NET_THREAD(NetTimerThread)
 {
-	if (!parameter)
+	if (parameter == nullptr)
+	{
 		return NULL;
+	}
 
 	auto timer = (Net::Timer::Timer_t*)parameter;
-	if (!timer->func)
+	if (timer->func == nullptr)
 	{
-		NET_UNUSED_PARAM(timer->param);
-
-		if (timer->async)
+		if (timer->callback_onFinished)
 		{
-			NET_UNUSED(timer);
-			return NULL;
+			timer->callback_onFinished(timer);
 		}
 
-		timer->finished = true;
 		return NULL;
 	}
 
@@ -76,19 +94,15 @@ NET_THREAD(NetTimerThread)
 
 	timer->last = static_cast<double>((((long long)tv.tv_sec) * 1000) + (tv.tv_usec / 1000));
 
-	while (true)
+	while (1)
 	{
 		if (timer->clear)
 		{
-			NET_UNUSED_PARAM(timer->param);
-
-			if (timer->async)
+			if (timer->callback_onFinished)
 			{
-				NET_UNUSED(timer);
-				return NULL;
+				timer->callback_onFinished(timer);
 			}
 
-			timer->finished = true;
 			return NULL;
 		}
 
@@ -96,17 +110,13 @@ NET_THREAD(NetTimerThread)
 
 		if (((((long long)tv.tv_sec) * 1000) + (tv.tv_usec / 1000) - timer->last) > timer->timer)
 		{
-			if (!(*timer->func)(timer->param))
+			if ((*timer->func)(timer->param) == 0)
 			{
-				NET_UNUSED_PARAM(timer->param);
-
-				if (timer->async)
+				if (timer->callback_onFinished)
 				{
-					NET_UNUSED(timer);
-					return NULL;
+					timer->callback_onFinished(timer);
 				}
 
-				timer->finished = true;
 				return NULL;
 			}
 
@@ -123,48 +133,51 @@ NET_THREAD(NetTimerThread)
 
 NET_HANDLE_TIMER Net::Timer::Create(NET_TimerRet(*func)(void*), const double timer, void* param, const bool bdelete)
 {
-	const auto timer_t = ALLOC<Timer_t>();
-	timer_t->param = param;
-	timer_t->func = func;
-	timer_t->timer = timer;
-	timer_t->clear = false;
-	timer_t->finished = false;
-	timer_t->bdelete = bdelete;
-	timer_t->async = false;
-
-#ifndef BUILD_LINUX
-	timer_t->hThread = Thread::Create(NetTimerThread, timer_t);
-#else
-	Thread::Create(NetTimerThread, timer_t);
-#endif
-
-	return timer_t;
+	const auto pTimer = ALLOC<Timer_t>();
+	pTimer->param = param;
+	pTimer->func = func;
+	pTimer->timer = timer;
+	pTimer->clear = false;
+	pTimer->bdelete = bdelete;
+	pTimer->callback_onFinished = &OnNetTimerThreadFinished;
+	pTimer->hThread = Net::Thread::Create(NetTimerThread, pTimer);
+	return pTimer;
 }
 
 void Net::Timer::Clear(NET_HANDLE_TIMER handle)
 {
-	if (!handle) return;
-	handle->async = true;
+	if (handle == nullptr)
+	{
+		return;
+	}
+
 	handle->clear = true;
+	Net::Timer::WaitObject(handle);
+	FREE<Timer_t>(handle);
 }
 
-void Net::Timer::WaitSingleObjectStopped(NET_HANDLE_TIMER handle)
+NET_THREAD_DWORD Net::Timer::WaitObject(NET_HANDLE_TIMER handle)
 {
-	if (!handle) return;
-	handle->async = false;
+	if (handle == nullptr)
+	{
+		return 0;
+	}
+
+	if (handle->hThread == nullptr)
+	{
+		return 0;
+	}
+
 	handle->clear = true;
-	WaitTimerFinished(handle);
-	NET_UNUSED(handle);
+	return Net::Thread::WaitObject(handle->hThread);
 }
 
 void Net::Timer::SetTime(NET_HANDLE_TIMER handle, const double timer)
 {
-	if (!handle) return;
-	handle->timer = timer;
-}
+	if (handle == nullptr)
+	{
+		return;
+	}
 
-void Net::Timer::WaitTimerFinished(NET_HANDLE_TIMER handle)
-{
-	if(!handle) return;
-	while (!handle->finished) {};
+	handle->timer = timer;
 }

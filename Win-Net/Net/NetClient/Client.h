@@ -114,10 +114,6 @@ namespace Net
 
 				bool estabilished;
 
-				typeLatency latency;
-				bool bLatency;
-				NET_HANDLE_TIMER hCalcLatency;
-
 				std::mutex _mutex_send;
 
 				int m_heartbeat_sequence_number;
@@ -134,9 +130,6 @@ namespace Net
 					recordingData = false;
 					RSAHandshake = false;
 					estabilished = false;
-					latency = -1;
-					bLatency = false;
-					hCalcLatency = nullptr;
 					m_heartbeat_sequence_number = -1;
 				}
 
@@ -148,7 +141,6 @@ namespace Net
 				void clearData();
 				void createNewRSAKeys(size_t);
 				void deleteRSAKeys();
-				typeLatency getLatency() const;
 			};
 
 		public:
@@ -245,6 +237,8 @@ namespace Net
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
 			void DecompressData(BYTE*&, size_t&, size_t);
 			void DecompressData(BYTE*&, BYTE*&, size_t&, size_t, bool = false);
+
+			NET_THREAD_HANDLE hReceiveThread;
 
 		public:
 			Client();
