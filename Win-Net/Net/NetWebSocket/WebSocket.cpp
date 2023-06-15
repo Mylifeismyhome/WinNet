@@ -48,7 +48,7 @@ Net::WebSocket::Server::Server()
 	SetRunning(false);
 	optionBitFlag = 0;
 	socketOptionBitFlag = 0;
-	hWorkThread = nullptr;
+	hWorkThread = 0;
 }
 
 Net::WebSocket::Server::~Server()
@@ -635,7 +635,7 @@ bool Net::WebSocket::Server::Close()
 	{
 		Net::Thread::WaitObject(hWorkThread);
 		Net::Thread::Close(hWorkThread);
-		hWorkThread = nullptr;
+		hWorkThread = 0;
 	}
 
 	SetRunning(false);
