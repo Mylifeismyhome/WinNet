@@ -43,14 +43,13 @@ NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* pa
 
 NET_THREAD_DWORD Net::Thread::WaitObject(NET_THREAD_HANDLE handle, NET_THREAD_DWORD t)
 {
-	void* returnValue;
-	int result = pthread_join(handle, &returnValue);
+	const auto result = pthread_join(handle, nullptr);
 	if (result != 0)
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - Failed to join '%d'"), result);
 		return 0;
 	}
-	return reinterpret_cast<NET_THREAD_DWORD>(returnValue);
+	return result;
 }
 
 void Net::Thread::Close(NET_THREAD_HANDLE handle)
