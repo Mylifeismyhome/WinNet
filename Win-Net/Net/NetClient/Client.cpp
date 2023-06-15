@@ -48,22 +48,6 @@ namespace Net
 			return false;
 		}
 
-		NET_TIMER(CalcLatency)
-		{
-			const auto client = (Client*)param;
-			if (!client) NET_STOP_TIMER;
-
-			if (!client->IsConnected()) NET_CONTINUE_TIMER;
-
-			client->network.bLatency = true;
-			// tmp disabled due to missing linux support
-			//client->network.latency = Net::Protocol::ICMP::Exec(client->GetServerAddress());
-			client->network.bLatency = false;
-
-			Timer::SetTime(client->network.hCalcLatency, client->Isset(NET_OPT_INTERVAL_LATENCY) ? client->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
-			NET_CONTINUE_TIMER;
-		}
-
 		Client::Client()
 		{
 			SetSocket(INVALID_SOCKET);
@@ -72,6 +56,7 @@ namespace Net
 			SetConnected(false);
 			optionBitFlag = 0;
 			socketOptionBitFlag = 0;
+			hReceiveThread = 0;
 		}
 
 		Client::~Client()
@@ -99,20 +84,15 @@ namespace Net
 
 			while (client->IsConnected())
 			{
+				if (client->GetSocket() == INVALID_SOCKET)
+				{
+					break;
+				}
+
 #ifdef BUILD_LINUX
 				usleep(client->DoReceive() * 1000);
 #else
 				Kernel32::Sleep(client->DoReceive());
-#endif
-			}
-
-			// wait until thread has finished
-			while (client && client->network.bLatency)
-			{
-#ifdef BUILD_LINUX
-				usleep(FREQUENZ(client) * 1000);
-#else
-				Kernel32::Sleep(FREQUENZ(client));
 #endif
 			}
 
@@ -439,13 +419,8 @@ namespace Net
 
 			network.AllocReceiveBuffer((Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE));
 
-			/*
-			* disabled for now, will get replaced with a working version soon
-			*/
-			//network.hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, this);
-
 			// Create Loop-Receive Thread
-			Thread::Create(Receive, this);
+			hReceiveThread = Net::Thread::Create(Receive, this);
 
 			// callback
 			OnConnected();
@@ -462,7 +437,7 @@ namespace Net
 			*/
 			std::lock_guard<std::mutex> guard(this->_mutex_disconnect);
 
-			if (!IsConnected())
+			if (IsConnected() == false)
 			{
 				return false;
 			}
@@ -504,13 +479,11 @@ namespace Net
 				SetSocket(INVALID_SOCKET);
 			}
 
-			network.latency = -1;
-			network.bLatency = false;
-
-			if (network.hCalcLatency)
+			if (hReceiveThread)
 			{
-				Timer::WaitSingleObjectStopped(network.hCalcLatency);
-				network.hCalcLatency = nullptr;
+				Net::Thread::WaitObject(hReceiveThread);
+				Net::Thread::Close(hReceiveThread);
+				hReceiveThread = 0;
 			}
 
 			SetConnected(false);
@@ -681,11 +654,6 @@ namespace Net
 		{
 			RSA.deleteKeys();
 			RSAHandshake = false;
-		}
-
-		typeLatency Client::Network::getLatency() const
-		{
-			return latency;
 		}
 
 		void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed)
@@ -1464,7 +1432,7 @@ namespace Net
 			auto tpe = (TPacketExcecute*)parameter;
 			if (!tpe)
 			{
-				return 1;
+				return 0;
 			}
 
 			if (!tpe->m_client->CheckDataN(tpe->m_packetId, *tpe->m_packet))
@@ -2014,8 +1982,11 @@ namespace Net
 				tpe->m_packet = pPacket.get();
 				tpe->m_client = this;
 				tpe->m_packetId = packetId;
-				if (Net::Thread::Create(ThreadPacketExecute, tpe))
+				const auto hThread = Net::Thread::Create(ThreadPacketExecute, tpe);
+				if (hThread)
 				{
+					// Close only closes handle, it does not close the thread
+					Net::Thread::Close(hThread);
 					return;
 				}
 

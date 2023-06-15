@@ -300,7 +300,12 @@ void Net::PeerPool::PeerPool_t::threadpool_add()
 	auto data = ALLOC<threadpool_manager_data_t>();
 	data->pClass = this;
 	data->pool = pool;
-	Net::Thread::Create(threadpool_manager, (LPVOID)data);
+	const auto hThread = Net::Thread::Create(threadpool_manager, reinterpret_cast<void*>(data));
+	if (hThread)
+	{
+		// Close only closes handle, it does not close the thread
+		Net::Thread::Close(hThread);
+	}
 
 	// push to vector
 	threapool_push(pool);

@@ -205,9 +205,6 @@ namespace Net
 				/* Net Version */
 				bool NetVersionMatched;
 
-				typeLatency latency;
-				NET_HANDLE_TIMER hCalcLatency;
-
 				NET_HANDLE_TIMER hWaitForNetProtocol;
 				NET_HANDLE_TIMER hWaitHearbeatSend;
 				NET_HANDLE_TIMER hWaitHearbeatReceive;
@@ -224,8 +221,6 @@ namespace Net
 					estabilished = false;
 					bErase = false;
 					NetVersionMatched = false;
-					latency = -1;
-					hCalcLatency = nullptr;
 					hWaitForNetProtocol = nullptr;
 					hWaitHearbeatSend = nullptr;
 					hWaitHearbeatReceive = nullptr;
@@ -233,7 +228,6 @@ namespace Net
 				}
 
 				void clear();
-				typeLatency getLatency() const;
 				IPRef IPAddr() const;
 			};
 
@@ -273,6 +267,8 @@ namespace Net
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
 			void DecompressData(BYTE*&, size_t&, size_t);
 			void DecompressData(BYTE*&, BYTE*&, size_t&, size_t, bool = false);
+
+			NET_THREAD_HANDLE hWorkThread;
 
 		public:
 			Server();

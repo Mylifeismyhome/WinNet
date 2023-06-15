@@ -48,6 +48,7 @@ Net::WebSocket::Server::Server()
 	SetRunning(false);
 	optionBitFlag = 0;
 	socketOptionBitFlag = 0;
+	hWorkThread = 0;
 }
 
 Net::WebSocket::Server::~Server()
@@ -215,38 +216,6 @@ byte* Net::WebSocket::Server::network_t::getDataReceive()
 	return _dataReceive.get();
 }
 #pragma endregion
-
-NET_THREAD(LatencyTick)
-{
-	const auto peer = (NET_PEER)parameter;
-	if (!peer) return 0;
-
-	NET_LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been started"));
-	// tmp disabled
-	//peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
-	NET_LOG_DEBUG(CSTRING("[NET] - LatencyTick thread has been end"));
-	return 0;
-}
-
-struct DoCalcLatency_t
-{
-	Net::WebSocket::Server* server;
-	NET_PEER peer;
-};
-
-NET_TIMER(DoCalcLatency)
-{
-	const auto info = (DoCalcLatency_t*)param;
-	if (!info) NET_STOP_TIMER;
-
-	const auto server = info->server;
-	const auto peer = info->peer;
-
-	Net::Thread::Create(LatencyTick, peer);
-	Net::Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
-	NET_CONTINUE_TIMER;
-}
-
 NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
@@ -298,14 +267,6 @@ NET_PEER Net::WebSocket::Server::CreatePeer(const sockaddr_in client_addr, const
 		}
 	}
 
-	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
-	{
-		const auto _DoCalcLatency = ALLOC<DoCalcLatency_t>();
-		_DoCalcLatency->server = this;
-		_DoCalcLatency->peer = peer;
-		//peer->hCalcLatency = Timer::Create(DoCalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _DoCalcLatency, true);
-	}
-
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => New peer connected."), SERVERNAME(this), peer->IPAddr().get());
 
 	// callback
@@ -347,13 +308,6 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 			peer->pSocket = INVALID_SOCKET;
 		}
 
-		if (peer->hCalcLatency)
-		{
-			// stop latency interval
-		//	Timer::WaitSingleObjectStopped(peer->hCalcLatency);
-			peer->hCalcLatency = nullptr;
-		}
-
 		// callback
 #ifdef BUILD_LINUX
 		OnPeerDisconnect(peer, errno);
@@ -380,8 +334,6 @@ void Net::WebSocket::Server::peerInfo::clear()
 	estabilished = false;
 	bErase = false;
 	handshake = false;
-	latency = -1;
-	hCalcLatency = nullptr;
 
 	network.clear();
 	network.reset();
@@ -664,7 +616,7 @@ bool Net::WebSocket::Server::Run()
 	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
 #endif;
 
-	Thread::Create(WorkThread, this);
+	hWorkThread = Net::Thread::Create(WorkThread, this);
 
 	SetRunning(true);
 	NET_LOG_SUCCESS(CSTRING("WinNet :: Server('%s') => started on Port: %d"), SERVERNAME(this), SERVERPORT(this));
@@ -679,13 +631,24 @@ bool Net::WebSocket::Server::Close()
 		return false;
 	}
 
+	if (hWorkThread)
+	{
+		Net::Thread::WaitObject(hWorkThread);
+		Net::Thread::Close(hWorkThread);
+		hWorkThread = 0;
+	}
+
 	SetRunning(false);
 
 	if (GetListenSocket())
+	{
 		Ws2_32::closesocket(GetListenSocket());
+	}
 
 	if (GetAcceptSocket())
+	{
 		Ws2_32::closesocket(GetAcceptSocket());
+	}
 
 #ifndef BUILD_LINUX
 	Ws2_32::WSACleanup();
@@ -1565,7 +1528,7 @@ NET_THREAD(ThreadPacketExecute)
 	auto tpe = (TPacketExcecute*)parameter;
 	if (!tpe)
 	{
-		return 1;
+		return 0;
 	}
 
 	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
@@ -1656,8 +1619,11 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 		tpe->m_server = this;
 		tpe->m_peer = peer;
 		tpe->m_packetId = packetId;
-		if (Net::Thread::Create(ThreadPacketExecute, tpe))
+		const auto hThread = Net::Thread::Create(ThreadPacketExecute, tpe);
+		if (hThread)
 		{
+			// Close only closes handle, it does not close the thread
+			Net::Thread::Close(hThread);
 			return;
 		}
 

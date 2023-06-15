@@ -201,6 +201,9 @@ MAKE_IMPORT(hSnapshot, lpte);
 
 DEFINE_IMPORT(DWORD, GetFileSize, HANDLE hFile, LPDWORD lpFileSizeHigh);
 MAKE_IMPORT(hFile, lpFileSizeHigh);
+
+DEFINE_IMPORT(DWORD, WaitForSingleObject, HANDLE hHandle, DWORD dwMilliseconds);
+MAKE_IMPORT(hHandle, dwMilliseconds);
 RESOLVE_IMPORT_END;
 #endif
 #endif

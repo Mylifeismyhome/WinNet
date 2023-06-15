@@ -48,6 +48,7 @@ Net::Server::Server::Server()
 	hNetSyncClock = nullptr;
 	optionBitFlag = 0;
 	socketOptionBitFlag = 0;
+	hWorkThread = 0;
 }
 
 Net::Server::Server::~Server()
@@ -230,28 +231,6 @@ bool Net::Server::Server::cryption_t::getHandshakeStatus() const
 	return RSAHandshake;
 }
 #pragma endregion
-
-struct	 CalcLatency_t
-{
-	Net::Server::Server* server;
-	Net::Server::Server::peerInfo* peer;
-};
-
-NET_TIMER(CalcLatency)
-{
-	const auto info = (CalcLatency_t*)param;
-	if (!info) NET_STOP_TIMER;
-
-	const auto server = info->server;
-	const auto peer = info->peer;
-
-	// tmp: disabled till linux support for icmp
-	//	peer->latency = Net::Protocol::ICMP::Exec(peer->IPAddr().get());
-
-	Net::Timer::SetTime(peer->hCalcLatency, server->Isset(NET_OPT_INTERVAL_LATENCY) ? server->GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY);
-	NET_CONTINUE_TIMER;
-}
-
 Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in client_addr, const SOCKET socket)
 {
 	// UniqueID is equal to socket, since socket is already an unique ID
@@ -276,14 +255,6 @@ Net::Server::Server::peerInfo* Net::Server::Server::CreatePeer(const sockaddr_in
 		{
 			NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') => failed to apply socket option { %i : %i } for socket '%d'"), SERVERNAME(this), entry->opt, LAST_ERROR, socket);
 		}
-	}
-
-	if (Isset(NET_OPT_DISABLE_LATENCY_REQUEST) ? GetOption<bool>(NET_OPT_DISABLE_LATENCY_REQUEST) : NET_OPT_DEFAULT_LATENCY_REQUEST)
-	{
-		const auto _CalcLatency = ALLOC<CalcLatency_t>();
-		_CalcLatency->server = this;
-		_CalcLatency->peer = peer;
-		//peer->hCalcLatency = Timer::Create(CalcLatency, Isset(NET_OPT_INTERVAL_LATENCY) ? GetOption<int>(NET_OPT_INTERVAL_LATENCY) : NET_OPT_DEFAULT_INTERVAL_LATENCY, _CalcLatency, true);
 	}
 
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => New peer connected."), SERVERNAME(this), peer->IPAddr().get());
@@ -328,20 +299,14 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 			peer->pSocket = INVALID_SOCKET;
 		}
 
-		Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
-		peer->hWaitForNetProtocol = nullptr;
+		Net::Timer::Clear(peer->hWaitForNetProtocol);
+		peer->hWaitForNetProtocol = 0;
 
-		Net::Timer::WaitSingleObjectStopped(peer->hWaitHearbeatSend);
-		peer->hWaitHearbeatSend = nullptr;
+		Net::Timer::Clear(peer->hWaitHearbeatSend);
+		peer->hWaitHearbeatSend = 0;
 
-		Net::Timer::WaitSingleObjectStopped(peer->hWaitHearbeatReceive);
-		peer->hWaitHearbeatReceive = nullptr;
-
-		if (peer->hCalcLatency)
-		{
-			Timer::WaitSingleObjectStopped(peer->hCalcLatency);
-			peer->hCalcLatency = nullptr;
-		}
+		Net::Timer::Clear(peer->hWaitHearbeatReceive);
+		peer->hWaitHearbeatReceive = 0;
 
 		// callback
 #ifdef BUILD_LINUX
@@ -409,19 +374,12 @@ void Net::Server::Server::peerInfo::clear()
 	estabilished = false;
 	NetVersionMatched = false;
 	bErase = false;
-	latency = -1;
-	hCalcLatency = nullptr;
 
 	network.clear();
 	network.reset();
 	network.ClearReceiveBuffer();
 
 	cryption.deleteKeyPair();
-}
-
-typeLatency Net::Server::Server::peerInfo::getLatency() const
-{
-	return latency;
 }
 
 Net::Server::IPRef Net::Server::Server::peerInfo::IPAddr() const
@@ -629,7 +587,7 @@ bool Net::Server::Server::Run()
 	PeerPoolManager.set_sleep_function(&Kernel32::Sleep);
 #endif;
 
-	Thread::Create(WorkThread, this);
+	hWorkThread = Net::Thread::Create(WorkThread, this);
 
 	SetRunning(true);
 	NET_LOG_SUCCESS(CSTRING("WinNet :: Server('%s') => running on port %d"), SERVERNAME(this), SERVERPORT(this));
@@ -646,8 +604,15 @@ bool Net::Server::Server::Close()
 
 	if (hNetSyncClock)
 	{
-		Timer::WaitSingleObjectStopped(hNetSyncClock);
+		Net::Timer::Clear(hNetSyncClock);
 		hNetSyncClock = nullptr;
+	}
+
+	if (hWorkThread)
+	{
+		Net::Thread::WaitObject(hWorkThread);
+		Net::Thread::Close(hWorkThread);
+		hWorkThread = 0;
 	}
 
 	SetRunning(false);
@@ -1296,7 +1261,10 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 	auto peer = data->peer;
 	const auto server = data->server;
 
-	if (peer->hWaitForNetProtocol == nullptr) NET_STOP_TIMER;
+	if (peer->hWaitForNetProtocol == 0)
+	{
+		NET_STOP_TIMER;
+	}
 
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer did not response in time as expected from WinNet Protocol. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
@@ -1635,7 +1603,7 @@ NET_THREAD(ThreadPacketExecute)
 	auto tpe = (TPacketExcecute*)parameter;
 	if (!tpe)
 	{
-		return 1;
+		return 0;
 	}
 
 	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
@@ -2185,8 +2153,11 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		tpe->m_server = this;
 		tpe->m_peer = peer;
 		tpe->m_packetId = packetId;
-		if (Net::Thread::Create(ThreadPacketExecute, tpe))
+		const auto hThread = Net::Thread::Create(ThreadPacketExecute, tpe);
+		if (hThread)
 		{
+			// Close only closes handle, it does not close the thread
+			Net::Thread::Close(hThread);
 			return;
 		}
 
@@ -2392,8 +2363,8 @@ if ((NET_MAJOR_VERSION == Version::Major())
 
 		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
-		Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
-		peer->hWaitForNetProtocol = nullptr;
+		Net::Timer::Clear(peer->hWaitForNetProtocol);
+		peer->hWaitForNetProtocol = 0;
 
 		/* start net heartbeat routine */
 		if (this->Isset(NET_OPT_USE_HEARTBEAT) ? this->GetOption<bool>(NET_OPT_USE_HEARTBEAT) : NET_OPT_DEFAULT_USE_HEARTBEAT)
@@ -2468,8 +2439,8 @@ NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Asymmetric Handshake with P
 
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
-	Net::Timer::WaitSingleObjectStopped(peer->hWaitForNetProtocol);
-	peer->hWaitForNetProtocol = nullptr;
+	Net::Timer::Clear(peer->hWaitForNetProtocol);
+	peer->hWaitForNetProtocol = 0;
 
 	/* start net heartbeat routine */
 	if (this->Isset(NET_OPT_USE_HEARTBEAT) ? this->GetOption<bool>(NET_OPT_USE_HEARTBEAT) : NET_OPT_DEFAULT_USE_HEARTBEAT)
@@ -2502,7 +2473,7 @@ if (peer->m_heartbeat_expected_sequence_number != PKG[CSTRING("NET_SEQUENCE_NUMB
 }
 
 /* stop receive timer first before continueing. */
-Net::Timer::WaitSingleObjectStopped(peer->hWaitHearbeatReceive);
+Net::Timer::Clear(peer->hWaitHearbeatReceive);
 peer->hWaitHearbeatReceive = nullptr;
 
 /* start net heartbeat timer */
