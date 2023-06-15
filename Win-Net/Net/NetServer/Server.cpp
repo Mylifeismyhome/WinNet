@@ -1603,7 +1603,7 @@ NET_THREAD(ThreadPacketExecute)
 	auto tpe = (TPacketExcecute*)parameter;
 	if (!tpe)
 	{
-		return 1;
+		return 0;
 	}
 
 	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))

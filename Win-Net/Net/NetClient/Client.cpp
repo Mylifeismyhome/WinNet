@@ -1432,7 +1432,7 @@ namespace Net
 			auto tpe = (TPacketExcecute*)parameter;
 			if (!tpe)
 			{
-				return 1;
+				return 0;
 			}
 
 			if (!tpe->m_client->CheckDataN(tpe->m_packetId, *tpe->m_packet))
