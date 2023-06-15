@@ -59,7 +59,7 @@ static void OnNetTimerThreadFinished(void* param)
 
 	auto pTimer = reinterpret_cast<Net::Timer::Timer_t*>(param);
 	Net::Thread::Close(pTimer->hThread);
-	pTimer->hThread = nullptr;
+	pTimer->hThread = 0;
 
 	if (pTimer->param)
 	{
@@ -163,7 +163,7 @@ NET_THREAD_DWORD Net::Timer::WaitObject(NET_HANDLE_TIMER handle)
 		return 0;
 	}
 
-	if (handle->hThread == nullptr)
+	if (handle->hThread == 0)
 	{
 		return 0;
 	}
