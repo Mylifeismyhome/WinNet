@@ -38,7 +38,7 @@
 #ifdef BUILD_LINUX
 typedef unsigned int NET_THREAD_DWORD;
 typedef void*(*NET_THREAD_FUNCTION)(void*);
-#define NET_THREAD(fnc) NET_THREAD_DWORD fnc(void* parameter)
+#define NET_THREAD(fnc) void* fnc(void* parameter)
 #define NET_THREAD_HANDLE pthread_t
 #else
 #ifdef _WIN64
