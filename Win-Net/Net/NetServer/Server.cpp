@@ -300,13 +300,13 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 		}
 
 		Net::Timer::Clear(peer->hWaitForNetProtocol);
-		peer->hWaitForNetProtocol = nullptr;
+		peer->hWaitForNetProtocol = 0;
 
 		Net::Timer::Clear(peer->hWaitHearbeatSend);
-		peer->hWaitHearbeatSend = nullptr;
+		peer->hWaitHearbeatSend = 0;
 
 		Net::Timer::Clear(peer->hWaitHearbeatReceive);
-		peer->hWaitHearbeatReceive = nullptr;
+		peer->hWaitHearbeatReceive = 0;
 
 		// callback
 #ifdef BUILD_LINUX
@@ -1261,7 +1261,10 @@ NET_TIMER(TimerPeerCheckAwaitNetProtocol)
 	auto peer = data->peer;
 	const auto server = data->server;
 
-	if (peer->hWaitForNetProtocol == nullptr) NET_STOP_TIMER;
+	if (peer->hWaitForNetProtocol == 0)
+	{
+		NET_STOP_TIMER;
+	}
 
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer did not response in time as expected from WinNet Protocol. Connection to the peer will be dropped immediately."), SERVERNAME(server), peer->IPAddr().get());
 
@@ -2361,7 +2364,7 @@ if ((NET_MAJOR_VERSION == Version::Major())
 		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
 		Net::Timer::Clear(peer->hWaitForNetProtocol);
-		peer->hWaitForNetProtocol = nullptr;
+		peer->hWaitForNetProtocol = 0;
 
 		/* start net heartbeat routine */
 		if (this->Isset(NET_OPT_USE_HEARTBEAT) ? this->GetOption<bool>(NET_OPT_USE_HEARTBEAT) : NET_OPT_DEFAULT_USE_HEARTBEAT)
@@ -2437,7 +2440,7 @@ NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Asymmetric Handshake with P
 	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Connection to Peer estabilished."), SERVERNAME(this), peer->IPAddr().get());
 
 	Net::Timer::Clear(peer->hWaitForNetProtocol);
-	peer->hWaitForNetProtocol = nullptr;
+	peer->hWaitForNetProtocol = 0;
 
 	/* start net heartbeat routine */
 	if (this->Isset(NET_OPT_USE_HEARTBEAT) ? this->GetOption<bool>(NET_OPT_USE_HEARTBEAT) : NET_OPT_DEFAULT_USE_HEARTBEAT)

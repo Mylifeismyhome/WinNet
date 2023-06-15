@@ -56,7 +56,7 @@ namespace Net
 			SetConnected(false);
 			optionBitFlag = 0;
 			socketOptionBitFlag = 0;
-			hReceiveThread = nullptr;
+			hReceiveThread = 0;
 		}
 
 		Client::~Client()
@@ -483,7 +483,7 @@ namespace Net
 			{
 				Net::Thread::WaitObject(hReceiveThread);
 				Net::Thread::Close(hReceiveThread);
-				hReceiveThread = nullptr;
+				hReceiveThread = 0;
 			}
 
 			SetConnected(false);
