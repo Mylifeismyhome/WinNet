@@ -29,10 +29,10 @@
 #include <Net/assets/manager/logmanager.h>
 
 #ifdef NET_THREAD_USE_STD
-NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION function, void* parameter = nullptr)
+NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, void* parameter = nullptr)
 {
 	pthread_t thread;
-	const auto result = pthread_create(&thread, nullptr, function, parameter);
+	const auto result = pthread_create(&thread, nullptr, StartRoutine, parameter);
 	if (result != 0) 
 	{
 		NET_LOG_DEBUG(CSTRING("[Thread] - Failed to create '%d'"), result);
@@ -60,7 +60,7 @@ void Net::Thread::Close(NET_THREAD_HANDLE handle)
 	// Therefore, no explicit close is needed.
 }
 #else
-NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), LPVOID const parameter)
+NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_FUNCTION StartRoutine, LPVOID const parameter)
 {
 	auto handle = INVALID_HANDLE_VALUE;
 
@@ -104,7 +104,7 @@ NET_THREAD_HANDLE Net::Thread::Create(NET_THREAD_DWORD(*StartRoutine)(LPVOID), L
 
 NET_THREAD_DWORD Net::Thread::WaitObject(NET_THREAD_HANDLE h, NET_THREAD_DWORD t)
 {
-	return Kernel32::WaitForSingleObject(h, t);
+	return Kernel32::WaitForSingleObject(h, static_cast<DWORD>(t));
 }
 
 void Net::Thread::Close(NET_THREAD_HANDLE h)

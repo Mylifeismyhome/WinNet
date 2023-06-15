@@ -43,10 +43,12 @@ typedef NET_THREAD_DWORD(*NET_THREAD_FUNCTION)(void*);
 #else
 #ifdef _WIN64
 typedef DWORD64 NET_THREAD_DWORD;
+typedef NET_THREAD_DWORD(*NET_THREAD_FUNCTION)(LPVOID);
 #define NET_THREAD(fnc) NET_THREAD_DWORD WINAPI fnc(LPVOID parameter)
 #define NET_THREAD_HANDLE HANDLE
 #else
 typedef DWORD NET_THREAD_DWORD;
+typedef NET_THREAD_DWORD(*NET_THREAD_FUNCTION)(LPVOID);
 #define NET_THREAD(fnc) NET_THREAD_DWORD WINAPIV fnc(LPVOID parameter)
 #define NET_THREAD_HANDLE HANDLE
 #endif
@@ -57,11 +59,11 @@ namespace Net
 	namespace Thread
 	{
 #ifdef BUILD_LINUX
-		NET_THREAD_HANDLE Create(NET_THREAD_FUNCTION function, void* parameter = nullptr);
+		NET_THREAD_HANDLE Create(NET_THREAD_FUNCTION StartRoutine, void* parameter = nullptr);
 		NET_THREAD_DWORD WaitObject(NET_THREAD_HANDLE h, NET_THREAD_DWORD t = INFINITE);
 		void Close(NET_THREAD_HANDLE h);
 #else
-		NET_THREAD_HANDLE Create(NET_THREAD_DWORD(*)(LPVOID), LPVOID parameter = nullptr);
+		NET_THREAD_HANDLE Create(NET_THREAD_FUNCTION StartRoutine, LPVOID parameter = nullptr);
 		NET_THREAD_DWORD WaitObject(NET_THREAD_HANDLE h, NET_THREAD_DWORD t = INFINITE);
 		void Close(NET_THREAD_HANDLE h);
 #endif
