@@ -649,11 +649,15 @@ namespace Net
 
 		void Client::SingleSend(const char* data, size_t size, bool& bPreviousSentFailed)
 		{
-			if (!GetSocket())
+			if (GetSocket() == false)
+			{
 				return;
+			}
 
 			if (bPreviousSentFailed)
+			{
 				return;
+			}
 
 			do
 			{
@@ -686,8 +690,11 @@ namespace Net
 					}
 #endif
 				}
+
 				if (res < 0)
+				{
 					break;
+				}
 
 				size -= res;
 			} while (size > 0);
@@ -695,7 +702,7 @@ namespace Net
 
 		void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
 		{
-			if (!GetSocket())
+			if (GetSocket() == false)
 			{
 				FREE<byte>(data);
 				return;
@@ -740,8 +747,11 @@ namespace Net
 					}
 #endif
 				}
+
 				if (res < 0)
+				{
 					break;
+				}
 
 				size -= res;
 			} while (size > 0);
@@ -751,7 +761,7 @@ namespace Net
 
 		void Client::SingleSend(NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
 		{
-			if (!GetSocket())
+			if (GetSocket() == false)
 			{
 				data.free();
 				return;
@@ -796,8 +806,11 @@ namespace Net
 					}
 #endif
 				}
+
 				if (res < 0)
+				{
 					break;
+				}
 
 				size -= res;
 			} while (size > 0);
@@ -807,9 +820,12 @@ namespace Net
 
 		void Client::SingleSend(Net::RawData_t& data, bool& bPreviousSentFailed)
 		{
-			if (!data.valid()) return;
+			if (data.valid() == false)
+			{
+				return;
+			}
 
-			if (!GetSocket())
+			if (GetSocket() == false)
 			{
 				data.free();
 				return;
@@ -855,8 +871,11 @@ namespace Net
 					}
 #endif
 				}
+
 				if (res < 0)
+				{
 					break;
+				}
 
 				size -= res;
 			} while (size > 0);
@@ -934,7 +953,7 @@ namespace Net
 				}
 
 				/* Encrypt AES Keypair using RSA */
-				if (!network.RSA.encryptBase64(Key.reference().get(), aesKeySize))
+				if (network.RSA.encryptBase64(Key.reference().get(), aesKeySize) == false)
 				{
 					Key.free();
 					IV.free();
@@ -944,7 +963,7 @@ namespace Net
 				}
 
 				size_t IVSize = CryptoPP::AES::BLOCKSIZE;
-				if (!network.RSA.encryptBase64(IV.reference().get(), IVSize))
+				if (network.RSA.encryptBase64(IV.reference().get(), IVSize) == false)
 				{
 					Key.free();
 					IV.free();
@@ -996,7 +1015,10 @@ namespace Net
 				}
 
 				// Append Raw data packet size
-				if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+				if (PKG.HasRawData())
+				{
+					combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+				}
 
 				std::string dataSizeStr = std::to_string(dataBufferSize);
 				combinedSize += dataSizeStr.length();
@@ -1322,7 +1344,10 @@ namespace Net
 			}
 
 			// [PROTOCOL] - read data full size from header
-			if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
+			if (
+				network.data_full_size == 0 || 
+				network.data_full_size == INVALID_SIZE
+				)
 			{
 				// read entire packet size
 				const size_t start = NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + 1;
@@ -1410,8 +1435,10 @@ namespace Net
 
 			// re-alloc buffer
 			const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
-			if (leftSize != INVALID_SIZE
-				&& leftSize > 0)
+			if (
+				leftSize != INVALID_SIZE && 
+				leftSize > 0
+				)
 			{
 				const auto leftBuffer = ALLOC<BYTE>(leftSize + 1);
 				memcpy(leftBuffer, &network.data.get()[network.data_full_size], leftSize);
@@ -1437,17 +1464,19 @@ namespace Net
 		NET_THREAD(ThreadPacketExecute)
 		{
 			auto tpe = (TPacketExcecute*)parameter;
-			if (!tpe)
+			if (tpe == nullptr)
 			{
 				return 0;
 			}
 
-			if (!tpe->m_client->CheckDataN(tpe->m_packetId, *tpe->m_packet))
-				if (!tpe->m_client->CheckData(tpe->m_packetId, *tpe->m_packet))
+			if (tpe->m_client->CheckDataN(tpe->m_packetId, *tpe->m_packet) == false)
+			{
+				if (tpe->m_client->CheckData(tpe->m_packetId, *tpe->m_packet) == false)
 				{
-					tpe->m_client->Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
+					tpe->m_client->Disconnect();
 				}
+			}
 
 			/* because we had to create a copy to work with this data in seperate thread, we also have to handle the deletion of this block */
 			if (tpe->m_packet->HasRawData())
@@ -1986,11 +2015,7 @@ namespace Net
 			/*
 			* check for option async to execute the callback in a seperate thread
 			*/
-			if (
-				Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? 
-				GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : 
-				NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC
-				)
+			if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 			{
 				TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
 				tpe->m_packet = pPacket.get();
