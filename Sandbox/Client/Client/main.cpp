@@ -17,7 +17,7 @@ int main()
 	Net::load(Net::ENABLE_LOGGING);
 
 	Client client;
-	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
+	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, false });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{
@@ -25,7 +25,7 @@ int main()
 	}
 	else
 	{
-		while (client.IsConnected())
+		while (client.getConnectionStatus() != Net::Client::EDISCONNECTED)
 		{
 #ifdef BUILD_LINUX
 			usleep(1000);

@@ -1635,7 +1635,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 	NET_CPOINTER<BYTE> data;
 	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
-	if (!pPacket.valid())
+	if (pPacket.valid() == false)
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		return;
@@ -1712,7 +1712,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			offset += AESIVSize;
 		}
 
-		if (!peer->cryption.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
+		if (peer->cryption.RSA.decryptBase64(AESKey.reference().get(), AESKeySize) == false)
 		{
 			AESKey.free();
 			AESIV.free();
@@ -1721,7 +1721,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			return;
 		}
 
-		if (!peer->cryption.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
+		if (peer->cryption.RSA.decryptBase64(AESIV.reference().get(), AESIVSize) == false)
 		{
 			AESKey.free();
 			AESIV.free();
