@@ -97,6 +97,13 @@ namespace Net
 {
 	namespace Client
 	{
+		enum ECONNECTION_STATUS
+		{
+			EDISCONNECTED = 0,
+			ECONNECTED,
+			EPENDING_DISCONNECT
+		};
+
 		class Client
 		{
 			struct Network
@@ -145,7 +152,6 @@ namespace Net
 
 		public:
 			Network network;
-			std::mutex _mutex_disconnect;
 
 		private:
 			DWORD optionBitFlag;
@@ -226,12 +232,9 @@ namespace Net
 			struct addrinfo* connectSocketAddr;
 			NET_CPOINTER<char> ServerAddress;
 			u_short ServerPort;
-			bool connected;
+			ECONNECTION_STATUS m_connectionStatus;
 
 			void SetRecordingData(bool);
-
-			/* clear all stored data */
-			void ConnectionClosed();
 
 			void CompressData(BYTE*&, size_t&);
 			void CompressData(BYTE*&, BYTE*&, size_t&, bool = false);
@@ -246,7 +249,8 @@ namespace Net
 
 			char* ResolveHostname(const char*);
 			bool Connect(const char*, u_short);
-			bool Disconnect();
+			void Disconnect();
+			void ConnectionClosed();
 			void Clear();
 
 			void SetSocket(const SOCKET);
@@ -258,8 +262,11 @@ namespace Net
 			void SetServerPort(u_short);
 			u_short GetServerPort() const;
 
-			void SetConnected(bool);
-			bool IsConnected() const;
+		private:
+			void SetConnectionStatus(ECONNECTION_STATUS);
+
+		public:
+			ECONNECTION_STATUS getConnectionStatus() const;
 
 			size_t GetNextPacketSize() const;
 			size_t GetReceivedPacketSize() const;
@@ -281,8 +288,8 @@ namespace Net
 			void DoSend(int, NET_PACKET&);
 
 		private:
-			void ProcessPackets();
-			void ExecutePacket();
+			DWORD ProcessPackets();
+			DWORD ExecutePacket();
 
 			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);

@@ -53,7 +53,7 @@ namespace Net
 			SetSocket(INVALID_SOCKET);
 			SetServerAddress(CSTRING(""));
 			SetServerPort(0);
-			SetConnected(false);
+			SetConnectionStatus(EDISCONNECTED);
 			optionBitFlag = 0;
 			socketOptionBitFlag = 0;
 			hReceiveThread = 0;
@@ -82,20 +82,28 @@ namespace Net
 				return 0;
 			}
 
-			while (client->IsConnected())
+			while (client->getConnectionStatus() == Net::Client::ECONNECTED)
 			{
 				if (client->GetSocket() == INVALID_SOCKET)
 				{
 					break;
 				}
 
+				const auto ret = client->DoReceive();
+				if (ret == -1)
+				{
+					client->Disconnect();
+					break;
+				}
+
 #ifdef BUILD_LINUX
-				usleep(client->DoReceive() * 1000);
+				usleep(ret * 1000);
 #else
-				Kernel32::Sleep(client->DoReceive());
+				Kernel32::Sleep(ret);
 #endif
 			}
 
+			client->ConnectionClosed();
 			return 0;
 		}
 
@@ -219,7 +227,7 @@ namespace Net
 
 		bool Client::Connect(const char* Address, const u_short Port)
 		{
-			if (IsConnected())
+			if (getConnectionStatus() != EDISCONNECTED)
 			{
 				NET_LOG_ERROR(CSTRING("[NET] - Can't connect to server, reason: already connected!"));
 				return false;
@@ -415,7 +423,7 @@ namespace Net
 			}
 
 			// successfully connected
-			SetConnected(true);
+			SetConnectionStatus(ECONNECTED);
 
 			network.AllocReceiveBuffer((Isset(NET_OPT_RECEIVE_BUFFER_SIZE) ? GetOption<size_t>(NET_OPT_RECEIVE_BUFFER_SIZE) : NET_OPT_DEFAULT_RECEIVE_BUFFER_SIZE));
 
@@ -428,28 +436,14 @@ namespace Net
 			return true;
 		}
 
-		bool Client::Disconnect()
+		void Client::Disconnect()
 		{
-			/*
-			* NET_OPT_EXECUTE_PACKET_ASYNC allow packet execution in different threads
-			* that threads might call Disconnect
-			* soo require a mutex to block it
-			*/
-			std::lock_guard<std::mutex> guard(this->_mutex_disconnect);
-
-			if (IsConnected() == false)
+			if (getConnectionStatus() == EDISCONNECTED)
 			{
-				return false;
+				return;
 			}
 
-			// connection has been closed
-			ConnectionClosed();
-
-			// callback
-			OnDisconnected();
-
-			NET_LOG_SUCCESS(CSTRING("[NET] - Disconnected from server"));
-			return true;
+			SetConnectionStatus(EPENDING_DISCONNECT);
 		}
 
 		void Client::ConnectionClosed()
@@ -481,27 +475,24 @@ namespace Net
 
 			if (hReceiveThread)
 			{
-				Net::Thread::WaitObject(hReceiveThread);
 				Net::Thread::Close(hReceiveThread);
 				hReceiveThread = 0;
 			}
 
-			SetConnected(false);
 			Clear();
+
+			// callback
+			OnDisconnected();
+
+			// finally set disconnected status
+			SetConnectionStatus(EDISCONNECTED);
 		}
 
 		void Client::Clear()
 		{
-			if (IsConnected())
-			{
-				NET_LOG_ERROR(CSTRING("[NET] - Can not clear Client while being connected!"));
-				return;
-			}
-
 #ifndef BUILD_LINUX
 			Ws2_32::WSACleanup();
 #endif
-
 			network.clear();
 		}
 
@@ -539,14 +530,14 @@ namespace Net
 			return ServerPort;
 		}
 
-		void Client::SetConnected(const bool connected)
+		void Client::SetConnectionStatus(ECONNECTION_STATUS status)
 		{
-			this->connected = connected;
+			m_connectionStatus = status;
 		}
 
-		bool Client::IsConnected() const
+		ECONNECTION_STATUS Client::getConnectionStatus() const
 		{
-			return connected;
+			return m_connectionStatus;
 		}
 
 		size_t Client::GetNextPacketSize() const
@@ -673,7 +664,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-		}
+					}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -694,12 +685,12 @@ namespace Net
 						return;
 					}
 #endif
-	}
+				}
 				if (res < 0)
 					break;
 
 				size -= res;
-} while (size > 0);
+			} while (size > 0);
 		}
 
 		void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
@@ -725,7 +716,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-			}
+					}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -748,7 +739,7 @@ namespace Net
 						return;
 					}
 #endif
-		}
+				}
 				if (res < 0)
 					break;
 
@@ -781,7 +772,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-			}
+					}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -804,7 +795,7 @@ namespace Net
 						return;
 					}
 #endif
-		}
+				}
 				if (res < 0)
 					break;
 
@@ -840,7 +831,7 @@ namespace Net
 					if (errno == EWOULDBLOCK)
 					{
 						continue;
-			}
+					}
 					else
 					{
 						bPreviousSentFailed = true;
@@ -863,7 +854,7 @@ namespace Net
 						return;
 					}
 #endif
-		}
+				}
 				if (res < 0)
 					break;
 
@@ -896,8 +887,10 @@ namespace Net
 		*/
 		void Client::DoSend(const int id, NET_PACKET& pkg)
 		{
-			if (!IsConnected())
+			if (getConnectionStatus() != ECONNECTED)
+			{
 				return;
+			}
 
 			std::lock_guard<std::mutex> guard(network._mutex_send);
 
@@ -930,7 +923,7 @@ namespace Net
 				Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 				IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-				if (!aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())))
+				if (aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())) == false)
 				{
 					Key.free();
 					IV.free();
@@ -1241,9 +1234,9 @@ namespace Net
 		*/
 		DWORD Client::DoReceive()
 		{
-			if (IsConnected() == 0)
+			if (getConnectionStatus() != ECONNECTED)
 			{
-				return FREQUENZ(this);
+				return -1;
 			}
 
 			auto data_size = Ws2_32::recv(GetSocket(), reinterpret_cast<char*>(network.dataReceive.get()), network.data_receive_size, 0);
@@ -1256,7 +1249,6 @@ namespace Net
 #endif
 				{
 					network.ResetReceiveBuffer();
-					Disconnect();
 
 #ifdef BUILD_LINUX
 					if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
@@ -1264,21 +1256,19 @@ namespace Net
 					if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 #endif
 
-					return FREQUENZ(this);
+					return -1;
 				}
 
 				network.ResetReceiveBuffer();
-				ProcessPackets();
-				return FREQUENZ(this);
+				return ProcessPackets();
 			}
 
 			// graceful disconnect
 			if (data_size == 0)
 			{
 				network.ResetReceiveBuffer();
-				Disconnect();
 				NET_LOG_PEER(CSTRING("Connection has been gracefully closed"));
-				return FREQUENZ(this);
+				return -1;
 			}
 
 			if (!network.data.valid())
@@ -1310,20 +1300,26 @@ namespace Net
 			}
 
 			network.ResetReceiveBuffer();
-			ProcessPackets();
-			return 0;
-	}
+			return ProcessPackets();
+		}
 
-		void Client::ProcessPackets()
+		DWORD Client::ProcessPackets()
 		{
 			// check valid data size
-			if (!network.data_size)
-				return;
+			if (network.data_size == 0)
+			{
+				return 0;
+			}
 
 			if (network.data_size == INVALID_SIZE)
-				return;
+			{
+				return 0;
+			}
 
-			if (network.data_size < NET_PACKET_HEADER_LEN) return;
+			if (network.data_size < NET_PACKET_HEADER_LEN)
+			{
+				return 0;
+			}
 
 			// [PROTOCOL] - read data full size from header
 			if (!network.data_full_size || network.data_full_size == INVALID_SIZE)
@@ -1348,7 +1344,7 @@ namespace Net
 							memcpy(newBuffer, network.data.get(), network.data_size);
 							newBuffer[network.data_full_size] = '\0';
 							network.data = newBuffer; // pointer swap
-							return;
+							return 0;
 						}
 
 						break;
@@ -1357,7 +1353,14 @@ namespace Net
 			}
 
 			// keep going until we have received the entire packet
-			if (!network.data_full_size || network.data_full_size == INVALID_SIZE || network.data_size < network.data_full_size) return;
+			if (
+				network.data_full_size == 0 || 
+				network.data_full_size == INVALID_SIZE || 
+				network.data_size < network.data_full_size
+				)
+			{
+				return 0;
+			}
 
 			/* Decompression */
 			{
@@ -1394,13 +1397,16 @@ namespace Net
 			if (memcmp(&network.data.get()[network.data_full_size - NET_PACKET_FOOTER_LEN], NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN) != 0)
 			{
 				network.clear();
-				Disconnect();
 				NET_LOG_ERROR(CSTRING("[NET] - Received a frame with an invalid footer"));
-				return;
+				return -1;
 			}
 
 			// Execute the packet
-			ExecutePacket();
+			const auto ret = ExecutePacket();
+			if (ret == -1)
+			{
+				return -1;
+			}
 
 			// re-alloc buffer
 			const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
@@ -1413,10 +1419,11 @@ namespace Net
 				network.clearData();
 				network.data = leftBuffer; // swap pointer
 				network.data_size = leftSize;
-				return;
+				return 0;
 			}
 
 			network.clearData();
+			return 0;
 		}
 
 
@@ -1457,17 +1464,18 @@ namespace Net
 			return 0;
 		}
 
-		void Client::ExecutePacket()
+		DWORD Client::ExecutePacket()
 		{
 			int packetId = -1;
 
 			NET_CPOINTER<BYTE> data;
 			NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
-			if (!pPacket.valid())
+			if (pPacket.valid() == false)
 			{
-				Disconnect();
-				return;
+				return -1;
 			}
+
+			DWORD ret = 0;
 
 			/* Crypt */
 			if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -1544,20 +1552,20 @@ namespace Net
 				{
 					AESKey.free();
 					AESIV.free();
-					Disconnect();
 					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
+					
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				if (!network.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
 				{
 					AESKey.free();
 					AESIV.free();
-					Disconnect();
 					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
+			
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				NET_AES aes;
@@ -1565,10 +1573,10 @@ namespace Net
 				{
 					AESKey.free();
 					AESIV.free();
-					Disconnect();
 					NET_LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
+			
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				AESKey.free();
@@ -1661,12 +1669,12 @@ namespace Net
 							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
 							/* decrypt aes */
-							if (!aes.decrypt(entry.value(), entry.size()))
+							if (aes.decrypt(entry.value(), entry.size()) == false)
 							{
-								Disconnect();
 								NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
+							
+								ret = -1;
 								goto loc_packet_free;
-								return;
 							}
 
 							/* Decompression */
@@ -1729,13 +1737,13 @@ namespace Net
 						offset += packetSize;
 
 						/* decrypt aes */
-						if (!aes.decrypt(data.get(), packetSize))
+						if (aes.decrypt(data.get(), packetSize) == false)
 						{
 							data.free();
-							Disconnect();
 							NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
+
+							ret = -1;
 							goto loc_packet_free;
-							return;
 						}
 
 						/* Decompression */
@@ -1748,9 +1756,11 @@ namespace Net
 
 					// we have reached the end of reading
 					if (offset + NET_PACKET_FOOTER_LEN >= network.data_full_size)
+					{
 						break;
+					}
 
-				} while (true);
+				} while (1);
 			}
 			else
 			{
@@ -1916,51 +1926,51 @@ namespace Net
 				} while (true);
 			}
 
-			if (!data.valid())
+			if (data.valid() == false)
 			{
-				Disconnect();
 				NET_LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
+
+				ret = -1;
 				goto loc_packet_free;
-				return;
 			}
 
 			{
 				Net::Json::Document doc;
-				if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))
+				if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 				{
 					data.free();
-					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
+
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				data.free();
 
-				if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
+				if ((doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()) == false)
 				{
-					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+				
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				packetId = doc[CSTRING("ID")]->as_int();
 				if (packetId < 0)
 				{
-					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+				
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
 					&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
 				{
-					Disconnect();
 					NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
+			
+					ret = -1;
 					goto loc_packet_free;
-					return;
 				}
 
 				if (doc[CSTRING("CONTENT")]->is_object())
@@ -1976,7 +1986,11 @@ namespace Net
 			/*
 			* check for option async to execute the callback in a seperate thread
 			*/
-			if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
+			if (
+				Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? 
+				GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : 
+				NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC
+				)
 			{
 				TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
 				tpe->m_packet = pPacket.get();
@@ -1987,7 +2001,7 @@ namespace Net
 				{
 					// Close only closes handle, it does not close the thread
 					Net::Thread::Close(hThread);
-					return;
+					return 0;
 				}
 
 				FREE<TPacketExcecute>(tpe);
@@ -1996,12 +2010,14 @@ namespace Net
 			/*
 			* execute in current thread
 			*/
-			if (!CheckDataN(packetId, *pPacket.ref().get()))
-				if (!CheckData(packetId, *pPacket.ref().get()))
+			if (CheckDataN(packetId, *pPacket.ref().get()) == false)
+			{
+				if (CheckData(packetId, *pPacket.ref().get()) == false)
 				{
-					Disconnect();
+					ret = -1;
 					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
 				}
+			}
 
 		loc_packet_free:
 			if (pPacket.get()->HasRawData())
@@ -2011,10 +2027,12 @@ namespace Net
 				{
 					data.free();
 				}
-				}
+			}
 
 			pPacket.free();
-			}
+
+			return ret;
+		}
 
 		void Client::CompressData(BYTE*& data, size_t& size)
 		{
@@ -2236,7 +2254,7 @@ namespace Net
 
 		NET_BEGIN_PACKET(Client, Close);
 		// connection has been closed
-		ConnectionClosed();
+		Disconnect();
 
 		NET_LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by the Server"));
 
@@ -2251,7 +2269,9 @@ namespace Net
 
 		// callback Different Version
 		if (code == NET_ERROR_CODE::NET_ERR_Versionmismatch)
+		{
 			OnVersionMismatch();
+		}
 
 		// Callback
 		OnConnectionClosed(code);
@@ -2265,5 +2285,5 @@ namespace Net
 		resp[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
 		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
 		NET_END_PACKET;
-		}
+	}
 }
