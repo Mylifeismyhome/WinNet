@@ -86,7 +86,9 @@ namespace Net
 		bool AES::encryptHex(CryptoPP::byte* data, CryptoPP::byte*& out, size_t& size)
 		{
 			if (encrypt(data, size))
+			{
 				return NET_HEX::encode(data, out, size);
+			}
 
 			return true;
 		}

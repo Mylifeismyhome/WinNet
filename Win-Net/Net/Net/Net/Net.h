@@ -205,19 +205,15 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 			NET_TEST_MEMORY_LEAKS_POINTER_LIST.emplace_back(pointer);
 #endif
 
-			/*
-			* call constructor using placement new
-			*/
-			new (pointer) T(args...);
-
-			return pointer;
+			// call constructor using placement new
+			return new (pointer) T(args...);
 		}
 
 		throw std::bad_alloc();
 	}
 	catch (...)
 	{
-		// failure on allocating
+		// allocation failed
 		return nullptr;
 	}
 }
@@ -225,8 +221,10 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 template <typename T>
 __forceinline void NET_FREE_MEM(void* pointer)
 {
-	if (!pointer)
+	if (pointer == nullptr)
+	{
 		return;
+	}
 
 #ifdef NET_TEST_MEMORY_LEAKS
 	//printf("Deallocated: %p\n", pointer);
