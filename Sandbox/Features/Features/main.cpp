@@ -28,9 +28,6 @@
 #include <Net/assets/web/http.h>
 #include <Net/assets/timer.h>
 
-// database
-#include <Net/Database/MYSQL.h>
-
 // Protocol
 #include <Net/Protocol/NTP.h>
 
@@ -270,15 +267,6 @@ TEST(TIMER,
 		Net::Timer::Clear(handle);
 );
 
-TEST(DATABASE,
-		//MYSQL_CON cfg(CSTRING("localhost"), 3306, CSTRING("root"), CSTRING(""), CSTRING("test"));
-		//MYSQL mysql(cfg);
-		//if (mysql.connect()) // mysql connector throwing error
-		//{
-		//	NET_LOG(CSTRING("MYSQL CONNECTED!"));
-		//}
-);
-
 TEST(NTP,
 		auto time = Net::Protocol::NTP::Exec(CSTRING(NTP_HOST));
 
@@ -326,7 +314,6 @@ int main()
 	RUN(HTTP);
 	RUN(HTTPS);
 	RUN(TIMER);
-	//RUN(DATABASE);
 	RUN(JSON);
 	RUN(NTP);
 

@@ -68,40 +68,11 @@ define clean_openssl
 	rm -f ${ROOT_DIR}/extern/OpenSSL/src/openssl-source.tar.gz
 endef
 
-# download compressed (packaged) mysql library from the official website
-define download_mysql
-        @printf "`tput setaf 1`********** DOWNLOADING MYSQL (C++ CONNECTOR) **********`tput sgr0`\n"
-	wget -O ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz "https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.26-linux-glibc2.12-x86-64bit.tar.gz"
-endef
-
-# install mysql library
-define install_mysql
-        @printf "`tput setaf 1`********** INSTALLING MYSQL (C++ CONNECTOR) **********`tput sgr0`\n"
-
-	mkdir -p ${ROOT_DIR}/extern/MYSQL/tmp/
-	tar zxvf ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz -C ${ROOT_DIR}/extern/MYSQL/tmp/
-	cp -R ${ROOT_DIR}/extern/MYSQL/tmp/*/include/* ${ROOT_DIR}/extern/MYSQL/include/
-	mkdir -p ${ROOT_DIR}/extern/MYSQL/lib/
-	cp ${ROOT_DIR}/extern/MYSQL/tmp/*/lib64/libmysqlcppconn-static.a ${ROOT_DIR}/extern/MYSQL/lib/
-endef
-
-# clean mysql installation
-define clean_mysql
-        @printf "`tput setaf 1`********** CLEANING UP MYSQL FILES **********`tput sgr0`\n"
-
-	# installation completed, now delete tmp folder
-        rm -r ${ROOT_DIR}/extern/MYSQL/tmp/
-
-        # also get rid of the package
-        rm ${ROOT_DIR}/extern/MYSQL/mysql_package.tar.gz
-endef
-
 # clean all
 define clean_all
         @printf "`tput setaf 1`********** CLEANING UP EVERYTHING **********`tput sgr0`\n"
 	$(clean_crypto++)
 	$(clean_openssl)
-	$(clean_mysql)
 endef
 
 # build netcore
@@ -160,8 +131,6 @@ all:
 	$(configure_openssl)
 	$(build_openssl)
 	$(install_openssl)
-	$(download_mysql)
-	$(install_mysql)
 	$(clean_all)
 
 	$(build_netcore)
@@ -210,15 +179,6 @@ crypto++-clean:
 
 openssl-clean:
 	$(clean_openssl)
-
-mysql-download:
-	$(download_mysql)
-
-mysql-install:
-	$(install_mysql)
-
-mysql-clean:
-	$(clean_mysql)
 
 netcore:
 	$(build_netcore)

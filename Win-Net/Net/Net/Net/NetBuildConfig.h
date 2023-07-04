@@ -24,9 +24,6 @@
 
 #pragma once
 
-/* define to use MYSQL c++ connector */
-#define NET_USE_MYSQL_SUPPORT
-
 /* define to track memory */
 #undef NET_TEST_MEMORY_LEAKS
 
