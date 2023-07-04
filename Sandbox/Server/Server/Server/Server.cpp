@@ -18,6 +18,13 @@ if (!PKG[CSTRING("text")])
 auto text = PKG[CSTRING("text")]->as_string();
 NET_LOG(CSTRING("Hello '%s' from Client"), text);
 
+BYTE* b = ALLOC<BYTE>(500 + 1);
+memset(b, 0xAB, 500);
+b[500] = 0;
+
 NET_PACKET reply;
+reply.AddRaw("test", b, 500);
 NET_SEND(peer, Sandbox::Packet::PKG_TEST, reply);
+
+FREE<BYTE>(b);
 NET_END_PACKET

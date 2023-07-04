@@ -60,21 +60,16 @@ namespace Net
 		byte* _data;
 		size_t _size;
 		size_t _original_size; // for compression
-		bool _free_after_sent; /* by default this value is set to TRUE */
-		bool _valid;
 
 	public:
 		RawData_t();
 		RawData_t(const char* name, byte* pointer, const size_t size);
 		RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent);
 
-		bool valid() const;
 		byte* value() const;
 		byte*& value();
 		size_t size() const;
 		size_t& size();
-		void set_free(bool free);
-		bool do_free() const;
 		const char* key() const;
 		void set(byte* pointer);
 		void free();
@@ -88,11 +83,9 @@ namespace Net
 	{
 		Net::Json::Document json;
 		std::vector<Net::RawData_t> raw;
-		bool freeRaw;
 
 	public:
 		Packet();
-		~Packet();
 
 		Net::Json::BasicValueRead operator[](const char* key)
 		{
@@ -101,7 +94,7 @@ namespace Net
 
 		Net::Json::Document& Data();
 
-		void AddRaw(const char* Key, BYTE* data, const size_t size, const bool free_after_sent = true);
+		void AddRaw(const char* Key, BYTE* data, const size_t size);
 		void AddRaw(Net::RawData_t& raw);
 
 		bool Deserialize(char* data);
@@ -109,11 +102,11 @@ namespace Net
 
 		void SetJson(Net::Json::Document& doc);
 		void SetRaw(const std::vector<Net::RawData_t>& raw);
-		void SetFreeRaw(bool freeRaw);
 
 		std::vector<Net::RawData_t>& GetRawData();
 		bool HasRawData() const;
-		size_t GetRawDataFullSize(bool bCompression) const;
+		size_t GetRawDataFullSize(bool bCompression);
+		size_t CalcRawDataFulLSize(bool bCompression, std::vector<Net::RawData_t>& raw) const;
 		Net::RawData_t* GetRaw(const char* Key);
 
 		Net::String Stringify();

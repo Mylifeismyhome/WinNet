@@ -686,20 +686,22 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 
 void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed)
 {
+	if (data == nullptr)
+	{
+		return;
+	}
+
 	PEER_NOT_VALID(peer,
-		FREE<byte>(data);
-	return;
+		return;
 	);
 
 	if (peer->bErase)
 	{
-		FREE<byte>(data);
 		return;
 	}
 
 	if (bPreviousSentFailed)
 	{
-		FREE<byte>(data);
 		return;
 	}
 
@@ -716,7 +718,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 			else
 			{
 				bPreviousSentFailed = true;
-				FREE<byte>(data);
 				ErasePeer(peer);
 				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
@@ -729,38 +730,40 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 			else
 			{
 				bPreviousSentFailed = true;
-				FREE<byte>(data);
 				ErasePeer(peer);
 				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
 		}
+
 		if (res < 0)
+		{
 			break;
+		}
 
 		size -= res;
 	} while (size > 0);
-
-	FREE<byte>(data);
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
 {
+	if (data.valid() == false)
+	{
+		return;
+	}
+
 	PEER_NOT_VALID(peer,
-		data.free();
-	return;
+		return;
 	);
 
 	if (peer->bErase)
 	{
-		data.free();
 		return;
 	}
 
 	if (bPreviousSentFailed)
 	{
-		data.free();
 		return;
 	}
 
@@ -777,7 +780,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 			else
 			{
 				bPreviousSentFailed = true;
-				data.free();
 				ErasePeer(peer);
 				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
@@ -790,40 +792,40 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 			else
 			{
 				bPreviousSentFailed = true;
-				data.free();
 				ErasePeer(peer);
 				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
 		}
+
 		if (res < 0)
+		{
 			break;
+		}
 
 		size -= res;
 	} while (size > 0);
-
-	data.free();
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& bPreviousSentFailed)
 {
-	if (!data.valid()) return;
+	if (data.value() == nullptr)
+	{
+		return;
+	}
 
 	PEER_NOT_VALID(peer,
-		data.free();
-	return;
+		return;
 	);
 
 	if (peer->bErase)
 	{
-		data.free();
 		return;
 	}
 
 	if (bPreviousSentFailed)
 	{
-		data.free();
 		return;
 	}
 
@@ -841,7 +843,6 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 			else
 			{
 				bPreviousSentFailed = true;
-				data.free();
 				ErasePeer(peer);
 				if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(errno).c_str());
 				return;
@@ -854,20 +855,20 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 			else
 			{
 				bPreviousSentFailed = true;
-				data.free();
 				ErasePeer(peer);
 				if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => %s"), SERVERNAME(this), peer->IPAddr().get(), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 				return;
 			}
 #endif
 		}
+
 		if (res < 0)
+		{
 			break;
+		}
 
 		size -= res;
 	} while (size > 0);
-
-	data.free();
 }
 
 /*
@@ -918,8 +919,17 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 	size_t combinedSize = 0;
 
+	// copy rawData
+	std::vector<Net::RawData_t> rawData = PKG.GetRawData();
+	BYTE bRawDataModified = 0;
+
 	/* Crypt */
-	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
+	if (
+		(Isset(NET_OPT_USE_CIPHER) 
+			? GetOption<bool>(NET_OPT_USE_CIPHER) 
+			: NET_OPT_DEFAULT_USE_CIPHER) && 
+		peer->cryption.getHandshakeStatus()
+		)
 	{
 		NET_AES aes;
 
@@ -967,24 +977,37 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 			CompressData(dataBuffer.reference().get(), dataBufferSize);
 
 			/* Compress Raw Data */
-			if (PKG.HasRawData())
+			if (rawData.empty() == false)
 			{
-				for (auto& entry : PKG.GetRawData())
+				for (auto& data : rawData)
 				{
-					entry.set_original_size(entry.size());
-					CompressData(entry.value(), entry.size());
+					auto pCopy = ALLOC<BYTE>(data.size());
+					memcpy(pCopy, data.value(), data.size());
+					data.set(pCopy);
+
+					data.set_original_size(data.size());
+					CompressData(data.value(), data.size());
 				}
+
+				bRawDataModified = 1;
 			}
 		}
 
 		/* Crypt Buffer using AES and Encode to Base64 */
 		aes.encrypt(dataBuffer.get(), dataBufferSize);
 
-		if (PKG.HasRawData())
+		if (rawData.empty() == false)
 		{
-			std::vector<Net::RawData_t>& rawData = PKG.GetRawData();
 			for (auto& data : rawData)
+			{
+				auto pCopy = ALLOC<BYTE>(data.size());
+				memcpy(pCopy, data.value(), data.size());
+				data.set(pCopy);
+
 				aes.encrypt(data.value(), data.size());
+			}
+
+			bRawDataModified = 1;
 		}
 
 		combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
@@ -1000,7 +1023,10 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		}
 
 		// Append Raw data packet size
-		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+		if (rawData.empty() == false)
+		{
+			combinedSize += PKG.CalcRawDataFulLSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION, rawData);
+		}
 
 		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
@@ -1042,6 +1068,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, Key, aesKeySize, bPreviousSentFailed);
+		Key.free();
 
 		/* Append Packet IV */
 		SingleSend(peer, NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed);
@@ -1049,11 +1076,12 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, IV, IVSize, bPreviousSentFailed);
+		IV.free();
 
 		/* Append Packet Data */
-		if (PKG.HasRawData())
+		if (rawData.empty() == false)
 		{
-			for (auto& data : PKG.GetRawData())
+			for (auto& data : rawData)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed);
@@ -1087,7 +1115,11 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(peer, data, bPreviousSentFailed);
 
-				data.set_free(false);
+				if (bRawDataModified == 1)
+				{
+					// original pointer still exist and was never free'd
+					data.free();
+				}
 			}
 		}
 
@@ -1096,6 +1128,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
+		dataBuffer.free();
 
 		/* Append Packet Footer */
 		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed);
@@ -1112,11 +1145,17 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 			/* Compress Raw Data */
 			if (PKG.HasRawData())
 			{
-				for (auto& entry : PKG.GetRawData())
+				for (auto& data : PKG.GetRawData())
 				{
-					entry.set_original_size(entry.size());
-					CompressData(entry.value(), entry.size());
+					auto pCopy = ALLOC<BYTE>(data.size());
+					memcpy(pCopy, data.value(), data.size());
+					data.set(pCopy);
+
+					data.set_original_size(data.size());
+					CompressData(data.value(), data.size());
 				}
+
+				bRawDataModified = 1;
 			}
 		}
 
@@ -1133,7 +1172,10 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		}
 
 		// Append Raw data packet size
-		if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+		if (rawData.empty() == false)
+		{
+			combinedSize += PKG.CalcRawDataFulLSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION, rawData);
+		}
 
 		std::string dataSizeStr = std::to_string(dataBufferSize);
 		combinedSize += dataSizeStr.length();
@@ -1164,9 +1206,9 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		}
 
 		/* Append Packet Data */
-		if (PKG.HasRawData())
+		if (rawData.empty() == false)
 		{
-			for (auto& data : PKG.GetRawData())
+			for (auto& data : rawData)
 			{
 				// Append Key
 				SingleSend(peer, NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed);
@@ -1200,7 +1242,11 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 				SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(peer, data, bPreviousSentFailed);
 
-				data.set_free(false);
+				if (bRawDataModified == 1)
+				{
+					// original pointer still exist and was never free'd
+					data.free();
+				}
 			}
 		}
 
@@ -1209,6 +1255,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		SingleSend(peer, dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 		SingleSend(peer, NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 		SingleSend(peer, dataBuffer, dataBufferSize, bPreviousSentFailed);
+		dataBuffer.free();
 
 		/* Append Packet Footer */
 		SingleSend(peer, NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed);
@@ -1601,19 +1648,23 @@ struct TPacketExcecute
 NET_THREAD(ThreadPacketExecute)
 {
 	auto tpe = (TPacketExcecute*)parameter;
-	if (!tpe)
+	if (tpe == nullptr)
 	{
 		return 0;
 	}
 
-	if (!tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
-		if (!tpe->m_server->CheckData(tpe->m_peer, tpe->m_packetId, *tpe->m_packet))
+	if (tpe->m_server->CheckDataN(tpe->m_peer, tpe->m_packetId, *tpe->m_packet) == 0)
+	{
+		if (tpe->m_server->CheckData(tpe->m_peer, tpe->m_packetId, *tpe->m_packet) == 0)
+		{
 			tpe->m_server->DisconnectPeer(tpe->m_peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+		}
+	}
 
 	/* because we had to create a copy to work with this data in seperate thread, we also have to handle the deletion of this block */
 	if (tpe->m_packet->HasRawData())
 	{
-		std::vector<Net::RawData_t>& rawData = tpe->m_packet->GetRawData();
+		auto& rawData = tpe->m_packet->GetRawData();
 		for (auto& data : rawData)
 		{
 			data.free();
@@ -1633,20 +1684,16 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 	int packetId = -1;
 
-	NET_CPOINTER<BYTE> data;
-	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
-	if (pPacket.valid() == false)
-	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
-		return;
-	}
+	NET_CPOINTER<BYTE> data(nullptr);
+	Net::Packet packet;
+	Net::Json::Document doc;
 
 	/* Crypt */
 	if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && peer->cryption.getHandshakeStatus())
 	{
 		auto offset = peer->network.getDataOffset() + 1;
 
-		NET_CPOINTER<BYTE> AESKey;
+		NET_CPOINTER<BYTE> AESKey(nullptr);
 		size_t AESKeySize;
 
 		// look for key tag
@@ -1679,7 +1726,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			offset += AESKeySize;
 		}
 
-		NET_CPOINTER<BYTE> AESIV;
+		NET_CPOINTER<BYTE> AESIV(nullptr);
 		size_t AESIVSize;
 
 		// look for iv tag
@@ -1718,7 +1765,6 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptKeyBase64);
 			goto loc_packet_free;
-			return;
 		}
 
 		if (peer->cryption.RSA.decryptBase64(AESIV.reference().get(), AESIVSize) == false)
@@ -1727,7 +1773,6 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptIVBase64);
 			goto loc_packet_free;
-			return;
 		}
 
 		NET_AES aes;
@@ -1737,7 +1782,6 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 			AESIV.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
 			goto loc_packet_free;
-			return;
 		}
 
 		AESKey.free();
@@ -1751,7 +1795,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				offset += NET_RAW_DATA_KEY_LEN;
 
 				// read size
-				NET_CPOINTER<BYTE> key;
+				NET_CPOINTER<BYTE> key(nullptr);
 				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
@@ -1829,35 +1873,28 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
+					// create copy
+					BYTE* copy = ALLOC<BYTE>(entry.size());
+					memcpy(copy, entry.value(), entry.size());
+					entry.set(copy);
+
 					/* decrypt aes */
-					if (!aes.decrypt(entry.value(), entry.size()))
+					if (aes.decrypt(entry.value(), entry.size()) == false)
 					{
+						entry.free();
 						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 						goto loc_packet_free;
-						return;
 					}
 
 					/* Decompression */
 					if (originalSize != 0)
 					{
-						BYTE* copy = ALLOC<BYTE>(entry.size());
-						memcpy(copy, entry.value(), entry.size());
-						entry.set(copy);
-
 						entry.set_original_size(originalSize);
 						DecompressData(entry.value(), entry.size(), entry.original_size());
 						entry.set_original_size(0);
 					}
 
-					/* in seperate thread we need to create a copy of this data-set */
-					if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
-					{
-						BYTE* copy = ALLOC<BYTE>(entry.size());
-						memcpy(copy, entry.value(), entry.size());
-						entry.set(copy);
-					}
-
-					pPacket.get()->AddRaw(entry);
+					packet.AddRaw(entry);
 					key.free();
 
 					offset += packetSize;
@@ -1898,12 +1935,11 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				offset += packetSize;
 
 				/* decrypt aes */
-				if (!aes.decrypt(data.get(), dataSize))
+				if (aes.decrypt(data.get(), dataSize) == false)
 				{
 					data.free();
 					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
 					goto loc_packet_free;
-					return;
 				}
 
 				/* Decompression */
@@ -1932,7 +1968,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				offset += NET_RAW_DATA_KEY_LEN;
 
 				// read size
-				NET_CPOINTER<BYTE> key;
+				NET_CPOINTER<BYTE> key(nullptr);
 				size_t KeySize = 0;
 				{
 					for (auto y = offset; y < peer->network.getDataSize(); ++y)
@@ -2010,27 +2046,20 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 					Net::RawData_t entry = { (char*)key.get(), &peer->network.getData()[offset], packetSize, false };
 
+					// create copy
+					BYTE* copy = ALLOC<BYTE>(entry.size());
+					memcpy(copy, entry.value(), entry.size());
+					entry.set(copy);
+
 					/* Decompression */
 					if (originalSize != 0)
 					{
-						BYTE* copy = ALLOC<BYTE>(entry.size());
-						memcpy(copy, entry.value(), entry.size());
-						entry.set(copy);
-
 						entry.set_original_size(originalSize);
 						DecompressData(entry.value(), entry.size(), entry.original_size());
 						entry.set_original_size(0);
 					}
 
-					/* in seperate thread we need to create a copy of this data-set */
-					if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
-					{
-						BYTE* copy = ALLOC<BYTE>(entry.size());
-						memcpy(copy, entry.value(), entry.size());
-						entry.set(copy);
-					}
-
-					pPacket.get()->AddRaw(entry);
+					packet.AddRaw(entry);
 					key.free();
 
 					offset += packetSize;
@@ -2079,16 +2108,16 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 			// we have reached the end of reading
 			if (offset + NET_PACKET_FOOTER_LEN >= peer->network.getDataFullSize())
+			{
 				break;
-
-		} while (true);
+			}
+		} while (1);
 	}
 
-	if (!data.valid())
+	if (data.valid() == false)
 	{
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
 		goto loc_packet_free;
-		return;
 	}
 
 	/*
@@ -2096,67 +2125,67 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	* get packet id from it
 	* and json content
 	*
-	* pass the json content into pPacket object
+	* pass the json content into packet object
 	*/
+	if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 	{
-		Net::Json::Document doc;
-		if (!doc.Deserialize(reinterpret_cast<char*>(data.get())))
-		{
-			data.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
-			goto loc_packet_free;
-			return;
-		}
-
 		data.free();
-
-		if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
-		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
-			goto loc_packet_free;
-			return;
-		}
-
-		packetId = doc[CSTRING("ID")]->as_int();
-		if (packetId < 0)
-		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
-			goto loc_packet_free;
-			return;
-		}
-
-		if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
-			&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
-		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
-			goto loc_packet_free;
-			return;
-		}
-
-		if (doc[CSTRING("CONTENT")]->is_object())
-		{
-			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
-		}
-		else if (doc[CSTRING("CONTENT")]->is_array())
-		{
-			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
-		}
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		goto loc_packet_free;
 	}
 
-	/*
-	* check for option async to execute the callback in a seperate thread
-	*/
-	if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
+	data.free();
+
+	if (
+		doc[CSTRING("ID")] == 0 ||
+		doc[CSTRING("ID")]->is_int() == 0
+		)
 	{
-		TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
-		tpe->m_packet = pPacket.get();
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+		goto loc_packet_free;
+	}
+
+	packetId = doc[CSTRING("ID")]->as_int();
+	if (packetId < 0)
+	{
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+		goto loc_packet_free;
+	}
+
+	if (
+		doc[CSTRING("CONTENT")] == 0 ||
+		(doc[CSTRING("CONTENT")]->is_object() == 0 && doc[CSTRING("CONTENT")]->is_array() == 0)
+		)
+	{
+		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+		goto loc_packet_free;
+	}
+
+	if (doc[CSTRING("CONTENT")]->is_object())
+	{
+		packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
+	}
+	else if (doc[CSTRING("CONTENT")]->is_array())
+	{
+		packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+	}
+
+	// check for option async to execute the packet in a new created thread
+	if (
+		Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ?
+		GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) :
+		NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC
+		)
+	{
+		auto tpe = ALLOC<TPacketExcecute>();
+		tpe->m_packet = ALLOC<Net::Packet, Net::Packet>(1, packet);
 		tpe->m_server = this;
 		tpe->m_peer = peer;
 		tpe->m_packetId = packetId;
 		const auto hThread = Net::Thread::Create(ThreadPacketExecute, tpe);
 		if (hThread)
 		{
-			// Close only closes handle, it does not close the thread
+			// this function call only closes the handle, it does not stop the thread
 			Net::Thread::Close(hThread);
 			return;
 		}
@@ -2164,24 +2193,26 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		FREE<TPacketExcecute>(tpe);
 	}
 
-	/*
-	* execute in current thread
-	*/
-	if (!CheckDataN(peer, packetId, *pPacket.ref().get()))
-		if (!CheckData(peer, packetId, *pPacket.ref().get()))
+	// execute packet in this thread
+	if (CheckDataN(peer, packetId, packet) == false)
+	{
+		if (CheckData(peer, packetId, packet) == false)
+		{
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+		}
+	}
 
 loc_packet_free:
-	if (pPacket.get()->HasRawData())
+	if (packet.HasRawData())
 	{
-		std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
+		auto& rawData = packet.GetRawData();
 		for (auto& data : rawData)
 		{
 			data.free();
 		}
 	}
 
-	pPacket.free();
+	return;
 }
 
 void Net::Server::Server::CompressData(BYTE*& data, size_t& size)

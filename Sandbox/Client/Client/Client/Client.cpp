@@ -10,9 +10,16 @@ NET_TIMER(Test)
 	const auto client = (Client*)param;
 	if (!client) NET_STOP_TIMER;
 
+	BYTE* b = ALLOC<BYTE>(500 + 1);
+	memset(b, 0xAB, 500);
+	b[500] = 0;
+
 	NET_PACKET pkg;
 	pkg[CSTRING("text")] = CSTRING("WinNet");
+	pkg.AddRaw("test", b, 500);
 	client->NET_SEND(Sandbox::Packet::PKG_TEST, pkg);
+
+	FREE<BYTE>(b);
 
 	NET_CONTINUE_TIMER;
 }

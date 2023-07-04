@@ -704,13 +704,16 @@ namespace Net
 		{
 			if (GetSocket() == false)
 			{
-				FREE<byte>(data);
+				return;
+			}
+
+			if (data == nullptr)
+			{
 				return;
 			}
 
 			if (bPreviousSentFailed)
 			{
-				FREE<byte>(data);
 				return;
 			}
 
@@ -727,7 +730,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						FREE<byte>(data);
 						Disconnect();
 						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 						return;
@@ -740,7 +742,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						FREE<byte>(data);
 						Disconnect();
 						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
@@ -755,21 +756,22 @@ namespace Net
 
 				size -= res;
 			} while (size > 0);
-
-			FREE<byte>(data);
 		}
 
 		void Client::SingleSend(NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
 		{
 			if (GetSocket() == false)
 			{
-				data.free();
+				return;
+			}
+
+			if (data.valid() == false)
+			{
 				return;
 			}
 
 			if (bPreviousSentFailed)
 			{
-				data.free();
 				return;
 			}
 
@@ -786,7 +788,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						data.free();
 						Disconnect();
 						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 						return;
@@ -799,7 +800,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						data.free();
 						Disconnect();
 						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
@@ -814,26 +814,22 @@ namespace Net
 
 				size -= res;
 			} while (size > 0);
-
-			data.free();
 		}
 
 		void Client::SingleSend(Net::RawData_t& data, bool& bPreviousSentFailed)
 		{
-			if (data.valid() == false)
+			if (data.value() == nullptr)
 			{
 				return;
 			}
 
 			if (GetSocket() == false)
 			{
-				data.free();
 				return;
 			}
 
 			if (bPreviousSentFailed)
 			{
-				data.free();
 				return;
 			}
 
@@ -851,7 +847,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						data.free();
 						Disconnect();
 						if (ERRNO_ERROR_TRIGGERED) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(errno).c_str());
 						return;
@@ -864,7 +859,6 @@ namespace Net
 					else
 					{
 						bPreviousSentFailed = true;
-						data.free();
 						Disconnect();
 						if (Ws2_32::WSAGetLastError() != 0) NET_LOG_PEER(CSTRING("%s"), Net::sock_err::getString(Ws2_32::WSAGetLastError()).c_str());
 						return;
@@ -879,8 +873,6 @@ namespace Net
 
 				size -= res;
 			} while (size > 0);
-
-			data.free();
 		}
 
 		/*
@@ -927,8 +919,17 @@ namespace Net
 
 			size_t combinedSize = 0;
 
+			// copy rawData
+			std::vector<Net::RawData_t> rawData = PKG.GetRawData();
+			BYTE bRawDataModified = 0;
+
 			/* Crypt */
-			if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
+			if (
+				(Isset(NET_OPT_USE_CIPHER) 
+					? GetOption<bool>(NET_OPT_USE_CIPHER) 
+					: NET_OPT_DEFAULT_USE_CIPHER) 
+				&& network.RSAHandshake
+				)
 			{
 				NET_AES aes;
 
@@ -942,12 +943,11 @@ namespace Net
 				Random::GetRandStringNew(IV.reference().get(), CryptoPP::AES::BLOCKSIZE);
 				IV.get()[CryptoPP::AES::BLOCKSIZE] = '\0';
 
-				if (aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())) == false)
+				if (!aes.init(reinterpret_cast<const char*>(Key.get()), reinterpret_cast<const char*>(IV.get())))
 				{
 					Key.free();
 					IV.free();
 
-					NET_LOG_ERROR(CSTRING("[NET] - Failed to Init AES [0]"));
 					Disconnect();
 					return;
 				}
@@ -957,7 +957,7 @@ namespace Net
 				{
 					Key.free();
 					IV.free();
-					NET_LOG_ERROR(CSTRING("[NET] - Failed Key to encrypt and encode to base64"));
+
 					Disconnect();
 					return;
 				}
@@ -967,7 +967,7 @@ namespace Net
 				{
 					Key.free();
 					IV.free();
-					NET_LOG_ERROR(CSTRING("[NET] - Failed IV to encrypt and encode to base64"));
+
 					Disconnect();
 					return;
 				}
@@ -980,29 +980,40 @@ namespace Net
 					CompressData(dataBuffer.reference().get(), dataBufferSize);
 
 					/* Compress Raw Data */
-					if (PKG.HasRawData())
+					if (rawData.empty() == false)
 					{
-						for (auto& entry : PKG.GetRawData())
+						for (auto& data : rawData)
 						{
-							entry.set_original_size(entry.size());
-							CompressData(entry.value(), entry.size());
+							auto pCopy = ALLOC<BYTE>(data.size());
+							memcpy(pCopy, data.value(), data.size());
+							data.set(pCopy);
+
+							data.set_original_size(data.size());
+							CompressData(data.value(), data.size());
 						}
+
+						bRawDataModified = 1;
 					}
 				}
 
 				/* Crypt Buffer using AES and Encode to Base64 */
 				aes.encrypt(dataBuffer.get(), dataBufferSize);
 
-				if (PKG.HasRawData())
+				if (rawData.empty() == false)
 				{
-					std::vector<Net::RawData_t>& rawData = PKG.GetRawData();
 					for (auto& data : rawData)
 					{
+						auto pCopy = ALLOC<BYTE>(data.size());
+						memcpy(pCopy, data.value(), data.size());
+						data.set(pCopy);
+
 						aes.encrypt(data.value(), data.size());
 					}
+
+					bRawDataModified = 1;
 				}
 
-				combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + strlen(NET_AES_IV) + aesKeySize + IVSize + 8;
+				combinedSize = dataBufferSize + NET_PACKET_HEADER_LEN + NET_PACKET_SIZE_LEN + NET_DATA_LEN + NET_PACKET_FOOTER_LEN + NET_AES_KEY_LEN + NET_AES_IV_LEN + aesKeySize + IVSize + 8;
 
 				/* Compression */
 				if (Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION)
@@ -1015,9 +1026,9 @@ namespace Net
 				}
 
 				// Append Raw data packet size
-				if (PKG.HasRawData())
+				if (rawData.empty() == false)
 				{
-					combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+					combinedSize += PKG.CalcRawDataFulLSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION, rawData);
 				}
 
 				std::string dataSizeStr = std::to_string(dataBufferSize);
@@ -1060,18 +1071,20 @@ namespace Net
 				SingleSend(KeySizeStr.data(), KeySizeStr.length(), bPreviousSentFailed);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(Key, aesKeySize, bPreviousSentFailed);
+				Key.free();
 
 				/* Append Packet IV */
-				SingleSend(NET_AES_IV, strlen(NET_AES_IV), bPreviousSentFailed);
+				SingleSend(NET_AES_IV, NET_AES_IV_LEN, bPreviousSentFailed);
 				SingleSend(NET_PACKET_BRACKET_OPEN, 1, bPreviousSentFailed);
 				SingleSend(IVSizeStr.data(), IVSizeStr.length(), bPreviousSentFailed);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(IV, IVSize, bPreviousSentFailed);
+				IV.free();
 
 				/* Append Packet Data */
-				if (PKG.HasRawData())
+				if (rawData.empty() == false)
 				{
-					for (auto& data : PKG.GetRawData())
+					for (auto& data : rawData)
 					{
 						// Append Key
 						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed);
@@ -1105,7 +1118,11 @@ namespace Net
 						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 						SingleSend(data, bPreviousSentFailed);
 
-						data.set_free(false);
+						if (bRawDataModified == 1)
+						{
+							// original pointer still exist and was never free'd
+							data.free();
+						}
 					}
 				}
 
@@ -1114,6 +1131,7 @@ namespace Net
 				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed);
+				dataBuffer.free();
 
 				/* Append Packet Footer */
 				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed);
@@ -1130,11 +1148,17 @@ namespace Net
 					/* Compress Raw Data */
 					if (PKG.HasRawData())
 					{
-						for (auto& entry : PKG.GetRawData())
+						for (auto& data : PKG.GetRawData())
 						{
-							entry.set_original_size(entry.size());
-							CompressData(entry.value(), entry.size());
+							auto pCopy = ALLOC<BYTE>(data.size());
+							memcpy(pCopy, data.value(), data.size());
+							data.set(pCopy);
+
+							data.set_original_size(data.size());
+							CompressData(data.value(), data.size());
 						}
+
+						bRawDataModified = 1;
 					}
 				}
 
@@ -1151,7 +1175,10 @@ namespace Net
 				}
 
 				// Append Raw data packet size
-				if (PKG.HasRawData()) combinedSize += PKG.GetRawDataFullSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION);
+				if (rawData.empty() == false)
+				{
+					combinedSize += PKG.CalcRawDataFulLSize(Isset(NET_OPT_USE_COMPRESSION) ? GetOption<bool>(NET_OPT_USE_COMPRESSION) : NET_OPT_DEFAULT_USE_COMPRESSION, rawData);
+				}
 
 				std::string dataSizeStr = std::to_string(dataBufferSize);
 				combinedSize += dataSizeStr.length();
@@ -1182,9 +1209,9 @@ namespace Net
 				}
 
 				/* Append Packet Data */
-				if (PKG.HasRawData())
+				if (rawData.empty() == false)
 				{
-					for (auto& data : PKG.GetRawData())
+					for (auto& data : rawData)
 					{
 						// Append Key
 						SingleSend(NET_RAW_DATA_KEY, NET_RAW_DATA_KEY_LEN, bPreviousSentFailed);
@@ -1218,7 +1245,11 @@ namespace Net
 						SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 						SingleSend(data, bPreviousSentFailed);
 
-						data.set_free(false);
+						if (bRawDataModified == 1)
+						{
+							// original pointer still exist and was never free'd
+							data.free();
+						}
 					}
 				}
 
@@ -1227,6 +1258,7 @@ namespace Net
 				SingleSend(dataSizeStr.data(), dataSizeStr.length(), bPreviousSentFailed);
 				SingleSend(NET_PACKET_BRACKET_CLOSE, 1, bPreviousSentFailed);
 				SingleSend(dataBuffer, dataBufferSize, bPreviousSentFailed);
+				dataBuffer.free();
 
 				/* Append Packet Footer */
 				SingleSend(NET_PACKET_FOOTER, NET_PACKET_FOOTER_LEN, bPreviousSentFailed);
@@ -1345,7 +1377,7 @@ namespace Net
 
 			// [PROTOCOL] - read data full size from header
 			if (
-				network.data_full_size == 0 || 
+				network.data_full_size == 0 ||
 				network.data_full_size == INVALID_SIZE
 				)
 			{
@@ -1379,8 +1411,8 @@ namespace Net
 
 			// keep going until we have received the entire packet
 			if (
-				network.data_full_size == 0 || 
-				network.data_full_size == INVALID_SIZE || 
+				network.data_full_size == 0 ||
+				network.data_full_size == INVALID_SIZE ||
 				network.data_size < network.data_full_size
 				)
 			{
@@ -1436,7 +1468,7 @@ namespace Net
 			// re-alloc buffer
 			const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
 			if (
-				leftSize != INVALID_SIZE && 
+				leftSize != INVALID_SIZE &&
 				leftSize > 0
 				)
 			{
@@ -1478,10 +1510,9 @@ namespace Net
 				}
 			}
 
-			/* because we had to create a copy to work with this data in seperate thread, we also have to handle the deletion of this block */
 			if (tpe->m_packet->HasRawData())
 			{
-				std::vector<Net::RawData_t>& rawData = tpe->m_packet->GetRawData();
+				auto& rawData = tpe->m_packet->GetRawData();
 				for (auto& data : rawData)
 				{
 					data.free();
@@ -1497,13 +1528,10 @@ namespace Net
 		{
 			int packetId = -1;
 
-			NET_CPOINTER<BYTE> data;
-			NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
-			if (pPacket.valid() == false)
-			{
-				return -1;
-			}
+			NET_CPOINTER<BYTE> data(nullptr);
 
+			Net::Packet packet;
+			Net::Json::Document doc;
 			DWORD ret = 0;
 
 			/* Crypt */
@@ -1511,7 +1539,7 @@ namespace Net
 			{
 				auto offset = network.data_offset + 1;
 
-				NET_CPOINTER<BYTE> AESKey;
+				NET_CPOINTER<BYTE> AESKey(nullptr);
 				size_t AESKeySize;
 
 				// look for key tag
@@ -1544,7 +1572,7 @@ namespace Net
 					offset += AESKeySize;
 				}
 
-				NET_CPOINTER<BYTE> AESIV;
+				NET_CPOINTER<BYTE> AESIV(nullptr);
 				size_t AESIVSize;
 
 				// look for iv tag
@@ -1582,7 +1610,7 @@ namespace Net
 					AESKey.free();
 					AESIV.free();
 					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
-					
+
 					ret = -1;
 					goto loc_packet_free;
 				}
@@ -1592,7 +1620,7 @@ namespace Net
 					AESKey.free();
 					AESIV.free();
 					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
-			
+
 					ret = -1;
 					goto loc_packet_free;
 				}
@@ -1603,7 +1631,7 @@ namespace Net
 					AESKey.free();
 					AESIV.free();
 					NET_LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
-			
+
 					ret = -1;
 					goto loc_packet_free;
 				}
@@ -1619,7 +1647,7 @@ namespace Net
 						offset += NET_RAW_DATA_KEY_LEN;
 
 						// read size
-						NET_CPOINTER<BYTE> key;
+						NET_CPOINTER<BYTE> key(nullptr);
 						size_t KeySize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
@@ -1697,11 +1725,18 @@ namespace Net
 
 							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
+							// create copy
+							BYTE* copy = ALLOC<BYTE>(entry.size());
+							memcpy(copy, entry.value(), entry.size());
+							entry.set(copy);
+
 							/* decrypt aes */
 							if (aes.decrypt(entry.value(), entry.size()) == false)
 							{
+								entry.free();
+
 								NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
-							
+
 								ret = -1;
 								goto loc_packet_free;
 							}
@@ -1709,24 +1744,12 @@ namespace Net
 							/* Decompression */
 							if (originalSize != 0)
 							{
-								BYTE* copy = ALLOC<BYTE>(entry.size());
-								memcpy(copy, entry.value(), entry.size());
-								entry.set(copy);
-
 								entry.set_original_size(originalSize);
 								DecompressData(entry.value(), entry.size(), entry.original_size());
 								entry.set_original_size(0);
 							}
 
-							/* in seperate thread we need to create a copy of this data-set */
-							if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
-							{
-								BYTE* copy = ALLOC<BYTE>(entry.size());
-								memcpy(copy, entry.value(), entry.size());
-								entry.set(copy);
-							}
-
-							pPacket.get()->AddRaw(entry);
+							packet.AddRaw(entry);
 							key.free();
 
 							offset += packetSize;
@@ -1768,7 +1791,6 @@ namespace Net
 						/* decrypt aes */
 						if (aes.decrypt(data.get(), packetSize) == false)
 						{
-							data.free();
 							NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
 
 							ret = -1;
@@ -1788,7 +1810,6 @@ namespace Net
 					{
 						break;
 					}
-
 				} while (1);
 			}
 			else
@@ -1803,7 +1824,7 @@ namespace Net
 						offset += NET_RAW_DATA_KEY_LEN;
 
 						// read size
-						NET_CPOINTER<BYTE> key;
+						NET_CPOINTER<BYTE> key(nullptr);
 						size_t KeySize = 0;
 						{
 							for (auto y = offset; y < network.data_size; ++y)
@@ -1881,27 +1902,20 @@ namespace Net
 
 							Net::RawData_t entry = { (char*)key.get(), &network.data.get()[offset], packetSize, false };
 
+							// create copy
+							BYTE* copy = ALLOC<BYTE>(entry.size());
+							memcpy(copy, entry.value(), entry.size());
+							entry.set(copy);
+
 							/* Decompression */
 							if (originalSize != 0)
 							{
-								BYTE* copy = ALLOC<BYTE>(entry.size());
-								memcpy(copy, entry.value(), entry.size());
-								entry.set(copy);
-
 								entry.set_original_size(originalSize);
 								DecompressData(entry.value(), entry.size(), entry.original_size());
 								entry.set_original_size(entry.size());
 							}
 
-							/* in seperate thread we need to create a copy of this data-set */
-							if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
-							{
-								BYTE* copy = ALLOC<BYTE>(entry.size());
-								memcpy(copy, entry.value(), entry.size());
-								entry.set(copy);
-							}
-
-							pPacket.get()->AddRaw(entry);
+							packet.AddRaw(entry);
 							key.free();
 
 							offset += packetSize;
@@ -1950,9 +1964,10 @@ namespace Net
 
 					// we have reached the end of reading
 					if (offset + NET_PACKET_FOOTER_LEN >= network.data_full_size)
+					{
 						break;
-
-				} while (true);
+					}
+				} while (1);
 			}
 
 			if (data.valid() == false)
@@ -1963,62 +1978,69 @@ namespace Net
 				goto loc_packet_free;
 			}
 
+			/*
+			* parse json
+			* get packet id from it
+			* and json content
+			*
+			* pass the json content into packet object
+			*/
+			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
-				Net::Json::Document doc;
-				if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
-				{
-					data.free();
-					NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
-
-					ret = -1;
-					goto loc_packet_free;
-				}
-
 				data.free();
+				NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
 
-				if ((doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()) == false)
-				{
-					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-				
-					ret = -1;
-					goto loc_packet_free;
-				}
-
-				packetId = doc[CSTRING("ID")]->as_int();
-				if (packetId < 0)
-				{
-					NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-				
-					ret = -1;
-					goto loc_packet_free;
-				}
-
-				if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
-					&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
-				{
-					NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
-			
-					ret = -1;
-					goto loc_packet_free;
-				}
-
-				if (doc[CSTRING("CONTENT")]->is_object())
-				{
-					pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
-				}
-				else if (doc[CSTRING("CONTENT")]->is_array())
-				{
-					pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
-				}
+				ret = -1;
+				goto loc_packet_free;
 			}
 
-			/*
-			* check for option async to execute the callback in a seperate thread
-			*/
+			data.free();
+
+			if (
+				doc[CSTRING("ID")] == 0 ||
+				doc[CSTRING("ID")]->is_int() == 0
+				)
+			{
+				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+
+				ret = -1;
+				goto loc_packet_free;
+			}
+
+			packetId = doc[CSTRING("ID")]->as_int();
+			if (packetId < 0)
+			{
+				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
+
+				ret = -1;
+				goto loc_packet_free;
+			}
+
+			if (
+				doc[CSTRING("CONTENT")] == 0 ||
+				(doc[CSTRING("CONTENT")]->is_object() == 0 && doc[CSTRING("CONTENT")]->is_array() == 0)
+				)
+			{
+				NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
+
+				ret = -1;
+				goto loc_packet_free;
+			}
+
+			if (doc[CSTRING("CONTENT")]->is_object())
+			{
+				packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
+			}
+			else if (doc[CSTRING("CONTENT")]->is_array())
+			{
+				packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+			}
+
+			// check for option async to execute the packet in a new created thread
 			if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 			{
-				TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
-				tpe->m_packet = pPacket.get();
+				auto tpe = ALLOC<TPacketExcecute>();
+				tpe->m_packet = ALLOC<Net::Packet, Net::Packet>(1, packet);
 				tpe->m_client = this;
 				tpe->m_packetId = packetId;
 				const auto hThread = Net::Thread::Create(ThreadPacketExecute, tpe);
@@ -2032,12 +2054,10 @@ namespace Net
 				FREE<TPacketExcecute>(tpe);
 			}
 
-			/*
-			* execute in current thread
-			*/
-			if (CheckDataN(packetId, *pPacket.ref().get()) == false)
+			// execute packet in this thread
+			if (CheckDataN(packetId, packet) == false)
 			{
-				if (CheckData(packetId, *pPacket.ref().get()) == false)
+				if (CheckData(packetId, packet) == false)
 				{
 					ret = -1;
 					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
@@ -2045,16 +2065,14 @@ namespace Net
 			}
 
 		loc_packet_free:
-			if (pPacket.get()->HasRawData())
+			if (packet.HasRawData())
 			{
-				std::vector<Net::RawData_t>& rawData = pPacket.get()->GetRawData();
+				auto& rawData = packet.GetRawData();
 				for (auto& data : rawData)
 				{
 					data.free();
 				}
 			}
-
-			pPacket.free();
 
 			return ret;
 		}
