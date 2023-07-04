@@ -28,7 +28,6 @@ SOFTWARE.</b>
 - OpenSLL
 - Crypto++
 - ZLib
-- MySQL C++ Connector By Oracle
 
 ### NetClient
 - NetCore
@@ -63,13 +62,6 @@ Requires:
 - perl
 - VC build tools
 
-MYSQL:
-To compile WinNet with MYSQL Support, you will have to download the MySQL C++ Connector and place all files in the following directories:
-- MYSQL/lib/x64/release/
-- MYSQL/lib/x64/debug/
-- MYSQL/lib/x86/release/
-- MYSQL/lib/x86/debug/
-
 Install and Compile:
 1. Run Install.bat inside the Scripts folder.
 2. Enter the VC Path (e.g., C:\Program Files (x86)\Microsoft Visual Studio\2019).
@@ -93,13 +85,10 @@ Build dependencies:
 - `make openssl-configure`
 - `make openssl-build`
 - `make openssl-install`
-- `make mysql-download`
-- `make mysql-install`
 
 Clean:
 - `make cryptopp-clean`
 - `make openssl-clean`
-- `make mysql-clean`
 
 Clean all:
 - `make clean`
@@ -144,7 +133,6 @@ Using WinSocket for Windows build and Unix Socket for Linux build.
 - [x] Log-Manager
 
 ## Extern
-- [x] MySQL (C++ connector by Oracle)
 - [x] AES (OpenSSL)
 - [x] RSA (CryptoPP)
 - [x] ZLib

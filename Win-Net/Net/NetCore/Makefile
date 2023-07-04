@@ -61,11 +61,6 @@ define PATH_PROTOCOL
 	g++ $(CFLAGS) $(INCLUDE_PATH) -c ../Net/Protocol/NTP.cpp -o bin/NTP.o
 endef
 
-# Net/Database
-define PATH_DATABASE
-	g++ $(CFLAGS) -D_GLIBCXX_USE_CXX11_ABI=0 $(INCLUDE_PATH) -c ../Net/Database/MYSQL.cpp -o bin/MYSQL.o
-endef
-
 # extract files from crypto++
 define EXTRACT_CRYPTOPP
 	cd bin/cryptopp && ar x ../../../../../extern/crypto++/bin/lib/libcryptopp.a
@@ -77,14 +72,9 @@ define EXTRACT_OPENSSL
 	cd bin/openssl/libssl && ar x ../../../../../../extern/OpenSSL/bin/bin/lib/libssl.a
 endef
 
-# extract files from mysql
-define EXTRACT_MYSQL
-	cd bin/mysql && ar x ../../../../../extern/MYSQL/lib/libmysqlcppconn-static.a
-endef
-
 # link Library
 define LINK
-	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o bin/mysql/*.o
+	ar rvs NetCore.a bin/*.o bin/*.h.gch bin/cryptopp/*.o bin/openssl/libcrypto/*.o bin/openssl/libssl/*.o
 	ranlib NetCore.a
 endef
 
@@ -97,11 +87,6 @@ define COPY
 	mkdir -p ../../bin/include/
 	cp -r ../Net/ ../../bin/include/
 	find ../../bin/include/ ! -name '*.h' ! -name '*.hpp' -type f -exec rm -f {} +
-
-	# copy mysql c++ connector headers
- 	mkdir -p ../../bin/include/MYSQL
- 	mkdir -p ../../bin/include/MYSQL/include
-	cp -r ../../../extern/MYSQL/include/* ../../bin/include/MYSQL/include/
 
 	# copy openssl headers
 	cp -r ../../../extern/OpenSSL/bin/bin/include/openssl ../../bin/include
@@ -125,7 +110,6 @@ all:
 	mkdir -p bin/openssl
 	mkdir -p bin/openssl/libcrypto
 	mkdir -p bin/openssl/libssl
-	mkdir -p bin/mysql
 
 	$(PATH_NET)
 	$(PATH_MANAGER)
@@ -135,11 +119,9 @@ all:
 	$(PATH_CRYPTION)
 	$(PATH_COMPRESSION)
 	$(PATH_PROTOCOL)
-	$(PATH_DATABASE)
 
 	$(EXTRACT_CRYPTOPP)
 	$(EXTRACT_OPENSSL)
-	$(EXTRACT_MYSQL)
 
 	$(LINK)
 	$(COPY)

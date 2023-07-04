@@ -28,9 +28,6 @@
     <Filter Include="Compression\ZLib">
       <UniqueIdentifier>{72c61b26-7269-4e78-9b07-b58bb435b02c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Database">
-      <UniqueIdentifier>{f5c1da9e-6263-4b05-bb5e-c73d987d314f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Import">
       <UniqueIdentifier>{d3668493-a839-44a7-9586-d7720675e3c6}</UniqueIdentifier>
     </Filter>
@@ -92,9 +89,6 @@
     </ClCompile>
     <ClCompile Include="..\Net\Net\NetCodes.cpp">
       <Filter>Net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Net\Database\MYSQL.cpp">
-      <Filter>Database</Filter>
     </ClCompile>
     <ClCompile Include="..\Net\Cryption\RSA.cpp">
       <Filter>Cryption</Filter>
@@ -181,9 +175,6 @@
     </ClInclude>
     <ClInclude Include="..\Net\Net\NetCodes.h">
       <Filter>Net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Net\Database\MYSQL.h">
-      <Filter>Database</Filter>
     </ClInclude>
     <ClInclude Include="..\Net\Cryption\AES.h">
       <Filter>Cryption</Filter>
