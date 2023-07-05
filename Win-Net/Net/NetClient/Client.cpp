@@ -1974,7 +1974,6 @@ namespace Net
 			*
 			* pass the json content into packet object
 			*/
-			printf("%s\n\n", data.get());
 			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
 				NET_LOG_PEER(CSTRING("packet is in wrong format. json was unable to deserialize. packet will be rejected."));

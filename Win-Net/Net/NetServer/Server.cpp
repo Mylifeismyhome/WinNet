@@ -905,9 +905,6 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
-	auto a = pkg.Data().Serialize();
-	printf("a: %s\n\n", a.get().get());
-
 	Net::Json::Document doc;
 	doc[CSTRING("ID")] = id;
 	doc[CSTRING("CONTENT")] = pkg.Data();
