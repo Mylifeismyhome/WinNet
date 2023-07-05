@@ -1366,7 +1366,7 @@ void Net::Json::BasicValueRead::operator=(const BasicObject& value)
 	{
 		if (m_ParentType == Type::OBJECT)
 		{
-			auto pObject = (BasicObject*)m_pParent;
+			auto pObject = (Object*)m_pParent;
 			BasicValue<BasicObject>* pNew = ALLOC<BasicValue<BasicObject>>();
 			pNew->SetKey(m_pNextKey);
 			pNew->SetValue(value, Type::OBJECT);
@@ -1398,7 +1398,7 @@ void Net::Json::BasicValueRead::operator=(const BasicArray& value)
 	{
 		if (m_ParentType == Type::OBJECT)
 		{
-			auto pObject = (BasicArray*)m_pParent;
+			auto pObject = (Object*)m_pParent;
 			BasicValue<BasicArray>* pNew = ALLOC<BasicValue<BasicArray>>();
 			pNew->SetKey(m_pNextKey);
 			pNew->SetValue(value, Type::ARRAY);
@@ -3167,7 +3167,7 @@ void Net::Json::Array::Destroy()
 		{
 			tmp->m_refCount--;
 		}
-
+		
 		if (tmp->m_refCount > 0)
 		{
 			continue;

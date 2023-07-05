@@ -114,12 +114,13 @@ namespace Net
 		template<typename T>
 		class BasicValue
 		{
+		public:
+			size_t m_refCount;
+
+		private:
 			Type m_type;
 			char* m_key;
 			T m_value;
-
-		public:
-			size_t m_refCount;
 
 		public:
 			BasicValue();
@@ -386,5 +387,5 @@ namespace Net
 			this->m_iIndex = m_iIndex;
 			this->m_Type = m_Type;
 		}
-}
+	}
 }
