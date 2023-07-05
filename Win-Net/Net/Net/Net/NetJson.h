@@ -94,7 +94,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			std::map<int, void*> value;
+			std::map<int, void*> m_value;
 
 		protected:
 			void __push(void* ptr);
@@ -105,7 +105,7 @@ namespace Net
 
 			std::map<int, void*> Value();
 			void Set(std::map<int, void*> value);
-			void OnIndexChanged(size_t m_idx, void* m_pNew);
+			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
 
 		class Object;
@@ -130,6 +130,7 @@ namespace Net
 			void operator=(const float& value);
 			void operator=(const double& value);
 			void operator=(const BasicObject& value);
+			void operator=(const BasicArray& value);
 
 			void SetKey(const char* key);
 			void SetKey(Net::ViewString& key);
@@ -294,8 +295,6 @@ namespace Net
 
 			bool DeserializeAny(Net::String&, bool m_prepareString = false);
 			bool DeserializeAny(Net::ViewString&, bool m_prepareString = false);
-
-			size_t m_refCount;
 
 		public:
 			Array();
