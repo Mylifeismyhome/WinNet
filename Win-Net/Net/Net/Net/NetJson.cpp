@@ -690,10 +690,9 @@ Net::Json::BasicValue<T>::~BasicValue()
 	* string's are allocated into its own mem space before storing
 	* free it aswell
 	*/
-	if(this->m_type ==  Type::STRING)
+	if(this->m_type == Type::STRING)
 	{
-		auto m_pCast = (BasicValue<char*>*)this;
-		FREE<char>(m_pCast->Value());
+		FREE<char>(((BasicValue<char*>*)this)->Value());
 	}
 
 	this->value = {};
@@ -1305,12 +1304,6 @@ void Net::Json::BasicValueRead::operator=(const BasicObject& value)
 {
 	auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
 
-	/*
-	* ok, so BasicObject is now linking to this tree
-	* so do not permit it to destroy its data-set
-	*/
-	const_cast<Net::Json::BasicObject*>(&value)->SetSharedMemory(true);
-
 	if (
 		cast == nullptr ||
 		cast->GetType() != Type::OBJECT
@@ -1639,7 +1632,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 	auto m_pEntry = this->__get<Object>(key);
 	if (m_pEntry.m_pValue == nullptr)
 	{
-		return { nullptr, this, INVALID_SIZE, Net::Json::Type::OBJECT, key };
+		return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
 	}
 
 	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type, key };
@@ -1650,7 +1643,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(Net::ViewString& key)
 	auto m_pEntry = this->__get<Object>(key);
 	if (m_pEntry.m_pValue == nullptr)
 	{
-		return { nullptr, this, INVALID_SIZE, Net::Json::Type::OBJECT, key };
+		return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
 	}
 
 	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type, key };
@@ -4318,41 +4311,21 @@ void Net::Json::Document::Clear()
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT)
-	{
-		return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
-	}
-
 	return this->root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY)
-	{
-		return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::UNKNOWN, (char*)nullptr };
-	}
-
 	return this->root_array.at(idx);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(const char* key)
 {
-	if (this->m_type != Net::Json::Type::OBJECT)
-	{
-		return { nullptr, &this->root_obj, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
-	}
-
 	return this->root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 {
-	if (this->m_type != Net::Json::Type::ARRAY)
-	{
-		return { nullptr, &this->root_array, INVALID_SIZE, Net::Json::Type::UNKNOWN, (char*)nullptr };
-	}
-
 	return this->root_array.at(idx);
 }
 

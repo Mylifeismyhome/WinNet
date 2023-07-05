@@ -19,9 +19,16 @@ int main()
 	__debugbreak();
 	{
 		Net::Json::Document doc;
-		doc["abc"] = "test";
-		doc["abc2"] = "test2";
-		doc["abc3"]["abc2"] = "test2";
+		//doc["abc"] = "test";
+		//doc["abc2"] = "test2";
+
+		Net::Json::Object obj;
+		obj["test"] = 25;
+
+		doc["test2"] = obj;
+
+		// not work, not assigned
+		doc["abc"]["abc3"] = 5;
 
 		//Net::Json::BasicValueRead b = doc.operator[]("abc");
 		//if (b != 0)
