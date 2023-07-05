@@ -1987,14 +1987,14 @@ namespace Net
 			*/
 			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
-				data.free();
 				NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
 
 				ret = -1;
+				data.Set(nullptr);
 				goto loc_packet_free;
 			}
 
-			data.free();
+			data.Set(nullptr);
 
 			if (
 				doc[CSTRING("ID")] == 0 ||
@@ -2065,6 +2065,8 @@ namespace Net
 			}
 
 		loc_packet_free:
+			data.free();
+
 			if (packet.HasRawData())
 			{
 				auto& rawData = packet.GetRawData();

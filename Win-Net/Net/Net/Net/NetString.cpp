@@ -114,11 +114,6 @@ namespace Net
 		this->m_valid = vs.m_valid;
 	}
 
-	ViewString::~ViewString()
-	{
-		//this->m_ref = { nullptr, 0 };
-	}
-
 	ViewString::ViewString(ViewString&& vs) NOEXCEPT
 	{
 		this->m_bSubView = vs.m_bSubView;

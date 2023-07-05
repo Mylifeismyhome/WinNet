@@ -2129,12 +2129,12 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	*/
 	if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 	{
-		data.free();
 		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		data.Set(nullptr);
 		goto loc_packet_free;
 	}
 
-	data.free();
+	data.Set(nullptr);
 
 	if (
 		doc[CSTRING("ID")] == 0 ||
@@ -2203,6 +2203,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	}
 
 loc_packet_free:
+	data.free();
+
 	if (packet.HasRawData())
 	{
 		auto& rawData = packet.GetRawData();
