@@ -736,7 +736,6 @@ void Net::Json::BasicValue<T>::operator=(const BasicArray& value)
 	((BasicValue<BasicArray>*)this)->SetValue(value, Type::ARRAY);
 }
 
-
 template <typename T>
 void Net::Json::BasicValue<T>::SetKey(const char* key)
 {
@@ -761,11 +760,6 @@ void Net::Json::BasicValue<T>::SetKey(Net::ViewString& key)
 	if (m_key)
 	{
 		FREE<char>(m_key);
-	}
-
-	if (key.valid() == false)
-	{
-		return;
 	}
 
 	m_key = ALLOC<char>(key.size() + 1);
@@ -979,11 +973,6 @@ void Net::Json::BasicValueRead::allocNextKey(Net::ViewString& key)
 	if (m_pNextKey != nullptr)
 	{
 		FREE<char>(m_pNextKey);
-	}
-
-	if (key.valid() == false)
-	{
-		return;
 	}
 
 	const auto len = key.size();
@@ -2352,16 +2341,6 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString)
 {
-	if (!key.valid() || !value.valid())
-	{
-		/*
-		* some internal error
-		*/
-		NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-		Destroy();
-		return false;
-	}
-
 	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	// with object chain
@@ -3064,15 +3043,6 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::View
 				* walk forward till we reach the syntax for the seperator for an element or till we reach the end of file
 				*/
 				key = json.sub_view(v + 1, i - v - 1);
-				if (!key.valid())
-				{
-					/*
-					* some internal error
-					*/
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					Destroy();
-					return false;
-				}
 
 				/*
 				* a key in the json language must be a string
@@ -3112,15 +3082,6 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::View
 
 				// obtain the string from the json-string without the double-qoutes
 				key = key.sub_view(key.start() + 1, key.length() - 1);
-				if (!key.valid())
-				{
-					/*
-					* some internal error
-					*/
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					Destroy();
-					return false;
-				}
 
 				flag |= (int)EDeserializeFlag::FLAG_READING_OBJECT_VALUE;
 				v = i;
@@ -3173,15 +3134,6 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::View
 				}
 
 				Net::ViewString value = (i == json.end() - 2) ? json.sub_view(v + 1, i - v) : json.sub_view(v + 1, i - v - 1);
-				if (!value.valid())
-				{
-					/*
-					* some internal error
-					*/
-					NET_LOG_ERROR(CSTRING("[Net::Json::Object] -> Internal parsing error ... view string is not valid"));
-					Destroy();
-					return false;
-				}
 
 				/*
 				* pass the value to the DeserializeAny method
@@ -3825,16 +3777,6 @@ bool Net::Json::Array::DeserializeAny(Net::String& value, bool m_prepareString)
 
 bool Net::Json::Array::DeserializeAny(Net::ViewString& vs, bool m_prepareString)
 {
-	if (!vs.valid())
-	{
-		/*
-		* some internal error
-		*/
-		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
-		Destroy();
-		return false;
-	}
-
 	Net::Json::Type m_type = Net::Json::Type::UNKNOWN;
 
 	/*
@@ -4378,16 +4320,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 					continue;
 				}
 
-				Net::ViewString element = (i == json.end() - 2) ? json.sub_view(v + 1, i - v) : json.sub_view(v + 1, i - v - 1);
-				if (!element.valid())
-				{
-					/*
-					* some internal error
-					*/
-					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
-					Destroy();
-					return false;
-				}
+				auto element = (i == json.end() - 2) ? json.sub_view(v + 1, i - v) : json.sub_view(v + 1, i - v - 1);
 
 				/*
 				* pass the value to the DeserializeAny method
@@ -4582,7 +4515,9 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return Deserialize(vs);
+	auto ret = Deserialize(vs);
+	vs.free();
+	return ret;
 }
 
 bool Net::Json::Document::Deserialize(Net::ViewString& json)

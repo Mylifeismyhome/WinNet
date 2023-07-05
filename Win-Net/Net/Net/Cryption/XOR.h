@@ -56,13 +56,13 @@ namespace Net
 	{
 		class XOR_UNIQUEPOINTER
 		{
-			BYTE bFree;
-			NET_CPOINTER<char> buffer;
-			size_t _size;
+			size_t m_refCount;
+			NET_CPOINTER<char> m_buffer;
+			size_t m_size;
 
 		public:
 			XOR_UNIQUEPOINTER();
-			XOR_UNIQUEPOINTER(char*, size_t, BYTE = 0);
+			XOR_UNIQUEPOINTER(char*, size_t, size_t);
 			~XOR_UNIQUEPOINTER();
 
 			XOR_UNIQUEPOINTER& operator=(const XOR_UNIQUEPOINTER& other);
@@ -74,8 +74,6 @@ namespace Net
 			size_t size() const;
 
 			void free();
-			BYTE getFree() const;
-			void setFree(BYTE);
 		};
 
 		class XOR

@@ -30,26 +30,29 @@ namespace Net
 	{
 		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER()
 		{
-			this->bFree = 0;
-			this->buffer = nullptr;
-			this->_size = INVALID_SIZE;
+			m_refCount = 1;
+			m_buffer = nullptr;
+			m_size = INVALID_SIZE;
 		}
 
-		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER(char* buffer, const size_t size, BYTE bFree)
+		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER(char* buffer, const size_t size, size_t refCount)
 		{
-			this->bFree = bFree;
-			this->buffer = buffer; // pointer swap
-			this->_size = size;
+			m_refCount = refCount;
+			m_buffer = buffer;
+			m_size = size;
 		}
 
 		XOR_UNIQUEPOINTER::~XOR_UNIQUEPOINTER()
 		{
-			if (this->bFree == 1)
+			if(m_refCount != 0)
 			{
-				this->buffer.free();
+				m_refCount--;
 			}
 
-			this->_size = NULL;
+			if (m_refCount <= 0)
+			{
+				m_buffer.free();
+			}
 		}
 
 		XOR_UNIQUEPOINTER& XOR_UNIQUEPOINTER::operator=(const XOR_UNIQUEPOINTER& other)
@@ -60,52 +63,42 @@ namespace Net
 				return *this;
 			}
 
-			buffer = other.buffer;
-			_size = other._size;
-			bFree = 1;
-			const_cast<XOR_UNIQUEPOINTER*>(&other)->bFree = 0;
+			m_buffer = other.m_buffer;
+			m_size = other.m_size;
+			m_refCount = other.m_refCount;
+			const_cast<XOR_UNIQUEPOINTER*>(&other)->m_refCount++;
 
 			return *this;
 		}
 
 		char* XOR_UNIQUEPOINTER::get() const
 		{
-			return buffer.get();
+			return m_buffer.get();
 		}
 
 		char* XOR_UNIQUEPOINTER::data() const
 		{
-			return buffer.get();
+			return m_buffer.get();
 		}
 
 		char* XOR_UNIQUEPOINTER::str() const
 		{
-			return buffer.get();
+			return m_buffer.get();
 		}
 
 		size_t XOR_UNIQUEPOINTER::length() const
 		{
-			return _size - 1;
+			return m_size - 1;
 		}
 
 		size_t XOR_UNIQUEPOINTER::size() const
 		{
-			return _size;
+			return m_size;
 		}
 
 		void XOR_UNIQUEPOINTER::free()
 		{
-			buffer.free();
-		}
-
-		BYTE XOR_UNIQUEPOINTER::getFree() const
-		{
-			return bFree;
-		}
-
-		void XOR_UNIQUEPOINTER::setFree(BYTE b)
-		{
-			bFree = b;
+			m_buffer.free();
 		}
 
 		XOR::XOR()

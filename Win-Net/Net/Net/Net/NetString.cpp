@@ -42,22 +42,20 @@ namespace Net
 
 	ViewString::ViewString()
 	{
-		this->m_ptr_original = nullptr;
-		this->m_ref = {};
-		this->m_start = INVALID_SIZE;
-		this->m_size = INVALID_SIZE;
-		this->m_valid = false;
-		this->m_bSubView = 0;
+		m_ptr_original = nullptr;
+		m_ref = {};
+		m_start = INVALID_SIZE;
+		m_size = INVALID_SIZE;
+		m_bSubView = 0;
 	}
 
-	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
+	ViewString::ViewString(void* ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& ref, size_t start, size_t size)
 	{
-		this->m_ptr_original = m_ptr_original;
-		this->m_ref = m_ref;
-		this->m_start = m_start;
-		this->m_size = m_size;
-		this->m_valid = true;
-		this->m_bSubView = 0;
+		m_ptr_original = ptr_original;
+		m_ref = ref;
+		m_start = start;
+		m_size = size;
+		m_bSubView = 0;
 	}
 
 	ViewString& ViewString::operator=(const ViewString& other)
@@ -68,105 +66,69 @@ namespace Net
 			return *this;
 		}
 
-		this->m_bSubView = other.m_bSubView;
-		this->m_ptr_original = other.m_ptr_original;
+		m_bSubView = other.m_bSubView;
+		m_ptr_original = other.m_ptr_original;
+		m_ref = other.m_ref;
 
-		const auto preFree = other.m_ref.getFree();
-		this->m_ref = other.m_ref;
-
-		if (this->m_bSubView == 1)
-		{
-			m_ref.setFree(0);
-		}
-
-		const_cast<ViewString*>(&other)->m_ref.setFree(preFree);
-
-		this->m_start = other.m_start;
-		this->m_size = other.m_size;
-		this->m_valid = other.m_valid;
+		m_start = other.m_start;
+		m_size = other.m_size;
 
 		return *this;
 	}
 
 	char ViewString::operator[](size_t i)
 	{
-		if (!valid()) return '\0';
-		return this->m_ref.get()[i];
+		if (m_ref.get() == nullptr)
+		{
+			return 0;
+		}
+
+		return m_ref.get()[i];
 	}
 
 	ViewString::ViewString(ViewString& vs)
 	{
-		this->m_bSubView = vs.m_bSubView;
-		this->m_ptr_original = vs.m_ptr_original;
+		m_bSubView = vs.m_bSubView;
+		m_ptr_original = vs.m_ptr_original;
+		m_ref = vs.m_ref;
 
-		const auto preFree = vs.m_ref.getFree();
-		this->m_ref = vs.m_ref;
-
-		if (this->m_bSubView == 1)
-		{
-			m_ref.setFree(0);
-		}
-
-		vs.m_ref.setFree(preFree);
-
-		this->m_start = vs.m_start;
-		this->m_size = vs.m_size;
-		this->m_valid = vs.m_valid;
+		m_start = vs.m_start;
+		m_size = vs.m_size;
 	}
 
 	ViewString::ViewString(ViewString&& vs) NOEXCEPT
 	{
-		this->m_bSubView = vs.m_bSubView;
-		this->m_ptr_original = vs.m_ptr_original;
-	
-		const auto preFree = vs.m_ref.getFree();
-		this->m_ref = vs.m_ref;
-
-		if (this->m_bSubView == 1)
-		{
-			m_ref.setFree(0);
-		}
-
-		vs.m_ref.setFree(preFree);
-
-		this->m_start = vs.m_start;
-		this->m_size = vs.m_size;
-		this->m_valid = vs.m_valid;
+		m_bSubView = vs.m_bSubView;
+		m_ptr_original = vs.m_ptr_original;
+		m_ref = vs.m_ref;
+		
+		m_start = vs.m_start;
+		m_size = vs.m_size;
 	}
 
 	size_t ViewString::start() const
 	{
-		if (!valid()) return INVALID_SIZE;
 		return m_start;
 	}
 
 	size_t ViewString::end() const
 	{
-		if (!valid()) return INVALID_SIZE;
 		return start() + size();
 	}
 
 	size_t ViewString::size() const
 	{
-		if (!valid()) return INVALID_SIZE;
 		return m_size;
 	}
 
 	size_t ViewString::length() const
 	{
-		if (!valid()) return INVALID_SIZE;
 		return m_size - 1;
 	}
 
 	char* ViewString::get() const
 	{
-		if (!valid()) return nullptr;
 		return m_ref.get();
-	}
-
-	bool ViewString::valid() const
-	{
-		return m_valid;
 	}
 
 	void* ViewString::original()
@@ -176,34 +138,31 @@ namespace Net
 
 	bool ViewString::refresh()
 	{
-		if (!valid()) return false;
-		if (!original()) return false;
-
-		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
-
-		if (this->m_start != 0)
+		if (original() == false)
 		{
-			if (this->m_start - (this->m_size - m_ref.size()) == INVALID_SIZE)
+			return false;
+		}
+
+		m_ref = reinterpret_cast<Net::String*>(original())->get();
+
+		if (m_start != 0)
+		{
+			if (m_start - (m_size - m_ref.size()) == INVALID_SIZE)
 			{
-				this->m_start = 0;
+				m_start = 0;
 			}
 			else
 			{
-				this->m_start -= this->m_size - m_ref.size();
+				m_start -= m_size - m_ref.size();
 			}
 		}
 
-		this->m_size = m_ref.size();
+		m_size = m_ref.size();
 		return true;
 	}
 
 	ViewString ViewString::sub_view(size_t m_start, size_t m_size)
 	{
-		if (valid() == false)
-		{
-			return {};
-		}
-
 		if (size() == INVALID_SIZE || size() == 0)
 		{
 			return {};
@@ -212,17 +171,17 @@ namespace Net
 		ViewString vs;
 		vs.m_bSubView = 1;
 		vs.m_ptr_original = m_ptr_original;
-
-		const auto preFree = m_ref.getFree();
 		vs.m_ref = m_ref;
-		vs.m_ref.setFree(0);
-		m_ref.setFree(preFree);
-
+		
 		vs.m_start = m_start;
 		vs.m_size = m_size;
 
-		vs.m_valid = true;
 		return vs;
+	}
+
+	void Net::ViewString::free()
+	{
+		m_ref.free();
 	}
 
 	String::String()

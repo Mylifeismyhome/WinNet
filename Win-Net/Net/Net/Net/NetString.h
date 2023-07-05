@@ -67,7 +67,6 @@ namespace Net
 		Net::Cryption::XOR_UNIQUEPOINTER m_ref;
 		size_t m_start;
 		size_t m_size;
-		bool m_valid;
 		BYTE m_bSubView;
 
 	public:
@@ -85,11 +84,12 @@ namespace Net
 		size_t length() const;
 
 		char* get() const;
-		bool valid() const;
 
 		void* original();
 		bool refresh();
 		ViewString sub_view(size_t m_start, size_t m_size = 0);
+
+		void free();
 
 		friend std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs);
 	};
