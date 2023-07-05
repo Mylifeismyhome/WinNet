@@ -30,23 +30,24 @@ namespace Net
 	{
 		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER()
 		{
+			this->bFree = 0;
 			this->buffer = nullptr;
 			this->_size = INVALID_SIZE;
-			this->bFree = false;
 		}
 
-		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER(char* buffer, const size_t size, const bool bFree)
+		XOR_UNIQUEPOINTER::XOR_UNIQUEPOINTER(char* buffer, const size_t size, BYTE bFree)
 		{
-			// create a copy
+			this->bFree = bFree;
 			this->buffer = buffer; // pointer swap
 			this->_size = size;
-			this->bFree = bFree;
 		}
 
 		XOR_UNIQUEPOINTER::~XOR_UNIQUEPOINTER()
 		{
-			if (this->bFree)
+			if (this->bFree == 1)
+			{
 				this->buffer.free();
+			}
 
 			this->_size = NULL;
 		}
@@ -55,11 +56,14 @@ namespace Net
 		{
 			// Guard self assignment
 			if (this == &other)
+			{
 				return *this;
+			}
 
-			this->buffer = other.buffer;
-			this->_size = other._size;
-			this->bFree = other.bFree;
+			buffer = other.buffer;
+			_size = other._size;
+			bFree = 1;
+			const_cast<XOR_UNIQUEPOINTER*>(&other)->bFree = 0;
 
 			return *this;
 		}
@@ -94,12 +98,14 @@ namespace Net
 			buffer.free();
 		}
 
-		void XOR_UNIQUEPOINTER::lost_reference() const
+		BYTE XOR_UNIQUEPOINTER::getFree() const
 		{
-			/*
-			* lost reference means that we know that the pointer is not valid any longer
-			*/
-			const_cast<XOR_UNIQUEPOINTER*>(this)->bFree = false;
+			return bFree;
+		}
+
+		void XOR_UNIQUEPOINTER::setFree(BYTE b)
+		{
+			bFree = b;
 		}
 
 		XOR::XOR()
@@ -108,12 +114,11 @@ namespace Net
 			_actual_size = INVALID_SIZE;
 			_buffer = nullptr;
 			_Key = 0;
-			_bfree = false;
 		}
 
-		XOR::XOR(char* str, bool m_free)
+		XOR::XOR(char* str)
 		{
-			init(str, m_free);
+			init(str);
 		}
 
 		XOR::XOR(const char* str)
@@ -123,24 +128,20 @@ namespace Net
 
 		void XOR::reserve(size_t m_size)
 		{
-			if (_buffer.get())
+			_buffer.free();
+
+			if (m_size >= size())
 			{
-				if (m_size >= size())
+				auto tmp = ALLOC<char>(m_size + 1);
+				for (size_t i = 0; i < size(); ++i)
 				{
-					auto tmp = ALLOC<char>(m_size + 1);
-					for (size_t i = 0; i < size(); ++i)
-					{
-						tmp[i] = this->operator[](i);
-					}
-					tmp[size()] = 0;
-
-					_buffer.free();
-					_buffer = tmp;
-					_actual_size = m_size;
-					return;
+					tmp[i] = this->operator[](i);
 				}
+				tmp[size()] = 0;
 
-				_buffer.free();
+				_buffer = tmp;
+				_actual_size = m_size;
+				return;
 			}
 
 			auto tmp = ALLOC<char>(m_size + 1);
@@ -178,13 +179,15 @@ namespace Net
 		{
 			// Guard self assignment
 			if (this == &other)
+			{
 				return *this;
+			}
 
-			this->_buffer = other._buffer;
-			this->_Key = other._Key;
-			this->_size = other._size;
-			this->_actual_size = other._actual_size;
-			this->_bfree = other._bfree;
+			_buffer = other._buffer;
+			_Key = other._Key;
+			_size = other._size;
+			_actual_size = other._actual_size;
+			const_cast<XOR*>(&other)->_buffer = nullptr;
 
 			return *this;
 		}
@@ -199,7 +202,9 @@ namespace Net
 		void XOR::set(size_t it, char c)
 		{
 			if (it > actual_size() || actual_size() == INVALID_SIZE)
+			{
 				return;
+			}
 
 			this->_buffer.get()[it] = c;
 
@@ -223,9 +228,9 @@ namespace Net
 			this->_size = new_size;
 		}
 
-		void XOR::init(char* str, bool m_free)
+		void XOR::init(char* str)
 		{
-			if (!str)
+			if (str == nullptr)
 			{
 				_size = INVALID_SIZE;
                 _actual_size = size();
@@ -238,7 +243,6 @@ namespace Net
             _actual_size = size();
 			_buffer = str;
 			_Key = 0;
-			_bfree = m_free;
 
 			encrypt();
 		}
@@ -251,7 +255,6 @@ namespace Net
 			memcpy(_buffer.get(), str, _size);
 			_buffer.get()[_size] = '\0';
 			_Key = 0;
-			_bfree = true;
 
 			encrypt();
 		}
@@ -289,15 +292,22 @@ namespace Net
 			return _buffer.get();
 		}
 
-		XOR_UNIQUEPOINTER XOR::revert(const bool free)
+		XOR_UNIQUEPOINTER XOR::revert()
 		{
-			NET_CPOINTER<byte> buffer(ALLOC<byte>(this->size() + 1));
-			for (size_t i = 0; i < this->size(); ++i)
+			const auto len = size();
+			auto ptr = ALLOC<char>(len + 1);
+			if (ptr == nullptr)
 			{
-				buffer.get()[i] = this->operator[](i);
+				return {};
 			}
-			buffer.get()[this->size()] = '\0';
-			return XOR_UNIQUEPOINTER(reinterpret_cast<char*>(buffer.get()), size(), free);
+
+			for (size_t i = 0; i < len; ++i)
+			{
+				ptr[i] = operator[](i);
+			}
+			ptr[len] = 0;
+
+			return { ptr, len, 1 };
 		}
 
 		size_t XOR::size() const
@@ -318,19 +328,9 @@ namespace Net
 		void XOR::free()
 		{
 			_Key = 0;
-
-			if (this->_bfree)
-			{
-				_buffer.free();
-			}
-
+			_buffer.free();
 			_size = INVALID_SIZE;
 			_actual_size = INVALID_SIZE;
-		}
-
-		void XOR::lost_reference()
-		{
-			this->_bfree = false;
 		}
 	}
 }

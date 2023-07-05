@@ -47,35 +47,44 @@ namespace Net
 		this->m_start = INVALID_SIZE;
 		this->m_size = INVALID_SIZE;
 		this->m_valid = false;
+		this->m_bSubView = 0;
 	}
 
-	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER* m_ref, size_t m_start, size_t m_size)
+	ViewString::ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size)
 	{
 		this->m_ptr_original = m_ptr_original;
-		this->m_ref = *m_ref;
+		this->m_ref = m_ref;
 		this->m_start = m_start;
 		this->m_size = m_size;
 		this->m_valid = true;
-
-		/*
-		* vs ptr moved
-		*/
-		m_ref->lost_reference();
+		this->m_bSubView = 0;
 	}
 
-	ViewString& ViewString::operator=(const ViewString& vs)
+	ViewString& ViewString::operator=(const ViewString& other)
 	{
 		// Guard self assignment
-		if (this == &vs)
+		if (this == &other)
+		{
 			return *this;
+		}
 
-		this->m_ptr_original = vs.m_ptr_original;
-		this->m_ref = vs.m_ref;
-		this->m_start = vs.m_start;
-		this->m_size = vs.m_size;
-		this->m_valid = vs.m_valid;
+		this->m_bSubView = other.m_bSubView;
+		this->m_ptr_original = other.m_ptr_original;
 
-		vs.m_ref.lost_reference();
+		const auto preFree = other.m_ref.getFree();
+		this->m_ref = other.m_ref;
+
+		if (this->m_bSubView == 1)
+		{
+			m_ref.setFree(0);
+		}
+
+		const_cast<ViewString*>(&other)->m_ref.setFree(preFree);
+
+		this->m_start = other.m_start;
+		this->m_size = other.m_size;
+		this->m_valid = other.m_valid;
+
 		return *this;
 	}
 
@@ -87,30 +96,47 @@ namespace Net
 
 	ViewString::ViewString(ViewString& vs)
 	{
+		this->m_bSubView = vs.m_bSubView;
 		this->m_ptr_original = vs.m_ptr_original;
+
+		const auto preFree = vs.m_ref.getFree();
 		this->m_ref = vs.m_ref;
+
+		if (this->m_bSubView == 1)
+		{
+			m_ref.setFree(0);
+		}
+
+		vs.m_ref.setFree(preFree);
+
 		this->m_start = vs.m_start;
 		this->m_size = vs.m_size;
 		this->m_valid = vs.m_valid;
+	}
 
-		/*
-		* vs ptr moved
-		*/
-		vs.m_ref.lost_reference();
+	ViewString::~ViewString()
+	{
+		//this->m_ref = { nullptr, 0 };
 	}
 
 	ViewString::ViewString(ViewString&& vs) NOEXCEPT
 	{
+		this->m_bSubView = vs.m_bSubView;
 		this->m_ptr_original = vs.m_ptr_original;
+	
+		const auto preFree = vs.m_ref.getFree();
 		this->m_ref = vs.m_ref;
+
+		if (this->m_bSubView == 1)
+		{
+			m_ref.setFree(0);
+		}
+
+		vs.m_ref.setFree(preFree);
+
 		this->m_start = vs.m_start;
 		this->m_size = vs.m_size;
 		this->m_valid = vs.m_valid;
-
-		/*
-		* vs ptr moved
-		*/
-		vs.m_ref.lost_reference();
 	}
 
 	size_t ViewString::start() const
@@ -158,39 +184,44 @@ namespace Net
 		if (!valid()) return false;
 		if (!original()) return false;
 
-		auto tmp = reinterpret_cast<Net::String*>(original())->get();
-		this->m_ref = tmp;
-		tmp.lost_reference();
+		this->m_ref = reinterpret_cast<Net::String*>(original())->get();
 
 		if (this->m_start != 0)
 		{
-			if (this->m_start - (this->m_size - tmp.size()) == INVALID_SIZE)
+			if (this->m_start - (this->m_size - m_ref.size()) == INVALID_SIZE)
+			{
 				this->m_start = 0;
+			}
 			else
-				this->m_start -= this->m_size - tmp.size();
+			{
+				this->m_start -= this->m_size - m_ref.size();
+			}
 		}
 
-		this->m_size = tmp.size();
-
+		this->m_size = m_ref.size();
 		return true;
 	}
 
 	ViewString ViewString::sub_view(size_t m_start, size_t m_size)
 	{
-		if (!valid())
+		if (valid() == false)
+		{
 			return {};
+		}
 
 		if (size() == INVALID_SIZE || size() == 0)
+		{
 			return {};
+		}
 
 		ViewString vs;
-		vs.m_ptr_original = this->m_ptr_original;
-		vs.m_ref = this->m_ref;
+		vs.m_bSubView = 1;
+		vs.m_ptr_original = m_ptr_original;
 
-		/*
-		* ok, so on a sub_view we gotta make sure that it will not free on death
-		*/
-		vs.m_ref.lost_reference();
+		const auto preFree = m_ref.getFree();
+		vs.m_ref = m_ref;
+		vs.m_ref.setFree(0);
+		m_ref.setFree(preFree);
 
 		vs.m_start = m_start;
 		vs.m_size = m_size;
@@ -298,31 +329,29 @@ namespace Net
 
 	void String::copy(const String& in)
 	{
+		Destroy();
+
 		auto cast = const_cast<String*>(&in);
 
 		auto ref = cast->get();
 		auto pBuffer = ref.get();
 
-		this->Destroy();
-		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
-		this->_free_size = INVALID_SIZE;
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(pBuffer));
+		_free_size = INVALID_SIZE;
 	}
 
 	void String::move(const String& in)
 	{
+		Destroy();
+
 		auto cast = const_cast<String*>(&in);
 		_string = cast->_string;
 		_free_size = cast->_free_size;
-
-		/*
-		* object moved
-		*/
-		cast->_string.lost_reference();
 	}
 
 	String::~String()
 	{
-		this->Destroy();
+		Destroy();
 	}
 
 	/*
@@ -499,14 +528,15 @@ namespace Net
 
 	void String::set(const String& in, ...)
 	{
+		Destroy();
+
 		auto cast = const_cast<String*>(&in);
 
 		auto ref = cast->get();
 		auto ptr = ref.get();
 
-		this->Destroy();
-		this->_string = RUNTIMEXOR(reinterpret_cast<const char*>(ptr));
-		this->_free_size = INVALID_SIZE;
+		_string = RUNTIMEXOR(reinterpret_cast<const char*>(ptr));
+		_free_size = INVALID_SIZE;
 	}
 
 	void String::append(const char in)
@@ -549,7 +579,7 @@ namespace Net
 				data.get()[newLen] = '\0';
 
 				this->Destroy();
-				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
 			}
 		}
 	}
@@ -588,7 +618,7 @@ namespace Net
 				data.get()[newSize] = '\0';
 
 				this->Destroy();
-				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()), true);
+				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
 				_free_size = INVALID_SIZE;
 
 				return;
@@ -657,7 +687,9 @@ namespace Net
 	Net::Cryption::XOR_UNIQUEPOINTER String::str()
 	{
 		if (size() == INVALID_SIZE)
-			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+		{
+			return {};
+		}
 
 		return _string.revert();
 	}
@@ -665,7 +697,9 @@ namespace Net
 	Net::Cryption::XOR_UNIQUEPOINTER String::cstr()
 	{
 		if (size() == INVALID_SIZE)
-			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+		{
+			return {};
+		}
 
 		return _string.revert();
 	}
@@ -673,7 +707,9 @@ namespace Net
 	Net::Cryption::XOR_UNIQUEPOINTER String::get()
 	{
 		if (size() == INVALID_SIZE)
-			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+		{
+			return {};
+		}
 
 		return _string.revert();
 	}
@@ -681,7 +717,9 @@ namespace Net
 	Net::Cryption::XOR_UNIQUEPOINTER String::revert()
 	{
 		if (size() == INVALID_SIZE)
-			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+		{
+			return {};
+		}
 
 		return _string.revert();
 	}
@@ -689,7 +727,9 @@ namespace Net
 	Net::Cryption::XOR_UNIQUEPOINTER String::data()
 	{
 		if (size() == INVALID_SIZE)
-			return Net::Cryption::XOR_UNIQUEPOINTER(nullptr, NULL, false);
+		{
+			return {};
+		}
 
 		return _string.revert();
 	}
@@ -1315,7 +1355,7 @@ namespace Net
 		}
 
 		this->Destroy();
-		_string = RUNTIMEXOR(replace, true);
+		_string = RUNTIMEXOR(replace);
 		return true;
 	}
 
@@ -1344,7 +1384,7 @@ namespace Net
 		memcpy(&replace[i + rSize], &str.get()[i + 1], size() - i - 1);
 
 		this->Destroy();
-		_string = RUNTIMEXOR(replace, true);
+		_string = RUNTIMEXOR(replace);
 		return true;
 	}
 
@@ -1380,7 +1420,7 @@ namespace Net
 		replace[replaceSize] = '\0';
 
 		this->Destroy();
-		_string = RUNTIMEXOR(replace, true);
+		_string = RUNTIMEXOR(replace);
 		return true;
 	}
 
@@ -1421,7 +1461,7 @@ namespace Net
 		replace[replaceSize] = '\0';
 
 		this->Destroy();
-		_string = RUNTIMEXOR(replace, true);
+		_string = RUNTIMEXOR(replace);
 		return true;
 	}
 
@@ -1491,18 +1531,18 @@ namespace Net
 	ViewString Net::String::view_string(size_t m_start, size_t m_size)
 	{
 		if (size() == INVALID_SIZE || size() == 0)
+		{
 			return {};
+		}
 
-		/*
-		* if m_size is zero
-		* then we return the entire size of the string
-		*/
-        auto m_ref = this->get();
+		auto ref = get();
 
 		if (m_size == 0)
-			return { this, &m_ref, m_start, size() };
+		{
+			return { this, ref, m_start, size() };
+		}
 
-		return { this, &m_ref, m_start, m_size };
+		return { this, ref, m_start, m_size };
 	}
 
 	std::ostream& operator<<(std::ostream& os, const Net::ViewString& vs)

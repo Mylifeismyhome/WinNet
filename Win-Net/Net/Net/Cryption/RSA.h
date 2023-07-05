@@ -70,15 +70,15 @@ namespace Net
 			XOR_UNIQUEPOINTER publicKey();
 			XOR_UNIQUEPOINTER privateKey();
 
-			void setPublicKey(char*, bool = false);
+			void setPublicKey(char*);
 			void setPublicKey(const char*);
-			void setPrivateKey(char*, bool = false);
+			void setPrivateKey(char*);
 			void setPrivateKey(const char*);
 
 			void deleteKeys();
 
 			bool init(const char*, const char*);
-			bool init(char*, bool = false, char* = nullptr, bool = false);
+			bool init(char*, char* = nullptr);
 			bool isSet() const { return Set; }
 
 			bool encrypt(CryptoPP::byte*&, size_t&);

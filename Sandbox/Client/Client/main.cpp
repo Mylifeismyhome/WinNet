@@ -16,6 +16,21 @@ int main()
 {
 	Net::load(Net::ENABLE_LOGGING);
 
+	__debugbreak();
+	{
+		Net::Json::Document doc;
+		doc.Parse(R"({"test":3})");
+
+		{
+			Net::Json::Document doc2;
+			doc2["a"] = doc;
+
+			auto str = doc2.Serialize();
+			printf(str.get().get());
+		}
+	}
+	__debugbreak();
+
 	Client client;
 	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, false });
 

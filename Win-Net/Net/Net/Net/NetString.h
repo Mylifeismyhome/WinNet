@@ -68,14 +68,16 @@ namespace Net
 		size_t m_start;
 		size_t m_size;
 		bool m_valid;
+		BYTE m_bSubView;
 
 	public:
 		ViewString();
-		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER* m_ref, size_t m_start, size_t m_size);
+		ViewString(void* m_ptr_original, Net::Cryption::XOR_UNIQUEPOINTER& m_ref, size_t m_start, size_t m_size);
 		ViewString(ViewString& vs);
 		ViewString(ViewString&& vs) NOEXCEPT;
+		~ViewString();
 
-		ViewString& operator=(const ViewString& vs);
+		ViewString& operator=(const ViewString& other);
 		char operator[](size_t i);
 
 		size_t start() const;
