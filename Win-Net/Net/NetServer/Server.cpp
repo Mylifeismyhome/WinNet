@@ -905,6 +905,9 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 	std::lock_guard<std::mutex> guard(peer->network._mutex_send);
 
+	auto a = pkg.Data().Serialize();
+	printf("a: %s\n\n", a.get().get());
+
 	Net::Json::Document doc;
 	doc[CSTRING("ID")] = id;
 	doc[CSTRING("CONTENT")] = pkg.Data();
@@ -997,7 +1000,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 		}
 
 		/* Crypt Buffer using AES and Encode to Base64 */
-		aes.encrypt(dataBuffer.get(), dataBufferSize);
+		aes.encrypt(dataBuffer.reference().get(), dataBufferSize);
 
 		if (rawData.empty() == false)
 		{

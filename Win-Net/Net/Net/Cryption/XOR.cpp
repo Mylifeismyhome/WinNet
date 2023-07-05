@@ -121,8 +121,6 @@ namespace Net
 
 		void XOR::reserve(size_t m_size)
 		{
-			_buffer.free();
-
 			if (m_size >= size())
 			{
 				auto tmp = ALLOC<char>(m_size + 1);
@@ -132,6 +130,7 @@ namespace Net
 				}
 				tmp[size()] = 0;
 
+				_buffer.free();
 				_buffer = tmp;
 				_actual_size = m_size;
 				return;
@@ -139,6 +138,7 @@ namespace Net
 
 			auto tmp = ALLOC<char>(m_size + 1);
 			memset(tmp, 0, m_size);
+			_buffer.free();
 			_buffer = tmp;
 			_size = 0;
 			_actual_size = m_size;
@@ -146,7 +146,7 @@ namespace Net
 
 		void XOR::finalize()
 		{
-			if (!_buffer.get())
+			if (_buffer.get() == nullptr)
 			{
 				return;
 			}

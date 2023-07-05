@@ -220,12 +220,6 @@ namespace Net
 			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
 		};
 
-		struct SerializeT
-		{
-			Net::String m_buffer;
-			bool m_reserved;
-		};
-
 		template<typename T>
 		struct TObjectGet
 		{
@@ -275,7 +269,7 @@ namespace Net
 			bool Append(const char* key, Object value);
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
+			bool TrySerialize(SerializeType type, Net::String& buffer, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -322,7 +316,7 @@ namespace Net
 			size_t size() const;
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
+			bool TrySerialize(SerializeType type, Net::String& buffer, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -340,9 +334,6 @@ namespace Net
 			Type m_type;
 			Object root_obj;
 			Array root_array;
-
-			void Init();
-			void Clear();
 
 		public:
 			Document();

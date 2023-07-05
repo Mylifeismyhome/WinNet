@@ -20,7 +20,7 @@ int main()
 	server.SetOption<bool>({ NET_OPT_USE_COMPRESSION, false });
 
 #ifdef _USE_CIPHER_
-	server.SetOption<bool>({ NET_OPT_USE_CIPHER, true });
+	server.SetOption<bool>({ NET_OPT_USE_CIPHER, false });
 	NET_LOG_WARNING(CSTRING("USING CIPHER"));
 #endif
 
