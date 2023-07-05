@@ -76,7 +76,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			std::vector<void*> value;
+			std::map<int, void*> value;
 			bool m_bSharedMemory;
 
 		protected:
@@ -86,11 +86,11 @@ namespace Net
 			BasicObject();
 			~BasicObject();
 
-			std::vector<void*> Value();
-			void Set(std::vector<void*> value);
+			std::map<int, void*> Value();
+			void Set(std::map<int, void*> value);
 			void SetSharedMemory(bool m_bSharedMemory);
 			bool IsSharedMemory() const;
-			void OnIndexChanged(size_t m_idx, void* m_pNew);
+			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
 
 		class BasicArray
@@ -171,21 +171,32 @@ namespace Net
 
 		class BasicValueRead
 		{
+			char* m_pNextKey;
 			void* m_pValue;
 			void* m_pParent;
 			size_t m_iValueIndex;
 			Type m_ParentType;
 
+			void allocNextKey(const char* key);
+			void allocNextKey(Net::ViewString& key);
+			void allocNextKey(char* key);
+
 		public:
-			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType);
+			BasicValueRead(const BasicValueRead& other);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, const char* key);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, Net::ViewString& key);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, char* key);
+			~BasicValueRead();
 			BasicValue<Object>* operator->() const;
+
+			BasicValueRead& operator=(const BasicValueRead& other);
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
 			BasicValueRead operator[](size_t idx);
 
-			operator bool();
+			operator bool() const;
 
 			void operator=(const NullValue& value);
 			void operator=(const int& value);

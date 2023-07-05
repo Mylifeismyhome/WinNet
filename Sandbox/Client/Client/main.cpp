@@ -16,10 +16,31 @@ int main()
 {
 	Net::load(Net::ENABLE_LOGGING);
 
-	/*__debugbreak();
+	__debugbreak();
 	{
 		Net::Json::Document doc;
-		doc.Parse(R"({"test":3})");
+		doc["abc"] = "test";
+		doc["abc2"] = "test2";
+		doc["abc3"]["abc2"] = "test2";
+
+		//Net::Json::BasicValueRead b = doc.operator[]("abc");
+		//if (b != 0)
+		//{
+		//	if (doc["abc"]->is_string())
+		//	{
+		//	}
+		//}
+
+
+		//if (doc2["abbb"] != 0)
+		//{
+		//	if (doc2["abbb"]->is_int())
+		//	{
+		//		printf("%i\n", doc2["abbb"]->as_int());
+		//	}
+		//}
+
+		/*doc.Parse(R"({"test":3})");
 
 		{
 			Net::Json::Document doc2;
@@ -28,9 +49,9 @@ int main()
 
 			auto str = doc2.Serialize();
 			printf(str.get().get());
-		}
+		}*/
 	}
-	__debugbreak();*/
+	__debugbreak();
 
 	Client client;
 	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, false });
