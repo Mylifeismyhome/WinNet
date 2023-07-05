@@ -913,7 +913,10 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 	auto dataBufferSize = buffer.size();
 	NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-	memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
+
+	auto ref = buffer.get();
+	memcpy(dataBuffer.get(), ref.get(), dataBufferSize);
+
 	dataBuffer.get()[dataBufferSize] = '\0';
 	buffer.clear();
 
@@ -1936,13 +1939,9 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				memcpy(data.get(), &peer->network.getData()[offset], dataSize);
 				data.get()[dataSize] = '\0';
 
-				offset += packetSize;
-
 				/* decrypt aes */
-				if (aes.decrypt(data.get(), dataSize) == false)
+				if (aes.decrypt(data.reference().get(), dataSize) == false)
 				{
-					data.free();
-
 					NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on decrypting packet. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 					goto loc_packet_free;
 				}
@@ -1953,13 +1952,16 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
 					peer->network.SetUncompressedSize(0);
 				}
+
+				offset += packetSize;
 			}
 
 			// we have reached the end of reading
 			if (offset + NET_PACKET_FOOTER_LEN >= peer->network.getDataFullSize())
+			{
 				break;
-
-		} while (true);
+			}
+		} while (1);
 	}
 	else
 	{
@@ -2101,14 +2103,14 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				memcpy(data.get(), &peer->network.getData()[offset], packetSize);
 				data.get()[packetSize] = '\0';
 
-				offset += packetSize;
-
 				/* Decompression */
 				if (peer->network.getUncompressedSize() != 0)
 				{
 					DecompressData(data.reference().get(), packetSize, peer->network.getUncompressedSize());
 					peer->network.SetUncompressedSize(0);
 				}
+
+				offset += packetSize;
 			}
 
 			// we have reached the end of reading

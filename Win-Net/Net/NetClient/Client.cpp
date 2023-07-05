@@ -913,7 +913,10 @@ namespace Net
 
 			auto dataBufferSize = buffer.size();
 			NET_CPOINTER<BYTE> dataBuffer(ALLOC<BYTE>(dataBufferSize + 1));
-			memcpy(dataBuffer.get(), buffer.get().get(), dataBufferSize);
+
+			auto ref = buffer.get();
+			memcpy(dataBuffer.get(), ref.get(), dataBufferSize);
+
 			dataBuffer.get()[dataBufferSize] = '\0';
 			buffer.clear();
 
@@ -1776,10 +1779,8 @@ namespace Net
 						memcpy(data.get(), &network.data.get()[offset], packetSize);
 						data.get()[packetSize] = '\0';
 
-						offset += packetSize;
-
 						/* decrypt aes */
-						if (aes.decrypt(data.get(), packetSize) == false)
+						if (aes.decrypt(data.reference().get(), packetSize) == false)
 						{
 							NET_LOG_PEER(CSTRING("failure on decrypting packet. packet will be rejected."));
 							goto loc_packet_free;
@@ -1791,6 +1792,8 @@ namespace Net
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
 							network.data_original_uncompressed_size = 0;
 						}
+
+						offset += packetSize;
 					}
 
 					// we have reached the end of reading
@@ -1940,14 +1943,14 @@ namespace Net
 						memcpy(data.get(), &network.data.get()[offset], packetSize);
 						data.get()[packetSize] = '\0';
 
-						offset += packetSize;
-
 						/* Compression */
 						if (network.data_original_uncompressed_size != 0)
 						{
 							DecompressData(data.reference().get(), packetSize, network.data_original_uncompressed_size);
 							network.data_original_uncompressed_size = 0;
 						}
+
+						offset += packetSize;
 					}
 
 					// we have reached the end of reading
@@ -1971,6 +1974,7 @@ namespace Net
 			*
 			* pass the json content into packet object
 			*/
+			printf("%s\n\n", data.get());
 			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
 				NET_LOG_PEER(CSTRING("packet is in wrong format. json was unable to deserialize. packet will be rejected."));
