@@ -1763,7 +1763,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptKeyBase64);
+
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on decrypting packet. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			goto loc_packet_free;
 		}
 
@@ -1771,7 +1772,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptIVBase64);
+
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on decrypting packet. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			goto loc_packet_free;
 		}
 
@@ -1780,7 +1782,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		{
 			AESKey.free();
 			AESIV.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_InitAES);
+
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on initializing encryption routine. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			goto loc_packet_free;
 		}
 
@@ -1882,7 +1885,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					if (aes.decrypt(entry.value(), entry.size()) == false)
 					{
 						entry.free();
-						DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
+
+						NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on decrypting packet. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 						goto loc_packet_free;
 					}
 
@@ -1938,7 +1942,8 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 				if (aes.decrypt(data.get(), dataSize) == false)
 				{
 					data.free();
-					DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DecryptAES);
+
+					NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => failure on decrypting packet. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 					goto loc_packet_free;
 				}
 
@@ -2116,7 +2121,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 
 	if (data.valid() == false)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet data is invalid. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 		goto loc_packet_free;
 	}
 
@@ -2129,7 +2134,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	*/
 	if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet is in wrong format. json was unable to deserialize. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 		data.Set(nullptr);
 		goto loc_packet_free;
 	}
@@ -2141,14 +2146,14 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		doc[CSTRING("ID")]->is_int() == 0
 		)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet id is missing. packet is incomplete. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 		goto loc_packet_free;
 	}
 
 	packetId = doc[CSTRING("ID")]->as_int();
 	if (packetId < 0)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet id is not valid. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 		goto loc_packet_free;
 	}
 
@@ -2164,7 +2169,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		}
 		else
 		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet is missing content. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			goto loc_packet_free;
 		}
 	}
@@ -2197,7 +2202,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 	{
 		if (CheckData(peer, packetId, packet) == false)
 		{
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => received unknown packet id: %i"), SERVERNAME(this), peer->IPAddr().get(), packetId);
 		}
 	}
 
@@ -2317,37 +2322,52 @@ NET_DEFINE_PACKET(NetHeartbeat, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat)
 NET_PACKET_DEFINITION_END
 
 NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
-if (!(PKG[CSTRING("NET_STATUS")] && PKG[CSTRING("NET_STATUS")]->is_int()))
+if(
+	PKG[CSTRING("NET_STATUS")] == 0 ||
+	PKG[CSTRING("NET_STATUS")]->is_int() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_STATUS' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
-if (!(PKG[CSTRING("NET_MAJOR_VERSION")] && PKG[CSTRING("NET_MAJOR_VERSION")]->is_int()))
+if (
+	PKG[CSTRING("NET_MAJOR_VERSION")] == 0 ||
+	PKG[CSTRING("NET_MAJOR_VERSION")]->is_int() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_MAJOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
-if (!(PKG[CSTRING("NET_MINOR_VERSION")] && PKG[CSTRING("NET_MINOR_VERSION")]->is_int()))
+if (
+	PKG[CSTRING("NET_MINOR_VERSION")] == 0 ||
+	PKG[CSTRING("NET_MINOR_VERSION")]->is_int() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_MINOR_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
-if (!(PKG[CSTRING("NET_REVISION_VERSION")] && PKG[CSTRING("NET_REVISION_VERSION")]->is_int()))
+if (
+	PKG[CSTRING("NET_REVISION_VERSION")] == 0 ||
+	PKG[CSTRING("NET_REVISION_VERSION")]->is_int() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_REVISION_VERSION' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
 
-if (!(PKG[CSTRING("NET_KEY")] && PKG[CSTRING("NET_KEY")]->is_string()))
+if (
+	PKG[CSTRING("NET_KEY")] == 0 ||
+	PKG[CSTRING("NET_KEY")]->is_string() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_KEY' attribute in NetProtocolHandshake. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }
@@ -2358,10 +2378,12 @@ const auto NET_MINOR_VERSION = (short)PKG[CSTRING("NET_MINOR_VERSION")]->as_int(
 const auto NET_REVISION_VERSION = (short)PKG[CSTRING("NET_REVISION_VERSION")]->as_int();
 const auto NET_KEY = PKG[CSTRING("NET_KEY")]->as_string();
 
-if ((NET_MAJOR_VERSION == Version::Major())
-	&& (NET_MINOR_VERSION == Version::Minor())
-	&& (NET_REVISION_VERSION == Version::Revision())
-	&& strcmp(NET_KEY, Version::Key().data().data()) == 0)
+if (
+	NET_MAJOR_VERSION == Version::Major() && 
+	NET_MINOR_VERSION == Version::Minor() && 
+	NET_REVISION_VERSION == Version::Revision() &&
+	strcmp(NET_KEY, Version::Key().data().data()) == 0
+	)
 {
 	peer->NetVersionMatched = true;
 
@@ -2379,17 +2401,17 @@ if ((NET_MAJOR_VERSION == Version::Major())
 
 		Net::Coding::Base64::encode(b64, b64len);
 
-		NET_PACKET resp;
-		resp[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
-		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake, resp);
+		NET_PACKET response;
+		response[CSTRING("PublicKey")] = reinterpret_cast<char*>(b64);
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetAsymmetricHandshake, response);
 
 		FREE<byte>(b64);
 	}
 	else
 	{
 		/* no cipher mode and version is checked aswell. Set Peer's connection to estabilished */
-		NET_PACKET resp;
-		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, resp);
+		NET_PACKET response;
+		NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, response);
 
 		peer->estabilished = true;
 
@@ -2413,7 +2435,7 @@ if ((NET_MAJOR_VERSION == Version::Major())
 }
 else
 {
-	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Peer sent not matching Net-Version. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => NetProtocolHandshake is outdated. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Versionmismatch);
 }
 NET_END_PACKET;
@@ -2439,9 +2461,12 @@ else if (peer->cryption.getHandshakeStatus())
 	return;
 }
 
-if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string())) // empty
+if (
+	PKG[CSTRING("PublicKey")] == 0 ||
+	PKG[CSTRING("PublicKey")]->is_string() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'PublicKey' attribute in Asymmetric Handshake Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => RSAHandshake packet is incomplete. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_Handshake);
 	return;
 }
@@ -2464,8 +2489,8 @@ NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Asymmetric Handshake with P
 /* Asymmetric Handshake done. Estabilish Peer connection */
 {
 	/* Set Peer's connection to estabilished */
-	NET_PACKET resp;
-	NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, resp);
+	NET_PACKET response;
+	NET_SEND(peer, NET_NATIVE_PACKET_ID::PKG_NetEstabilish, response);
 
 	peer->estabilished = true;
 
@@ -2489,9 +2514,12 @@ NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => Asymmetric Handshake with P
 NET_END_PACKET
 
 NET_BEGIN_PACKET(Net::Server::Server, NetHeartbeat);
-if (!(PKG[CSTRING("NET_SEQUENCE_NUMBER")] && PKG[CSTRING("NET_SEQUENCE_NUMBER")]->is_int()))
+if (
+	PKG[CSTRING("NET_SEQUENCE_NUMBER")] == 0 ||
+	PKG[CSTRING("NET_SEQUENCE_NUMBER")]->is_int() == 0
+	)
 {
-	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => missing or bad datatype of 'NET_SEQUENCE_NUMBER' attribute in Heartbeat Packet. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
+	NET_LOG_ERROR(CSTRING("WinNet :: Server('%s') '%s' => NetHeartbeat packet is incomplete.. Connection to the peer will be dropped immediately."), SERVERNAME(this), peer->IPAddr().get());
 	DisconnectPeer(peer, 0, true);
 	return;
 }

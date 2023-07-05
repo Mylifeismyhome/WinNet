@@ -1459,11 +1459,7 @@ namespace Net
 			}
 
 			// Execute the packet
-			const auto ret = ExecutePacket();
-			if (ret == -1)
-			{
-				return -1;
-			}
+			ExecutePacket();
 
 			// re-alloc buffer
 			const auto leftSize = static_cast<int>(network.data_size - network.data_full_size) > 0 ? network.data_size - network.data_full_size : INVALID_SIZE;
@@ -1524,7 +1520,7 @@ namespace Net
 			return 0;
 		}
 
-		DWORD Client::ExecutePacket()
+		void Client::ExecutePacket()
 		{
 			int packetId = -1;
 
@@ -1532,7 +1528,6 @@ namespace Net
 
 			Net::Packet packet;
 			Net::Json::Document doc;
-			DWORD ret = 0;
 
 			/* Crypt */
 			if ((Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER) && network.RSAHandshake)
@@ -1605,34 +1600,31 @@ namespace Net
 					offset += AESIVSize;
 				}
 
-				if (!network.RSA.decryptBase64(AESKey.reference().get(), AESKeySize))
+				if (network.RSA.decryptBase64(AESKey.reference().get(), AESKeySize) == false)
 				{
 					AESKey.free();
 					AESIV.free();
-					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-Key & RSA and Base64"));
 
-					ret = -1;
+					NET_LOG_ERROR(CSTRING("failure on decrypting packet. packet will be rejected."));
 					goto loc_packet_free;
 				}
 
-				if (!network.RSA.decryptBase64(AESIV.reference().get(), AESIVSize))
+				if (network.RSA.decryptBase64(AESIV.reference().get(), AESIVSize) == false)
 				{
 					AESKey.free();
 					AESIV.free();
-					NET_LOG_ERROR(CSTRING("[NET] - Failure on decrypting frame using AES-IV & RSA and Base64"));
 
-					ret = -1;
+					NET_LOG_ERROR(CSTRING("failure on decrypting packet. packet will be rejected."));
 					goto loc_packet_free;
 				}
 
 				NET_AES aes;
-				if (!aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())))
+				if (aes.init(reinterpret_cast<const char*>(AESKey.get()), reinterpret_cast<const char*>(AESIV.get())) == false)
 				{
 					AESKey.free();
 					AESIV.free();
-					NET_LOG_ERROR(CSTRING("[NET] - Initializing AES failure"));
 
-					ret = -1;
+					NET_LOG_ERROR(CSTRING("failure on initializing encryption routine. packet will be rejected."));
 					goto loc_packet_free;
 				}
 
@@ -1735,9 +1727,7 @@ namespace Net
 							{
 								entry.free();
 
-								NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
-
-								ret = -1;
+								NET_LOG_PEER(CSTRING("failure on decrypting packet. packet will be rejected."));
 								goto loc_packet_free;
 							}
 
@@ -1791,9 +1781,7 @@ namespace Net
 						/* decrypt aes */
 						if (aes.decrypt(data.get(), packetSize) == false)
 						{
-							NET_LOG_PEER(CSTRING("[NET] - Decrypting frame has been failed"));
-
-							ret = -1;
+							NET_LOG_PEER(CSTRING("failure on decrypting packet. packet will be rejected."));
 							goto loc_packet_free;
 						}
 
@@ -1972,9 +1960,7 @@ namespace Net
 
 			if (data.valid() == false)
 			{
-				NET_LOG_PEER(CSTRING("[NET] - JSON data is not valid"));
-
-				ret = -1;
+				NET_LOG_PEER(CSTRING("packet data is invalid. packet will be rejected."));
 				goto loc_packet_free;
 			}
 
@@ -1985,40 +1971,28 @@ namespace Net
 			*
 			* pass the json content into packet object
 			*/
-			printf("%s\n\t", data.get());
 			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
-				NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
-
-				ret = -1;
+				NET_LOG_PEER(CSTRING("packet is in wrong format. json was unable to deserialize. packet will be rejected."));
 				data.Set(nullptr);
 				goto loc_packet_free;
 			}
 
 			data.Set(nullptr);
 
-			{
-				auto s = doc.Serialize();
-				printf("%s\n\t", s.get().get());
-			}
-
 			if (
 				doc[CSTRING("ID")] == 0 ||
 				doc[CSTRING("ID")]->is_int() == 0
 				)
 			{
-				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-
-				ret = -1;
+				NET_LOG_PEER(CSTRING("packet id is missing. packet is incomplete. packet will be rejected."));
 				goto loc_packet_free;
 			}
 
 			packetId = doc[CSTRING("ID")]->as_int();
 			if (packetId < 0)
 			{
-				NET_LOG_PEER(CSTRING("[NET] - Frame identification is not valid"));
-
-				ret = -1;
+				NET_LOG_PEER(CSTRING("packet id is not valid. packet will be rejected."));
 				goto loc_packet_free;
 			}
 
@@ -2034,9 +2008,7 @@ namespace Net
 				}
 				else
 				{
-					NET_LOG_PEER(CSTRING("[NET] - packet is wrong format"));
-
-					ret = -1;
+					NET_LOG_PEER(CSTRING("packet is missing content. packet will be rejected."));
 					goto loc_packet_free;
 				}
 			}
@@ -2053,7 +2025,7 @@ namespace Net
 				{
 					// Close only closes handle, it does not close the thread
 					Net::Thread::Close(hThread);
-					return 0;
+					return;
 				}
 
 				FREE<TPacketExcecute>(tpe);
@@ -2064,8 +2036,7 @@ namespace Net
 			{
 				if (CheckData(packetId, packet) == false)
 				{
-					ret = -1;
-					NET_LOG_PEER(CSTRING("[NET] - Frame is not defined"));
+					NET_LOG_PEER(CSTRING("received unknown packet id: %i"), packetId);
 				}
 			}
 
@@ -2081,7 +2052,7 @@ namespace Net
 				}
 			}
 
-			return ret;
+			return;
 		}
 
 		void Client::CompressData(BYTE*& data, size_t& size)
@@ -2212,40 +2183,43 @@ namespace Net
 
 		/* communication set */
 		// -> Response to Server with current Net Version
-		Net::Packet resp;
-		resp[CSTRING("NET_STATUS")] = 1;
-		resp[CSTRING("NET_MAJOR_VERSION")] = Version::Major();
-		resp[CSTRING("NET_MINOR_VERSION")] = Version::Minor();
-		resp[CSTRING("NET_REVISION_VERSION")] = Version::Revision();
+		Net::Packet reponse;
+		reponse[CSTRING("NET_STATUS")] = 1;
+		reponse[CSTRING("NET_MAJOR_VERSION")] = Version::Major();
+		reponse[CSTRING("NET_MINOR_VERSION")] = Version::Minor();
+		reponse[CSTRING("NET_REVISION_VERSION")] = Version::Revision();
 		const auto Key = Version::Key().get();
-		resp[CSTRING("NET_KEY")] = Key.get();
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, resp);
+		reponse[CSTRING("NET_KEY")] = Key.get();
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetProtocolHandshake, reponse);
 		NET_END_PACKET;
 
 		NET_BEGIN_PACKET(Client, RSAHandshake);
 		if (!(Isset(NET_OPT_USE_CIPHER) ? GetOption<bool>(NET_OPT_USE_CIPHER) : NET_OPT_DEFAULT_USE_CIPHER))
 		{
 			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, cipher option is been disabled, rejecting the frame"), FUNCTION_NAME);
+			NET_LOG_ERROR(CSTRING("Received a handshake frame, but the cipher option is disabled. Connection will be dropped immediately."));
 			return;
 		}
 		if (network.estabilished)
 		{
 			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already been estabilished, rejecting the frame"), FUNCTION_NAME);
+			NET_LOG_ERROR(CSTRING("Received a handshake frame, but the client connection is already established. Connection will be dropped immediately."));
 			return;
 		}
 		if (network.RSAHandshake)
 		{
 			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, client has already performed a handshake, rejecting the frame"), FUNCTION_NAME);
+			NET_LOG_ERROR(CSTRING("Received a handshake frame, but the client has already performed a handshake. Connection will be dropped immediately."));
 			return;
 		}
 
-		if (!(PKG[CSTRING("PublicKey")] && PKG[CSTRING("PublicKey")]->is_string()))
+		if (
+			PKG[CSTRING("PublicKey")] == 0 ||
+			PKG[CSTRING("PublicKey")]->is_string() == 0
+			)
 		{
 			Disconnect();
-			NET_LOG_ERROR(CSTRING("[NET][%s] - received a handshake frame, received public key is not valid, rejecting the frame"), FUNCTION_NAME);
+			NET_LOG_ERROR(CSTRING("RSAHandshake packet is incomplete. Connection will be dropped immediately."));
 			return;
 		}
 
@@ -2306,9 +2280,12 @@ namespace Net
 		// connection has been closed
 		Disconnect();
 
-		NET_LOG_SUCCESS(CSTRING("[NET] - Connection has been closed by the Server"));
+		NET_LOG_SUCCESS(CSTRING("Connection has been closed by the Server"));
 
-		if (!(PKG[CSTRING("code")] && PKG[CSTRING("code")]->is_int()))
+		if (
+			PKG[CSTRING("code")] == 0 ||
+			PKG[CSTRING("code")]->is_int() == 0
+			)
 		{
 			// Callback
 			OnConnectionClosed(-1);
@@ -2329,11 +2306,13 @@ namespace Net
 
 		NET_BEGIN_PACKET(Client, NetHeartbeat);
 		if (network.m_heartbeat_sequence_number >= INT_MAX)
+		{
 			network.m_heartbeat_sequence_number = -1;
+		}
 
-		Net::Packet resp;
-		resp[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
-		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, resp);
+		Net::Packet response;
+		response[CSTRING("NET_SEQUENCE_NUMBER")] = ++network.m_heartbeat_sequence_number;
+		NET_SEND(NET_NATIVE_PACKET_ID::PKG_NetHeartbeat, response);
 		NET_END_PACKET;
 	}
 }
