@@ -584,7 +584,7 @@ void Net::Json::BasicObject::__push(void* ptr)
 	m_value.insert({ idx, ptr });
 }
 
-std::map<int, void*> Net::Json::BasicObject::Value()
+std::map<int, void*> Net::Json::BasicObject::Value() const
 {
 	return m_value;
 }
@@ -635,7 +635,7 @@ void Net::Json::BasicArray::__push(void* ptr)
 	m_value.insert({ idx, ptr });
 }
 
-std::map<int, void*> Net::Json::BasicArray::Value()
+std::map<int, void*> Net::Json::BasicArray::Value() const
 {
 	return m_value;
 }
@@ -677,19 +677,28 @@ Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type t
 {
 	SetKey(key);
 	SetValue(value, type);
-	m_refCount = refCount;
+	//m_refCount = refCount;
 }
 
 template <typename T>
 Net::Json::BasicValue<T>::~BasicValue()
 {
-	/*
-	* string's are allocated into its own mem space before storing
-	* free it aswell
-	*/
-	if (m_type == Type::STRING)
+	switch(m_type)
 	{
-		FREE<char>(((BasicValue<char*>*)this)->Value());
+		case Type::OBJECT:
+			((BasicValue<Object>*)this)->Value().Destroy();
+			break;
+
+		case Type::ARRAY:
+			((BasicValue<Array>*)this)->Value().Destroy();
+			break;
+
+		case Type::STRING:
+			FREE<char>(((BasicValue<char*>*)this)->Value());
+			break;
+
+		default:
+			break;
 	}
 
 	m_value = {};
@@ -779,6 +788,18 @@ template <typename T>
 void Net::Json::BasicValue<T>::SetType(Net::Json::Type type)
 {
 	m_type = type;
+}
+
+template<typename T>
+size_t Net::Json::BasicValue<T>::getRefCount() const
+{
+	return m_refCount;
+}
+
+template<typename T>
+void Net::Json::BasicValue<T>::setRefCount(size_t refCount)
+{
+	m_refCount = refCount;
 }
 
 template <typename T>
@@ -1177,6 +1198,7 @@ void Net::Json::BasicValueRead::operator=(const NullValue& value)
 			BasicValue<NullValue>* pNew = ALLOC<BasicValue<NullValue>>();
 			pNew->SetKey(m_pNextKey);
 			pNew->SetValue(value, Type::NULLVALUE);
+			pNew->setRefCount(value.getRefCount());
 			pObject->OnIndexChanged(m_iValueIndex, pNew);
 		}
 		else if (m_ParentType == Type::ARRAY)
@@ -1185,6 +1207,7 @@ void Net::Json::BasicValueRead::operator=(const NullValue& value)
 			BasicValue<NullValue>* pNew = ALLOC<BasicValue<NullValue>>();
 			pNew->SetKey(m_pNextKey);
 			pNew->SetValue(value, Type::NULLVALUE);
+			pNew->setRefCount(value.getRefCount());
 			pArray->OnIndexChanged(m_iValueIndex, pNew);
 		}
 	}
@@ -1385,6 +1408,18 @@ void Net::Json::BasicValueRead::operator=(const BasicObject& value)
 	{
 		cast->SetValue(value, Type::OBJECT);
 	}
+
+	auto& map = value.Value();
+	for(auto it = map.begin(); it != map.end(); ++it)
+	{
+		auto tmp = (BasicValue<void*>*)it->second;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
+		tmp->m_refCount++;
+	}
 }
 
 void Net::Json::BasicValueRead::operator=(const BasicArray& value)
@@ -1417,6 +1452,18 @@ void Net::Json::BasicValueRead::operator=(const BasicArray& value)
 	{
 		cast->SetValue(value, Type::ARRAY);
 	}
+
+	auto& map = value.Value();
+	for (auto it = map.begin(); it != map.end(); ++it)
+	{
+		auto tmp = (BasicValue<void*>*)it->second;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
+		tmp->m_refCount++;
+	}
 }
 
 void Net::Json::BasicValueRead::operator=(const Document& value)
@@ -1443,6 +1490,18 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 			cast->SetValue(*const_cast<Net::Json::Document*>(&value)->GetRootObject(), Type::OBJECT);
 		}
 
+		auto& map = const_cast<Net::Json::Document*>(&value)->GetRootObject()->Value();
+		for (auto it = map.begin(); it != map.end(); ++it)
+		{
+			auto tmp = (BasicValue<void*>*)it->second;
+			if (tmp == nullptr)
+			{
+				continue;
+			}
+
+			tmp->m_refCount++;
+		}
+
 		break;
 	}
 
@@ -1465,6 +1524,18 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 			cast->SetValue(*const_cast<Net::Json::Document*>(&value)->GetRootArray(), Type::ARRAY);
 		}
 
+		auto& map = const_cast<Net::Json::Document*>(&value)->GetRootArray()->Value();
+		for (auto it = map.begin(); it != map.end(); ++it)
+		{
+			auto tmp = (BasicValue<void*>*)it->second;
+			if (tmp == nullptr)
+			{
+				continue;
+			}
+
+			tmp->m_refCount++;
+		}
+
 		break;
 	}
 
@@ -1479,10 +1550,10 @@ Net::Json::Object::Object()
 {
 }
 
-Net::Json::Object::Object(Object& m_Object)
+Net::Json::Object::Object(Object& other)
 {
-	m_type = m_Object.m_type;
-	m_value = m_Object.m_value;
+	m_type = other.m_type;
+	m_value = other.m_value;
 
 	for (size_t i = 0; i < m_value.size(); ++i)
 	{
@@ -1707,10 +1778,10 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* other)
 	return other;
 }
 
-void Net::Json::Object::operator=(const Object& m_Object)
+void Net::Json::Object::operator=(const Object& other)
 {
-	m_type = m_Object.m_type;
-	m_value = m_Object.m_value;
+	m_type = other.m_type;
+	m_value = other.m_value;
 
 	for (size_t i = 0; i < m_value.size(); ++i)
 	{
@@ -3123,10 +3194,10 @@ Net::Json::Array::Array()
 {
 }
 
-Net::Json::Array::Array(Array& m_Array)
+Net::Json::Array::Array(const Array& other)
 {
-	m_type = m_Array.m_type;
-	m_value = m_Array.m_value;
+	m_type = other.m_type;
+	m_value = other.m_value;
 
 	for (size_t i = 0; i < m_value.size(); ++i)
 	{
@@ -3247,10 +3318,10 @@ Net::Json::BasicValueRead Net::Json::Array::at(size_t idx)
 	return this->operator[](idx);
 }
 
-void Net::Json::Array::operator=(const Array& m_Array)
+void Net::Json::Array::operator=(const Array& other)
 {
-	m_type = m_Array.m_type;
-	m_value = m_Array.m_value;
+	m_type = other.m_type;
+	m_value = other.m_value;
 
 	for (size_t i = 0; i < m_value.size(); ++i)
 	{
@@ -4334,7 +4405,7 @@ Net::Json::Document::Document()
 	Init();
 }
 
-Net::Json::Document::Document(Document& m_doc)
+Net::Json::Document::Document(const Document& m_doc)
 {
 	m_type = m_doc.m_type;
 	root_obj = m_doc.root_obj;
@@ -4346,10 +4417,10 @@ Net::Json::Document::~Document()
 	Clear();
 }
 
-Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
+Net::Json::Document& Net::Json::Document::operator=(const Document& doc)
 {
 	// Guard self assignment
-	if (this == &m_doc)
+	if (this == &doc)
 	{
 		return *this;
 	}
@@ -4357,22 +4428,22 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
 	/*
 	* move the document into new instance
 	*/
-	m_type = m_doc.m_type;
-	root_obj = m_doc.root_obj;
-	root_array = m_doc.root_array;
+	m_type = doc.m_type;
+	root_obj = doc.root_obj;
+	root_array = doc.root_array;
 
 	return *this;
 }
 
-void Net::Json::Document::operator=(Object& m_Object)
+void Net::Json::Document::operator=(const Object& obj)
 {
-	root_obj = m_Object;
+	root_obj = obj;
 	m_type = Type::OBJECT;
 }
 
-void Net::Json::Document::operator=(Array& m_Array)
+void Net::Json::Document::operator=(const Array& arr)
 {
-	root_array = m_Array;
+	root_array = arr;
 	m_type = Type::ARRAY;
 }
 

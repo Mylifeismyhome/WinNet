@@ -85,7 +85,7 @@ namespace Net
 			BasicObject();
 			~BasicObject();
 
-			std::map<int, void*> Value();
+			std::map<int, void*> Value() const;
 			void Set(std::map<int, void*> value);
 			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
@@ -103,7 +103,7 @@ namespace Net
 			BasicArray();
 			~BasicArray();
 
-			std::map<int, void*> Value();
+			std::map<int, void*> Value() const;
 			void Set(std::map<int, void*> value);
 			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
@@ -137,6 +137,9 @@ namespace Net
 			void SetKey(Net::ViewString& key);
 			void SetValue(T value, Type type);
 			void SetType(Type type);
+
+			size_t getRefCount() const;
+			void setRefCount(size_t refCount);
 
 			char* Key();
 			T& Value();
@@ -251,7 +254,7 @@ namespace Net
 
 		public:
 			Object();
-			Object(Object& m_Object);
+			Object(Object& other);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
@@ -262,7 +265,7 @@ namespace Net
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
 
-			void operator=(const Object& m_Object);
+			void operator=(const Object& other);
 
 			bool Append(const char* key, int value);
 			bool Append(const char* key, float value);
@@ -299,13 +302,13 @@ namespace Net
 
 		public:
 			Array();
-			Array(Array& m_Array);
+			Array(const Array& other);
 			~Array();
 
 			BasicValueRead operator[](size_t idx);
 			BasicValueRead at(size_t idx);
 
-			void operator=(const Array& m_Array);
+			void operator=(const Array& other);
 
 			bool push(int value);
 			bool push(float value);
@@ -343,12 +346,12 @@ namespace Net
 
 		public:
 			Document();
-			Document(Document& m_Doc);
+			Document(const Document& doc);
 			~Document();
 
-			Document& operator=(const Document& m_doc);
-			void operator=(Object& m_Object);
-			void operator=(Array& m_Array);
+			Document& operator=(const Document& doc);
+			void operator=(const Object& obj);
+			void operator=(const Array& arr);
 
 			Type GetType();
 			Object* GetRootObject();

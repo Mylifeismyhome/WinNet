@@ -103,8 +103,7 @@ size_t& Net::RawData_t::original_size()
 
 Net::Packet::Packet::Packet()
 {
-	this->json = {};
-	this->raw = {};
+	raw = {};
 }
 
 Net::Json::Document& Net::Packet::Data()
