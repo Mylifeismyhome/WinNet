@@ -1569,7 +1569,7 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 	int packetId = -1;
 	{
 		Net::Json::Document doc;
-		if (!doc.Deserialize(reinterpret_cast<char*>(data)))
+		if (!doc.Deserialize(reinterpret_cast<const char*>(data)))
 		{
 			pPacket.free();
 			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
