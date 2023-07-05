@@ -20,18 +20,36 @@ int main()
 	{
 		Net::Json::Document doc;
 
-		Net::Json::Object o1;
 		{
-			Net::Json::Object o2;
-			o2["abc"] = 123;
-			o1 = o2;
+			Net::Json::Document doc1;
+			Net::Json::Object o1;
+			{
+
+				Net::Json::Object o2;
+
+				{
+					Net::Json::Object o3;
+					o3["PIMMEL"] = 25;
+					o2 = o3;
+				}
+
+				o2["abc"] = 123;
+				o1 = o2;
+			}
+
+			if (o1["abc"] && o1["abc"]->is_int())
+			{
+				int i = 0;
+				i = 1;
+			}
+
+			//auto s = o1.Serialize();
+			doc1 = o1;
+			doc = o1;
 		}
 
-		if (o1["abc"] && o1["abc"]->is_int())
-		{
-			int i = 0;
-			i = 1;
-		}
+	//	auto s = doc.Serialize();
+	/*	printf("%s\n", s.get().get());*/
 
 		//{
 		//	Net::Json::Document b;

@@ -564,13 +564,13 @@ bool Net::Json::Convert::is_boolean(Net::ViewString& vs)
 Net::Json::BasicObject::BasicObject()
 {
 	this->m_type = Type::OBJECT;
-	this->value = {};
+	this->m_value = {};
 }
 
 Net::Json::BasicObject::~BasicObject()
 {
 	this->m_type = Type::OBJECT;
-	this->value = {};
+	this->m_value = {};
 }
 
 void Net::Json::BasicObject::__push(void* ptr)
@@ -580,18 +580,18 @@ void Net::Json::BasicObject::__push(void* ptr)
 		return;
 	}
 
-	auto idx = value.size();
-	value.insert({ idx, ptr });
+	auto idx = m_value.size();
+	m_value.insert({ idx, ptr });
 }
 
 std::map<int, void*> Net::Json::BasicObject::Value()
 {
-	return value;
+	return m_value;
 }
 
 void Net::Json::BasicObject::Set(std::map<int, void*> value)
 {
-	this->value = value;
+	m_value = value;
 }
 
 void Net::Json::BasicObject::OnIndexChanged(size_t& m_idx, void* m_pNew)
@@ -601,14 +601,14 @@ void Net::Json::BasicObject::OnIndexChanged(size_t& m_idx, void* m_pNew)
 		return;
 	}
 
-	if (value.find(m_idx) == value.end())
+	if (m_value.find(m_idx) == m_value.end())
 	{
-		m_idx = value.size();
-		value.insert({ m_idx, m_pNew });
+		m_idx = m_value.size();
+		m_value.insert({ m_idx, m_pNew });
 	}
 	else
 	{
-		value[m_idx] = m_pNew;
+		m_value[m_idx] = m_pNew;
 	}
 }
 
@@ -666,16 +666,18 @@ void Net::Json::BasicArray::OnIndexChanged(size_t m_idx, void* m_pNew)
 template <typename T>
 Net::Json::BasicValue<T>::BasicValue()
 {
-	this->value = {};
-	this->key = nullptr;
-	this->m_type = Type::UNKNOWN;
+	m_value = {};
+	m_key = nullptr;
+	m_type = Type::UNKNOWN;
+	m_refCount = 1;
 }
 
 template <typename T>
-Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type type)
+Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type type, size_t refCount)
 {
-	this->SetKey(key);
-	this->SetValue(value, type);
+	SetKey(key);
+	SetValue(value, type);
+	m_refCount = refCount;
 }
 
 template <typename T>
@@ -685,14 +687,14 @@ Net::Json::BasicValue<T>::~BasicValue()
 	* string's are allocated into its own mem space before storing
 	* free it aswell
 	*/
-	if(this->m_type == Type::STRING)
+	if (m_type == Type::STRING)
 	{
 		FREE<char>(((BasicValue<char*>*)this)->Value());
 	}
 
-	this->value = {};
-	FREE<char>(this->key);
-	this->m_type = Type::UNKNOWN;
+	m_value = {};
+	FREE<char>(m_key);
+	m_type = Type::UNKNOWN;
 }
 
 template <typename T>
@@ -720,169 +722,215 @@ void Net::Json::BasicValue<T>::operator=(const BasicObject& value)
 }
 
 template <typename T>
-void Net::Json::BasicValue<T>::SetKey(const char* in)
+void Net::Json::BasicValue<T>::SetKey(const char* key)
 {
-	auto len = strlen(in);
-	key = ALLOC<char>(len + 1);
-	if (key == nullptr)
+	if (m_key)
+	{
+		FREE<char>(m_key);
+	}
+
+	auto len = strlen(key);
+	m_key = ALLOC<char>(len + 1);
+	if (m_key == nullptr)
 	{
 		return;
 	}
-	memcpy(key, in, len);
-	key[len] = 0;
+	memcpy(m_key, key, len);
+	m_key[len] = 0;
 }
 
 template <typename T>
 void Net::Json::BasicValue<T>::SetKey(Net::ViewString& key)
 {
-	this->key = ALLOC<char>(key.size() + 1);
-	if (!this->key) return;
-	memcpy(this->key, &key.get()[key.start()], key.size());
-	this->key[key.size()] = 0;
+	if (m_key)
+	{
+		FREE<char>(m_key);
+	}
+
+	if (key.valid() == false)
+	{
+		return;
+	}
+
+	m_key = ALLOC<char>(key.size() + 1);
+	if (m_key == nullptr)
+	{
+		return;
+	}
+	memcpy(m_key, &key.get()[key.start()], key.size());
+	m_key[key.size()] = 0;
 }
 
 template <typename T>
 void Net::Json::BasicValue<T>::SetValue(T value, Net::Json::Type type)
 {
-	this->value = value;
-	this->m_type = type;
+	m_value = value;
+	m_type = type;
 }
 
 template <typename T>
 void Net::Json::BasicValue<T>::SetType(Net::Json::Type type)
 {
-	this->m_type = type;
+	m_type = type;
 }
 
 template <typename T>
 char* Net::Json::BasicValue<T>::Key()
 {
-	return this->key;
+	return m_key;
 }
 
 template <typename T>
 T& Net::Json::BasicValue<T>::Value()
 {
-	return this->value;
+	return m_value;
 }
 
 template <typename T>
 Net::Json::Type Net::Json::BasicValue<T>::GetType()
 {
-	return this->m_type;
+	return m_type;
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_null()
 {
-	return this->GetType() == Type::NULLVALUE;
+	return (GetType() == Type::NULLVALUE);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_object()
 {
-	return this->GetType() == Type::OBJECT;
+	return (GetType() == Type::OBJECT);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_array()
 {
-	return this->GetType() == Type::ARRAY;
+	return (GetType() == Type::ARRAY);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_integer()
 {
-	return this->GetType() == Type::INTEGER;
+	return (GetType() == Type::INTEGER);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_int()
 {
-	return this->GetType() == Type::INTEGER;
+	return (GetType() == Type::INTEGER);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_float()
 {
-	return this->GetType() == Type::FLOAT;
+	return (GetType() == Type::FLOAT);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_double()
 {
-	return this->GetType() == Type::DOUBLE;
+	return (GetType() == Type::DOUBLE);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_boolean()
 {
-	return this->GetType() == Type::BOOLEAN;
+	return (GetType() == Type::BOOLEAN);
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::is_string()
 {
-	return this->GetType() == Type::STRING;
+	return (GetType() == Type::STRING);
 }
 
 template <typename T>
 Net::Json::Object* Net::Json::BasicValue<T>::as_object()
 {
-	if (!is_object()) return {};
+	if (is_object() == false)
+	{
+		return {};
+	}
+
 	return (Object*)&((BasicValue<BasicObject>*)this)->Value();
 }
 
 template <typename T>
 Net::Json::Array* Net::Json::BasicValue<T>::as_array()
 {
-	if (!is_array()) return {};
+	if (is_array() == false)
+	{
+		return {};
+	}
+
 	return (Array*)&((BasicValue<BasicArray>*)this)->Value();
 }
 
 template <typename T>
 int Net::Json::BasicValue<T>::as_int()
 {
-	if (!is_integer()) return 0;
+	if (is_integer() == false)
+	{
+		return 0;
+	}
+
 	return ((BasicValue<int>*)this)->Value();
 }
 
 template <typename T>
 float Net::Json::BasicValue<T>::as_float()
 {
-	if (!is_float()) return 0.0f;
+	if (is_float() == false)
+	{
+		return 0.0f;
+	}
+
 	return ((BasicValue<float>*)this)->Value();
 }
 
 template <typename T>
 double Net::Json::BasicValue<T>::as_double()
 {
-	if (!is_double()) return 0;
+	if (is_double() == false)
+	{
+		return 0;
+	}
+
 	return ((BasicValue<double>*)this)->Value();
 }
 
 template <typename T>
 bool Net::Json::BasicValue<T>::as_boolean()
 {
-	if (!is_boolean()) return false;
+	if (is_boolean() == false)
+	{
+		return false;
+	}
+
 	return ((BasicValue<bool>*)this)->Value();
 }
 
 template <typename T>
 char* Net::Json::BasicValue<T>::as_string()
 {
-	if (!is_string()) return (char*)"";
+	if (is_string() == false)
+	{
+		return (char*)"";
+	}
+
 	return ((BasicValue<char*>*)this)->Value();
 }
 
 Net::Json::NullValue::NullValue()
 {
-	this->SetType(Type::NULLVALUE);
+	SetType(Type::NULLVALUE);
 }
 
 Net::Json::NullValue::NullValue(int i)
 {
-	this->SetType(Type::NULLVALUE);
+	SetType(Type::NULLVALUE);
 }
 
 void Net::Json::BasicValueRead::allocNextKey(const char* key)
@@ -1289,7 +1337,7 @@ void Net::Json::BasicValueRead::operator=(const char* value)
 			m_pNew->SetValue(ptr, Type::STRING);
 			m_pObject->OnIndexChanged(this->m_iValueIndex, m_pNew);
 		}
-		else if(this->m_ParentType == Type::ARRAY)
+		else if (this->m_ParentType == Type::ARRAY)
 		{
 			auto m_pArray = (Array*)this->m_pParent;
 			BasicValue<char*>* m_pNew = ALLOC<BasicValue<char*>>();
@@ -1422,14 +1470,25 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 Net::Json::Object::Object()
 	: Net::Json::BasicObject::BasicObject()
 {
-	m_refCount = 1;
 }
+
 Net::Json::Object::Object(Object& m_Object)
 {
 	m_type = m_Object.m_type;
-	value = m_Object.value;
-	m_refCount = m_Object.m_refCount;
-	m_Object.m_refCount++;
+	m_value = m_Object.m_value;
+
+	for (size_t i = 0; i < m_value.size(); ++i)
+	{
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<void*>*)ptr;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
+		tmp->m_refCount++;
+	}
 }
 
 Net::Json::Object::~Object()
@@ -1437,37 +1496,28 @@ Net::Json::Object::~Object()
 	Destroy();
 }
 
-void Net::Json::Object::lost_refernece()
-{
-	if (m_refCount == 0)
-	{
-		return;
-	}
-
-	m_refCount--;
-}
-
 void Net::Json::Object::Destroy()
 {
-	if (m_refCount != 0)
-	{
-		m_refCount--;
-	}
-
-	if (m_refCount > 0)
-	{
-		return;
-	}
-
 	/*
 	* iterate through the values
 	* then manually free it to call its destructor
 	*/
-	const auto size = value.size();
-	for (size_t i = 0; i < size; ++i)
+	for (size_t i = 0; i < m_value.size(); ++i)
 	{
-		auto tmp = (BasicValue<void*>*)value[i];
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<void*>*)ptr;
 		if (tmp == nullptr)
+		{
+			continue;
+		}
+
+		if (tmp->m_refCount != 0)
+		{
+			tmp->m_refCount--;
+		}
+
+		if (tmp->m_refCount > 0)
 		{
 			continue;
 		}
@@ -1475,39 +1525,39 @@ void Net::Json::Object::Destroy()
 		switch (tmp->GetType())
 		{
 		case Type::UNKNOWN:
-			FREE<void>(value[i]);
+			FREE<void>(ptr);
 			break;
 
 		case Type::NULLVALUE:
-			FREE<Net::Json::NullValue>(value[i]);
+			FREE<Net::Json::NullValue>(ptr);
 			break;
 
 		case Type::OBJECT:
-			FREE<Net::Json::BasicValue<Net::Json::Object>>(value[i]);
+			FREE<Net::Json::BasicValue<Net::Json::Object>>(ptr);
 			break;
 
 		case Type::ARRAY:
-			FREE<Net::Json::BasicValue<Net::Json::Array>>(value[i]);
+			FREE<Net::Json::BasicValue<Net::Json::Array>>(ptr);
 			break;
 
 		case Type::STRING:
-			FREE<Net::Json::BasicValue<char>>(value[i]);
+			FREE<Net::Json::BasicValue<char>>(ptr);
 			break;
 
 		case Type::INTEGER:
-			FREE<Net::Json::BasicValue<int>>(value[i]);
+			FREE<Net::Json::BasicValue<int>>(ptr);
 			break;
 
 		case Type::FLOAT:
-			FREE<Net::Json::BasicValue<float>>(value[i]);
+			FREE<Net::Json::BasicValue<float>>(ptr);
 			break;
 
 		case Type::DOUBLE:
-			FREE<Net::Json::BasicValue<double>>(value[i]);
+			FREE<Net::Json::BasicValue<double>>(ptr);
 			break;
 
 		case Type::BOOLEAN:
-			FREE<Net::Json::BasicValue<bool>>(value[i]);
+			FREE<Net::Json::BasicValue<bool>>(ptr);
 			break;
 
 		default:
@@ -1515,7 +1565,7 @@ void Net::Json::Object::Destroy()
 		}
 	}
 
-	this->value.clear();
+	m_value.clear();
 }
 
 template<typename T>
@@ -1532,10 +1582,12 @@ bool Net::Json::Object::__append(const char* key, T value, Type type)
 template <typename T>
 Net::Json::TObjectGet<T> Net::Json::Object::__get(const char* key)
 {
-	const auto size = value.size();
+	const auto size = m_value.size();
 	for (size_t i = 0; i < size; ++i)
 	{
-		BasicValue<T>* tmp = (BasicValue<T>*)value.operator[](i);
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<T*>*)ptr;
 		if (tmp == nullptr)
 		{
 			continue;
@@ -1558,7 +1610,7 @@ Net::Json::TObjectGet<T> Net::Json::Object::__get(const char* key)
 		}
 
 		if (m_notMatch) continue;
-		return { (BasicValue<T>*)value[i], i, tmp->GetType()};
+		return { (BasicValue<T>*)tmp, i, tmp->GetType() };
 	}
 
 	return {};
@@ -1567,10 +1619,12 @@ Net::Json::TObjectGet<T> Net::Json::Object::__get(const char* key)
 template <typename T>
 Net::Json::TObjectGet<T> Net::Json::Object::__get(Net::ViewString& key)
 {
-	const auto size = value.size();
+	const auto size = m_value.size();
 	for (size_t i = 0; i < size; ++i)
 	{
-		BasicValue<T>* tmp = (BasicValue<T>*)value[i];
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<T*>*)ptr;
 		if (tmp == nullptr)
 		{
 			continue;
@@ -1592,7 +1646,7 @@ Net::Json::TObjectGet<T> Net::Json::Object::__get(Net::ViewString& key)
 		}
 
 		if (m_notMatch) continue;
-		return { (BasicValue<T>*)value[i], i, tmp->GetType()};
+		return { (BasicValue<T>*)tmp, i, tmp->GetType() };
 	}
 
 	return {};
@@ -1646,9 +1700,20 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* other)
 void Net::Json::Object::operator=(const Object& m_Object)
 {
 	m_type = m_Object.m_type;
-	value = m_Object.value;
-	m_refCount = m_Object.m_refCount;
-	const_cast<Object*>(&m_Object)->m_refCount++;
+	m_value = m_Object.m_value;
+
+	for (size_t i = 0; i < m_value.size(); ++i)
+	{
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<void*>*)ptr;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
+		tmp->m_refCount++;
+	}
 }
 
 bool Net::Json::Object::Append(const char* key, int value)
@@ -1694,9 +1759,16 @@ bool Net::Json::Object::Append(const char* key, Object value)
 size_t Net::Json::Object::CalcLengthForSerialize()
 {
 	size_t m_size = 0;
-	for (size_t i = 0; i < value.size(); ++i)
+	for (size_t i = 0; i < m_value.size(); ++i)
 	{
-		auto tmp = (BasicValue<void*>*)value[i];
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<void*>*)ptr;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
 		if (tmp->GetType() == Type::NULLVALUE)
 		{
 			m_size += NET_JSON_ARR_LEN("null");
@@ -2524,9 +2596,16 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 	if (!st.m_reserved)
 	{
 		size_t m_size = CalcLengthForSerialize();
-		for (size_t i = 0; i < value.size(); ++i)
+		for (size_t i = 0; i < m_value.size(); ++i)
 		{
-			auto tmp = (BasicValue<void*>*)value[i];
+			auto& ptr = m_value[i];
+
+			auto tmp = (BasicValue<void*>*)ptr;
+			if (tmp == nullptr)
+			{
+				continue;
+			}
+
 			switch (tmp->GetType())
 			{
 			case Type::OBJECT:
@@ -2545,29 +2624,44 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 
 	st.m_buffer += "{";
 
-	if (value.size() != 0 && type == SerializeType::FORMATTED)
+	if (m_value.size() != 0 && type == SerializeType::FORMATTED)
+	{
 		st.m_buffer += '\n';
+	}
 
-	for (size_t i = 0; i < value.size(); ++i)
+	for (size_t i = 0; i < m_value.size(); ++i)
 	{
 		if (type == SerializeType::FORMATTED)
 		{
 			for (size_t i = 0; i < iterations; ++i)
+			{
 				st.m_buffer += '\t';
+			}
 		}
 
-		auto tmp = (BasicValue<void*>*)value[i];
+		auto& ptr = m_value[i];
+
+		auto tmp = (BasicValue<void*>*)ptr;
+		if (tmp == nullptr)
+		{
+			continue;
+		}
+
 		Net::String encodedKey(reinterpret_cast<const char*>(tmp->Key()));
 		Net::Json::EncodeString(encodedKey);
-		
+
 		// append key
 		st.m_buffer += '"';
 		st.m_buffer += encodedKey;
 		st.m_buffer += '"';
 		if (type == SerializeType::FORMATTED)
+		{
 			st.m_buffer += " : ";
+		}
 		else
+		{
 			st.m_buffer += ":";
+		}
 
 		switch (tmp->GetType())
 		{
@@ -2628,21 +2722,25 @@ bool Net::Json::Object::TrySerialize(SerializeType type, SerializeT& st, size_t 
 			return false;
 		}
 
-		if (i != value.size() - 1)
+		if (i != m_value.size() - 1)
 		{
 			st.m_buffer += ',';
 
 			if (type == SerializeType::FORMATTED)
+			{
 				st.m_buffer += '\n';
+			}
 		}
 	}
 
-	if (value.size() != 0 && type == SerializeType::FORMATTED)
+	if (m_value.size() != 0 && type == SerializeType::FORMATTED)
 	{
 		st.m_buffer += '\n';
 
 		for (size_t i = 0; i < iterations - 1; ++i)
+		{
 			st.m_buffer += '\t';
+		}
 	}
 
 	st.m_buffer += "}";
@@ -3025,24 +3123,12 @@ Net::Json::Array::~Array()
 	Destroy();
 }
 
-void Net::Json::Array::lost_refernece()
-{
-	if (m_refCount == 0)
-	{
-		return;
-	}
-
-	m_refCount--;
-}
-
 void Net::Json::Array::Destroy()
 {
-	if (m_refCount == 0)
+	if (m_refCount != 0)
 	{
-		return;
+		m_refCount--;
 	}
-
-	m_refCount--;
 
 	if (m_refCount > 1)
 	{
@@ -4168,14 +4254,11 @@ Net::Json::Document::Document()
 	Init();
 }
 
-Net::Json::Document::Document(Document& m_Doc)
+Net::Json::Document::Document(Document& m_doc)
 {
-	m_type = m_Doc.m_type;
-	root_obj = m_Doc.root_obj;
-	root_array = m_Doc.root_array;
-
-	m_bFree = 1;
-	m_Doc.m_bFree = 0;
+	m_type = m_doc.m_type;
+	root_obj = m_doc.root_obj;
+	root_array = m_doc.root_array;
 }
 
 Net::Json::Document::~Document()
@@ -4198,30 +4281,19 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
 	root_obj = m_doc.root_obj;
 	root_array = m_doc.root_array;
 
-	m_bFree = 1;
-	const_cast<Net::Json::Document*>(&m_doc)->m_bFree = 0;
-
 	return *this;
 }
 
 void Net::Json::Document::operator=(Object& m_Object)
 {
-	Clear();
-
 	root_obj = m_Object;
-	m_Object.lost_refernece();
 	m_type = Type::OBJECT;
-	m_bFree = 1;
 }
 
 void Net::Json::Document::operator=(Array& m_Array)
 {
-	Clear();
-
 	root_array = m_Array;
-	m_Array.lost_refernece();
 	m_type = Type::ARRAY;
-	m_bFree = 1;
 }
 
 Net::Json::Type Net::Json::Document::GetType()
@@ -4245,18 +4317,10 @@ void Net::Json::Document::Init()
 	root_obj = {};
 	root_array = {};
 	m_type = Type::OBJECT;
-	m_bFree = 1;
 }
 
 void Net::Json::Document::Clear()
 {
-	if (m_bFree == 0)
-	{
-		root_obj = {};
-		root_array = {};
-		return;
-	}
-
 	root_obj.Destroy();
 	root_array.Destroy();
 }

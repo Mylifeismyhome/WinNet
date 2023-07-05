@@ -76,7 +76,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			std::map<int, void*> value;
+			std::map<int, void*> m_value;
 
 		protected:
 			void __push(void* ptr);
@@ -115,12 +115,15 @@ namespace Net
 		class BasicValue
 		{
 			Type m_type;
-			char* key;
-			T value;
+			char* m_key;
+			T m_value;
+
+		public:
+			size_t m_refCount;
 
 		public:
 			BasicValue();
-			BasicValue(const char* key, T value, Type type);
+			BasicValue(const char* key, T value, Type type, size_t refCount);
 			~BasicValue();
 
 			void operator=(const int& value);
@@ -244,14 +247,10 @@ namespace Net
 			bool DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString = false);
 			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
 
-			size_t m_refCount;
-
 		public:
 			Object();
 			Object(Object& m_Object);
 			~Object();
-
-			void lost_refernece();
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
@@ -303,8 +302,6 @@ namespace Net
 			Array(Array& m_Array);
 			~Array();
 
-			void lost_refernece();
-
 			BasicValueRead operator[](size_t idx);
 			BasicValueRead at(size_t idx);
 
@@ -340,8 +337,6 @@ namespace Net
 			Type m_type;
 			Object root_obj;
 			Array root_array;
-
-			BYTE m_bFree;
 
 			void Init();
 			void Clear();
