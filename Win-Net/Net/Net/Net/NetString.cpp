@@ -232,7 +232,7 @@ namespace Net
 		* instead of allocating new space and copy this string
 		* we just move it's pointer into ours
 		*/
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(str);
 		_free_size = INVALID_SIZE;
 	}
@@ -284,7 +284,7 @@ namespace Net
 
 	void String::copy(const String& in)
 	{
-		Destroy();
+		//Destroy();
 
 		auto cast = const_cast<String*>(&in);
 
@@ -297,7 +297,7 @@ namespace Net
 
 	void String::move(const String& in)
 	{
-		Destroy();
+		//Destroy();
 
 		auto cast = const_cast<String*>(&in);
 		_string = cast->_string;
@@ -306,7 +306,7 @@ namespace Net
 
 	String::~String()
 	{
-		Destroy();
+		//Destroy();
 	}
 
 	/*
@@ -450,7 +450,7 @@ namespace Net
 		str[0] = in;
 		str[1] = '\0';
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 		_free_size = INVALID_SIZE;
 	}
@@ -476,14 +476,14 @@ namespace Net
 		va_end(vaArgs);
 #endif
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(reinterpret_cast<const char*>(str.data()));
 		_free_size = INVALID_SIZE;
 	}
 
 	void String::set(const String& in, ...)
 	{
-		Destroy();
+		//Destroy();
 
 		auto cast = const_cast<String*>(&in);
 
@@ -533,7 +533,7 @@ namespace Net
 				data.get()[_string.size()] = in;
 				data.get()[newLen] = '\0';
 
-				Destroy();
+				//Destroy();
 				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
 			}
 		}
@@ -572,7 +572,7 @@ namespace Net
 				memcpy(&data.get()[_string.size()], buffer, buffer_len);
 				data.get()[newSize] = '\0';
 
-				Destroy();
+				//Destroy();
 				_string = RUNTIMEXOR(reinterpret_cast<char*>(data.get()));
 				_free_size = INVALID_SIZE;
 
@@ -691,7 +691,7 @@ namespace Net
 
 	void String::clear()
 	{
-		Destroy();
+		//Destroy();
 	}
 
 	bool String::empty()
@@ -1309,7 +1309,7 @@ namespace Net
 			++j;
 		}
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(replace);
 		return true;
 	}
@@ -1338,7 +1338,7 @@ namespace Net
 		memcpy(&replace[i], r, rSize);
 		memcpy(&replace[i + rSize], &str.get()[i + 1], size() - i - 1);
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(replace);
 		return true;
 	}
@@ -1374,7 +1374,7 @@ namespace Net
 		}
 		replace[replaceSize] = '\0';
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(replace);
 		return true;
 	}
@@ -1415,7 +1415,7 @@ namespace Net
 		}
 		replace[replaceSize] = '\0';
 
-		Destroy();
+		//Destroy();
 		_string = RUNTIMEXOR(replace);
 		return true;
 	}

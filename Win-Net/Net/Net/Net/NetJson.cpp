@@ -1770,19 +1770,18 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* other)
 void Net::Json::Object::operator=(const Object& other)
 {
 	m_type = other.m_type;
-	m_value = other.m_value;
 
-	for (size_t i = 0; i < m_value.size(); ++i)
+	for (auto it = other.m_value.begin(); it != other.m_value.end(); ++it)
 	{
-		auto& ptr = m_value[i];
-
-		auto tmp = (BasicValue<void*>*)ptr;
+		auto tmp = (BasicValue<void*>*)it->second;
 		if (tmp == nullptr)
 		{
 			continue;
 		}
 
 		tmp->m_refCount++;
+
+		m_value.insert({ it->first, it->second });
 	}
 }
 
@@ -3312,19 +3311,18 @@ Net::Json::BasicValueRead Net::Json::Array::at(size_t idx)
 void Net::Json::Array::operator=(const Array& other)
 {
 	m_type = other.m_type;
-	m_value = other.m_value;
 
-	for (size_t i = 0; i < m_value.size(); ++i)
+	for (auto it = other.m_value.begin(); it != other.m_value.end(); ++it)
 	{
-		auto& ptr = m_value[i];
-
-		auto tmp = (BasicValue<void*>*)ptr;
+		auto tmp = (BasicValue<void*>*)it->second;
 		if (tmp == nullptr)
 		{
 			continue;
 		}
 
 		tmp->m_refCount++;
+
+		m_value.insert({ it->first, it->second });
 	}
 }
 
