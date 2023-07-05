@@ -30,6 +30,23 @@ int main()
 		// not work, not assigned
 		doc["abc"]["abc3"] = 5;
 
+		{
+			Net::Json::Document doc2;
+
+			Net::Json::Object obj2;
+			doc2["test"] = 25;
+	/*		doc["P"] = doc2;*/
+
+			doc2["p"] = obj;
+			doc["aka"] = obj2;
+		}
+
+		Net::Json::Array arr;
+		arr.push(5);
+		arr.push(6.0);
+		arr.push("test");
+		doc["bbb"] = arr;
+
 		//Net::Json::BasicValueRead b = doc.operator[]("abc");
 		//if (b != 0)
 		//{

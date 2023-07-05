@@ -77,7 +77,6 @@ namespace Net
 		protected:
 			Type m_type;
 			std::map<int, void*> value;
-			bool m_bSharedMemory;
 
 		protected:
 			void __push(void* ptr);
@@ -88,8 +87,6 @@ namespace Net
 
 			std::map<int, void*> Value();
 			void Set(std::map<int, void*> value);
-			void SetSharedMemory(bool m_bSharedMemory);
-			bool IsSharedMemory() const;
 			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
 
@@ -98,7 +95,6 @@ namespace Net
 		protected:
 			Type m_type;
 			std::vector<void*> value;
-			bool m_bSharedMemory;
 
 		protected:
 			void __push(void* ptr);
@@ -109,8 +105,6 @@ namespace Net
 
 			std::vector<void*> Value();
 			void Set(std::vector<void*> value);
-			void SetSharedMemory(bool m_bSharedMemory);
-			bool IsSharedMemory() const;
 			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
