@@ -76,8 +76,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			std::vector<void*> value;
-			bool m_bSharedMemory;
+			std::map<int, void*> m_value;
 
 		protected:
 			void __push(void* ptr);
@@ -86,19 +85,16 @@ namespace Net
 			BasicObject();
 			~BasicObject();
 
-			std::vector<void*> Value();
-			void Set(std::vector<void*> value);
-			void SetSharedMemory(bool m_bSharedMemory);
-			bool IsSharedMemory() const;
-			void OnIndexChanged(size_t m_idx, void* m_pNew);
+			std::map<int, void*> Value() const;
+			void Set(std::map<int, void*> value);
+			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
 
 		class BasicArray
 		{
 		protected:
 			Type m_type;
-			std::vector<void*> value;
-			bool m_bSharedMemory;
+			std::map<int, void*> m_value;
 
 		protected:
 			void __push(void* ptr);
@@ -107,11 +103,9 @@ namespace Net
 			BasicArray();
 			~BasicArray();
 
-			std::vector<void*> Value();
-			void Set(std::vector<void*> value);
-			void SetSharedMemory(bool m_bSharedMemory);
-			bool IsSharedMemory() const;
-			void OnIndexChanged(size_t m_idx, void* m_pNew);
+			std::map<int, void*> Value() const;
+			void Set(std::map<int, void*> value);
+			void OnIndexChanged(size_t& m_idx, void* m_pNew);
 		};
 
 		class Object;
@@ -120,24 +114,32 @@ namespace Net
 		template<typename T>
 		class BasicValue
 		{
+		public:
+			size_t m_refCount;
+
+		private:
 			Type m_type;
-			char* key;
-			T value;
+			char* m_key;
+			T m_value;
 
 		public:
 			BasicValue();
-			BasicValue(const char* key, T value, Type type);
+			BasicValue(const char* key, T value, Type type, size_t refCount);
 			~BasicValue();
 
 			void operator=(const int& value);
 			void operator=(const float& value);
 			void operator=(const double& value);
 			void operator=(const BasicObject& value);
+			void operator=(const BasicArray& value);
 
 			void SetKey(const char* key);
 			void SetKey(Net::ViewString& key);
 			void SetValue(T value, Type type);
 			void SetType(Type type);
+
+			size_t getRefCount() const;
+			void setRefCount(size_t refCount);
 
 			char* Key();
 			T& Value();
@@ -171,21 +173,32 @@ namespace Net
 
 		class BasicValueRead
 		{
+			char* m_pNextKey;
 			void* m_pValue;
 			void* m_pParent;
 			size_t m_iValueIndex;
 			Type m_ParentType;
 
+			void allocNextKey(const char* key);
+			void allocNextKey(Net::ViewString& key);
+			void allocNextKey(char* key);
+
 		public:
-			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType);
+			BasicValueRead(const BasicValueRead& other);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, const char* key);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, Net::ViewString& key);
+			BasicValueRead(void* m_pValue, void* m_pParent, size_t m_iValueIndex, Type m_ParentType, char* key);
+			~BasicValueRead();
 			BasicValue<Object>* operator->() const;
+
+			BasicValueRead& operator=(const BasicValueRead& other);
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
 			BasicValueRead operator[](char* key);
 			BasicValueRead operator[](size_t idx);
 
-			operator bool();
+			operator bool() const;
 
 			void operator=(const NullValue& value);
 			void operator=(const int& value);
@@ -205,12 +218,6 @@ namespace Net
 			FLAG_READING_ARRAY = (1 << 2), // reading an array
 			FLAG_READING_STRING = (1 << 3), // reading a string
 			FLAG_READING_ELEMENT = (1 << 4), // this flag is pretty useless, just to identify in the code that we are readin an element
-		};
-
-		struct SerializeT
-		{
-			Net::String m_buffer;
-			bool m_reserved;
 		};
 
 		template<typename T>
@@ -241,7 +248,7 @@ namespace Net
 
 		public:
 			Object();
-			Object(Object& m_Object);
+			Object(Object& other);
 			~Object();
 
 			BasicValueRead operator[](const char* key);
@@ -252,7 +259,7 @@ namespace Net
 			template<typename T>
 			BasicValue<T>* operator=(BasicValue<T>* value);
 
-			void operator=(const Object& m_Object);
+			void operator=(const Object& other);
 
 			bool Append(const char* key, int value);
 			bool Append(const char* key, float value);
@@ -262,7 +269,7 @@ namespace Net
 			bool Append(const char* key, Object value);
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
+			bool TrySerialize(SerializeType type, Net::String& buffer, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -289,13 +296,13 @@ namespace Net
 
 		public:
 			Array();
-			Array(Array& m_Array);
+			Array(const Array& other);
 			~Array();
 
 			BasicValueRead operator[](size_t idx);
 			BasicValueRead at(size_t idx);
 
-			void operator=(const Array& m_Array);
+			void operator=(const Array& other);
 
 			bool push(int value);
 			bool push(float value);
@@ -309,7 +316,7 @@ namespace Net
 			size_t size() const;
 
 			size_t CalcLengthForSerialize();
-			bool TrySerialize(SerializeType type, SerializeT& st, size_t iterations = 1);
+			bool TrySerialize(SerializeType type, Net::String& buffer, size_t iterations = 1);
 			Net::String Serialize(SerializeType type = SerializeType::UNFORMATTED);
 			Net::String Stringify(SerializeType type = SerializeType::UNFORMATTED);
 			bool Deserialize(Net::String json);
@@ -328,27 +335,18 @@ namespace Net
 			Object root_obj;
 			Array root_array;
 
-			bool m_free_root_obj;
-			bool m_free_root_array;
-
-			void Init();
-			void Clear();
-
 		public:
 			Document();
-			Document(Document& m_Doc);
+			Document(const Document& doc);
 			~Document();
 
-			Document& operator=(const Document& m_doc);
-			void operator=(Object& m_Object);
-			void operator=(Array& m_Array);
+			Document& operator=(const Document& doc);
+			void operator=(const Object& obj);
+			void operator=(const Array& arr);
 
 			Type GetType();
 			Object* GetRootObject();
 			Array* GetRootArray();
-
-			void SetFreeRootObject(bool);
-			void SetFreeRootArray(bool);
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](size_t idx);
@@ -383,5 +381,5 @@ namespace Net
 			this->m_iIndex = m_iIndex;
 			this->m_Type = m_Type;
 		}
-}
+	}
 }

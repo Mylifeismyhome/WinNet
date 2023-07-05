@@ -37,39 +37,39 @@ namespace Net
 	{
 		class Profile_t
 		{
-			void* peer;
+			void* m_peer;
 
 		public:
-			Net::Json::Document data;
-			void* ext;
+			Net::Json::Document m_doc;
+			void* m_ext;
 
 			Profile_t()
 			{
-				peer = nullptr;
-				ext = nullptr;
+				m_peer = nullptr;
+				m_ext = nullptr;
 			}
 
 			Profile_t(void* peer)
 			{
-				this->peer = peer;
-				ext = nullptr;
+				m_peer = peer;
+				m_ext = nullptr;
 			}
 
 			bool valid()
 			{
-				return (peer != nullptr);
+				return (m_peer != nullptr);
 			}
 
 			void clear()
 			{
-				peer = nullptr;
-				FREE<byte>(ext);
+				m_peer = nullptr;
+				FREE<byte>(m_ext);
 			}
 
 			template <typename T>
 			T Peer()
 			{
-				return (T)peer;
+				return (T)m_peer;
 			}
 		};
 
@@ -127,9 +127,15 @@ namespace Net
 				}
 
 				auto slot = get_free_slot();
-				if (slot == INVALID_SIZE) return nullptr;
-				data[slot] = NET_PROFILE_DATA(peer);
+				if (slot == INVALID_SIZE)
+				{
+					return nullptr;
+				}
+
+				NET_PROFILE_DATA profile(peer);
+				data[slot] = profile;
 				++c_entries;
+
 				return this->peer(peer);
 			}
 
@@ -162,7 +168,7 @@ namespace Net
 				{
 					if (data[i].Peer<void*>() == peer)
 					{
-						return data[i].ext;
+						return data[i].m_ext;
 					}
 				}
 
@@ -180,7 +186,7 @@ namespace Net
 				{
 					if (data[i].Peer<void*>() == peer)
 					{
-						data[i].ext = ext;
+						data[i].m_ext = ext;
 						break;
 					}
 				}
@@ -197,7 +203,7 @@ namespace Net
 				{
 					if (data[i].Peer<void*>() == peer)
 					{
-						return &data[i].data;
+						return &data[i].m_doc;
 					}
 				}
 

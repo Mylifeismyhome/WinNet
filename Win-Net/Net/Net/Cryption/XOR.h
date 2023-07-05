@@ -56,13 +56,13 @@ namespace Net
 	{
 		class XOR_UNIQUEPOINTER
 		{
-			NET_CPOINTER<char> buffer;
-			size_t _size;
-			bool bFree;
+			size_t m_refCount;
+			NET_CPOINTER<char> m_buffer;
+			size_t m_size;
 
 		public:
 			XOR_UNIQUEPOINTER();
-			XOR_UNIQUEPOINTER(char*, size_t, bool);
+			XOR_UNIQUEPOINTER(char*, size_t, size_t);
 			~XOR_UNIQUEPOINTER();
 
 			XOR_UNIQUEPOINTER& operator=(const XOR_UNIQUEPOINTER& other);
@@ -74,7 +74,6 @@ namespace Net
 			size_t size() const;
 
 			void free();
-			void lost_reference() const;
 		};
 
 		class XOR
@@ -83,14 +82,13 @@ namespace Net
 			size_t _size;
 			size_t _actual_size;
 			uintptr_t _Key;
-			bool _bfree;
 
 			char* encrypt();
 			char* decrypt();
 
 		public:
 			XOR();
-			XOR(char*, bool m_free = false);
+			XOR(char*);
 			XOR(const char*);
 
 			void reserve(size_t size);
@@ -105,14 +103,13 @@ namespace Net
 
 			void set(size_t, char);
 			void set_size(size_t);
-			void init(char*, bool m_free = false);
+			void init(char*);
 			void init(const char*);
 			size_t size() const;
 			size_t actual_size() const;
 			size_t length() const;
-			XOR_UNIQUEPOINTER revert(bool = true);
+			XOR_UNIQUEPOINTER revert();
 			void free();
-			void lost_reference();
 		};
 	}
 }

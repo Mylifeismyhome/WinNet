@@ -17,7 +17,7 @@ int main()
 	Net::load(Net::ENABLE_LOGGING);
 
 	Client client;
-	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, false });
+	client.SetOption<bool>({ NET_OPT_EXECUTE_PACKET_ASYNC, true });
 
 	if (!client.Connect(SANDBOX_SERVERIP, SANBOX_PORT))
 	{
@@ -38,4 +38,4 @@ int main()
 	Net::unload();
 
 	return 0;
-}
+	}

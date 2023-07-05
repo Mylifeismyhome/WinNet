@@ -289,7 +289,7 @@ namespace Net
 
 		private:
 			DWORD ProcessPackets();
-			DWORD ExecutePacket();
+			void ExecutePacket();
 
 			NET_DECLARE_PACKET(NetProtocolHandshake);
 			NET_DECLARE_PACKET(RSAHandshake);

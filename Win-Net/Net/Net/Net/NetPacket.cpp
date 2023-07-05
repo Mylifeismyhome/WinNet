@@ -103,13 +103,12 @@ size_t& Net::RawData_t::original_size()
 
 Net::Packet::Packet::Packet()
 {
-	this->json = {};
-	this->raw = {};
+	raw = {};
 }
 
 Net::Json::Document& Net::Packet::Data()
 {
-	return this->json;
+	return m_doc;
 }
 
 void Net::Packet::AddRaw(const char* Key, BYTE* data, const size_t size)
@@ -140,19 +139,14 @@ void Net::Packet::AddRaw(Net::RawData_t& raw)
 	this->raw.emplace_back(raw);
 }
 
-bool Net::Packet::Deserialize(char* data)
-{
-	return this->json.Deserialize(data);
-}
-
 bool Net::Packet::Deserialize(const char* data)
 {
-	return this->json.Deserialize(data);
+	return m_doc.Deserialize(data);
 }
 
 void Net::Packet::SetJson(Net::Json::Document& doc)
 {
-	this->json = doc;
+	m_doc = doc;
 }
 
 void Net::Packet::SetRaw(const std::vector<Net::RawData_t>& raw)
@@ -222,5 +216,5 @@ Net::RawData_t* Net::Packet::GetRaw(const char* Key)
 
 Net::String Net::Packet::Stringify()
 {
-	return this->json.Serialize(Net::Json::SerializeType::UNFORMATTED);
+	return m_doc.Serialize(Net::Json::SerializeType::UNFORMATTED);
 }

@@ -1546,18 +1546,13 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 		return;
 	);
 
-	if (!data)
+	if (data == nullptr)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+		NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet data is invalid. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 		return;
 	}
 
-	NET_CPOINTER<Net::Packet> pPacket(ALLOC<Net::Packet>());
-	if (!pPacket.valid())
-	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
-		return;
-	}
+	Net::Packet packet;
 
 	/*
 	* parse json
@@ -1569,43 +1564,43 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 	int packetId = -1;
 	{
 		Net::Json::Document doc;
-		if (!doc.Deserialize(reinterpret_cast<char*>(data)))
+		if (doc.Deserialize(reinterpret_cast<const char*>(data)) == false)
 		{
-			pPacket.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_DataInvalid);
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet is in wrong format. json was unable to deserialize. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			return;
 		}
 
-		if (!(doc[CSTRING("ID")] && doc[CSTRING("ID")]->is_int()))
+		if (
+			doc[CSTRING("ID")] == 0 ||
+			doc[CSTRING("ID")]->is_int() == 0
+			)
 		{
-			pPacket.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberID);
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet id is missing. packet is incomplete. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			return;
 		}
 
 		packetId = doc[CSTRING("ID")]->as_int();
 		if (packetId < 0)
 		{
-			pPacket.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_MemberIDInvalid);
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet id is not valid. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
 			return;
 		}
 
-		if (!(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_object())
-			&& !(doc[CSTRING("CONTENT")] && doc[CSTRING("CONTENT")]->is_array()))
+		if (doc[CSTRING("CONTENT")] != 0)
 		{
-			pPacket.free();
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
-			return;
-		}
-
-		if (doc[CSTRING("CONTENT")]->is_object())
-		{
-			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_object());
-		}
-		else if (doc[CSTRING("CONTENT")]->is_array())
-		{
-			pPacket.get()->Data().Set(doc[CSTRING("CONTENT")]->as_array());
+			if (doc[CSTRING("CONTENT")]->is_object())
+			{
+				packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
+			}
+			else if (doc[CSTRING("CONTENT")]->is_array())
+			{
+				packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+			}
+			else
+			{
+				NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => packet is missing content. packet will be rejected."), SERVERNAME(this), peer->IPAddr().get());
+				return;
+			}
 		}
 	}
 
@@ -1615,7 +1610,7 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 	if (Isset(NET_OPT_EXECUTE_PACKET_ASYNC) ? GetOption<bool>(NET_OPT_EXECUTE_PACKET_ASYNC) : NET_OPT_DEFAULT_EXECUTE_PACKET_ASYNC)
 	{
 		TPacketExcecute* tpe = ALLOC<TPacketExcecute>();
-		tpe->m_packet = pPacket.get();
+		tpe->m_packet = ALLOC<Net::Packet, Net::Packet>(1, packet);
 		tpe->m_server = this;
 		tpe->m_peer = peer;
 		tpe->m_packetId = packetId;
@@ -1633,11 +1628,13 @@ void Net::WebSocket::Server::ProcessPacket(NET_PEER peer, BYTE* data, const size
 	/*
 	* execute in current thread
 	*/
-	if (!CheckDataN(peer, packetId, *pPacket.ref().get()))
-		if (!CheckData(peer, packetId, *pPacket.ref().get()))
-			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_UndefinedFrame);
-
-	pPacket.free();
+	if (CheckDataN(peer, packetId, packet) == false)
+	{
+		if (CheckData(peer, packetId, packet) == false)
+		{
+			NET_LOG_PEER(CSTRING("WinNet :: Server('%s') '%s' => received unknown packet id: %i"), SERVERNAME(this), peer->IPAddr().get(), packetId);
+		}
+	}
 }
 
 void Net::WebSocket::Server::onSSLTimeout(NET_PEER peer)
