@@ -626,22 +626,41 @@ Net::Json::BasicArray::~BasicArray()
 
 void Net::Json::BasicArray::__push(void* ptr)
 {
-	value.push_back(ptr);
+	if (ptr == nullptr)
+	{
+		return;
+	}
+
+	auto idx = value.size();
+	value.insert({ idx, ptr });
 }
 
-std::vector<void*> Net::Json::BasicArray::Value()
+std::map<int, void*> Net::Json::BasicArray::Value()
 {
 	return this->value;
 }
 
-void Net::Json::BasicArray::Set(std::vector<void*> value)
+void Net::Json::BasicArray::Set(std::map<int, void*> value)
 {
 	this->value = value;
 }
 
 void Net::Json::BasicArray::OnIndexChanged(size_t m_idx, void* m_pNew)
 {
-	this->value[m_idx] = m_pNew;
+	if (m_pNew == nullptr)
+	{
+		return;
+	}
+
+	if (value.find(m_idx) == value.end())
+	{
+		m_idx = value.size();
+		value.insert({ m_idx, m_pNew });
+	}
+	else
+	{
+		value[m_idx] = m_pNew;
+	}
 }
 
 template <typename T>
@@ -886,6 +905,11 @@ void Net::Json::BasicValueRead::allocNextKey(Net::ViewString& key)
 		FREE<char>(m_pNextKey);
 	}
 
+	if (key.valid() == false)
+	{
+		return;
+	}
+
 	const auto len = key.size();
 	m_pNextKey = ALLOC<char>(len + 1);
 	memcpy(m_pNextKey, &key.get()[key.start()], len);
@@ -897,6 +921,11 @@ void Net::Json::BasicValueRead::allocNextKey(char* key)
 	if (m_pNextKey != nullptr)
 	{
 		FREE<char>(m_pNextKey);
+	}
+
+	if (key == nullptr)
+	{
+		return;
 	}
 
 	const auto len = strlen(key);
@@ -1565,7 +1594,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(const char* key)
 	auto m_pEntry = this->__get<Object>(key);
 	if (m_pEntry.m_pValue == nullptr)
 	{
-		return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
+		return { nullptr, this, INVALID_SIZE, Net::Json::Type::OBJECT, key };
 	}
 
 	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type, key };
@@ -1576,7 +1605,7 @@ Net::Json::BasicValueRead Net::Json::Object::At(Net::ViewString& key)
 	auto m_pEntry = this->__get<Object>(key);
 	if (m_pEntry.m_pValue == nullptr)
 	{
-		return { nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, key };
+		return { nullptr, this, INVALID_SIZE, Net::Json::Type::OBJECT, key };
 	}
 
 	return { m_pEntry.m_pValue, this, m_pEntry.m_iIndex, m_pEntry.m_Type, key };

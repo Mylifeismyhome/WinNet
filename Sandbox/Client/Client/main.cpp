@@ -27,6 +27,10 @@ int main()
 
 		doc["test2"] = obj;
 
+		if (doc["test2"] && doc["test2"]->is_object())
+		{
+		}
+
 		// not work, not assigned
 		doc["abc"]["abc3"] = 5;
 
@@ -46,6 +50,21 @@ int main()
 		arr.push(6.0);
 		arr.push("test");
 		doc["bbb"] = arr;
+
+		if (doc["bbb"] && doc["bbb"]->is_array())
+		{
+			const auto arr2 = doc["bbb"]->as_array();
+			for (size_t i = 0; i < arr2->size(); ++i)
+			{
+				const auto& val = arr2->at(i);
+				if (val)
+				{
+					if (val->is_int())
+					{
+					}
+				}
+			}
+		}
 
 		//Net::Json::BasicValueRead b = doc.operator[]("abc");
 		//if (b != 0)

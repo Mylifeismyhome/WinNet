@@ -94,7 +94,7 @@ namespace Net
 		{
 		protected:
 			Type m_type;
-			std::vector<void*> value;
+			std::map<int, void*> value;
 
 		protected:
 			void __push(void* ptr);
@@ -103,8 +103,8 @@ namespace Net
 			BasicArray();
 			~BasicArray();
 
-			std::vector<void*> Value();
-			void Set(std::vector<void*> value);
+			std::map<int, void*> Value();
+			void Set(std::map<int, void*> value);
 			void OnIndexChanged(size_t m_idx, void* m_pNew);
 		};
 
