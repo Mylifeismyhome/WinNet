@@ -683,22 +683,22 @@ Net::Json::BasicValue<T>::BasicValue(const char* key, T value, Net::Json::Type t
 template <typename T>
 Net::Json::BasicValue<T>::~BasicValue()
 {
-	switch(m_type)
+	switch (m_type)
 	{
-		case Type::OBJECT:
-			((BasicValue<Object>*)this)->Value().Destroy();
-			break;
+	case Type::OBJECT:
+		((BasicValue<Object>*)this)->Value().Destroy();
+		break;
 
-		case Type::ARRAY:
-			((BasicValue<Array>*)this)->Value().Destroy();
-			break;
+	case Type::ARRAY:
+		((BasicValue<Array>*)this)->Value().Destroy();
+		break;
 
-		case Type::STRING:
-			FREE<char>(((BasicValue<char*>*)this)->Value());
-			break;
+	case Type::STRING:
+		FREE<char>(((BasicValue<char*>*)this)->Value());
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	m_value = {};
@@ -1410,7 +1410,7 @@ void Net::Json::BasicValueRead::operator=(const BasicObject& value)
 	}
 
 	auto& map = value.Value();
-	for(auto it = map.begin(); it != map.end(); ++it)
+	for (auto it = map.begin(); it != map.end(); ++it)
 	{
 		auto tmp = (BasicValue<void*>*)it->second;
 		if (tmp == nullptr)
@@ -2012,12 +2012,19 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 	// with object chain
 	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, pKey);
+
 	if (object_chain.size() > 0)
 	{
-		obj = { this->operator[](object_chain[0]) };
+		if (this->operator[](object_chain[0]) == 0)
+		{
+			this->operator[](object_chain[0]) = Net::Json::Object();
+		}
+
+		obj = this->operator[](object_chain[0]);
+
 		for (size_t i = 1; i < object_chain.size(); ++i)
 		{
-			obj = obj[object_chain[i]];
+			obj = obj.operator[](object_chain[i]);
 		}
 	}
 
@@ -2052,7 +2059,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = Net::Json::Object();
+					obj.operator[](pKey) = Net::Json::Object();
 				}
 				else
 				{
@@ -2106,10 +2113,20 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = arr;
+					if (obj.operator[](pKey) == 0)
+					{
+						obj.operator[](pKey) = Net::Json::Array();
+					}
+
+					obj.operator[](pKey) = arr;
 				}
 				else
 				{
+					if (this->operator[](pKey) == 0)
+					{
+						this->operator[](pKey) = Net::Json::Array();
+					}
+
 					this->operator[](pKey) = arr;
 				}
 			}
@@ -2166,7 +2183,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 			if (object_chain.size() > 0)
 			{
-				obj[pKey] = str.get().get();
+				obj.operator[](pKey) = str.get().get();
 			}
 			else
 			{
@@ -2187,7 +2204,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 			if (object_chain.size() > 0)
 			{
-				obj[pKey] = Convert::ToBoolean(pValue);
+				obj.operator[](pKey) = Convert::ToBoolean(pValue);
 				return true;
 			}
 
@@ -2206,7 +2223,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 
 			if (object_chain.size() > 0)
 			{
-				obj[pKey] = Net::Json::NullValue();
+				obj.operator[](pKey) = Net::Json::NullValue();
 				return true;
 			}
 
@@ -2297,7 +2314,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 			case Net::Json::Type::INTEGER:
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = Convert::ToInt32(pValue);
+					obj.operator[](pKey) = Convert::ToInt32(pValue);
 					break;
 				}
 
@@ -2307,7 +2324,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 			case Net::Json::Type::DOUBLE:
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = Convert::ToDouble(pValue);
+					obj.operator[](pKey) = Convert::ToDouble(pValue);
 					break;
 				}
 
@@ -2317,7 +2334,7 @@ bool Net::Json::Object::DeserializeAny(Net::String& key, Net::String& value, std
 			case Net::Json::Type::FLOAT:
 				if (object_chain.size() > 0)
 				{
-					obj[pKey] = Convert::ToFloat(pValue);
+					obj.operator[](pKey) = Convert::ToFloat(pValue);
 					break;
 				}
 
@@ -2349,13 +2366,19 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 	// with object chain
 	Net::Json::BasicValueRead obj(nullptr, this, INVALID_SIZE, Net::Json::Type::UNKNOWN, key);
+
 	if (object_chain.size() > 0)
 	{
-		obj = { this->operator[](*object_chain[0]) };
+		if (this->operator[](*object_chain[0]) == 0)
+		{
+			this->operator[](*object_chain[0]) = Net::Json::Object();
+		}
+
+		obj = this->operator[](*object_chain[0]);
+
 		for (size_t i = 1; i < object_chain.size(); ++i)
 		{
-			auto vs = *object_chain[i];
-			obj = obj[vs];
+			obj = obj.operator[](*object_chain[i]);
 		}
 	}
 
@@ -2390,7 +2413,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 				// need this line otherwise empty objects do not work
 				if (object_chain.size() > 0)
 				{
-					obj[key] = Net::Json::Object();
+					obj.operator[](key) = Net::Json::Object();
 				}
 				else
 				{
@@ -2444,10 +2467,20 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 				if (object_chain.size() > 0)
 				{
-					obj[key] = arr;
+					if (obj.operator[](key) == 0)
+					{
+						obj.operator[](key) = Net::Json::Array();
+					}
+
+					obj.operator[](key) = arr;
 				}
 				else
 				{
+					if (this->operator[](key) == 0)
+					{
+						this->operator[](key) = Net::Json::Array();
+					}
+
 					this->operator[](key) = arr;
 				}
 			}
@@ -2505,7 +2538,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 			if (object_chain.size() > 0)
 			{
-				obj[key] = decoded_string_ref.get();
+				obj.operator[](key) = decoded_string_ref.get();
 			}
 			else
 			{
@@ -2526,7 +2559,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 			if (object_chain.size() > 0)
 			{
-				obj[key] = Convert::ToBoolean(value);
+				obj.operator[](key) = Convert::ToBoolean(value);
 				return true;
 			}
 
@@ -2545,7 +2578,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 
 			if (object_chain.size() > 0)
 			{
-				obj[key] = Net::Json::NullValue();
+				obj.operator[](key) = Net::Json::NullValue();
 				return true;
 			}
 
@@ -2636,7 +2669,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 			case Net::Json::Type::INTEGER:
 				if (object_chain.size() > 0)
 				{
-					obj[key] = Convert::ToInt32(value);
+					obj.operator[](key) = Convert::ToInt32(value);
 					break;
 				}
 
@@ -2646,7 +2679,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 			case Net::Json::Type::DOUBLE:
 				if (object_chain.size() > 0)
 				{
-					obj[key] = Convert::ToDouble(value);
+					obj.operator[](key) = Convert::ToDouble(value);
 					break;
 				}
 
@@ -2656,7 +2689,7 @@ bool Net::Json::Object::DeserializeAny(Net::ViewString& key, Net::ViewString& va
 			case Net::Json::Type::FLOAT:
 				if (object_chain.size() > 0)
 				{
-					obj[key] = Convert::ToFloat(value);
+					obj.operator[](key) = Convert::ToFloat(value);
 					break;
 				}
 
@@ -3238,7 +3271,7 @@ void Net::Json::Array::Destroy()
 		{
 			tmp->m_refCount--;
 		}
-		
+
 		if (tmp->m_refCount > 0)
 		{
 			continue;

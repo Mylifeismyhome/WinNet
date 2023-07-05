@@ -1985,6 +1985,7 @@ namespace Net
 			*
 			* pass the json content into packet object
 			*/
+			printf("%s\n\t", data.get());
 			if (doc.Deserialize(reinterpret_cast<char*>(data.get())) == false)
 			{
 				NET_LOG_PEER(CSTRING("[NET] - Unable to deserialize json data"));
@@ -1995,6 +1996,11 @@ namespace Net
 			}
 
 			data.Set(nullptr);
+
+			{
+				auto s = doc.Serialize();
+				printf("%s\n\t", s.get().get());
+			}
 
 			if (
 				doc[CSTRING("ID")] == 0 ||
