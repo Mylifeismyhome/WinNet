@@ -2875,7 +2875,9 @@ bool Net::Json::Object::Deserialize(Net::String& json, std::vector<char*>& objec
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return Deserialize(vs, m_prepareString);
+	auto ret = Deserialize(vs, m_prepareString);
+	vs.free();
+	return ret;
 }
 
 bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::ViewString*>& object_chain, bool m_prepareString)
@@ -3520,7 +3522,9 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return Deserialize(vs, false);
+	auto ret = Deserialize(vs, false);
+	vs.free();
+	return ret;
 }
 
 bool Net::Json::Array::Deserialize(Net::ViewString& json)
@@ -4164,7 +4168,9 @@ bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return Deserialize(vs, m_prepareString);
+	auto ret = Deserialize(vs, m_prepareString);
+	vs.free();
+	return ret;
 }
 
 bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)

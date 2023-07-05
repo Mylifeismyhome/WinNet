@@ -143,6 +143,7 @@ namespace Net
 			return false;
 		}
 
+		m_ref.free();
 		m_ref = reinterpret_cast<Net::String*>(original())->get();
 
 		if (m_start != 0)
