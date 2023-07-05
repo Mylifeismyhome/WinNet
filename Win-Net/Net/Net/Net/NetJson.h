@@ -244,10 +244,14 @@ namespace Net
 			bool DeserializeAny(Net::String& key, Net::String& value, std::vector<char*>& object_chain, bool m_prepareString = false);
 			bool DeserializeAny(Net::ViewString& key, Net::ViewString& value, std::vector<Net::ViewString*>& object_chain, bool m_prepareString = false);
 
+			size_t m_refCount;
+
 		public:
 			Object();
 			Object(Object& m_Object);
 			~Object();
+
+			void lost_refernece();
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](Net::ViewString& key);
@@ -292,10 +296,14 @@ namespace Net
 			bool DeserializeAny(Net::String&, bool m_prepareString = false);
 			bool DeserializeAny(Net::ViewString&, bool m_prepareString = false);
 
+			size_t m_refCount;
+
 		public:
 			Array();
 			Array(Array& m_Array);
 			~Array();
+
+			void lost_refernece();
 
 			BasicValueRead operator[](size_t idx);
 			BasicValueRead at(size_t idx);
@@ -333,8 +341,7 @@ namespace Net
 			Object root_obj;
 			Array root_array;
 
-			bool m_free_root_obj;
-			bool m_free_root_array;
+			BYTE m_bFree;
 
 			void Init();
 			void Clear();
@@ -351,9 +358,6 @@ namespace Net
 			Type GetType();
 			Object* GetRootObject();
 			Array* GetRootArray();
-
-			void SetFreeRootObject(bool);
-			void SetFreeRootArray(bool);
 
 			BasicValueRead operator[](const char* key);
 			BasicValueRead operator[](size_t idx);

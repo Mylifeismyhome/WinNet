@@ -19,52 +19,87 @@ int main()
 	__debugbreak();
 	{
 		Net::Json::Document doc;
-		//doc["abc"] = "test";
-		//doc["abc2"] = "test2";
 
-		Net::Json::Object obj;
-		obj["test"] = 25;
-
-		doc["test2"] = obj;
-
-		if (doc["test2"] && doc["test2"]->is_object())
+		Net::Json::Object o1;
 		{
+			Net::Json::Object o2;
+			o2["abc"] = 123;
+			o1 = o2;
 		}
 
-		// not work, not assigned
-		doc["abc"]["abc3"] = 5;
-
+		if (o1["abc"] && o1["abc"]->is_int())
 		{
-			Net::Json::Document doc2;
-
-			Net::Json::Object obj2;
-			doc2["test"] = 25;
-	/*		doc["P"] = doc2;*/
-
-			doc2["p"] = obj;
-			doc["aka"] = obj2;
+			int i = 0;
+			i = 1;
 		}
 
-		Net::Json::Array arr;
-		arr.push(5);
-		arr.push(6.0);
-		arr.push("test");
-		doc["bbb"] = arr;
+		//{
+		//	Net::Json::Document b;
+		//	b["alll"] = 5;
+		//	doc = b;
 
-		if (doc["bbb"] && doc["bbb"]->is_array())
-		{
-			const auto arr2 = doc["bbb"]->as_array();
-			for (size_t i = 0; i < arr2->size(); ++i)
-			{
-				const auto& val = arr2->at(i);
-				if (val)
-				{
-					if (val->is_int())
-					{
-					}
-				}
-			}
-		}
+		//	Net::Json::Object ob2;
+		//	ob2["amkaa"] = 25;
+		//	doc = ob2;
+		//}
+		////doc["abc"] = "test";
+		////doc["abc2"] = "test2";
+
+		//Net::Json::Object obj;
+		//obj["test"] = 25;
+
+		//doc["test2"] = obj;
+
+		//if (doc["test2"] && doc["test2"]->is_object())
+		//{
+		//}
+
+		//// not work, not assigned
+		//doc["abc"]["abc3"] = 5;
+
+		//{
+		//	Net::Json::Document doc2;
+
+		//	Net::Json::Object obj2;
+		//	obj2["blume"] = 55;
+
+		//	doc2["test"] = 25;
+		//	doc["P"] = doc2;
+
+		//	{
+		//		Net::Json::Object obj3;
+		//		obj3 = obj2;
+		//	}
+
+		//	if (obj2["blume"])
+		//	{
+		//		printf("%i\n", obj2["blume"]->as_int());
+		//	}
+
+		//	doc2["p"] = obj;
+		//	doc["aka"] = obj2;
+		//}
+
+		//Net::Json::Array arr;
+		//arr.push(5);
+		//arr.push(6.0);
+		//arr.push("test");
+		//doc["bbb"] = arr;
+
+		//if (doc["bbb"] && doc["bbb"]->is_array())
+		//{
+		//	const auto arr2 = doc["bbb"]->as_array();
+		//	for (size_t i = 0; i < arr2->size(); ++i)
+		//	{
+		//		const auto& val = arr2->at(i);
+		//		if (val)
+		//		{
+		//			if (val->is_int())
+		//			{
+		//			}
+		//		}
+		//	}
+		//}
 
 		//Net::Json::BasicValueRead b = doc.operator[]("abc");
 		//if (b != 0)

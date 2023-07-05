@@ -1371,8 +1371,6 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 	{
 	case Net::Json::Type::OBJECT:
 	{
-		const_cast<Net::Json::Document*>(&value)->SetFreeRootObject(false);
-
 		auto cast = ((BasicValue<BasicObject>*)this->m_pValue);
 		if (
 			cast == nullptr ||
@@ -1395,8 +1393,6 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 
 	case Net::Json::Type::ARRAY:
 	{
-		const_cast<Net::Json::Document*>(&value)->SetFreeRootArray(false);
-
 		auto cast = ((BasicValue<BasicArray>*)this->m_pValue);
 		if (
 			cast == nullptr ||
@@ -1426,20 +1422,43 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 Net::Json::Object::Object()
 	: Net::Json::BasicObject::BasicObject()
 {
+	m_refCount = 1;
 }
 Net::Json::Object::Object(Object& m_Object)
 {
-	this->m_type = m_Object.m_type;
-	this->value = m_Object.value;
+	m_type = m_Object.m_type;
+	value = m_Object.value;
+	m_refCount = m_Object.m_refCount;
+	m_Object.m_refCount++;
 }
 
 Net::Json::Object::~Object()
 {
-	this->Destroy();
+	Destroy();
+}
+
+void Net::Json::Object::lost_refernece()
+{
+	if (m_refCount == 0)
+	{
+		return;
+	}
+
+	m_refCount--;
 }
 
 void Net::Json::Object::Destroy()
 {
+	if (m_refCount != 0)
+	{
+		m_refCount--;
+	}
+
+	if (m_refCount > 0)
+	{
+		return;
+	}
+
 	/*
 	* iterate through the values
 	* then manually free it to call its destructor
@@ -1626,8 +1645,10 @@ Net::Json::BasicValue<T>* Net::Json::Object::operator=(BasicValue<T>* other)
 
 void Net::Json::Object::operator=(const Object& m_Object)
 {
-	this->m_type = m_Object.m_type;
-	this->value = m_Object.value;
+	m_type = m_Object.m_type;
+	value = m_Object.value;
+	m_refCount = m_Object.m_refCount;
+	const_cast<Object*>(&m_Object)->m_refCount++;
 }
 
 bool Net::Json::Object::Append(const char* key, int value)
@@ -2988,21 +3009,46 @@ bool Net::Json::Object::Deserialize(Net::ViewString& json, std::vector<Net::View
 Net::Json::Array::Array()
 	: Net::Json::BasicArray::BasicArray()
 {
+	m_refCount = 1;
 }
 
 Net::Json::Array::Array(Array& m_Array)
 {
-	this->m_type = m_Array.m_type;
-	this->value = m_Array.value;
+	m_type = m_Array.m_type;
+	value = m_Array.value;
+	m_refCount = m_Array.m_refCount;
+	m_Array.m_refCount++;
 }
 
 Net::Json::Array::~Array()
 {
-	this->Destroy();
+	Destroy();
+}
+
+void Net::Json::Array::lost_refernece()
+{
+	if (m_refCount == 0)
+	{
+		return;
+	}
+
+	m_refCount--;
 }
 
 void Net::Json::Array::Destroy()
 {
+	if (m_refCount == 0)
+	{
+		return;
+	}
+
+	m_refCount--;
+
+	if (m_refCount > 1)
+	{
+		return;
+	}
+
 	/*
 	* iterate through the values
 	* then manually free it to call its destructor
@@ -3089,8 +3135,10 @@ Net::Json::BasicValueRead Net::Json::Array::at(size_t idx)
 
 void Net::Json::Array::operator=(const Array& m_Array)
 {
-	this->m_type = m_Array.m_type;
-	this->value = m_Array.value;
+	m_type = m_Array.m_type;
+	value = m_Array.value;
+	m_refCount = m_Array.m_refCount;
+	const_cast<Array*>(&m_Array)->m_refCount++;
 }
 
 bool Net::Json::Array::push(int value)
@@ -3904,7 +3952,7 @@ bool Net::Json::Array::Deserialize(Net::String& json, bool m_prepareString)
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return this->Deserialize(vs, m_prepareString);
+	return Deserialize(vs, m_prepareString);
 }
 
 bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
@@ -3931,14 +3979,14 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 	if (json[json.start()] != '[')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the beginning of the string ... got '%c' ... expected '['"), json[json.start()]);
-		this->Destroy();
+		Destroy();
 		return false;
 	}
 
 	if (json[json.end() - 1] != ']')
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Unexpected character in the ending of the string ... got '%c' ... expected ']'"), json[json.end() - 1]);
-		this->Destroy();
+		Destroy();
 		return false;
 	}
 
@@ -3977,7 +4025,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 				{
 					// we got an ending curly for an object but missing the start curly
 					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected '{' ... got '}'"));
-					this->Destroy();
+					Destroy();
 					return false;
 				}
 
@@ -4067,7 +4115,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 					* some internal error
 					*/
 					NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Internal parsing error ... view string is not valid"));
-					this->Destroy();
+					Destroy();
 					return false;
 				}
 
@@ -4079,7 +4127,7 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 				if (!DeserializeAny(element, m_prepareString))
 				{
 					// no need to display error message, the method will do it
-					this->Destroy();
+					Destroy();
 					return false;
 				}
 
@@ -4091,14 +4139,14 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 	if (arr_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an array ending curly ']'"));
-		this->Destroy();
+		Destroy();
 		return false;
 	}
 
 	if (obj_count > 0)
 	{
 		NET_LOG_ERROR(CSTRING("[Net::Json::Array] -> Bad syntax ... expected an object ending curly '}'"));
-		this->Destroy();
+		Destroy();
 		return false;
 	}
 
@@ -4107,37 +4155,32 @@ bool Net::Json::Array::Deserialize(Net::ViewString& json, bool m_prepareString)
 
 bool Net::Json::Array::Parse(Net::String json)
 {
-	return this->Deserialize(json);
+	return Deserialize(json);
 }
 
 bool Net::Json::Array::Parse(Net::ViewString& json)
 {
-	return this->Deserialize(json);
+	return Deserialize(json);
 }
 
 Net::Json::Document::Document()
 {
-	this->Init();
+	Init();
 }
 
 Net::Json::Document::Document(Document& m_Doc)
 {
-	this->m_type = m_Doc.m_type;
-	this->root_obj = m_Doc.root_obj;
-	this->root_array = m_Doc.root_array;
-	this->m_free_root_obj = m_Doc.m_free_root_obj;
-	this->m_free_root_array = m_Doc.m_free_root_array;
+	m_type = m_Doc.m_type;
+	root_obj = m_Doc.root_obj;
+	root_array = m_Doc.root_array;
 
-	/*
-	* document moved
-	*/
-	m_Doc.SetFreeRootObject(false);
-	m_Doc.SetFreeRootArray(false);
+	m_bFree = 1;
+	m_Doc.m_bFree = 0;
 }
 
 Net::Json::Document::~Document()
 {
-	this->Clear();
+	Clear();
 }
 
 Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
@@ -4151,135 +4194,126 @@ Net::Json::Document& Net::Json::Document::operator=(const Document& m_doc)
 	/*
 	* move the document into new instance
 	*/
-	this->m_type = m_doc.m_type;
-	this->root_obj = m_doc.root_obj;
-	this->root_array = m_doc.root_array;
-	this->m_free_root_obj = m_doc.m_free_root_obj;
-	this->m_free_root_array = m_doc.m_free_root_array;
+	m_type = m_doc.m_type;
+	root_obj = m_doc.root_obj;
+	root_array = m_doc.root_array;
 
-	/*
-	* m_doc lost it's reference
-	* do not free objects on heap
-	* they are still in use
-	*/
-	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootObject(false);
-	const_cast<Net::Json::Document*>(&m_doc)->SetFreeRootArray(false);
+	m_bFree = 1;
+	const_cast<Net::Json::Document*>(&m_doc)->m_bFree = 0;
 
 	return *this;
 }
 
 void Net::Json::Document::operator=(Object& m_Object)
 {
-	this->root_obj = m_Object;
-	this->m_type = Type::OBJECT;
-	this->SetFreeRootObject(true);
+	Clear();
+
+	root_obj = m_Object;
+	m_Object.lost_refernece();
+	m_type = Type::OBJECT;
+	m_bFree = 1;
 }
 
 void Net::Json::Document::operator=(Array& m_Array)
 {
-	this->root_array = m_Array;
-	this->m_type = Type::ARRAY;
-	this->SetFreeRootArray(true);
+	Clear();
+
+	root_array = m_Array;
+	m_Array.lost_refernece();
+	m_type = Type::ARRAY;
+	m_bFree = 1;
 }
 
 Net::Json::Type Net::Json::Document::GetType()
 {
-	return this->m_type;
+	return m_type;
 }
 
 Net::Json::Object* Net::Json::Document::GetRootObject()
 {
-	return &this->root_obj;
+	return &root_obj;
 }
 
 Net::Json::Array* Net::Json::Document::GetRootArray()
 {
-	return &this->root_array;
-}
-
-void Net::Json::Document::SetFreeRootObject(bool m_free)
-{
-	this->m_free_root_obj = m_free;
-}
-
-void Net::Json::Document::SetFreeRootArray(bool m_free)
-{
-	this->m_free_root_array = m_free;
+	return &root_array;
 }
 
 void Net::Json::Document::Init()
 {
 	/* by default its an object */
-	this->root_obj = {};
-	this->root_array = {};
-	this->m_free_root_obj = true;
-	this->m_free_root_array = true;
-	this->m_type = Type::OBJECT;
+	root_obj = {};
+	root_array = {};
+	m_type = Type::OBJECT;
+	m_bFree = 1;
 }
 
 void Net::Json::Document::Clear()
 {
-	if (this->m_free_root_obj) this->root_obj.Destroy();
-	if (this->m_free_root_array) this->root_array.Destroy();
+	if (m_bFree == 0)
+	{
+		root_obj = {};
+		root_array = {};
+		return;
+	}
+
+	root_obj.Destroy();
+	root_array.Destroy();
 }
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](const char* key)
 {
-	return this->root_obj.At(key);
+	return root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::operator[](size_t idx)
 {
-	return this->root_array.at(idx);
+	return root_array.at(idx);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(const char* key)
 {
-	return this->root_obj.At(key);
+	return root_obj.At(key);
 }
 
 Net::Json::BasicValueRead Net::Json::Document::At(size_t idx)
 {
-	return this->root_array.at(idx);
+	return root_array.at(idx);
 }
 
 void Net::Json::Document::Set(Object obj)
 {
-	this->root_obj = obj;
-	this->m_type = Type::OBJECT;
-	this->SetFreeRootObject(true);
+	root_obj = obj;
+	m_type = Type::OBJECT;
 }
 
 void Net::Json::Document::Set(Object* obj)
 {
-	this->root_obj = *obj;
-	this->m_type = Type::OBJECT;
-	this->SetFreeRootObject(true);
+	root_obj = *obj;
+	m_type = Type::OBJECT;
 }
 
 void Net::Json::Document::Set(Array arr)
 {
-	this->root_array = arr;
-	this->m_type = Type::ARRAY;
-	this->SetFreeRootArray(true);
+	root_array = arr;
+	m_type = Type::ARRAY;
 }
 
 void Net::Json::Document::Set(Array* arr)
 {
-	this->root_array = *arr;
-	this->m_type = Type::ARRAY;
-	this->SetFreeRootArray(true);
+	root_array = *arr;
+	m_type = Type::ARRAY;
 }
 
 Net::String Net::Json::Document::Serialize(SerializeType type)
 {
-	switch (this->m_type)
+	switch (m_type)
 	{
 	case Type::OBJECT:
-		return this->root_obj.Serialize(type);
+		return root_obj.Serialize(type);
 
 	case Type::ARRAY:
-		return this->root_array.Serialize(type);
+		return root_array.Serialize(type);
 
 	default:
 		break;
@@ -4290,7 +4324,7 @@ Net::String Net::Json::Document::Serialize(SerializeType type)
 
 Net::String Net::Json::Document::Stringify(SerializeType type)
 {
-	return this->Serialize(type);
+	return Serialize(type);
 }
 
 bool Net::Json::Document::Deserialize(Net::String json)
@@ -4300,25 +4334,25 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	* because it requires too many heap allocations
 	*/
 	auto vs = json.view_string();
-	return this->Deserialize(vs);
+	return Deserialize(vs);
 }
 
 bool Net::Json::Document::Deserialize(Net::ViewString& json)
 {
 	/* re-init */
-	this->Clear();
-	this->Init();
+	Clear();
+	Init();
 
 	if (json[0] == '{' && json[json.length()] == '}')
 	{
 		/* is object */
-		this->m_type = Net::Json::Type::OBJECT;
-		return this->root_obj.Deserialize(json);
+		m_type = Net::Json::Type::OBJECT;
+		return root_obj.Deserialize(json);
 	}
 	else if (json[0] == '[' && json[json.length()] == ']')
 	{
-		this->m_type = Net::Json::Type::ARRAY;
-		return this->root_array.Deserialize(json);
+		m_type = Net::Json::Type::ARRAY;
+		return root_array.Deserialize(json);
 	}
 
 	NET_LOG_ERROR(CSTRING("[Net::Json::Document] - Unable to deserialize document => neither object nor array"));
@@ -4327,12 +4361,12 @@ bool Net::Json::Document::Deserialize(Net::ViewString& json)
 
 bool Net::Json::Document::Parse(Net::String json)
 {
-	return this->Deserialize(json);
+	return Deserialize(json);
 }
 
 bool Net::Json::Document::Parse(Net::ViewString& json)
 {
-	return this->Deserialize(json);
+	return Deserialize(json);
 }
 
 template class Net::Json::BasicValue<int>;
