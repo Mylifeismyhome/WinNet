@@ -2152,22 +2152,21 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 		goto loc_packet_free;
 	}
 
-	if (
-		doc[CSTRING("CONTENT")] == 0 ||
-		(doc[CSTRING("CONTENT")]->is_object() == 0 && doc[CSTRING("CONTENT")]->is_array() == 0)
-		)
+	if (doc[CSTRING("CONTENT")] != 0)
 	{
-		DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
-		goto loc_packet_free;
-	}
-
-	if (doc[CSTRING("CONTENT")]->is_object())
-	{
-		packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
-	}
-	else if (doc[CSTRING("CONTENT")]->is_array())
-	{
-		packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+		if (doc[CSTRING("CONTENT")]->is_object())
+		{
+			packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
+		}
+		else if (doc[CSTRING("CONTENT")]->is_array())
+		{
+			packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+		}
+		else
+		{
+			DisconnectPeer(peer, NET_ERROR_CODE::NET_ERR_NoMemberContent);
+			goto loc_packet_free;
+		}
 	}
 
 	// check for option async to execute the packet in a new created thread

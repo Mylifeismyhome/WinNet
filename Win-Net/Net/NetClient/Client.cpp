@@ -2022,24 +2022,23 @@ namespace Net
 				goto loc_packet_free;
 			}
 
-			if (
-				doc[CSTRING("CONTENT")] == 0 ||
-				(doc[CSTRING("CONTENT")]->is_object() == 0 && doc[CSTRING("CONTENT")]->is_array() == 0)
-				)
+			if (doc[CSTRING("CONTENT")] != 0)
 			{
-				NET_LOG_PEER(CSTRING("[NET] - Frame is empty"));
+				if (doc[CSTRING("CONTENT")]->is_object())
+				{
+					packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
+				}
+				else if (doc[CSTRING("CONTENT")]->is_array())
+				{
+					packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+				}
+				else
+				{
+					NET_LOG_PEER(CSTRING("[NET] - packet is wrong format"));
 
-				ret = -1;
-				goto loc_packet_free;
-			}
-
-			if (doc[CSTRING("CONTENT")]->is_object())
-			{
-				packet.Data().Set(doc[CSTRING("CONTENT")]->as_object());
-			}
-			else if (doc[CSTRING("CONTENT")]->is_array())
-			{
-				packet.Data().Set(doc[CSTRING("CONTENT")]->as_array());
+					ret = -1;
+					goto loc_packet_free;
+				}
 			}
 
 			// check for option async to execute the packet in a new created thread
