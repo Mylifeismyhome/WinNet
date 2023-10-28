@@ -992,7 +992,7 @@ namespace Net
 							data.set(pCopy);
 
 							data.set_original_size(data.size());
-							CompressData(data.value(), data.size());
+							//CompressData(data.value(), data.size());
 						}
 
 						bRawDataModified = 1;
@@ -1158,7 +1158,7 @@ namespace Net
 							data.set(pCopy);
 
 							data.set_original_size(data.size());
-							CompressData(data.value(), data.size());
+							//CompressData(data.value(), data.size());
 						}
 
 						bRawDataModified = 1;
@@ -1738,7 +1738,7 @@ namespace Net
 							if (originalSize != 0)
 							{
 								entry.set_original_size(originalSize);
-								DecompressData(entry.value(), entry.size(), entry.original_size());
+								//DecompressData(entry.value(), entry.size(), entry.original_size());
 								entry.set_original_size(0);
 							}
 
@@ -1902,7 +1902,7 @@ namespace Net
 							if (originalSize != 0)
 							{
 								entry.set_original_size(originalSize);
-								DecompressData(entry.value(), entry.size(), entry.original_size());
+								//DecompressData(entry.value(), entry.size(), entry.original_size());
 								entry.set_original_size(entry.size());
 							}
 

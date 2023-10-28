@@ -67,9 +67,7 @@ namespace Net
 		RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent);
 
 		byte* value() const;
-		byte*& value();
 		size_t size() const;
-		size_t& size();
 		const char* key() const;
 		void set(byte* pointer);
 		void free();

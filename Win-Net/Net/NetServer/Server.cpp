@@ -989,7 +989,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 					data.set(pCopy);
 
 					data.set_original_size(data.size());
-					CompressData(data.value(), data.size());
+					//CompressData(data.value(), data.size());
 				}
 
 				bRawDataModified = 1;
@@ -1155,7 +1155,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 					data.set(pCopy);
 
 					data.set_original_size(data.size());
-					CompressData(data.value(), data.size());
+					//CompressData(data.value(), data.size());
 				}
 
 				bRawDataModified = 1;
@@ -1897,7 +1897,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					if (originalSize != 0)
 					{
 						entry.set_original_size(originalSize);
-						DecompressData(entry.value(), entry.size(), entry.original_size());
+						//DecompressData(entry.value(), entry.size(), entry.original_size());
 						entry.set_original_size(0);
 					}
 
@@ -2062,7 +2062,7 @@ void Net::Server::Server::ExecutePacket(NET_PEER peer)
 					if (originalSize != 0)
 					{
 						entry.set_original_size(originalSize);
-						DecompressData(entry.value(), entry.size(), entry.original_size());
+						//DecompressData(entry.value(), entry.size(), entry.original_size());
 						entry.set_original_size(0);
 					}
 

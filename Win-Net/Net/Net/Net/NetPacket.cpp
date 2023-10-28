@@ -53,17 +53,7 @@ byte* Net::RawData_t::value() const
 	return _data;
 }
 
-byte*& Net::RawData_t::value()
-{
-	return _data;
-}
-
 size_t Net::RawData_t::size() const
-{
-	return _size;
-}
-
-size_t& Net::RawData_t::size()
 {
 	return _size;
 }
