@@ -284,7 +284,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -652,7 +652,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK || errno == EAGAIN)
 			{
 				continue;
 			}
@@ -711,7 +711,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK || errno == EAGAIN)
 			{
 				continue;
 			}
@@ -773,7 +773,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK || errno == EAGAIN)
 			{
 				continue;
 			}
@@ -836,7 +836,7 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 		if (res == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK || errno == EAGAIN)
 			{
 				continue;
 			}

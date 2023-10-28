@@ -293,7 +293,7 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -851,7 +851,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}
@@ -1202,7 +1202,7 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}

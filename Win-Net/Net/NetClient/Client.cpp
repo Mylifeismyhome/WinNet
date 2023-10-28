@@ -313,7 +313,7 @@ namespace Net
 							if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 							{
 #ifdef BUILD_LINUX
-								if (errno == EWOULDBLOCK)
+								if (errno == EWOULDBLOCK || errno == EAGAIN)
 #else
 								if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -351,7 +351,7 @@ namespace Net
 						if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 						{
 #ifdef BUILD_LINUX
-							if (errno == EWOULDBLOCK)
+							if (errno == EWOULDBLOCK || errno == EAGAIN)
 #else
 							if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -458,7 +458,7 @@ namespace Net
 					if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 					{
 #ifdef BUILD_LINUX
-						if (errno == EWOULDBLOCK)
+						if (errno == EWOULDBLOCK || errno == EAGAIN)
 #else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -665,7 +665,7 @@ namespace Net
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}
@@ -723,7 +723,7 @@ namespace Net
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}
@@ -781,7 +781,7 @@ namespace Net
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}
@@ -840,7 +840,7 @@ namespace Net
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK)
+					if (errno == EWOULDBLOCK || errno == EAGAIN)
 					{
 						continue;
 					}
