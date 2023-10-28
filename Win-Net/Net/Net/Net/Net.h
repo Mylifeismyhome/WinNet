@@ -219,6 +219,21 @@ T* NET_ALLOC_MEM(const size_t n = 1, Args... args)
 }
 
 template <typename T>
+struct NET_FREE_MEMORY_HELPER {
+    static void FreeMem(void* pointer) {
+		// call destructor
+		((T*)pointer)->~T();
+	}
+};
+
+template <>
+struct NET_FREE_MEMORY_HELPER<void> {
+    static void FreeMem(void* pointer) {
+		// do not call destructor
+    }
+};
+
+template <typename T>
 __forceinline void NET_FREE_MEM(void* pointer)
 {
 	if (pointer == nullptr)
@@ -226,7 +241,7 @@ __forceinline void NET_FREE_MEM(void* pointer)
 		return;
 	}
 
-#ifdef NET_TEST_MEMORY_LEAKS
+	#ifdef NET_TEST_MEMORY_LEAKS
 	//printf("Deallocated: %p\n", pointer);
 	for (auto it = NET_TEST_MEMORY_LEAKS_POINTER_LIST.begin(); it != NET_TEST_MEMORY_LEAKS_POINTER_LIST.end(); ++it)
 	{
@@ -236,12 +251,9 @@ __forceinline void NET_FREE_MEM(void* pointer)
 			break;
 		}
 	}
-#endif
+	#endif
 
-	/*
-	* call destructor
-	*/
-	((T*)pointer)->~T();
+   	 NET_FREE_MEMORY_HELPER<T>::FreeMem(pointer);
 
 	free(pointer);
 	pointer = nullptr;

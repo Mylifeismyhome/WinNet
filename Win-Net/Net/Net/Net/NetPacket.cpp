@@ -34,7 +34,7 @@ Net::RawData_t::RawData_t()
 
 Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size)
 {
-	strcpy_s(this->_key, sizeof(this->_key), name);
+	strcpy(this->_key, name);
 	this->_data = pointer;
 	this->_size = size;
 	this->_original_size = size;
@@ -42,7 +42,7 @@ Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size)
 
 Net::RawData_t::RawData_t(const char* name, byte* pointer, const size_t size, const bool free_after_sent)
 {
-	strcpy_s(this->_key, sizeof(this->_key), name);
+	strcpy(this->_key, name);
 	this->_data = pointer;
 	this->_size = size;
 	this->_original_size = size;
