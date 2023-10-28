@@ -1007,7 +1007,7 @@ namespace Net
 							data.set(pCopy);
 
 							data.set_original_size(data.size());
-							//CompressData(data.value(), data.size());
+							CompressData(data.value(), data.size());
 						}
 
 						bRawDataModified = 1;
@@ -1173,7 +1173,7 @@ namespace Net
 							data.set(pCopy);
 
 							data.set_original_size(data.size());
-							//CompressData(data.value(), data.size());
+							CompressData(data.value(), data.size());
 						}
 
 						bRawDataModified = 1;
