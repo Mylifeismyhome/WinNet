@@ -1398,7 +1398,7 @@ void Net::Json::BasicValueRead::operator=(const BasicObject& value)
 		cast->SetValue(value, Type::OBJECT);
 	}
 
-	auto& map = value.Value();
+	const auto& map = value.Value();
 	for (auto it = map.begin(); it != map.end(); ++it)
 	{
 		auto tmp = (BasicValue<void*>*)it->second;
@@ -1442,7 +1442,7 @@ void Net::Json::BasicValueRead::operator=(const BasicArray& value)
 		cast->SetValue(value, Type::ARRAY);
 	}
 
-	auto& map = value.Value();
+	const auto& map = value.Value();
 	for (auto it = map.begin(); it != map.end(); ++it)
 	{
 		auto tmp = (BasicValue<void*>*)it->second;
@@ -1479,7 +1479,7 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 			cast->SetValue(*const_cast<Net::Json::Document*>(&value)->GetRootObject(), Type::OBJECT);
 		}
 
-		auto& map = const_cast<Net::Json::Document*>(&value)->GetRootObject()->Value();
+		const auto& map = const_cast<Net::Json::Document*>(&value)->GetRootObject()->Value();
 		for (auto it = map.begin(); it != map.end(); ++it)
 		{
 			auto tmp = (BasicValue<void*>*)it->second;
@@ -1513,7 +1513,7 @@ void Net::Json::BasicValueRead::operator=(const Document& value)
 			cast->SetValue(*const_cast<Net::Json::Document*>(&value)->GetRootArray(), Type::ARRAY);
 		}
 
-		auto& map = const_cast<Net::Json::Document*>(&value)->GetRootArray()->Value();
+		const auto& map = const_cast<Net::Json::Document*>(&value)->GetRootArray()->Value();
 		for (auto it = map.begin(); it != map.end(); ++it)
 		{
 			auto tmp = (BasicValue<void*>*)it->second;

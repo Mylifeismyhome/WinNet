@@ -138,7 +138,7 @@ namespace Net
 
 	bool ViewString::refresh()
 	{
-		if (original() == false)
+		if (original() == nullptr)
 		{
 			return false;
 		}
