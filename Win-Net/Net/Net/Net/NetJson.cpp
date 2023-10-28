@@ -3549,10 +3549,7 @@ bool Net::Json::Array::Deserialize(Net::String json)
 	* use view string method rather default way
 	* because it requires too many heap allocations
 	*/
-	auto vs = json.view_string();
-	auto ret = Deserialize(vs, false);
-	vs.free();
-	return ret;
+	return  Deserialize(json.view_string(), false);
 }
 
 bool Net::Json::Array::Deserialize(Net::ViewString& json)
@@ -4506,10 +4503,7 @@ bool Net::Json::Document::Deserialize(Net::String json)
 	* use view string method rather default way
 	* because it requires too many heap allocations
 	*/
-	auto vs = json.view_string();
-	auto ret = Deserialize(vs);
-	vs.free();
-	return ret;
+	return Deserialize(json.view_string());
 }
 
 bool Net::Json::Document::Deserialize(Net::ViewString& json)
