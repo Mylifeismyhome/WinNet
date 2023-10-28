@@ -313,7 +313,7 @@ namespace Net
 							if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 							{
 #ifdef BUILD_LINUX
-								if (errno == EWOULDBLOCK || errno == EAGAIN)
+								if (errno == EWOULDBLOCK)
 #else
 								if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -351,7 +351,7 @@ namespace Net
 						if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 						{
 #ifdef BUILD_LINUX
-							if (errno == EWOULDBLOCK || errno == EAGAIN)
+							if (errno == EWOULDBLOCK)
 #else
 							if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -458,7 +458,7 @@ namespace Net
 					if (Ws2_32::closesocket(GetSocket()) == SOCKET_ERROR)
 					{
 #ifdef BUILD_LINUX
-						if (errno == EWOULDBLOCK || errno == EAGAIN)
+						if (errno == EWOULDBLOCK)
 #else
 						if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -659,13 +659,15 @@ namespace Net
 				return;
 			}
 
+			size_t bytes_to_send = size;
+			size_t total_bytes_sent = 0;
 			do
 			{
-				const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
-				if (res == SOCKET_ERROR)
+				const auto bytes_sent = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+				if (bytes_sent == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -691,13 +693,15 @@ namespace Net
 #endif
 				}
 
-				if (res < 0)
+				if (bytes_sent == 0)
 				{
+					// socket closed
 					break;
 				}
 
-				size -= res;
-			} while (size > 0);
+				bytes_to_send -= bytes_sent;
+				total_bytes_sent += bytes_sent;
+			} while (bytes_to_send > 0);
 		}
 
 		void Client::SingleSend(BYTE*& data, size_t size, bool& bPreviousSentFailed)
@@ -717,13 +721,15 @@ namespace Net
 				return;
 			}
 
+			size_t bytes_to_send = size;
+			size_t total_bytes_sent = 0;
 			do
 			{
-				const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
-				if (res == SOCKET_ERROR)
+				const auto bytes_sent = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+				if (bytes_sent == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -749,13 +755,15 @@ namespace Net
 #endif
 				}
 
-				if (res < 0)
+				if (bytes_sent == 0)
 				{
+					// socket closed
 					break;
 				}
 
-				size -= res;
-			} while (size > 0);
+				bytes_to_send -= bytes_sent;
+				total_bytes_sent += bytes_sent;
+			} while (bytes_to_send > 0);
 		}
 
 		void Client::SingleSend(NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
@@ -775,13 +783,15 @@ namespace Net
 				return;
 			}
 
+			size_t bytes_to_send = size;
+			size_t total_bytes_sent = 0;
 			do
 			{
-				const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()), size, MSG_NOSIGNAL);
-				if (res == SOCKET_ERROR)
+				const auto bytes_sent = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.get()) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+				if (bytes_sent == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -807,13 +817,15 @@ namespace Net
 #endif
 				}
 
-				if (res < 0)
+				if (bytes_sent == 0)
 				{
+					// socket closed
 					break;
 				}
 
-				size -= res;
-			} while (size > 0);
+				bytes_to_send -= bytes_sent;
+				total_bytes_sent += bytes_sent;
+			} while (bytes_to_send > 0);
 		}
 
 		void Client::SingleSend(Net::RawData_t& data, bool& bPreviousSentFailed)
@@ -833,14 +845,15 @@ namespace Net
 				return;
 			}
 
-			size_t size = data.size();
+			size_t bytes_to_send = data.size();
+			size_t total_bytes_sent = 0;
 			do
 			{
-				const auto res = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.value()), size, MSG_NOSIGNAL);
-				if (res == SOCKET_ERROR)
+				const auto bytes_sent = Ws2_32::send(GetSocket(), reinterpret_cast<const char*>(data.value()) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+				if (bytes_sent == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -866,13 +879,15 @@ namespace Net
 #endif
 				}
 
-				if (res < 0)
+				if (bytes_sent == 0)
 				{
+					// socket closed
 					break;
 				}
 
-				size -= res;
-			} while (size > 0);
+				bytes_to_send -= bytes_sent;
+				total_bytes_sent += bytes_sent;
+			} while (bytes_to_send > 0);
 		}
 
 		/*
@@ -928,9 +943,9 @@ namespace Net
 
 			/* Crypt */
 			if (
-				(Isset(NET_OPT_USE_CIPHER) 
-					? GetOption<bool>(NET_OPT_USE_CIPHER) 
-					: NET_OPT_DEFAULT_USE_CIPHER) 
+				(Isset(NET_OPT_USE_CIPHER)
+					? GetOption<bool>(NET_OPT_USE_CIPHER)
+					: NET_OPT_DEFAULT_USE_CIPHER)
 				&& network.RSAHandshake
 				)
 			{

@@ -293,7 +293,7 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -851,7 +851,7 @@ short Net::WebSocket::Server::Handshake(NET_PEER peer)
 				if (res == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -1195,14 +1195,15 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 		}
 		else
 		{
-			auto sendSize = totalLength;
+			size_t bytes_to_send = totalLength;
+			size_t total_bytes_sent = 0;
 			do
 			{
-				const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(buf.get()), sendSize, MSG_NOSIGNAL);
-				if (res == SOCKET_ERROR)
+				const auto bytes_sent = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(buf.get()) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+				if (bytes_sent == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 					{
 						continue;
 					}
@@ -1228,8 +1229,15 @@ void Net::WebSocket::Server::EncodeFrame(BYTE* in_frame, const size_t frame_leng
 #endif
 				}
 
-				sendSize -= res;
-			} while (sendSize > 0);
+				if (bytes_sent == 0)
+				{
+					// socket closed
+					break;
+				}
+
+				bytes_to_send -= bytes_sent;
+				total_bytes_sent += bytes_sent;
+			} while (bytes_to_send > 0);
 		}
 
 		buf.free();

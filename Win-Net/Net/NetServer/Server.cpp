@@ -284,7 +284,7 @@ bool Net::Server::Server::ErasePeer(NET_PEER peer, bool clear)
 				if (Ws2_32::closesocket(peer->pSocket) == SOCKET_ERROR)
 				{
 #ifdef BUILD_LINUX
-					if (errno == EWOULDBLOCK || errno == EAGAIN)
+					if (errno == EWOULDBLOCK)
 #else
 					if (Ws2_32::WSAGetLastError() == WSAEWOULDBLOCK)
 #endif
@@ -646,13 +646,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 		return;
 	}
 
+	size_t bytes_to_send = size;
+	size_t total_bytes_sent = 0;
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
-		if (res == SOCKET_ERROR)
+		const auto bytes_sent = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+		if (bytes_sent == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK || errno == EAGAIN)
+			if (errno == EWOULDBLOCK)
 			{
 				continue;
 			}
@@ -677,11 +679,16 @@ void Net::Server::Server::SingleSend(NET_PEER peer, const char* data, size_t siz
 			}
 #endif
 		}
-		if (res < 0)
-			break;
 
-		size -= res;
-	} while (size > 0);
+		if (bytes_sent == 0)
+		{
+			// socket closed
+			break;
+		}
+
+		bytes_to_send -= bytes_sent;
+		total_bytes_sent += bytes_sent;
+	} while (bytes_to_send > 0);
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bool& bPreviousSentFailed)
@@ -705,13 +712,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 		return;
 	}
 
+	size_t bytes_to_send = size;
+	size_t total_bytes_sent = 0;
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data), size, MSG_NOSIGNAL);
-		if (res == SOCKET_ERROR)
+		const auto bytes_sent = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+		if (bytes_sent == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK || errno == EAGAIN)
+			if (errno == EWOULDBLOCK)
 			{
 				continue;
 			}
@@ -737,13 +746,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, BYTE*& data, size_t size, bo
 #endif
 		}
 
-		if (res < 0)
+		if (bytes_sent == 0)
 		{
+			// socket closed
 			break;
 		}
 
-		size -= res;
-	} while (size > 0);
+		bytes_to_send -= bytes_sent;
+		total_bytes_sent += bytes_sent;
+	} while (bytes_to_send > 0);
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, size_t size, bool& bPreviousSentFailed)
@@ -767,13 +778,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 		return;
 	}
 
+	size_t bytes_to_send = size;
+	size_t total_bytes_sent = 0;
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()), size, MSG_NOSIGNAL);
-		if (res == SOCKET_ERROR)
+		const auto bytes_sent = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.get()) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+		if (bytes_sent == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK || errno == EAGAIN)
+			if (errno == EWOULDBLOCK)
 			{
 				continue;
 			}
@@ -799,13 +812,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, NET_CPOINTER<BYTE>& data, si
 #endif
 		}
 
-		if (res < 0)
+		if (bytes_sent == 0)
 		{
+			// socket closed
 			break;
 		}
 
-		size -= res;
-	} while (size > 0);
+		bytes_to_send -= bytes_sent;
+		total_bytes_sent += bytes_sent;
+	} while (bytes_to_send > 0);
 }
 
 void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& bPreviousSentFailed)
@@ -829,14 +844,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 		return;
 	}
 
-	size_t size = data.size();
+	size_t bytes_to_send = data.size();
+	size_t total_bytes_sent = 0;
 	do
 	{
-		const auto res = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.value()), size, MSG_NOSIGNAL);
-		if (res == SOCKET_ERROR)
+		const auto bytes_sent = Ws2_32::send(peer->pSocket, reinterpret_cast<const char*>(data.value()) + total_bytes_sent, bytes_to_send, MSG_NOSIGNAL);
+		if (bytes_sent == SOCKET_ERROR)
 		{
 #ifdef BUILD_LINUX
-			if (errno == EWOULDBLOCK || errno == EAGAIN)
+			if (errno == EWOULDBLOCK)
 			{
 				continue;
 			}
@@ -862,13 +878,15 @@ void Net::Server::Server::SingleSend(NET_PEER peer, Net::RawData_t& data, bool& 
 #endif
 		}
 
-		if (res < 0)
+		if (bytes_sent == 0)
 		{
+			// socket closed
 			break;
 		}
 
-		size -= res;
-	} while (size > 0);
+		bytes_to_send -= bytes_sent;
+		total_bytes_sent += bytes_sent;
+	} while (bytes_to_send > 0);
 }
 
 /*
@@ -989,7 +1007,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 					data.set(pCopy);
 
 					data.set_original_size(data.size());
-					//CompressData(data.value(), data.size());
+					CompressData(data.value(), data.size());
 				}
 
 				bRawDataModified = 1;
@@ -1155,7 +1173,7 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 					data.set(pCopy);
 
 					data.set_original_size(data.size());
-					//CompressData(data.value(), data.size());
+					CompressData(data.value(), data.size());
 				}
 
 				bRawDataModified = 1;
