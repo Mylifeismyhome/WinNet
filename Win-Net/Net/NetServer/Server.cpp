@@ -366,6 +366,20 @@ float Net::Server::Server::GetReceivedPacketSizeAsPerc(NET_PEER peer)
 	return perc;
 }
 
+Net::Server::Server::peerInfo::peerInfo() {
+	UniqueID = INVALID_UID;
+	pSocket = INVALID_SOCKET;
+	client_addr = sockaddr_in();
+	estabilished = false;
+	bErase = false;
+	NetVersionMatched = false;
+	hWaitForNetProtocol = nullptr;
+	hWaitHearbeatSend = nullptr;
+	hWaitHearbeatReceive = nullptr;
+	m_heartbeat_expected_sequence_number = -1;
+	sessionData = Net::Json::Document();
+}
+
 void Net::Server::Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
@@ -380,6 +394,9 @@ void Net::Server::Server::peerInfo::clear()
 	network.ClearReceiveBuffer();
 
 	cryption.deleteKeyPair();
+
+	sessionData = Net::Json::Document();
+	sessionAdditionalData = nullptr;
 }
 
 Net::Server::IPRef Net::Server::Server::peerInfo::IPAddr() const
@@ -946,9 +963,9 @@ void Net::Server::Server::DoSend(NET_PEER peer, const int id, NET_PACKET& pkg)
 
 	/* Crypt */
 	if (
-		(Isset(NET_OPT_USE_CIPHER) 
-			? GetOption<bool>(NET_OPT_USE_CIPHER) 
-			: NET_OPT_DEFAULT_USE_CIPHER) && 
+		(Isset(NET_OPT_USE_CIPHER)
+			? GetOption<bool>(NET_OPT_USE_CIPHER)
+			: NET_OPT_DEFAULT_USE_CIPHER) &&
 		peer->cryption.getHandshakeStatus()
 		)
 	{
@@ -2342,7 +2359,7 @@ NET_DEFINE_PACKET(NetHeartbeat, NET_NATIVE_PACKET_ID::PKG_NetHeartbeat)
 NET_PACKET_DEFINITION_END
 
 NET_BEGIN_PACKET(Net::Server::Server, NetProtocolHandshake);
-if(
+if (
 	PKG[CSTRING("NET_STATUS")] == 0 ||
 	PKG[CSTRING("NET_STATUS")]->is_int() == 0
 	)
@@ -2399,8 +2416,8 @@ const auto NET_REVISION_VERSION = (short)PKG[CSTRING("NET_REVISION_VERSION")]->a
 const auto NET_KEY = PKG[CSTRING("NET_KEY")]->as_string();
 
 if (
-	NET_MAJOR_VERSION == Version::Major() && 
-	NET_MINOR_VERSION == Version::Minor() && 
+	NET_MAJOR_VERSION == Version::Major() &&
+	NET_MINOR_VERSION == Version::Minor() &&
 	NET_REVISION_VERSION == Version::Revision() &&
 	strcmp(NET_KEY, Version::Key().data().data()) == 0
 	)

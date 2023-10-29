@@ -211,16 +211,11 @@ namespace Net
 
 				std::mutex _mutex_disconnectPeer;
 
-				peerInfo()
-				{
-					UniqueID = INVALID_UID;
-					pSocket = INVALID_SOCKET;
-					client_addr = sockaddr_in();
-					estabilished = false;
-					bErase = false;
-					ssl = nullptr;
-					handshake = false;
-				}
+				/* custom data that can be set during peer lifetime */
+				Net::Json::Document sessionData;
+				void* sessionAdditionalData;
+
+				peerInfo();
 
 				void clear();
 				IPRef IPAddr() const;
