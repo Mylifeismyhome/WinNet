@@ -326,6 +326,18 @@ bool Net::WebSocket::Server::ErasePeer(NET_PEER peer, bool clear)
 	return true;
 }
 
+Net::WebSocket::Server::peerInfo::peerInfo() {
+	UniqueID = INVALID_UID;
+	pSocket = INVALID_SOCKET;
+	client_addr = sockaddr_in();
+	estabilished = false;
+	bErase = false;
+	ssl = nullptr;
+	handshake = false;
+	sessionData = Net::Json::Document();
+	sessionAdditionalData = nullptr;
+}
+
 void Net::WebSocket::Server::peerInfo::clear()
 {
 	UniqueID = INVALID_UID;
@@ -345,6 +357,9 @@ void Net::WebSocket::Server::peerInfo::clear()
 		SSL_free(ssl);
 		ssl = nullptr;
 	}
+
+	sessionData = Net::Json::Document();
+	sessionAdditionalData = nullptr;
 }
 
 Net::WebSocket::IPRef Net::WebSocket::Server::peerInfo::IPAddr() const
