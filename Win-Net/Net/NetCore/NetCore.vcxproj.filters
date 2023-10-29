@@ -239,9 +239,6 @@
     <ClInclude Include="..\Net\Coding\TOTP.h">
       <Filter>Coding</Filter>
     </ClInclude>
-    <ClInclude Include="..\Net\assets\manager\profile.hpp">
-      <Filter>Assets\manager</Filter>
-    </ClInclude>
     <ClInclude Include="..\Net\Net\NetBuildConfig.h">
       <Filter>Net</Filter>
     </ClInclude>
